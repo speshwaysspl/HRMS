@@ -296,14 +296,14 @@ const View = () => {
     );
   };
 
+  // Fix the downloadPDF function (around line 299)
   const downloadPDF = async (salaryId, empCode, payDate) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/salary/pdf/${salaryId}`, {
+      const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
-
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -417,7 +417,7 @@ const View = () => {
                       onClick={async () => {
                         try {
                           const token = localStorage.getItem("token");
-                          const response = await axios.get(`http://localhost:5000/api/payslip/download/${salary._id}`, {
+                          const response = await axios.get(`${API_BASE}/api/payslip/download/${salary._id}`, {
                             headers: { Authorization: `Bearer ${token}` },
                             responseType: "blob",
                           });
@@ -452,7 +452,7 @@ const View = () => {
                         if (confirmDelete) {
                           try {
                             const token = localStorage.getItem("token");
-                            const response = await axios.delete(`http://localhost:5000/api/salary/${salary._id}`, {
+                            const response = await axios.delete(`${API_BASE}/api/salary/${salary._id}`, {
                               headers: { Authorization: `Bearer ${token}` }
                             });
                             

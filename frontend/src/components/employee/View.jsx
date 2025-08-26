@@ -40,7 +40,7 @@ const View = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex justify-center md:justify-start">
               <img
-                src={`http://localhost:5000/${employee.userId.profileImage}`}
+                src={`${API_BASE}/${employee.userId.profileImage}`}
                 className="rounded-full border w-48 h-48 md:w-72 md:h-72 object-cover"
                 alt="Employee Profile"
               />
