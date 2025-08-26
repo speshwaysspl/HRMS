@@ -1,0 +1,32 @@
+{
+  "name": "speshway-hr-portal",
+  "version": "1.0.0",
+  "description": "HR Portal - MERN Stack Application",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "start": "npm run server:start",
+    "build": "npm run client:build",
+    "client:dev": "cd frontend && npm run dev",
+    "client:build": "cd frontend && npm run build",
+    "client:install": "cd frontend && npm install",
+    "server:dev": "cd server && npm run dev",
+    "server:start": "cd server && npm start",
+    "server:install": "cd server && npm install",
+    "install:all": "npm run client:install && npm run server:install",
+    "audit:fix": "cd frontend && npm audit fix; cd ../server && npm audit fix"
+  },
+  "keywords": [
+    "hr",
+    "portal",
+    "mern",
+    "react",
+    "nodejs",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
