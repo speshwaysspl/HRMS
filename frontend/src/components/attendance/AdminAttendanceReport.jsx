@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { API_BASE } from "../../utils/apiConfig";
  
 const AdminAttendanceReport = () => {
   const [selectedDate, setSelectedDate] = useState("");
@@ -79,7 +80,7 @@ const AdminAttendanceReport = () => {
     try {
       const token = localStorage.getItem("token");
       const queryParam = searchBy === 'id' ? `employeeId=${value}` : `employeeName=${encodeURIComponent(value)}`;
-      const response = await axios.get(`http://localhost:5000/api/employee/search?${queryParam}`, {
+      const response = await axios.get(`${API_BASE}/api/employee/search?${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
      
@@ -138,7 +139,7 @@ const AdminAttendanceReport = () => {
   // 🔹 Day-wise Attendance
   const fetchAttendance = () => {
     if (!selectedDate) return alert("Please select a date");
-    const url = `http://localhost:5000/api/attendance/admin/all?date=${selectedDate}`;
+    const url = `${API_BASE}/api/attendance/admin/all?date=${selectedDate}`;
     fetchData(url, "No records found.");
   };
  
@@ -147,7 +148,7 @@ const AdminAttendanceReport = () => {
     if (!selectedMonth || (!employeeId && !employeeName))
       return alert("Please select month and either Employee ID or Employee Name");
    
-    let url = `http://localhost:5000/api/attendance/admin/monthly?month=${selectedMonth}`;
+    let url = `${API_BASE}/api/attendance/admin/monthly?month=${selectedMonth}`;
     if (employeeId) {
       url += `&employeeId=${employeeId}`;
     } else if (employeeName) {
@@ -179,7 +180,7 @@ const AdminAttendanceReport = () => {
   // 🔹 Day-wise Excel
   const downloadDayExcel = () => {
     if (!selectedDate) return alert("Please select a date first");
-    let url = `http://localhost:5000/api/attendance/admin/export?date=${selectedDate}`;
+    let url = `${API_BASE}/api/attendance/admin/export?date=${selectedDate}`;
     if (statusFilter && statusFilter !== "All") {
       url += `&status=${encodeURIComponent(statusFilter)}`;
     }
@@ -191,7 +192,7 @@ const AdminAttendanceReport = () => {
     if (!selectedMonth || (!employeeId && !employeeName))
       return alert("Please select month and either Employee ID or Employee Name first");
    
-    let url = `http://localhost:5000/api/attendance/admin/export/monthly?month=${selectedMonth}`;
+    let url = `${API_BASE}/api/attendance/admin/export/monthly?month=${selectedMonth}`;
     if (employeeId) {
       url += `&employeeId=${employeeId}`;
     } else if (employeeName) {

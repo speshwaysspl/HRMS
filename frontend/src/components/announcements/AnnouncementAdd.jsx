@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { API_BASE } from "../../utils/apiConfig";
 
 const MotionBox = motion.create(Box);
 const MotionTypography = motion.create(Typography);
@@ -46,7 +47,7 @@ const AnnouncementAdd = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/announcement",
+        `${API_BASE}/api/announcement`,
         formData,
         {
           headers: {

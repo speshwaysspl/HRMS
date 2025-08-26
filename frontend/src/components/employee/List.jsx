@@ -4,6 +4,7 @@ import { columns, EmployeeButtons } from '../../utils/EmployeeHelper'
 import DataTable from 'react-data-table-component'
 import axios from 'axios'
 import { FaPlus, FaSearch } from 'react-icons/fa'
+import { API_BASE } from '../../utils/apiConfig'
 
 
 const List = () => {
@@ -17,7 +18,7 @@ const List = () => {
             setEmpLoading(true)
           try {
             const responnse = await axios.get(
-                `http://localhost:5000/api/employee?t=${Date.now()}`,
+                `${API_BASE}/api/employee?t=${Date.now()}`,
                 {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,

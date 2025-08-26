@@ -3,6 +3,7 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const EditAnnouncement = () => {
   const { id } = useParams();
@@ -17,14 +18,14 @@ const EditAnnouncement = () => {
     const fetchAnnouncement = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/api/announcement/${id}`, {
+        const res = await axios.get(`${API_BASE}/api/announcement/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) {
           const a = res.data.announcement;
           setTitle(a.title);
           setDescription(a.description);
-          if (a.image) setPreview(`http://localhost:5000/${a.image}`);
+          if (a.image) setPreview(`${API_BASE}/${a.image}`);
         }
       } catch (error) {
         console.error("Failed to load announcement:", error);
@@ -42,7 +43,7 @@ const EditAnnouncement = () => {
       formData.append("description", description);
       if (image) formData.append("image", image);
 
-      await axios.put(`http://localhost:5000/api/announcement/${id}`, formData, {
+      await axios.put(`${API_BASE}/api/announcement/${id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

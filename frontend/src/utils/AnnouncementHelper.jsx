@@ -1,7 +1,6 @@
 // src/utils/AnnouncementHelper.js
 import axios from "axios";
-
-export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { API_BASE } from "./apiConfig";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");

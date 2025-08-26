@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const AddDepartment = () => {
   const [department, setDepartment] = useState({
@@ -19,7 +20,7 @@ const AddDepartment = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/department/add",
+        `${API_BASE}/api/department/add`,
         department,
         {
           headers: {

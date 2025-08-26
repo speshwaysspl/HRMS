@@ -4,6 +4,7 @@ import DataTable from "react-data-table-component";
 import { columns, DepartmentButtons } from "../../utils/DepartmentHelper";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const DepartmentList = () => {
   const [departments, setDepartments] = useState([]);
@@ -17,7 +18,7 @@ const DepartmentList = () => {
   const fetchDepartments = async () => {
     setDepLoading(true);
     try {
-      const responnse = await axios.get("http://localhost:5000/api/department", {
+      const responnse = await axios.get(`${API_BASE}/api/department`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { API_BASE } from "../../utils/apiConfig";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
  
@@ -71,7 +72,7 @@ const Attendance = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const res = await axios.get("http://localhost:5000/api/attendance/today", {
+        const res = await axios.get(`${API_BASE}/api/attendance/today`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data) {
@@ -139,7 +140,7 @@ const Attendance = () => {
           : null,
       };
  
-      await axios.post("http://localhost:5000/api/attendance", attendanceData, {
+      await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
         headers: { Authorization: `Bearer ${token}` },
       });
  

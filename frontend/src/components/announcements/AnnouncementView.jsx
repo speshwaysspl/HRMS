@@ -2,7 +2,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { API_BASE } from "../../utils/AnnouncementHelper";
+import { API_BASE } from "../../utils/apiConfig";
 import { motion } from "framer-motion";
 
 const AnnouncementView = () => {

@@ -3,9 +3,7 @@ import React, { useEffect, useState } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-// API Base URL
-const API_BASE = "http://localhost:5000";
+import { API_BASE } from "../../utils/apiConfig";
 
 const BANKS = [
   "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank",

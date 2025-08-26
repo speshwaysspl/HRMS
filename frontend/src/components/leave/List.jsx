@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const List = () => {
   const [leaves, setLeaves] = useState(null);
@@ -14,7 +15,7 @@ const List = () => {
   const fetchLeaves = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/leave/${id}/${user.role}`,
+        `${API_BASE}/api/leave/${id}/${user.role}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

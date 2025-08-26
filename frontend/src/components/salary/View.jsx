@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE } from "../../utils/apiConfig";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -29,7 +30,7 @@ const View = () => {
           return;
         }
         
-        const response = await axios.get(`http://localhost:5000/api/salary/${id}/${user.role}`, {
+        const response = await axios.get(`${API_BASE}/api/salary/${id}/${user.role}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         

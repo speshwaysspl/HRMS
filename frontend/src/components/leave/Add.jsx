@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../utils/apiConfig";
 
 const Add = () => {
     const {user} = useAuth()
@@ -22,7 +23,7 @@ const Add = () => {
 
     try {
         const response = await axios.post(
-          `http://localhost:5000/api/leave/add`,leave,
+          `${API_BASE}/api/leave/add`,leave,
           {
             headers: {
               "Authorization": `Bearer ${localStorage.getItem("token")}`,

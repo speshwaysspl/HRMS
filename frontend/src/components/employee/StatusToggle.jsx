@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../../utils/apiConfig';
 
 const StatusToggle = ({ employeeId, currentStatus, onStatusChange }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +17,7 @@ const StatusToggle = ({ employeeId, currentStatus, onStatusChange }) => {
     
     try {
       const response = await axios.patch(
-        `http://localhost:5000/api/employee/${employeeId}/status`,
+        `${API_BASE}/api/employee/${employeeId}/status`,
         { status: newStatus },
         {
           headers: {

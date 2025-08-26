@@ -11,6 +11,7 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const Setting = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const Setting = () => {
     } else {
       try {
         const response = await axios.put(
-          "http://localhost:5000/api/setting/change-password",
+          `${API_BASE}/api/setting/change-password`,
           setting,
           {
             headers: {

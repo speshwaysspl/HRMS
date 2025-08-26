@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../utils/apiConfig";
  
 const AttendanceReport = () => {
   const location = useLocation();
@@ -19,7 +20,7 @@ const AttendanceReport = () => {
         if (!token) return;
  
         const { data } = await axios.get(
-          `http://localhost:5000/api/attendance/report?date=${selectedDate}`,
+          `${API_BASE}/api/attendance/report?date=${selectedDate}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
  

@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../../utils/apiConfig";
 
 const Detail = () => {
   const { id } = useParams();
@@ -11,7 +12,7 @@ const Detail = () => {
     const fetchLeave = async () => {
       try {
         const responnse = await axios.get(
-          `http://localhost:5000/api/leave/detail/${id}`,
+          `${API_BASE}/api/leave/detail/${id}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -35,7 +36,7 @@ const Detail = () => {
   const changeStatus = async (id, status) => {
     try {
         const responnse = await axios.put(
-          `http://localhost:5000/api/leave/${id}`, {status},
+          `${API_BASE}/api/leave/${id}`, {status},
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,

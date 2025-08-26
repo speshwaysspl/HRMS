@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from "@mui/material";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../utils/apiConfig";
 
 const EmployeeAnnouncementDetails = () => {
   const { id } = useParams();
@@ -15,7 +16,7 @@ const EmployeeAnnouncementDetails = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/api/announcement/${id}`, {
+        const res = await axios.get(`${API_BASE}/api/announcement/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) {

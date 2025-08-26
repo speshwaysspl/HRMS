@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const EmployeeAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -15,7 +16,7 @@ const EmployeeAnnouncements = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/announcement", {
+        const res = await axios.get(`${API_BASE}/api/announcement`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) {

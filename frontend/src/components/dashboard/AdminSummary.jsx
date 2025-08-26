@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 
 const StatCard = ({ icon, text, number, color }) => {
   return (
@@ -39,7 +40,7 @@ const AdminSummary = () => {
     const fetchSummary = async () => {
       try {
         const summary = await axios.get(
-          "http://localhost:5000/api/dashboard/summary",
+          `${API_BASE}/api/dashboard/summary`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
