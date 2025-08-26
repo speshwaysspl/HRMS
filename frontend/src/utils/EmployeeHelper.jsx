@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/authContext";
+import { useAuth } from "../context/AuthContext";
 import StatusToggle from "../components/employee/StatusToggle";
 
 export const columns = [

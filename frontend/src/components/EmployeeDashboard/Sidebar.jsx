@@ -13,7 +13,7 @@ import {
   FaChevronRight,
   FaSignOutAlt,
 } from "react-icons/fa";
-import { useAuth } from "../../context/authContext";
+import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Sidebar = () => {
