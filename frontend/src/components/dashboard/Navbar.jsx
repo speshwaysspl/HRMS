@@ -8,7 +8,7 @@ const Navbar = () => {
       <div className="overflow-hidden whitespace-nowrap w-full max-w-md mx-auto">
         <h1 className="text-sm sm:text-lg md:text-xl font-extrabold text-white animate-scroll">
           <span style={{ fontFamily: "Times New Roman, Times, serif" }}>
-            SPESHWAY SOLUTIONS PVT LTD
+            SPESHWAY SOLUTIONS PRIVATE LIMITED
           </span>
         </h1>
       </div>
@@ -23,9 +23,8 @@ const Navbar = () => {
           }
 
           @keyframes scroll {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(50%); }
           }
 
           .animate-gradient {
