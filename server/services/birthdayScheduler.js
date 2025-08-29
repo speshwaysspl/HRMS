@@ -8,10 +8,10 @@ import { processBirthdayWishes } from './birthdayService.js';
 export const initializeBirthdayScheduler = () => {
   console.log('🎂 Initializing birthday wishes scheduler...');
   
-  // Schedule to run daily at 11:45 PM IST (6:15 PM UTC)
-  // Cron format: '45 23 * * *' = At 11:45 PM every day
-  const task = cron.schedule('45 23 * * *', async () => {
-    console.log('🎂 Running daily birthday wishes check at 11:45 PM IST...');
+  // Schedule to run daily at 12:00 AM IST (6:30 PM UTC)
+  // Cron format: '0 0 * * *' = At 12:00 AM every day
+  const task = cron.schedule('0 0 * * *', async () => {
+    console.log('🎂 Running daily birthday wishes check at 12:00 AM IST...');
     
     try {
       const result = await processBirthdayWishes();
@@ -36,7 +36,7 @@ export const initializeBirthdayScheduler = () => {
     timezone: 'Asia/Kolkata' // Adjust timezone as needed
   });
   
-  console.log('✅ Birthday wishes scheduler initialized - will run daily at 11:45 PM IST');
+  console.log('✅ Birthday wishes scheduler initialized - will run daily at 12:00 AM IST');
   
   return task;
 };
@@ -61,9 +61,9 @@ export const getSchedulerStatus = (task) => {
   return {
     isRunning: task ? task.running : false,
     nextRun: task ? task.nextDate() : null,
-    schedule: '45 23 * * *', // Daily at 11:45 PM
+    schedule: '0 0 * * *', // Daily at 12:00 AM
     timezone: 'Asia/Kolkata',
-    description: 'Daily birthday wishes at 11:45 PM IST'
+    description: 'Daily birthday wishes at 12:00 AM IST'
   };
 };
 
