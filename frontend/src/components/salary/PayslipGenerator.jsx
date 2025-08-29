@@ -52,8 +52,6 @@ const PayslipGenerator = () => {
     pf: "",
     proftax: "",
     payDate: new Date().toISOString().split("T")[0],
-    autoCalculateHRA: false,
-    hraPercentage: 40,
     autoCalculateLOP: false
   });
 
@@ -151,9 +149,7 @@ const PayslipGenerator = () => {
       deductions: template.deductions || "",
       pf: template.pf || "",
       proftax: template.proftax || "",
-      workingdays: workingDays || 30,
-      autoCalculateHRA: template.autoCalculateHRA || false,
-      hraPercentage: template.hraPercentage || 40
+      workingdays: workingDays || 30
     }));
   };
 
@@ -230,11 +226,6 @@ const PayslipGenerator = () => {
     let hra = parseFloat(payslip.hra) || 0;
     let pf = parseFloat(payslip.pf) || 0;
     
-    // Auto-calculate HRA
-    if (payslip.autoCalculateHRA && basicSalary > 0) {
-      hra = (basicSalary * (parseFloat(payslip.hraPercentage) || 40)) / 100;
-    }
-    
     // PF is manually entered, no auto-calculation
     
     const totalEarnings = basicSalary + 
@@ -271,16 +262,13 @@ const PayslipGenerator = () => {
       totalEarnings: totalEarnings.toFixed(2),
       totalDeductions: totalDeductions.toFixed(2),
       netSalary: netSalary.toFixed(2),
-      calculatedHRA: hra.toFixed(2),
+
       calculatedPF: pf.toFixed(2),
       calculatedProfTax: professionalTax.toFixed(2),
       lopAmount: lopAmount.toFixed(2)
     });
     
     // Update form with calculated values
-    if (payslip.autoCalculateHRA) {
-      setPayslip(prev => ({ ...prev, hra: hra.toFixed(2) }));
-    }
     if (payslip.autoCalculateLOP) {
       setPayslip(prev => ({ ...prev, lopamount: lopAmount.toFixed(2) }));
     }
@@ -290,8 +278,7 @@ const PayslipGenerator = () => {
     }
   }, [payslip.basicSalary, payslip.da, payslip.hra, payslip.conveyance, payslip.medicalallowances, 
       payslip.specialallowances, payslip.allowances, payslip.pf, payslip.proftax, payslip.deductions,
-      payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateHRA, payslip.hraPercentage,
-      payslip.autoCalculateLOP]);
+      payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateLOP]);
 
   // Auto-update working days when month or year changes
   useEffect(() => {
@@ -683,47 +670,15 @@ const PayslipGenerator = () => {
             </div>
             
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">
-                HRA 
-                {payslip.autoCalculateHRA && (
-                  <span className="text-xs text-green-600 block sm:inline">(Auto: ₹{calculations.calculatedHRA})</span>
-                )}
-              </label>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  name="hra"
-                  value={payslip.hra}
-                  onChange={handleChange}
-                  className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
-                  placeholder="Enter HRA amount"
-                  readOnly={payslip.autoCalculateHRA}
-                />
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <label className="flex items-center text-xs">
-                    <input
-                      type="checkbox"
-                      name="autoCalculateHRA"
-                      checked={payslip.autoCalculateHRA}
-                      onChange={handleChange}
-                      className="mr-1"
-                    />
-                    Auto Calculate
-                  </label>
-                  {payslip.autoCalculateHRA && (
-                    <input
-                      type="number"
-                      name="hraPercentage"
-                      value={payslip.hraPercentage}
-                      onChange={handleChange}
-                      className="p-1 w-16 border border-gray-300 rounded text-xs"
-                      min="0"
-                      max="100"
-                      placeholder="%"
-                    />
-                  )}
-                </div>
-              </div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700">HRA</label>
+              <input
+                type="text"
+                name="hra"
+                value={payslip.hra}
+                onChange={handleChange}
+                className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                placeholder="Enter HRA amount"
+              />
             </div>
             
             <div>

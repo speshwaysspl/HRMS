@@ -28,12 +28,7 @@ const PayslipHistory = () => {
     toDate: ""
   });
   const [departments, setDepartments] = useState([]);
-  const [stats, setStats] = useState({
-    totalPayslips: 0,
-    totalSalaryPaid: 0,
-    averageSalary: 0,
-    monthlyBreakdown: []
-  });
+
   const [employees, setEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [showEmployeeSelection, setShowEmployeeSelection] = useState(false);
@@ -62,7 +57,6 @@ const PayslipHistory = () => {
       
       if (response.data.success) {
         setPayslips(response.data.payslips);
-        calculateStats(response.data.payslips);
       }
     } catch (error) {
       console.error("Error loading payslips:", error);
@@ -86,38 +80,7 @@ const PayslipHistory = () => {
     }
   };
 
-  const calculateStats = (payslipData) => {
-    const totalPayslips = payslipData.length;
-    const totalSalaryPaid = payslipData.reduce((sum, payslip) => {
-      return sum + (parseFloat(payslip.netSalary) || 0);
-    }, 0);
-    const averageSalary = totalPayslips > 0 ? totalSalaryPaid / totalPayslips : 0;
 
-    // Monthly breakdown
-    const monthlyBreakdown = {};
-    payslipData.forEach(payslip => {
-      const key = `${payslip.year}-${payslip.month.toString().padStart(2, '0')}`;
-      if (!monthlyBreakdown[key]) {
-        monthlyBreakdown[key] = {
-          month: MONTHS[payslip.month - 1],
-          year: payslip.year,
-          count: 0,
-          totalAmount: 0
-        };
-      }
-      monthlyBreakdown[key].count++;
-      monthlyBreakdown[key].totalAmount += parseFloat(payslip.netSalary) || 0;
-    });
-
-    setStats({
-      totalPayslips,
-      totalSalaryPaid,
-      averageSalary,
-      monthlyBreakdown: Object.values(monthlyBreakdown).sort((a, b) => 
-        `${b.year}-${b.month}`.localeCompare(`${a.year}-${a.month}`)
-      )
-    });
-  };
 
   const applyFilters = () => {
     let filtered = [...payslips];
@@ -439,25 +402,7 @@ const PayslipHistory = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-blue-50 p-6 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{stats.totalPayslips}</div>
-          <div className="text-sm text-gray-600">Total Payslips</div>
-        </div>
-        <div className="bg-green-50 p-6 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalSalaryPaid)}</div>
-          <div className="text-sm text-gray-600">Total Salary Paid</div>
-        </div>
-        <div className="bg-purple-50 p-6 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">{formatCurrency(stats.averageSalary)}</div>
-          <div className="text-sm text-gray-600">Average Salary</div>
-        </div>
-        <div className="bg-orange-50 p-6 rounded-lg">
-          <div className="text-2xl font-bold text-orange-600">{stats.monthlyBreakdown.length}</div>
-          <div className="text-sm text-gray-600">Active Months</div>
-        </div>
-      </div>
+
 
       {/* Filters */}
       <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -553,25 +498,7 @@ const PayslipHistory = () => {
         </div>
       </div>
 
-      {/* Monthly Breakdown */}
-      {stats.monthlyBreakdown.length > 0 && (
-        <div className="bg-white border rounded-lg mb-6">
-          <div className="px-6 py-4 border-b">
-            <h3 className="text-lg font-semibold">Monthly Breakdown</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats.monthlyBreakdown.slice(0, 6).map((month, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="font-semibold text-gray-800">{month.month} {month.year}</div>
-                  <div className="text-sm text-gray-600">{month.count} payslips</div>
-                  <div className="text-lg font-bold text-green-600">{formatCurrency(month.totalAmount)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Payslips Table */}
       <div className="bg-white border rounded-lg">

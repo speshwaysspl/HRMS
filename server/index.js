@@ -14,6 +14,8 @@ import dashboardRouter from "./routes/dashboard.js";
 import announcementRouter from "./routes/announcementRoutes.js";
 import payrollTemplateRouter from "./routes/payrollTemplate.js";
 import payslipRouter from "./routes/payslip.js";
+import birthdayRouter from "./routes/birthdayRoutes.js";
+import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import connectToDatabase from "./db/db.js";
 
 dotenv.config();
@@ -48,8 +50,12 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/announcement", announcementRouter);
 app.use("/api/payroll-template", payrollTemplateRouter);
 app.use("/api/payslip", payslipRouter);
+app.use("/api/birthdays", birthdayRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // Initialize birthday wishes scheduler
+  initializeBirthdayScheduler();
 });

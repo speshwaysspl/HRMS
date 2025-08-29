@@ -23,13 +23,9 @@ export const createTemplate = async (req, res) => {
       return res.status(404).json({ success: false, error: "Employee not found" });
     }
     
-    // Auto-calculate HRA and PF if enabled
+    // Get values directly from payload
     let hra = num(payload.hra);
     let pf = num(payload.pf);
-    
-    if (payload.autoCalculateHRA) {
-      hra = (num(payload.basicSalary) * num(payload.hraPercentage || 40)) / 100;
-    }
     
     if (payload.autoCalculatePF) {
       pf = (num(payload.basicSalary) * num(payload.pfPercentage || 12)) / 100;
@@ -55,7 +51,7 @@ export const createTemplate = async (req, res) => {
       // Salary structure
       basicSalary: num(payload.basicSalary),
       da: num(payload.da),
-      hra: Number(hra.toFixed(2)),
+      hra: num(payload.hra),
       conveyance: num(payload.conveyance),
       medicalallowances: num(payload.medicalallowances),
       specialallowances: num(payload.specialallowances),
@@ -66,8 +62,6 @@ export const createTemplate = async (req, res) => {
       deductions: num(payload.deductions),
       
       // Calculation settings
-      autoCalculateHRA: Boolean(payload.autoCalculateHRA),
-      hraPercentage: num(payload.hraPercentage) || 40,
       autoCalculatePF: Boolean(payload.autoCalculatePF),
       pfPercentage: num(payload.pfPercentage) || 12,
       
@@ -244,13 +238,9 @@ export const updateTemplate = async (req, res) => {
       return res.status(404).json({ success: false, error: "Template not found" });
     }
     
-    // Auto-calculate HRA and PF if enabled
+    // Get values directly from payload
     let hra = num(payload.hra);
     let pf = num(payload.pf);
-    
-    if (payload.autoCalculateHRA) {
-      hra = (num(payload.basicSalary) * num(payload.hraPercentage || 40)) / 100;
-    }
     
     if (payload.autoCalculatePF) {
       pf = (num(payload.basicSalary) * num(payload.pfPercentage || 12)) / 100;
@@ -267,7 +257,7 @@ export const updateTemplate = async (req, res) => {
       
       basicSalary: num(payload.basicSalary) || template.basicSalary,
       da: num(payload.da) || template.da,
-      hra: Number(hra.toFixed(2)),
+      hra: num(payload.hra) || template.hra,
       conveyance: num(payload.conveyance) || template.conveyance,
       medicalallowances: num(payload.medicalallowances) || template.medicalallowances,
       specialallowances: num(payload.specialallowances) || template.specialallowances,
@@ -278,8 +268,6 @@ export const updateTemplate = async (req, res) => {
       deductions: num(payload.deductions) || template.deductions,
       
 
-      autoCalculateHRA: payload.autoCalculateHRA !== undefined ? Boolean(payload.autoCalculateHRA) : template.autoCalculateHRA,
-      hraPercentage: num(payload.hraPercentage) || template.hraPercentage,
       autoCalculatePF: payload.autoCalculatePF !== undefined ? Boolean(payload.autoCalculatePF) : template.autoCalculatePF,
       pfPercentage: num(payload.pfPercentage) || template.pfPercentage,
       
@@ -375,41 +363,7 @@ export const setDefaultTemplate = async (req, res) => {
   }
 };
 
-// Clone template
-export const cloneTemplate = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { templateName } = req.body;
-    const { userId } = req.user;
-    
-    const originalTemplate = await PayrollTemplate.findById(id);
-    if (!originalTemplate) {
-      return res.status(404).json({ success: false, error: "Template not found" });
-    }
-    
-    const clonedTemplate = new PayrollTemplate({
-      ...originalTemplate.toObject(),
-      _id: undefined,
-      templateName: templateName || `${originalTemplate.templateName} - Copy`,
-      isDefault: false, // Cloned template should not be default
-      createdBy: userId,
-      lastModifiedBy: userId,
-      createdAt: undefined,
-      updatedAt: undefined
-    });
-    
-    await clonedTemplate.save();
-    
-    return res.status(201).json({ 
-      success: true, 
-      template: clonedTemplate,
-      message: "Template cloned successfully"
-    });
-  } catch (error) {
-    console.error("Clone Template error:", error);
-    return res.status(500).json({ success: false, error: "Template cloning server error" });
-  }
-};
+
 
 // Get template statistics
 export const getTemplateStats = async (req, res) => {

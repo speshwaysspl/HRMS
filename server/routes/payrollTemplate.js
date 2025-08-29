@@ -8,7 +8,6 @@ import {
   deleteTemplate,
   getEmployeeTemplates,
   setDefaultTemplate,
-  cloneTemplate,
   getTemplateStats,
   bulkSetDefaults,
   quickFixDefaults,
@@ -46,8 +45,7 @@ router.delete("/:id", verifyUser, deleteTemplate);
 // Set template as default for employee
 router.patch("/:id/set-default", verifyUser, setDefaultTemplate);
 
-// Clone template
-router.post("/:id/clone", verifyUser, cloneTemplate);
+
 
 // Bulk set templates as default (one per employee)
 router.post("/bulk/set-defaults", verifyUser, bulkSetDefaults);

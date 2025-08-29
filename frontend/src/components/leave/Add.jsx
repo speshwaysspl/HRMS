@@ -13,8 +13,62 @@ const Add = () => {
 
     const navigate = useNavigate()
 
+    // Get today's date in YYYY-MM-DD format
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
+
+    // Get tomorrow's date in YYYY-MM-DD format
+    const getTomorrowDate = () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0];
+    };
+
+    const validateDates = (name, value) => {
+        const today = getTodayDate();
+        const tomorrow = getTomorrowDate();
+        
+        if (name === 'startDate') {
+            if (value < today) {
+                alert('From date should be today or a future date!');
+                return false;
+            }
+            // If end date is already selected, validate it against new start date
+            if (leave.endDate && value >= leave.endDate) {
+                alert('From date should be before the To date!');
+                return false;
+            }
+        }
+        
+        if (name === 'endDate') {
+            if (value < tomorrow) {
+                alert('To date should be tomorrow or a future date!');
+                return false;
+            }
+            // If start date is selected, validate end date against it
+            if (leave.startDate && value <= leave.startDate) {
+                alert('To date should be after the From date!');
+                return false;
+            }
+        }
+        
+        return true;
+    };
+
   const handleChange = (e) => {
-    const {name, value} = e.target
+    const {name, value} = e.target;
+    
+    // Validate dates before updating state
+    if ((name === 'startDate' || name === 'endDate') && value) {
+        if (!validateDates(name, value)) {
+            // Reset the input field to empty if validation fails
+            e.target.value = '';
+            return;
+        }
+    }
+    
     setLeave((prevState) => ({...prevState, [name] : value}))
   };
 
@@ -70,6 +124,7 @@ const Add = () => {
               <input
                 type="date"
                 name="startDate"
+                min={getTodayDate()}
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 required
@@ -84,6 +139,7 @@ const Add = () => {
               <input
                 type="date"
                 name="endDate"
+                min={leave.startDate ? new Date(new Date(leave.startDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : getTomorrowDate()}
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 required
@@ -101,6 +157,7 @@ const Add = () => {
               placeholder="Reason"
               onChange={handleChange}
               className="w-full border border-gray-300"
+              required
             ></textarea>
           </div>
         </div>

@@ -25,8 +25,7 @@ const Table = () => {
           leaveType: leave.leaveType,
           department: leave.employeeId.department.dep_name,
           days:
-            new Date(leave.endDate).getDate() -
-            new Date(leave.startDate).getDate(),
+            Math.ceil((new Date(leave.endDate) - new Date(leave.startDate)) / (1000 * 60 * 60 * 24)) + 1,
           status: leave.status,
           action: <LeaveButtons Id={leave._id} />,
         }));

@@ -341,6 +341,20 @@ const AdminAttendanceReport = () => {
                     <div className="col-span-2">
                       <span className="font-medium">Location:</span> {att.inLocation || 'N/A'}
                     </div>
+                    <div className="col-span-2">
+                      <span className="font-medium">Breaks:</span> 
+                      {att.breaks?.length > 0 ? (
+                        <div className="mt-1 space-y-1">
+                          {att.breaks.map((b, idx) => (
+                            <div key={idx} className="text-xs bg-yellow-50 p-1 rounded">
+                              Break {idx + 1}: {b.start} - {b.end || 'Ongoing'}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        'No breaks'
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -360,6 +374,7 @@ const AdminAttendanceReport = () => {
                     <th className="px-3 py-2 text-left text-sm font-medium">Work Mode</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">In Location</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Out Location</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Breaks</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Status</th>
                   </tr>
                 </thead>
@@ -380,6 +395,19 @@ const AdminAttendanceReport = () => {
                       <td className="px-3 py-2 text-sm">{att.workMode}</td>
                       <td className="px-3 py-2 text-sm">{att.inLocation || 'N/A'}</td>
                       <td className="px-3 py-2 text-sm">{att.outLocation || 'N/A'}</td>
+                      <td className="px-3 py-2 text-sm">
+                        {att.breaks?.length > 0 ? (
+                          <div className="space-y-1">
+                            {att.breaks.map((b, idx) => (
+                              <div key={idx} className="text-xs">
+                                Break {idx + 1}: {b.start} - {b.end || 'Ongoing'}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          'No breaks'
+                        )}
+                      </td>
                       <td
                         className={`px-3 py-2 text-sm font-semibold ${
                           att.status === "Present"

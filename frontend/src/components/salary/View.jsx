@@ -7,7 +7,7 @@ import { API_BASE } from "../../utils/apiConfig";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
-  const [filteredSalaries, setFilteredSalaries] = useState([]);
+
   const [selectedSalary, setSelectedSalary] = useState(null);
   const { id } = useParams();
   const { user } = useAuth();
@@ -20,7 +20,7 @@ const View = () => {
         if (!id || id === undefined || id === null || id === '') {
           console.log('No ID provided, skipping API call');
           setSalaries([]);
-          setFilteredSalaries([]);
+    
           return;
         }
         
@@ -36,15 +36,15 @@ const View = () => {
         
         if (response.data.success) {
           setSalaries(response.data.salary || []);
-          setFilteredSalaries(response.data.salary || []);
+  
         } else {
           setSalaries([]);
-          setFilteredSalaries([]);
+  
         }
       } catch (error) {
         // Silently handle errors and show empty results
         setSalaries([]);
-        setFilteredSalaries([]);
+  
       }
     };
     // Only fetch if user is loaded
@@ -53,34 +53,7 @@ const View = () => {
     }
   }, [id, user]);
 
-  const filterSalaries = (e) => {
-    const query = e.target.value.toLowerCase();
-    if (!query) {
-      setFilteredSalaries(salaries);
-    } else {
-      const filtered = salaries.filter((s) => {
-        // Handle different possible structures for employeeId
-        let empId = "";
-        
-        if (s.employeeId) {
-          if (typeof s.employeeId === 'object' && s.employeeId.employeeId) {
-            // Populated case: s.employeeId.employeeId
-            empId = s.employeeId.employeeId;
-          } else if (typeof s.employeeId === 'string') {
-            // Direct string case
-            empId = s.employeeId;
-          }
-        }
-        
-        // Also search by employee name if available
-        const empName = s.employeeId?.name || s.name || "";
-        
-        return empId.toLowerCase().includes(query) || 
-               empName.toLowerCase().includes(query);
-      });
-      setFilteredSalaries(filtered);
-    }
-  };
+
 
 
 
@@ -348,19 +321,9 @@ const View = () => {
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Legacy Salary Records</h3>
+        <h3 className="text-lg font-semibold mb-4">Salary Records</h3>
         
-        {id && (
-          <div className="flex justify-end mb-3">
-            <input
-              type="text"
-              placeholder="Search By Emp ID"
-              className="border px-3 py-1 rounded-md border-gray-300"
-              onChange={filterSalaries}
-              aria-label="Search By Employee ID"
-            />
-          </div>
-        )}
+
 
       {!id ? (
         <div className="text-center py-8">
@@ -374,7 +337,7 @@ const View = () => {
             <p className="text-sm text-gray-500">Your salary information will be displayed here when available.</p>
           )}
         </div>
-      ) : filteredSalaries.length === 0 ? (
+      ) : salaries.length === 0 ? (
         <p className="text-center text-gray-500">No Records Found</p>
       ) : (
         <table className="w-full text-sm text-left text-gray-700 border border-gray-200 rounded">
@@ -391,7 +354,7 @@ const View = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredSalaries.map((salary, index) => (
+            {salaries.map((salary, index) => (
               <tr key={salary._id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                 <td className="px-6 py-3 border-b">{index + 1}</td>
                 <td className="px-6 py-3 border-b">
@@ -414,26 +377,6 @@ const View = () => {
                 <td className="px-6 py-3 border-b">
                   <div className="flex space-x-2">
                     <button
-                      onClick={async () => {
-                        try {
-                          const token = localStorage.getItem("token");
-                          const response = await axios.get(`${API_BASE}/api/payslip/download/${salary._id}`, {
-                            headers: { Authorization: `Bearer ${token}` },
-                            responseType: "blob",
-                          });
-                          const blob = new Blob([response.data], { type: "application/pdf" });
-                          const url = window.URL.createObjectURL(blob);
-                          window.open(url, '_blank');
-                        } catch (error) {
-                          alert("Failed to view PDF");
-                        }
-                      }}
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                      aria-label={`Preview payslip for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
-                    >
-                      Preview
-                    </button>
-                    <button
                       onClick={() =>
                         downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
                       }
@@ -441,40 +384,6 @@ const View = () => {
                       aria-label={`Download payslip PDF for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
                     >
                       Download PDF
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const empId = salary?.employeeId?.employeeId || salary?.employeeId || 'Unknown';
-                        const confirmDelete = window.confirm(
-                          `Are you sure you want to delete the salary record for Employee ID: ${empId}?\n\nThis action cannot be undone.`
-                        );
-                        
-                        if (confirmDelete) {
-                          try {
-                            const token = localStorage.getItem("token");
-                            const response = await axios.delete(`${API_BASE}/api/salary/${salary._id}`, {
-                              headers: { Authorization: `Bearer ${token}` }
-                            });
-                            
-                            if (response.data.success) {
-                              alert("Salary record deleted successfully!");
-                              // Refresh the salary list
-                              const updatedSalaries = salaries.filter(s => s._id !== salary._id);
-                              setSalaries(updatedSalaries);
-                              setFilteredSalaries(updatedSalaries);
-                            } else {
-                              alert(response.data.error || "Failed to delete salary record");
-                            }
-                          } catch (error) {
-                            console.error("Delete error:", error);
-                            alert(error.response?.data?.error || "Failed to delete salary record");
-                          }
-                        }
-                      }}
-                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
-                      aria-label={`Delete salary record for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
-                    >
-                      Delete
                     </button>
                   </div>
                 </td>

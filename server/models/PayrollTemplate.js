@@ -38,8 +38,6 @@ const payrollTemplateSchema = new Schema(
     // Calculation Settings
     
     // Auto-calculation flags
-    autoCalculateHRA: { type: Boolean, default: false }, // Auto calculate HRA as % of basic
-    hraPercentage: { type: Number, default: 40, min: 0, max: 100 }, // HRA percentage of basic salary
     autoCalculatePF: { type: Boolean, default: false }, // Auto calculate PF as % of basic
     pfPercentage: { type: Number, default: 12, min: 0, max: 100 }, // PF percentage of basic salary
     

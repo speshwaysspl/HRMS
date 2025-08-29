@@ -82,6 +82,10 @@ const Attendance = () => {
             inTime: res.data.inTime || "",
             outTime: res.data.outTime || "",
             workMode: res.data.workMode || prev.workMode,
+            breaks: res.data.breaks || [],
+            latitude: res.data.inLocation?.latitude || prev.latitude,
+            longitude: res.data.inLocation?.longitude || prev.longitude,
+            area: res.data.inLocation?.area || prev.area,
           }));
         }
       } catch (err) {
@@ -98,16 +102,35 @@ const Attendance = () => {
       minute: "2-digit",
     });
  
+  const saveBreaksToBackend = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const today = new Date().toISOString().split("T")[0];
+      const attendanceData = {
+        date: today,
+        breaks: tracker.breaks,
+      };
+
+      await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error("Error saving breaks:", err);
+    }
+  };
+
   const handleSubmit = async (type) => {
     const now = getCurrentTime();
     const updatedTracker = { ...tracker };
- 
+
     if (type === "inTime") {
       updatedTracker.inTime = now;
     } else if (type === "outTime") {
       updatedTracker.outTime = now;
     }
- 
+
     setTracker(updatedTracker);
     setLoading(true);
  
@@ -219,15 +242,18 @@ const Attendance = () => {
               </p>
               {!b.end && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const now = getCurrentTime();
                     setTracker((prev) => {
                       const updated = [...prev.breaks];
                       updated[idx].end = now;
                       return { ...prev, breaks: updated };
                     });
+                    // Save breaks to backend after state update
+                    setTimeout(() => saveBreaksToBackend(), 100);
                   }}
-                  className="px-3 py-1 bg-green-500 text-white rounded-lg"
+                  disabled={!!todayRecord?.outTime || loading}
+                  className="px-3 py-1 bg-green-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   End
                 </button>
@@ -235,14 +261,17 @@ const Attendance = () => {
             </div>
           ))}
           <button
-            onClick={() => {
+            onClick={async () => {
               const now = getCurrentTime();
               setTracker((prev) => ({
                 ...prev,
                 breaks: [...prev.breaks, { start: now, end: "" }],
               }));
+              // Save breaks to backend after state update
+              setTimeout(() => saveBreaksToBackend(), 100);
             }}
-            className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-xl"
+            disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading}
+            className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             + Start Break
           </button>

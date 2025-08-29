@@ -34,6 +34,12 @@ export const columns = [
     width: "120px",
   },
   {
+    name: "Designation",
+    selector: (row) => row.designation,
+    sortable: true,
+    width: "150px",
+  },
+  {
     name: "DOB",
     selector: (row) => row.dob,
     sortable: true,

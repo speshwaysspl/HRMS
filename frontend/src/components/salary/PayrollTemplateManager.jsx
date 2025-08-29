@@ -41,8 +41,7 @@ const PayrollTemplateManager = () => {
     pf: "",
     proftax: "",
 
-    autoCalculateHRA: false,
-    hraPercentage: 40,
+    
     isDefault: false,
     isActive: true
   });
@@ -123,10 +122,7 @@ const PayrollTemplateManager = () => {
     let hra = parseFloat(template.hra) || 0;
     let pf = parseFloat(template.pf) || 0;
     
-    // Auto-calculate HRA
-    if (template.autoCalculateHRA && basicSalary > 0) {
-      hra = (basicSalary * (parseFloat(template.hraPercentage) || 40)) / 100;
-    }
+
     
     // PF is manually entered, no auto-calculation
     
@@ -159,24 +155,45 @@ const PayrollTemplateManager = () => {
       calculatedProfTax: professionalTax.toFixed(2)
     });
     
-    // Update form with calculated values
-    if (template.autoCalculateHRA) {
-      setTemplate(prev => ({ ...prev, hra: hra.toFixed(2) }));
-    }
+
     // Always update professional tax automatically
     if (basicSalary > 0) {
       setTemplate(prev => ({ ...prev, proftax: professionalTax.toFixed(2) }));
     }
   }, [template.basicSalary, template.da, template.hra, template.conveyance, template.medicalallowances, 
-      template.specialallowances, template.allowances, template.pf, template.proftax, template.deductions,
-      template.autoCalculateHRA, template.hraPercentage]);
+      template.specialallowances, template.allowances, template.pf, template.proftax, template.deductions]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setTemplate(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
+    
+    if (name === "pan") {
+      // PAN card validation: 5 letters, 4 digits, 1 letter (ABCDE1234F)
+      const panRegex = /^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$/;
+      const upperValue = value.toUpperCase();
+      
+      // Only allow valid PAN format characters and limit to 10 characters
+      if (upperValue.length <= 10 && (upperValue === '' || panRegex.test(upperValue))) {
+        setTemplate(prev => ({
+          ...prev,
+          [name]: upperValue
+        }));
+      }
+      // Show alert for invalid format
+      else if (upperValue.length === 10 && !isValidPAN(upperValue)) {
+        alert("Invalid PAN format. Please enter in format: ABCDE1234F (5 letters, 4 digits, 1 letter)");
+      }
+    } else {
+      setTemplate(prev => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value
+      }));
+    }
+  };
+  
+  // Helper function to validate complete PAN format
+  const isValidPAN = (pan) => {
+    const fullPanRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    return fullPanRegex.test(pan);
   };
 
   const handleBankChange = (e) => {
@@ -222,8 +239,7 @@ const PayrollTemplateManager = () => {
       pf: "",
       proftax: "",
 
-      autoCalculateHRA: false,
-      hraPercentage: 40,
+
       isDefault: false,
       isActive: true
     });
@@ -236,6 +252,12 @@ const PayrollTemplateManager = () => {
     
     if (!template.employeeId || !template.templateName || !template.basicSalary) {
       alert("Please fill in Employee ID, Template Name, and Basic Salary");
+      return;
+    }
+    
+    // Validate PAN format if PAN is provided
+    if (template.pan && !isValidPAN(template.pan)) {
+      alert("Invalid PAN format. Please enter in format: ABCDE1234F (5 letters, 4 digits, 1 letter)");
       return;
     }
     
@@ -317,23 +339,7 @@ const PayrollTemplateManager = () => {
     }
   };
 
-  const handleClone = async (templateId) => {
-    try {
-      const response = await axios.post(`${API_BASE}/api/payroll-template/${templateId}/clone`, {}, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      });
-      
-      if (response.data.success) {
-        alert("Template cloned successfully!");
-        loadTemplates();
-      }
-    } catch (error) {
-      console.error("Error cloning template:", error);
-      alert(error.response?.data?.error || "Error cloning template");
-    }
-  };
+
 
   return (
     <div className="max-w-7xl mx-auto mt-10 bg-white p-8 rounded-md shadow-md">
@@ -483,6 +489,12 @@ const PayrollTemplateManager = () => {
                   onChange={handleChange}
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                   placeholder="ABCDE1234F"
+                  maxLength="10"
+                  pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                  title="PAN format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
+                  style={{
+                    textTransform: 'uppercase'
+                  }}
                 />
               </div>
               
@@ -528,47 +540,15 @@ const PayrollTemplateManager = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    HRA 
-                    {template.autoCalculateHRA && (
-                      <span className="text-xs text-green-600">(Auto: ₹{calculations.calculatedHRA})</span>
-                    )}
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      name="hra"
-                      value={template.hra}
-                      onChange={handleChange}
-                      className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-                      placeholder="Enter HRA amount"
-                      readOnly={template.autoCalculateHRA}
-                    />
-                    <div className="flex flex-col">
-                      <label className="flex items-center text-xs">
-                        <input
-                          type="checkbox"
-                          name="autoCalculateHRA"
-                          checked={template.autoCalculateHRA}
-                          onChange={handleChange}
-                          className="mr-1"
-                        />
-                        Auto
-                      </label>
-                      {template.autoCalculateHRA && (
-                        <input
-                          type="number"
-                          name="hraPercentage"
-                          value={template.hraPercentage}
-                          onChange={handleChange}
-                          className="mt-1 p-1 w-16 border border-gray-300 rounded text-xs"
-                          min="0"
-                          max="100"
-                          placeholder="%"
-                        />
-                      )}
-                    </div>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700">HRA</label>
+                  <input
+                    type="text"
+                    name="hra"
+                    value={template.hra}
+                    onChange={handleChange}
+                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    placeholder="Enter HRA amount"
+                  />
                 </div>
                 
                 <div>
@@ -801,12 +781,6 @@ const PayrollTemplateManager = () => {
                         className="text-indigo-600 hover:text-indigo-900"
                       >
                         Edit
-                      </button>
-                      <button
-                        onClick={() => handleClone(temp._id)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Clone
                       </button>
                       {!temp.isDefault && (
                         <button

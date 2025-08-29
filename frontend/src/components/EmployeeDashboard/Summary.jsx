@@ -1,5 +1,5 @@
 import React from 'react'
-import { FaUser, FaBuilding, FaPhone, FaEnvelope } from 'react-icons/fa'
+import { FaUser } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 
 const SummaryCard = () => {
@@ -19,30 +19,7 @@ const SummaryCard = () => {
         </div>
       </div>
 
-      {/* Company Info */}
-      <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-        <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 text-center">
-          Company Information
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm md:text-base">
-          <div className="flex items-center gap-3">
-            <FaBuilding className="text-teal-600 text-lg" />
-            <span className="text-gray-700">SPESHWAY SOLUTIONS PVT LTD</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <FaPhone className="text-teal-600 text-lg" />
-            <span className="text-gray-700">+1 (555) 123-4567</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <FaEnvelope className="text-teal-600 text-lg" />
-            <span className="text-gray-700">info@speshway.com</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <FaUser className="text-teal-600 text-lg" />
-            <span className="text-gray-700">Employee Portal</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 }

@@ -34,6 +34,7 @@ const List = () => {
                    employeeId: emp.employeeId,
                    dep_name: emp.department.dep_name,
                    name: emp.userId.name,
+                   designation: emp.designation,
                    dob: new Date(emp.dob).toLocaleDateString(),
                    profileImage: <img width={40} className='rounded-full' src={`${API_BASE}/${emp.userId.profileImage}`} />,
                    status: emp.status || 'active',
@@ -123,6 +124,7 @@ const List = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                   <div><span className="font-medium text-gray-600">Department:</span> {employee.dep_name}</div>
+                  <div><span className="font-medium text-gray-600">Designation:</span> {employee.designation}</div>
                   <div><span className="font-medium text-gray-600">DOB:</span> {employee.dob}</div>
                   <div><span className="font-medium text-gray-600">Status:</span> {employee.status}</div>
                 </div>

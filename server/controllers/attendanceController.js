@@ -29,10 +29,19 @@ export const saveAttendance = async (req, res) => {
         outLocation: null,
       });
     } else {
+      // Update existing record
       if (outTime) {
         if (attendance.outTime) return res.status(400).json({ message: "Out Time already set" });
         attendance.outTime = outTime;
         attendance.outLocation = outLocation;
+      }
+      // Update breaks if provided
+      if (breaks) {
+        attendance.breaks = breaks;
+      }
+      // Update work mode if provided
+      if (workMode) {
+        attendance.workMode = workMode;
       }
     }
  
@@ -117,6 +126,7 @@ export const getAllAttendance = async (req, res) => {
           workMode: record?.workMode || "N/A",
           inLocation: record?.inLocation?.area || "N/A",
           outLocation: record?.outLocation?.area || "N/A",
+          breaks: record?.breaks || [],
           status: attendanceStatus,
         };
       })
@@ -187,6 +197,7 @@ export const getMonthlyAttendance = async (req, res) => {
         workMode: record?.workMode || "N/A",
         inLocation: record?.inLocation?.area || "N/A",
         outLocation: record?.outLocation?.area || "N/A",
+        breaks: record?.breaks || [],
         status: attendanceStatus,
       });
     }
@@ -235,6 +246,7 @@ export const exportAttendanceExcel = async (req, res) => {
           workMode: record?.workMode || "N/A",
           inLocation: record?.inLocation?.area || "N/A",
           outLocation: record?.outLocation?.area || "N/A",
+          breaks: record?.breaks || [],
           status: attendanceStatus,
         };
       })
@@ -257,6 +269,7 @@ export const exportAttendanceExcel = async (req, res) => {
       { header: "Work Mode", key: "workMode", width: 20 },
       { header: "In Location", key: "inLocation", width: 25 },
       { header: "Out Location", key: "outLocation", width: 25 },
+      { header: "Breaks", key: "breaks", width: 30 },
       { header: "Status", key: "status", width: 15 },
     ];
     sheet.addRows(attendanceData);
@@ -338,6 +351,10 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
         continue;
       }
      
+      const breaksText = record?.breaks?.length > 0 
+        ? record.breaks.map((b, idx) => `Break ${idx + 1}: ${b.start} - ${b.end || 'Ongoing'}`).join('; ')
+        : 'No breaks';
+      
       sheet.addRow({
         employeeId: employee.employeeId,
         name: employee.userId?.name || "N/A",
@@ -348,6 +365,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
         workMode: record?.workMode || "N/A",
         inLocation: record?.inLocation?.area || "N/A",
         outLocation: record?.outLocation?.area || "N/A",
+        breaks: breaksText,
         status: attendanceStatus,
       });
     }

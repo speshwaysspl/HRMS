@@ -25,6 +25,7 @@ const addEmployee = async (req, res) => {
       email,
       employeeId,
       dob,
+      joiningDate,
       gender,
       mobilenumber,
       designation,
@@ -58,6 +59,7 @@ const addEmployee = async (req, res) => {
       userId: savedUser._id,
       employeeId,
       dob,
+      joiningDate,
       gender,
       mobilenumber,
       designation,
@@ -147,7 +149,7 @@ const getEmployee = async (req, res) => {
 const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, mobilenumber, designation, department, salary } = req.body;
+    const { name, email, employeeId, dob, gender, mobilenumber, designation, department, role, salary, joiningDate } = req.body;
  
     const employee = await Employee.findById(id);
     if (!employee) {
@@ -162,7 +164,7 @@ const updateEmployee = async (req, res) => {
     }
  
     // Update user with optional image
-    const updatedUserData = { name };
+    const updatedUserData = { name, email };
     if (req.file) {
       updatedUserData.profileImage = `uploads/${req.file.filename}`;
     }
@@ -170,9 +172,14 @@ const updateEmployee = async (req, res) => {
  
     // Update employee
     await Employee.findByIdAndUpdate(id, {
+      employeeId,
+      dob,
+      gender,
       mobilenumber,
       designation,
       department,
+      role,
+      joiningDate,
     });
  
     return res.status(200).json({ success: true, message: "Employee updated" });

@@ -69,6 +69,10 @@ const View = () => {
                 <p className="font-medium break-words">{employee.mobilenumber}</p>
               </div>
               <div className="flex flex-col sm:flex-row sm:space-x-3">
+                <p className="text-base md:text-lg font-bold min-w-fit">Designation:</p>
+                <p className="font-medium break-words">{employee.designation}</p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:space-x-3">
                 <p className="text-base md:text-lg font-bold min-w-fit">Department:</p>
                 <p className="font-medium break-words">{employee.department.dep_name}</p>
               </div>
