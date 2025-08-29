@@ -130,12 +130,6 @@ const PayrollTemplateManager = () => {
     
     // PF is manually entered, no auto-calculation
     
-    // Auto-calculate Professional Tax
-    let professionalTax = parseFloat(template.proftax) || 0;
-    if (basicSalary > 0) {
-      professionalTax = basicSalary <= 20000 ? 150 : 200;
-    }
-    
     const totalEarnings = basicSalary + 
                          (parseFloat(template.da) || 0) + 
                          hra + 
@@ -143,6 +137,12 @@ const PayrollTemplateManager = () => {
                          (parseFloat(template.medicalallowances) || 0) + 
                          (parseFloat(template.specialallowances) || 0) + 
                          (parseFloat(template.allowances) || 0);
+    
+    // Auto-calculate Professional Tax based on total earnings
+    let professionalTax = parseFloat(template.proftax) || 0;
+    if (totalEarnings > 0) {
+      professionalTax = totalEarnings <= 20000 ? 150 : 200;
+    }
     
     const totalDeductions = pf + 
                            professionalTax + 

@@ -116,9 +116,9 @@ export const generatePayslip = async (req, res) => {
       deductions.pf = (basicSalary * (num(payload.pfPercentage) || 12)) / 100;
     }
     
-    // Auto-calculate LOP if enabled
+    // Auto-calculate LOP if enabled (based on total earnings)
     if (payload.autoCalculateLOP && payload.lopDays) {
-      const dailySalary = basicSalary / (num(payload.workingdays) || 30);
+      const dailySalary = totalEarnings / (num(payload.workingdays) || 30);
       deductions.lopamount = dailySalary * num(payload.lopDays);
     }
     

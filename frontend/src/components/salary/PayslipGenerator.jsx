@@ -237,21 +237,6 @@ const PayslipGenerator = () => {
     
     // PF is manually entered, no auto-calculation
     
-    // Auto-calculate Professional Tax
-    let professionalTax = parseFloat(payslip.proftax) || 0;
-    if (basicSalary > 0) {
-      professionalTax = basicSalary <= 20000 ? 150 : 200;
-    }
-    
-    // Calculate LOP amount
-    let lopAmount = 0;
-    if (payslip.autoCalculateLOP && basicSalary > 0 && payslip.workingdays > 0 && payslip.lopDays > 0) {
-      const perDaySalary = basicSalary / parseFloat(payslip.workingdays);
-      lopAmount = perDaySalary * parseFloat(payslip.lopDays);
-    } else {
-      lopAmount = parseFloat(payslip.lopamount) || 0;
-    }
-    
     const totalEarnings = basicSalary + 
                          (parseFloat(payslip.da) || 0) + 
                          hra + 
@@ -259,6 +244,21 @@ const PayslipGenerator = () => {
                          (parseFloat(payslip.medicalallowances) || 0) + 
                          (parseFloat(payslip.specialallowances) || 0) + 
                          (parseFloat(payslip.allowances) || 0);
+    
+    // Calculate LOP amount based on total earnings
+    let lopAmount = 0;
+    if (payslip.autoCalculateLOP && totalEarnings > 0 && payslip.workingdays > 0 && payslip.lopDays > 0) {
+      const perDaySalary = totalEarnings / parseFloat(payslip.workingdays);
+      lopAmount = perDaySalary * parseFloat(payslip.lopDays);
+    } else {
+      lopAmount = parseFloat(payslip.lopamount) || 0;
+    }
+    
+    // Auto-calculate Professional Tax based on total earnings
+    let professionalTax = parseFloat(payslip.proftax) || 0;
+    if (totalEarnings > 0) {
+      professionalTax = totalEarnings <= 20000 ? 150 : 200;
+    }
     
     const totalDeductions = pf + 
                            professionalTax + 
@@ -546,7 +546,7 @@ const PayslipGenerator = () => {
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">
-                Auto-calculate LOP amount based on basic salary and LOP days
+                Auto-calculate LOP amount based on total salary and LOP days
               </span>
             </label>
           </div>

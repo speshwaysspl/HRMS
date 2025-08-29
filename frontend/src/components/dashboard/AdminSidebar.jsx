@@ -106,7 +106,7 @@ const AdminSidebar = () => {
 
 
         {/* Links */}
-        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1`}>
+        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
           {links.map((link, idx) => (
             <NavLink
               key={idx}
@@ -200,15 +200,13 @@ const AdminSidebar = () => {
               )}
             </AnimatePresence>
           </div>
-        </div>
-        
-        {/* Logout Button - Fixed at bottom */}
-        <div className="px-4 pb-4">
+
+          {/* Logout Button - After Salary Management */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={logout}
-            className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl hover:from-red-600 hover:to-red-700"
+            className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 mt-4 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl hover:from-red-600 hover:to-red-700"
           >
             <motion.span
               whileHover={{ scale: 1.3, rotate: 12 }}
