@@ -30,7 +30,7 @@ services:
         sync: false
       - key: EMAIL_PASS
         sync: false
-
+      # hello
   # Frontend Static Site
   - type: static
     name: hr-portal-frontend
