@@ -36,7 +36,15 @@ const List = () => {
                    name: emp.userId.name,
                    designation: emp.designation,
                    dob: new Date(emp.dob).toLocaleDateString(),
-                   profileImage: <img width={40} className='rounded-full' src={`${API_BASE}/${emp.userId.profileImage}`} />,
+                   profileImage: <img 
+                     width={40} 
+                     className='rounded-full' 
+                     src={emp.userId.profileImage ? `${API_BASE}/${emp.userId.profileImage}` : `${API_BASE}/uploads/default-profile.png`} 
+                     onError={(e) => {
+                       e.target.onerror = null;
+                       e.target.src = `${API_BASE}/uploads/default-profile.png`;
+                     }}
+                   />,
                    status: emp.status || 'active',
                    onStatusChange: handleStatusChange,
                    action: (<EmployeeButtons Id={emp._id} />),
