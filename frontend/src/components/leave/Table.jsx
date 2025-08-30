@@ -4,6 +4,8 @@ import { columns, LeaveButtons } from "../../utils/LeaveHelper";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 
+
+//
 const Table = () => {
   const [leaves, setLeaves] = useState(null);
   const [filteredLeaves, setFilteredLeaves] = useState(null);
