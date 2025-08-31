@@ -4,8 +4,8 @@ services:
     name: hr-portal-backend
     runtime: node
     plan: free
-    buildCommand: npm run server:install
-    startCommand: npm run server:start
+    buildCommand: npm install
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -34,7 +34,7 @@ services:
   # Frontend Static Site
   - type: static
     name: hr-portal-frontend
-    buildCommand: npm run client:install && npm run client:build
+    buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
     pullRequestPreviewsEnabled: false
     envVars:

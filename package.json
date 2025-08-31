@@ -2,10 +2,11 @@
   "name": "speshway-hr-portal",
   "version": "1.0.0",
   "description": "HR Portal - MERN Stack Application",
-  "main": "server/index.js",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "start": "npm run server:start",
+    "start": "node server.js",
     "build": "npm run client:build",
     "client:dev": "cd frontend && npm run dev",
     "client:build": "cd frontend && npm run build",
