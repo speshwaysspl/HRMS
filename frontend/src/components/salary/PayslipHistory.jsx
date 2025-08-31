@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
@@ -227,11 +228,7 @@ const PayslipHistory = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatISTDate(new Date(dateString));
   };
 
   // Fetch all employees with their status

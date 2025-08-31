@@ -1,7 +1,9 @@
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
+import Leave from "../models/Leave.js";
 import ExcelJS from "exceljs";
+import { toISTDateString, toISTTimeString, getCurrentISTDateTime } from "../utils/dateTimeUtils.js";
  
 /**
  * Save or update attendance for logged-in employee
@@ -60,7 +62,7 @@ export const getTodayAttendance = async (req, res) => {
     const employee = await Employee.findOne({ userId: req.user._id });
     if (!employee) return res.status(404).json({ message: "Employee profile not found" });
  
-    const today = new Date().toISOString().split("T")[0];
+    const today = toISTDateString(new Date());
     const attendance = await Attendance.findOne({ userId: employee._id, date: today });
  
     res.status(200).json(attendance || null);
@@ -102,17 +104,57 @@ export const getAllAttendance = async (req, res) => {
     const attendanceData = await Promise.all(
       employees.map(async (emp) => {
         const record = await Attendance.findOne({ userId: emp._id, date });
-        let attendanceStatus = record?.inTime && record?.outTime
-          ? "Present"
-          : record?.inTime
-          ? "Incomplete"
-          : "Absent";
-       
-        // Apply Half Day logic (same as frontend)
-        if (record?.inTime && record?.outTime) {
-          const [h, m] = record.inTime.split(":").map(Number);
-          if (h > 12 || (h === 12 && m > 0)) {
-            attendanceStatus = "Half Day";
+        // Calculate working hours if both in and out times are available
+        let workingHours = 0;
+        let attendanceStatus = "Absent";
+        
+        // Check if there's a leave request approved for this date
+        const leaveCheck = await Leave.findOne({
+          employeeId: emp._id,
+          startDate: { $lte: new Date(date) },
+          endDate: { $gte: new Date(date) },
+          status: "Approved"
+        });
+        const hasApprovedLeave = !!leaveCheck;
+        
+        if (hasApprovedLeave) {
+          attendanceStatus = "Leave";
+        } else if (record?.inTime) {
+          if (record?.outTime) {
+            // Calculate working hours
+            const [inHour, inMin] = record.inTime.split(":").map(Number);
+            const [outHour, outMin] = record.outTime.split(":").map(Number);
+            
+            // Simple calculation (doesn't account for overnight shifts)
+            workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+            if (workingHours < 0) workingHours += 24; // Handle overnight shifts
+            
+            // Subtract break times if any
+            if (record.breaks && record.breaks.length > 0) {
+              record.breaks.forEach(breakPeriod => {
+                if (breakPeriod.start && breakPeriod.end) {
+                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                  
+                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                  if (breakHours < 0) breakHours += 24;
+                  
+                  workingHours -= breakHours;
+                }
+              });
+            }
+            
+            // Determine status based on working hours
+            if (workingHours >= 8) {
+              attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+            } else if (workingHours >= 4) {
+              attendanceStatus = "Half-Day";
+            } else {
+              attendanceStatus = "Absent";
+            }
+          } else {
+            // Only in-time is marked, no out-time
+            attendanceStatus = "Incomplete";
           }
         }
        
@@ -173,19 +215,62 @@ export const getMonthlyAttendance = async (req, res) => {
     for (let d = 1; d <= endDate.getDate(); d++) {
       const currentDate = new Date(year, mon - 1, d).toISOString().split("T")[0];
       const record = records.find((r) => r.date === currentDate);
-      let attendanceStatus = record?.inTime && record?.outTime
-        ? "Present"
-        : record?.inTime
-        ? "Incomplete"
-        : "Absent";
-     
-      // Apply Half Day logic (same as frontend)
-      if (record?.inTime && record?.outTime) {
-        const [h, m] = record.inTime.split(":").map(Number);
-        if (h > 12 || (h === 12 && m > 0)) {
-          attendanceStatus = "Half Day";
+      // Calculate working hours if both in and out times are available
+      let workingHours = 0;
+      let attendanceStatus = "Absent";
+      
+      // Check if there's a leave request approved for this date
+      const leaveCheck = await Leave.findOne({
+        employeeId: employee._id,
+        startDate: { $lte: new Date(currentDate) },
+        endDate: { $gte: new Date(currentDate) },
+        status: "Approved"
+      });
+      const hasApprovedLeave = !!leaveCheck;
+      
+      if (hasApprovedLeave) {
+        attendanceStatus = "Leave";
+      } else if (record?.inTime) {
+        if (record?.outTime) {
+          // Calculate working hours
+          const [inHour, inMin] = record.inTime.split(":").map(Number);
+          const [outHour, outMin] = record.outTime.split(":").map(Number);
+          
+          // Simple calculation (doesn't account for overnight shifts)
+          workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+          if (workingHours < 0) workingHours += 24; // Handle overnight shifts
+          
+          // Subtract break times if any
+          if (record.breaks && record.breaks.length > 0) {
+            record.breaks.forEach(breakPeriod => {
+              if (breakPeriod.start && breakPeriod.end) {
+                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                
+                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                if (breakHours < 0) breakHours += 24;
+                
+                workingHours -= breakHours;
+              }
+            });
+          }
+          
+          // Determine status based on working hours
+          if (workingHours >= 8) {
+            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+          } else if (workingHours >= 4) {
+            attendanceStatus = "Half-Day";
+          } else {
+            attendanceStatus = "Absent";
+          }
+        } else {
+          // Only in-time is marked, no out-time
+          attendanceStatus = "Incomplete";
         }
       }
+     
+      // The Half Day logic is now handled in the working hours calculation above
+      // No need for the previous logic that was based only on in-time
      
       monthlyData.push({
         employeeId: employee.employeeId,
@@ -222,17 +307,57 @@ export const exportAttendanceExcel = async (req, res) => {
     let attendanceData = await Promise.all(
       employees.map(async (emp) => {
         const record = await Attendance.findOne({ userId: emp._id, date });
-        let attendanceStatus = record?.inTime && record?.outTime
-          ? "Present"
-          : record?.inTime
-          ? "Incomplete"
-          : "Absent";
-       
-        // Apply Half Day logic (same as frontend)
-        if (record?.inTime && record?.outTime) {
-          const [h, m] = record.inTime.split(":").map(Number);
-          if (h > 12 || (h === 12 && m > 0)) {
-            attendanceStatus = "Half Day";
+        
+        // Check if there's a leave request approved for this date
+        const leaveCheck = await Leave.findOne({
+          employeeId: emp._id,
+          startDate: { $lte: new Date(date) },
+          endDate: { $gte: new Date(date) },
+          status: "Approved"
+        });
+        const hasApprovedLeave = !!leaveCheck;
+        
+        let workingHours = 0;
+        let attendanceStatus = "Absent";
+        
+        if (hasApprovedLeave) {
+          attendanceStatus = "Leave";
+        } else if (record?.inTime) {
+          if (record?.outTime) {
+            // Calculate working hours
+            const [inHour, inMin] = record.inTime.split(":").map(Number);
+            const [outHour, outMin] = record.outTime.split(":").map(Number);
+            
+            // Simple calculation (doesn't account for overnight shifts)
+            workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+            if (workingHours < 0) workingHours += 24; // Handle overnight shifts
+            
+            // Subtract break times if any
+            if (record.breaks && record.breaks.length > 0) {
+              record.breaks.forEach(breakPeriod => {
+                if (breakPeriod.start && breakPeriod.end) {
+                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                  
+                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                  if (breakHours < 0) breakHours += 24;
+                  
+                  workingHours -= breakHours;
+                }
+              });
+            }
+            
+            // Determine status based on working hours
+            if (workingHours >= 8) {
+              attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+            } else if (workingHours >= 4) {
+              attendanceStatus = "Half-Day";
+            } else {
+              attendanceStatus = "Absent";
+            }
+          } else {
+            // Only in-time is marked, no out-time
+            attendanceStatus = "Incomplete";
           }
         }
        
@@ -332,17 +457,57 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
     for (let d = 1; d <= endDate.getDate(); d++) {
       const currentDate = new Date(year, mon - 1, d).toISOString().split("T")[0];
       const record = records.find((r) => r.date === currentDate);
-      let attendanceStatus = record?.inTime && record?.outTime
-        ? "Present"
-        : record?.inTime
-        ? "Incomplete"
-        : "Absent";
-     
-      // Apply Half Day logic (same as frontend)
-      if (record?.inTime && record?.outTime) {
-        const [h, m] = record.inTime.split(":").map(Number);
-        if (h > 12 || (h === 12 && m > 0)) {
-          attendanceStatus = "Half Day";
+      // Calculate working hours if both in and out times are available
+      let workingHours = 0;
+      let attendanceStatus = "Absent";
+      
+      // Check if there's a leave request approved for this date
+      const leaveCheck = await Leave.findOne({
+        employeeId: employee._id,
+        startDate: { $lte: new Date(currentDate) },
+        endDate: { $gte: new Date(currentDate) },
+        status: "Approved"
+      });
+      const hasApprovedLeave = !!leaveCheck;
+      
+      if (hasApprovedLeave) {
+        attendanceStatus = "Leave";
+      } else if (record?.inTime) {
+        if (record?.outTime) {
+          // Calculate working hours
+          const [inHour, inMin] = record.inTime.split(":").map(Number);
+          const [outHour, outMin] = record.outTime.split(":").map(Number);
+          
+          // Simple calculation (doesn't account for overnight shifts)
+          workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+          if (workingHours < 0) workingHours += 24; // Handle overnight shifts
+          
+          // Subtract break times if any
+          if (record.breaks && record.breaks.length > 0) {
+            record.breaks.forEach(breakPeriod => {
+              if (breakPeriod.start && breakPeriod.end) {
+                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                
+                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                if (breakHours < 0) breakHours += 24;
+                
+                workingHours -= breakHours;
+              }
+            });
+          }
+          
+          // Determine status based on working hours
+          if (workingHours >= 8) {
+            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+          } else if (workingHours >= 4) {
+            attendanceStatus = "Half-Day";
+          } else {
+            attendanceStatus = "Absent";
+          }
+        } else {
+          // Only in-time is marked, no out-time
+          attendanceStatus = "Incomplete";
         }
       }
      

@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 const EmployeeAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -81,7 +82,7 @@ const EmployeeAnnouncements = () => {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span>{new Date(createdAt).toLocaleDateString()}</span>
+                      <span>{formatISTDate(new Date(createdAt))}</span>
                     </div>
                   </div>
                   <div className="flex-shrink-0">

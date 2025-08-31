@@ -101,4 +101,33 @@ const updateLeave = async (req, res) => {
     }
 }
 
-export {addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave}
+// Get employee leaves by date (for attendance status)
+const getEmployeeLeavesByDate = async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        if (!date) {
+            return res.status(400).json({ success: false, error: "Date parameter is required" });
+        }
+        
+        // Find the employee based on the logged-in user
+        const employee = await Employee.findOne({ userId: req.user._id });
+        if (!employee) {
+            return res.status(404).json({ success: false, error: "Employee not found" });
+        }
+        
+        // Find leaves that include the specified date
+        const leaves = await Leave.find({
+            employeeId: employee._id,
+            startDate: { $lte: new Date(date) },
+            endDate: { $gte: new Date(date) }
+        });
+        
+        return res.status(200).json(leaves);
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ success: false, error: "Error fetching employee leaves" });
+    }
+}
+
+export {addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, getEmployeeLeavesByDate}

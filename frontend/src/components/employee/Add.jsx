@@ -3,6 +3,7 @@ import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
+import { toISTDateString } from "../../utils/dateTimeUtils";
 
 const Add = () => {
   const [departments, setDepartments] = useState([]);

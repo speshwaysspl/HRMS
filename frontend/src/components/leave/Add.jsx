@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import { toISTDateString } from "../../utils/dateTimeUtils";
 
 const Add = () => {
     const {user} = useAuth()
@@ -13,17 +14,16 @@ const Add = () => {
 
     const navigate = useNavigate()
 
-    // Get today's date in YYYY-MM-DD format
+    // Get today's date in YYYY-MM-DD format in IST
     const getTodayDate = () => {
-        const today = new Date();
-        return today.toISOString().split('T')[0];
+        return toISTDateString(new Date());
     };
 
-    // Get tomorrow's date in YYYY-MM-DD format
+    // Get tomorrow's date in YYYY-MM-DD format in IST
     const getTomorrowDate = () => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        return tomorrow.toISOString().split('T')[0];
+        return toISTDateString(tomorrow);
     };
 
     const validateDates = (name, value) => {
@@ -139,7 +139,7 @@ const Add = () => {
               <input
                 type="date"
                 name="endDate"
-                min={leave.startDate ? new Date(new Date(leave.startDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : getTomorrowDate()}
+                min={leave.startDate ? toISTDateString(new Date(new Date(leave.startDate).getTime() + 24 * 60 * 60 * 1000)) : getTomorrowDate()}
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 required

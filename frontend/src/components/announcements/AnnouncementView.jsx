@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion } from "framer-motion";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 const AnnouncementView = () => {
   const { id } = useParams();
@@ -101,7 +102,7 @@ const AnnouncementView = () => {
           <div className="mb-4 sm:mb-5">
             <p className="text-base sm:text-lg font-bold mb-1 sm:mb-2">Date:</p>
             <p className="font-medium text-gray-700 text-sm sm:text-base">
-              {new Date(announcement.createdAt).toLocaleDateString()}
+              {formatISTDate(new Date(announcement.createdAt))}
             </p>
           </div>
 

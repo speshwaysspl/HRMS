@@ -4,6 +4,7 @@ import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
+import { toISTDateString } from "../../utils/dateTimeUtils";
 
 const BANKS = [
   "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank",
@@ -51,7 +52,7 @@ const PayslipGenerator = () => {
     deductions: "",
     pf: "",
     proftax: "",
-    payDate: new Date().toISOString().split("T")[0],
+    payDate: "", // Will be set to joining date when employee is selected
     autoCalculateLOP: false
   });
 
@@ -91,14 +92,35 @@ const PayslipGenerator = () => {
         });
         
         if (response.data.success) {
+          // Log the entire response to understand its structure
+          console.log("API Response:", response.data);
+          
           const employee = response.data.employee;
+          
+          // Log the employee data to check available fields
+          console.log("Employee data:", employee);
+          console.log("Employee fields:", Object.keys(employee));
+          
+          // Get the joining date from the employee data
+          console.log("Employee joining date:", employee.joiningDate);
+          
+          // Format the joining date if found in IST
+          const formattedJoiningDate = employee.joiningDate ? toISTDateString(new Date(employee.joiningDate)) : "";
+          
+          // Alert if no joining date was found
+          if (!formattedJoiningDate) {
+            console.warn("No joining date found for employee ID:", payslip.employeeId);
+            // You could show an alert to the user here if needed
+          }
+          
           setPayslip(prev => ({
             ...prev,
             employeeObjectId: employee._id,
             name: employee.name,
             designation: employee.designation,
             department: employee.department,
-            joiningDate: employee.dob ? new Date(employee.dob).toISOString().split("T")[0] : ""
+            joiningDate: formattedJoiningDate,
+            payDate: formattedJoiningDate
           }));
           
           // Load employee templates
@@ -442,13 +464,14 @@ const PayslipGenerator = () => {
           </div>
           
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Pay Date</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700">Joining Date</label>
             <input
               type="date"
               name="payDate"
               value={payslip.payDate}
               onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base bg-gray-50"
+              readOnly
             />
           </div>
         </div>

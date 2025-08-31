@@ -4,6 +4,7 @@ import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from 
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 const EmployeeAnnouncementDetails = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const EmployeeAnnouncementDetails = () => {
         <CardContent>
           <Typography variant="h4" gutterBottom>{announcement.title}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {announcement.createdBy?.name} • {new Date(announcement.createdAt).toLocaleDateString()}
+            {announcement.createdBy?.name} • {formatISTDate(new Date(announcement.createdAt))}
           </Typography>
           <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}>
             {announcement.description}

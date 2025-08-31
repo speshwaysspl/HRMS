@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
  
 const AdminAttendanceReport = () => {
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedDate, setSelectedDate] = useState(toISTDateString(new Date()));
+  const [selectedMonth, setSelectedMonth] = useState(toISTDateString(new Date()).substring(0, 7));
   const [employeeId, setEmployeeId] = useState("");
   const [employeeName, setEmployeeName] = useState("");
   const [isAutoFetching, setIsAutoFetching] = useState(false);
@@ -43,25 +44,13 @@ const AdminAttendanceReport = () => {
     }
   };
  
-  // 🔹 Apply status filter + Half Day logic
+  // 🔹 Apply status filter
   const applyStatusFilter = (data, status) => {
-    const updated = data.map((item) => {
-      let finalStatus = item.status;
- 
-      if (item.inTime && item.outTime) {
-        const [h, m] = item.inTime.split(":").map(Number);
-        if (h > 12 || (h === 12 && m > 0)) {
-          finalStatus = "Half Day";
-        }
-      }
- 
-      return { ...item, status: finalStatus };
-    });
- 
+    // No need to modify status as it's now calculated correctly in the backend
     if (status === "All") {
-      setFilteredData(updated);
+      setFilteredData(data);
     } else {
-      setFilteredData(updated.filter((item) => item.status === status));
+      setFilteredData(data.filter((item) => item.status === status));
     }
   };
  
@@ -295,9 +284,11 @@ const AdminAttendanceReport = () => {
           >
             <option value="All">All Status</option>
             <option value="Present">Present</option>
+            <option value="Present + Overtime">Present + Overtime</option>
+            <option value="Half-Day">Half-Day</option>
             <option value="Absent">Absent</option>
+            <option value="Leave">Leave</option>
             <option value="Incomplete">Incomplete</option>
-            <option value="Half Day">Half Day</option>
           </select>
         </div>
  
@@ -323,26 +314,30 @@ const AdminAttendanceReport = () => {
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${
                       att.status === "Present"
                         ? "bg-green-100 text-green-600"
+                        : att.status === "Present + Overtime"
+                        ? "bg-green-200 text-green-800"
+                        : att.status === "Half-Day"
+                        ? "bg-orange-100 text-orange-600"
                         : att.status === "Incomplete"
                         ? "bg-yellow-100 text-yellow-600"
-                        : att.status === "Half Day"
-                        ? "bg-orange-100 text-orange-600"
+                        : att.status === "Leave"
+                        ? "bg-blue-100 text-blue-600"
                         : "bg-red-100 text-red-600"
                     }`}>
                       {att.status}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="font-medium">Date:</span> {att.date}</div>
+                    <div><span className="font-medium">Date (IST):</span> {att.date}</div>
                     <div><span className="font-medium">Designation:</span> {att.designation}</div>
-                    <div><span className="font-medium">In:</span> {att.inTime || 'N/A'}</div>
-                    <div><span className="font-medium">Out:</span> {att.outTime || 'N/A'}</div>
+                    <div><span className="font-medium">In (IST):</span> {att.inTime || 'N/A'}</div>
+                    <div><span className="font-medium">Out (IST):</span> {att.outTime || 'N/A'}</div>
                     <div><span className="font-medium">Mode:</span> {att.workMode}</div>
                     <div className="col-span-2">
                       <span className="font-medium">Location:</span> {att.inLocation || 'N/A'}
                     </div>
                     <div className="col-span-2">
-                      <span className="font-medium">Breaks:</span> 
+                      <span className="font-medium">Breaks (IST):</span> 
                       {att.breaks?.length > 0 ? (
                         <div className="mt-1 space-y-1">
                           {att.breaks.map((b, idx) => (
@@ -368,13 +363,13 @@ const AdminAttendanceReport = () => {
                     <th className="px-3 py-2 text-left text-sm font-medium">Employee ID</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Name</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Designation</th>
-                    <th className="px-3 py-2 text-left text-sm font-medium">Date</th>
-                    <th className="px-3 py-2 text-left text-sm font-medium">In Time</th>
-                    <th className="px-3 py-2 text-left text-sm font-medium">Out Time</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Date (IST)</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">In Time (IST)</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Out Time (IST)</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Work Mode</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">In Location</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Out Location</th>
-                    <th className="px-3 py-2 text-left text-sm font-medium">Breaks</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Breaks (IST)</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Status</th>
                   </tr>
                 </thead>
@@ -408,18 +403,21 @@ const AdminAttendanceReport = () => {
                           'No breaks'
                         )}
                       </td>
-                      <td
-                        className={`px-3 py-2 text-sm font-semibold ${
-                          att.status === "Present"
-                            ? "text-green-600"
-                            : att.status === "Incomplete"
-                            ? "text-yellow-600"
-                            : att.status === "Half Day"
-                            ? "text-orange-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {att.status}
+                      <td className="px-3 py-2 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${att.status === "Present"
+                          ? "bg-green-100 text-green-600"
+                          : att.status === "Present + Overtime"
+                          ? "bg-green-200 text-green-800"
+                          : att.status === "Half-Day"
+                          ? "bg-orange-100 text-orange-600"
+                          : att.status === "Incomplete"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : att.status === "Leave"
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-red-100 text-red-600"
+                        }`}>
+                          {att.status}
+                        </span>
                       </td>
                     </tr>
                   ))}

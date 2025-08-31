@@ -5,6 +5,7 @@ import DataTable from "react-data-table-component";
 import { fetchAnnouncements } from "../../utils/AnnouncementHelper";
 import AnnouncementButtons from "../../utils/AnnouncementButtons";
 import { motion } from "framer-motion";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 const columns = [
   { name: "S.No", selector: (row) => row.sno, width: "80px" },
@@ -55,7 +56,7 @@ const AnnouncementList = () => {
     return data.map((ann) => ({
       ...ann,
       sno: sno++,
-      date: new Date(ann.createdAt).toLocaleDateString(),
+      date: formatISTDate(new Date(ann.createdAt)),
     }));
   };
 

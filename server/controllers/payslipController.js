@@ -39,6 +39,7 @@ export const getEmployeeDetails = async (req, res) => {
       designation: employee.designation,
       department: employee.department.dep_name,
       dob: employee.dob,
+      joiningDate: employee.joiningDate, // Add joining date to the response
       gender: employee.gender,
       mobilenumber: employee.mobilenumber,
       template: template || null

@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatISTDate } from "../../utils/dateTimeUtils";
 
 const Detail = () => {
   const { id } = useParams();
@@ -94,11 +95,11 @@ const Detail = () => {
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">Start Date:</p>
-                <p className="font-medium">{new Date(leave.startDate).toLocaleDateString()}</p>
+                <p className="font-medium">{formatISTDate(new Date(leave.startDate))}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">End Date:</p>
-                <p className="font-medium">{new Date(leave.endDate).toLocaleDateString()}</p>
+                <p className="font-medium">{formatISTDate(new Date(leave.endDate))}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">

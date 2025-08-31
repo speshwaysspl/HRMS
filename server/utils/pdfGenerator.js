@@ -91,7 +91,7 @@ export const generateSalaryPDF = async (res, salary) => {
 
   const fields = [
     ["Name", salary.name, "Employee No", salary?.employeeId?.employeeId || "-"],
-    ["Joining Date", new Date(salary.joiningDate).toLocaleDateString(), "Bank Name", salary.bankname || "-"],
+    ["Joining Date", new Date(salary.joiningDate).toLocaleDateString('en-IN'), "Bank Name", salary.bankname || "-"],
     ["Designation", salary.designation || "-", "Bank Account No", salary.bankaccountnumber || "-"],
     ["Department", salary.department || "-", "PAN No", salary.pan || "-"],
     ["Work Days", salary.workingdays || 0, "UAN No", salary.uan || "-"],

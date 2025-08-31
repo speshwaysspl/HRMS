@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { API_BASE } from "../../utils/apiConfig";
+import { toISTDateString, toISTTimeString } from "../../utils/dateTimeUtils";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
  
@@ -95,19 +96,14 @@ const Attendance = () => {
     fetchToday();
   }, []);
  
-  const getCurrentTime = () =>
-    new Date().toLocaleTimeString([], {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const getCurrentTime = () => toISTTimeString();
  
   const saveBreaksToBackend = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = toISTDateString(new Date());
       const attendanceData = {
         date: today,
         breaks: tracker.breaks,
@@ -142,7 +138,7 @@ const Attendance = () => {
         return;
       }
  
-      const today = new Date().toISOString().split("T")[0];
+      const today = toISTDateString(new Date());
       const attendanceData = {
         date: today,
         inTime: updatedTracker.inTime,
