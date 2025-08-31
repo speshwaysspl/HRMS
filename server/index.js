@@ -18,7 +18,11 @@ import birthdayRouter from "./routes/birthdayRoutes.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import connectToDatabase from "./db/db.js";
 
-dotenv.config();
+// In production (Render), environment variables are set in the dashboard
+// In development, load from .env file
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 connectToDatabase();
 
 const app = express();
