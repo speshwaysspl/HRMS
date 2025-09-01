@@ -4,8 +4,8 @@ services:
     name: hr-portal-backend
     runtime: node
     plan: free
-    buildCommand: npm run server:install
-    startCommand: npm run server:start
+    buildCommand: npm install
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
