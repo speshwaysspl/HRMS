@@ -68,7 +68,7 @@ const Login = () => {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100vh",
         width: "100%",
         display: "flex",
         alignItems: "center",

@@ -40,7 +40,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <div
-      className="flex items-center justify-center min-h-screen bg-cover bg-center"
+      className="flex items-center justify-center h-screen bg-cover bg-center"
       style={{ backgroundImage: "url('/images/download.jpeg')" }}
     >
       <div className="w-full max-w-md bg-white/10 backdrop-blur-xl shadow-lg rounded-xl p-6 border border-white/20">
