@@ -32,7 +32,6 @@ const AdminSidebar = () => {
     { to: "/admin-dashboard/employees", label: "Employees", icon: <FaUsers /> },
     { to: "/admin-dashboard/departments", label: "Departments", icon: <FaBuilding /> },
     { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
-    { to: "/admin-dashboard/salary", label: "Salary", icon: <FaMoneyBillWave /> },
     { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <AiOutlineFileText /> },
     { to: "/admin-dashboard/announcements", label: "Announcements", icon: <FaBullhorn /> },
     { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
@@ -74,7 +73,8 @@ const AdminSidebar = () => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-50 p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg md:hidden"
+          className="fixed top-4 left-4 z-[60] p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg md:hidden hover:from-teal-600 hover:to-cyan-600 transition-all duration-200"
+          aria-label={isOpen ? "Close menu" : "Open menu"}
         >
           {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
         </motion.button>
@@ -85,7 +85,7 @@ const AdminSidebar = () => {
         initial={{ x: isDesktop ? 0 : -300 }}
         animate={{ x: isDesktop ? 0 : isOpen ? 0 : -300 }}
         transition={{ type: "spring", stiffness: 80, damping: 15 }}
-        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/90 to-gray-800/90 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-40 flex flex-col`}
+        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col ${isDesktop ? 'translate-x-0' : ''}`}
       >
         {/* Header */}
        <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-16 flex items-center justify-center shadow-md px-5">
@@ -227,7 +227,7 @@ const AdminSidebar = () => {
       {!isDesktop && isOpen && (
         <AnimatePresence>
           <motion.div
-            className="fixed inset-0 bg-black/60 z-30"
+            className="fixed inset-0 bg-black/60 z-40"
             onClick={() => setIsOpen(false)}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
