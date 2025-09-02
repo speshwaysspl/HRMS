@@ -39,15 +39,13 @@ const View = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex justify-center md:justify-start">
-              <img
-                src={employee.userId.profileImage ? `${API_BASE}/${employee.userId.profileImage}` : `${API_BASE}/uploads/default-profile.png`}
-                className="rounded-full border w-48 h-48 md:w-72 md:h-72 object-cover"
-                alt="Employee Profile"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `${API_BASE}/uploads/default-profile.png`;
-                }}
-              />
+              {employee.userId.profileImage && (
+                <img
+                  src={`${API_BASE}/${employee.userId.profileImage}`}
+                  className="rounded-full border w-48 h-48 md:w-72 md:h-72 object-cover"
+                  alt="Employee Profile"
+                />
+              )}
             </div>
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:space-x-3">
