@@ -2,6 +2,7 @@
 import PDFDocument from "pdfkit";
 import axios from "axios";
 import numberToWords from "number-to-words";
+import fs from "fs";
 
 const { toWords } = numberToWords;
 const formatCurrency = (val) => `INR ${Number(val || 0).toFixed(2)}`;
@@ -28,7 +29,6 @@ const generateSalaryPDFContent = (doc, salary) => {
   const logoPath = "./assets/logo.png";
   let logoBuffer = null;
   try {
-    const fs = require("fs");
     logoBuffer = fs.readFileSync(logoPath);
   } catch (err) {
     console.error("Error loading local logo:", err.message);
@@ -78,8 +78,11 @@ const generateSalaryPDFContent = (doc, salary) => {
   const lineSpacing = 15;
   let y = cursorY + 10;
 
+  // Handle employeeId field - it can be a string or an object with employeeId property
+  const employeeNumber = salary.employeeId?.employeeId || salary.employeeId || "-";
+  
   const fields = [
-    ["Name", salary.name, "Employee No", salary.employeeId || "-"],
+    ["Name", salary.name, "Employee No", employeeNumber],
     ["Joining Date", new Date(salary.joiningDate).toLocaleDateString("en-IN"), "Bank Name", salary.bankname || "-"],
     ["Designation", salary.designation || "-", "Bank Account No", salary.bankaccountnumber || "-"],
     ["Department", salary.department || "-", "PAN No", salary.pan || "-"],
