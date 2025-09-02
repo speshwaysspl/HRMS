@@ -5,7 +5,7 @@ import Navbar from '../components/dashboard/Navbar'
 
 const EmployeeDashboard = () => {
   return (
-    <div className='flex h-screen bg-gray-100'>
+    <div className='flex min-h-screen bg-gray-100'>
       <Sidebar />
       <div className='flex-1 md:ml-64 ml-0 transition-all duration-300'>
         <Navbar />

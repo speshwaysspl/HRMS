@@ -9,7 +9,7 @@ const AdminDashboard = () => {
   const {user} = useAuth()
  
   return (
-    <div className='flex h-screen bg-gray-100'>
+    <div className='flex min-h-screen bg-gray-100'>
       <AdminSidebar />
       <div className='flex-1 md:ml-64 ml-0 transition-all duration-300'>
         <Navbar />
