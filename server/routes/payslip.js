@@ -9,7 +9,10 @@ import {
   getPayslipHistory,
   downloadPayslipPDF,
   testWorkingDays,
-  fixWorkingDaysInPayslips
+  fixWorkingDaysInPayslips,
+  previewPayslip,
+  sendPayslipEmail,
+  downloadPreviewPDF
 } from "../controllers/payslipController.js";
 import verifyUser from "../middleware/authMiddlware.js";
 
@@ -43,5 +46,14 @@ router.get("/test-working-days", verifyUser, testWorkingDays);
 
 // Fix existing payslips with incorrect working days
 router.post("/fix-working-days", verifyUser, fixWorkingDaysInPayslips);
+
+// Preview payslip without saving
+router.post("/preview", verifyUser, previewPayslip);
+
+// Send payslip email
+router.post("/send-email", verifyUser, sendPayslipEmail);
+
+// Download preview PDF
+router.post("/download-preview", verifyUser, downloadPreviewPDF);
 
 export default router;
