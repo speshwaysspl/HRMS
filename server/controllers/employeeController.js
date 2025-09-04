@@ -1,21 +1,7 @@
-import multer from "multer";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import path from "path";
 import sendEmail from "../utils/sendEmail.js";
- 
-// Multer storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
- 
-const upload = multer({ storage });
  
 // Add new employee
 const addEmployee = async (req, res) => {
@@ -50,7 +36,6 @@ const addEmployee = async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      profileImage: req.file ? `uploads/${req.file.filename}` : "",
     });
     const savedUser = await newUser.save();
  
@@ -163,11 +148,8 @@ const updateEmployee = async (req, res) => {
       return res.status(404).json({ success: false, error: "User not found" });
     }
  
-    // Update user with optional image
+    // Update user
     const updatedUserData = { name, email };
-    if (req.file) {
-      updatedUserData.profileImage = `uploads/${req.file.filename}`;
-    }
     await User.findByIdAndUpdate(user._id, updatedUserData);
  
     // Update employee
@@ -283,7 +265,6 @@ const updateEmployeeStatus = async (req, res) => {
 
 export {
   addEmployee,
-  upload,
   getEmployees,
   getEmployee,
   updateEmployee,

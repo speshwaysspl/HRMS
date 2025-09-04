@@ -114,11 +114,9 @@ const Add = () => {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
+    const { name, value } = e.target;
     
-    if (name === "image") {
-      setFormData((prevData) => ({ ...prevData, [name]: files[0] }));
-    } else if (name === "mobilenumber") {
+    if (name === "mobilenumber") {
       // Only allow digits and limit to 10 characters
       const numericValue = value.replace(/\D/g, '');
       if (numericValue.length <= 10) {
@@ -153,18 +151,14 @@ const Add = () => {
       return;
     }
 
-    const formDataObj = new FormData()
-    Object.keys(formData).forEach((key) => {
-        formDataObj.append(key, formData[key])
-    })
-
     try {
       const response = await axios.post(
         `${API_BASE}/api/employee/add`,
-        formDataObj,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
           },
         }
       );
@@ -390,20 +384,7 @@ const Add = () => {
             value="employee"
           />
 
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Upload Image
-            </label>
-            <input
-              type="file"
-              name="image"
-              onChange={handleChange}
-              placeholder="Upload Image"
-              accept="image/*"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-            />
-          </div>
+
         </div>
 
         <button

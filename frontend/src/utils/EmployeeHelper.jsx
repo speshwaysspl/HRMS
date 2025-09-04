@@ -24,11 +24,6 @@ export const columns = [
     width: "120px",
   },
   {
-    name: "Image",
-    selector: (row) => row.profileImage,
-    width: "90px",
-  },
-  {
     name: "Department",
     selector: (row) => row.dep_name,
     width: "120px",
@@ -42,6 +37,12 @@ export const columns = [
   {
     name: "DOB",
     selector: (row) => row.dob,
+    sortable: true,
+    width: "130px",
+  },
+  {
+    name: "Joining Date",
+    selector: (row) => row.joiningDate,
     sortable: true,
     width: "130px",
   },
@@ -115,24 +116,31 @@ export const EmployeeButtons = ({ Id }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex flex-wrap gap-1.5">
       <button
-        className="px-2 py-1 bg-teal-600 text-white text-xs rounded"
+        className="px-3 py-1.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
         onClick={() => navigate(`/admin-dashboard/employees/${Id}`)}
       >
         View
       </button>
       <button
-        className="px-2 py-1 bg-blue-600 text-white text-xs rounded"
+        className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
         onClick={() => navigate(`/admin-dashboard/employees/edit/${Id}`)}
       >
         Edit
       </button>
-      <button className="px-2 py-1 bg-yellow-600 text-white text-xs rounded"
+      <button 
+        className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
         onClick={() => navigate(`/admin-dashboard/employees/salary/${Id}`)}
-      >Salary</button>
-      <button className="px-2 py-1 bg-red-600 text-white text-xs rounded"
-      onClick={() => navigate(`/admin-dashboard/employees/leaves/${Id}`)}>Leave</button>
+      >
+        Salary
+      </button>
+      <button 
+        className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+        onClick={() => navigate(`/admin-dashboard/employees/leaves/${Id}`)}
+      >
+        Leave
+      </button>
     </div>
   );
 };

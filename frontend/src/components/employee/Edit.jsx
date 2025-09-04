@@ -16,7 +16,6 @@ const Edit = () => {
     mobilenumber: "",
     designation: "",
     department: "",
-    image: null,
   });
   const [departments, setDepartments] = useState(null);
   const [designationSearch, setDesignationSearch] = useState("");
@@ -161,11 +160,9 @@ const Edit = () => {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
+    const { name, value } = e.target;
     
-    if (name === "image") {
-      setEmployee((prevData) => ({ ...prevData, [name]: files[0] }));
-    } else if (name === "mobilenumber") {
+    if (name === "mobilenumber") {
       // Only allow digits and limit to 10 characters
       const numericValue = value.replace(/\D/g, '');
       if (numericValue.length <= 10) {
@@ -206,21 +203,22 @@ const Edit = () => {
       return;
     }
 
-    const formDataObj = new FormData();
-    Object.keys(employee).forEach((key) => {
+    // Filter out null and empty values
+    const cleanedEmployee = Object.keys(employee).reduce((acc, key) => {
       if (employee[key] !== null && employee[key] !== "") {
-        formDataObj.append(key, employee[key]);
+        acc[key] = employee[key];
       }
-    });
+      return acc;
+    }, {});
 
     try {
       const response = await axios.put(
         `${API_BASE}/api/employee/${id}`,
-        formDataObj,
+        cleanedEmployee,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -430,20 +428,7 @@ const Edit = () => {
 
 
 
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Upload Image
-                </label>
-                <input
-                  type="file"
-                  name="image"
-                  onChange={handleChange}
-                  placeholder="Upload Image"
-                  accept="image/*"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-                />
-              </div>
+
             </div>
 
             <button
