@@ -2,11 +2,12 @@
 import PDFDocument from "pdfkit";
 import axios from "axios";
 import numberToWords from "number-to-words";
+import fs from "fs";
 
 const { toWords } = numberToWords;
 const formatCurrency = (val) => `INR ${Number(val || 0).toFixed(2)}`;
 
-// Fetch remote image as buffer
+// Fetch remote image as buffer (optional use if you want remote logos)
 const fetchLogoBuffer = async (url) => {
   try {
     const res = await axios.get(url, { responseType: "arraybuffer" });
@@ -17,41 +18,29 @@ const fetchLogoBuffer = async (url) => {
   }
 };
 
-export const generateSalaryPDF = async (res, salary) => {
-  const fileName = `Payslip_${salary?.employeeId?.employeeId || salary?.employeeId}_${
-    new Date(salary.payDate).toISOString().split("T")[0]
-  }.pdf`;
-
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-
-  const doc = new PDFDocument({ size: "A4", margin: 20 });
-  doc.pipe(res);
-
+/**
+ * Shared function to draw PDF content
+ */
+const generateSalaryPDFContent = (doc, salary) => {
   const pageWidth = doc.page.width;
   let cursorY = 20;
 
   /** -------------------- HEADER -------------------- **/
-  // Use local logo file instead of remote URL to avoid 403 errors
   const logoPath = "./assets/logo.png";
   let logoBuffer = null;
   try {
-    const fs = await import('fs');
-    logoBuffer = fs.default.readFileSync(logoPath);
+    logoBuffer = fs.readFileSync(logoPath);
   } catch (err) {
     console.error("Error loading local logo:", err.message);
     logoBuffer = null;
   }
 
-  // Draw outer rectangle for header
   doc.rect(20, cursorY, pageWidth - 40, 70).stroke();
 
-  // Place logo on the left
   if (logoBuffer) {
     doc.image(logoBuffer, 30, cursorY + 2, { width: 70 });
   }
 
-  // Center-aligned text block for company info
   doc
     .font("Times-Bold")
     .fontSize(16)
@@ -89,15 +78,17 @@ export const generateSalaryPDF = async (res, salary) => {
   const lineSpacing = 15;
   let y = cursorY + 10;
 
+  // Handle employeeId field - it can be a string or an object with employeeId property
+  const employeeNumber = salary.employeeId?.employeeId || salary.employeeId || "-";
+  
   const fields = [
-    ["Name", salary.name, "Employee No", salary?.employeeId?.employeeId || "-"],
-    ["Joining Date", new Date(salary.joiningDate).toLocaleDateString('en-IN'), "Bank Name", salary.bankname || "-"],
+    ["Name", salary.name, "Employee No", employeeNumber],
+    ["Joining Date", new Date(salary.joiningDate).toLocaleDateString("en-IN"), "Bank Name", salary.bankname || "-"],
     ["Designation", salary.designation || "-", "Bank Account No", salary.bankaccountnumber || "-"],
     ["Department", salary.department || "-", "PAN No", salary.pan || "-"],
     ["Work Days", salary.workingdays || 0, "UAN No", salary.uan || "-"],
     ["LOP Days", salary.lopDays || 0, "", ""],
   ];
-
 
   fields.forEach(([labelL, valueL, labelR, valueR]) => {
     doc.font("Times-Roman").text(`${labelL}:`, labelLeftX, y);
@@ -177,56 +168,67 @@ export const generateSalaryPDF = async (res, salary) => {
     .text(`Total Deductions: ${formatCurrency(totalDeductions)}`, pageWidth / 2 + 5, rowY);
 
   rowY += 25;
- doc
-  .font("Times-Italic") // Changed to italic
-  .fontSize(12)
-  .text(`Net Pay for the month: ${formatCurrency(netPay)}`, 25, rowY)
-  .font("Times-Italic") // Italic again
-  .fontSize(10)
-  .text(
-    `(${toWords(netPay).replace(/\b\w/g, c => c.toUpperCase())} Rupees Only)`,
-    25,
-    rowY + 15
-  );
-
+  doc
+    .font("Times-Italic")
+    .fontSize(12)
+    .text(`Net Pay for the month: ${formatCurrency(netPay)}`, 25, rowY)
+    .font("Times-Italic")
+    .fontSize(10)
+    .text(
+      `(${toWords(netPay).replace(/\b\w/g, (c) => c.toUpperCase())} Rupees Only)`,
+      25,
+      rowY + 15
+    );
 
   doc
     .fontSize(12)
     .font("Times-Roman")
-    .text(
-      "This is a system generated and does not require signature",
-      0,
-      rowY + 80,
-      {
-        width: pageWidth,
-        align: "center",
-      }
-    );
+    .text("This is a system generated and does not require signature", 0, rowY + 80, {
+      width: pageWidth,
+      align: "center",
+    });
 
   /** -------------------- FOOTER -------------------- **/
-  const pageHeight = doc.page.height;
-  const bottomMargin = 20;
+  
+    
+};
 
-  doc.font("Times-Roman").fontSize(9).fillColor("#0066cc")
-     .text("SPESHWAY SOLUTIONS PVT LTD", 0, pageHeight - bottomMargin - 80, {
-         width: pageWidth,
-         align: "center"
-     });
+/**
+ * Generate PDF and stream to response
+ */
+export const generateSalaryPDF = async (res, salary) => {
+  const fileName = `Payslip_${salary?.employeeId?.employeeId || salary?.employeeId}_${
+    new Date(salary.payDate).toISOString().split("T")[0]
+  }.pdf`;
 
-  doc
-    .font("Times-Italic")
-   .fillColor("black")
-     .text("Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha", 0, pageHeight - bottomMargin - 70, {
-         width: pageWidth,
-         align: "center"
-     });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
 
-  doc
-   .font("Times-Italic")
-  .text("Hyderabad Telangana 500081 | Email: info@speshway.com", 0, pageHeight - bottomMargin - 60, {
-         width: pageWidth,
-         align: "center"
-     });
+  const doc = new PDFDocument({ size: "A4", margin: 20 });
+  doc.pipe(res);
+
+  generateSalaryPDFContent(doc, salary);
 
   doc.end();
+};
+
+/**
+ * Generate PDF as buffer (for email attachments)
+ */
+export const generateSalaryPDFBuffer = async (salary) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const chunks = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", (err) => reject(err));
+
+      generateSalaryPDFContent(doc, salary);
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
 };

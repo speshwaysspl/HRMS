@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
+import PayslipPreview from "./PayslipPreview";
 
 const BANKS = [
   "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank",
@@ -69,6 +70,9 @@ const PayslipGenerator = () => {
     lopAmount: 0
   });
   const [lopCalculation, setLopCalculation] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -373,6 +377,86 @@ const PayslipGenerator = () => {
       
       if (response.data.success) {
         alert("Payslip generated successfully!");
+        navigate("/admin-dashboard/salary");
+      }
+    } catch (error) {
+      console.error("Error generating payslip:", error);
+      alert(error.response?.data?.error || "Error generating payslip");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!payslip.employeeId || !payslip.basicSalary) {
+      alert("Please fill in Employee ID and Basic Salary");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_BASE}/api/payslip/preview`, payslip, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      if (response.data.success) {
+        setPreviewData(response.data.payslip);
+        setShowPreview(true);
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      alert(error.response?.data?.error || "Error generating preview");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!previewData) {
+      alert("No payslip data available for email");
+      return;
+    }
+
+    try {
+      setEmailLoading(true);
+      const response = await axios.post(`${API_BASE}/api/payslip/send-email`, {
+        payslipData: previewData
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      if (response.data.success) {
+        alert("Payslip sent to employee email successfully!");
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      alert(error.response?.data?.error || "Error sending email");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleGenerateFromPreview = async () => {
+    if (!previewData) {
+      alert("No payslip data available");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_BASE}/api/payslip/generate`, previewData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      if (response.data.success) {
+        alert("Payslip generated successfully!");
+        setShowPreview(false);
         navigate("/admin-dashboard/salary");
       }
     } catch (error) {
@@ -814,7 +898,7 @@ const PayslipGenerator = () => {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Buttons */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
           <button
             type="button"
@@ -822,6 +906,14 @@ const PayslipGenerator = () => {
             className="w-full sm:w-auto bg-gray-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-md hover:bg-gray-600 transition-colors duration-200 text-sm md:text-base"
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handlePreview}
+            disabled={loading}
+            className="w-full sm:w-auto bg-blue-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors duration-200 text-sm md:text-base"
+          >
+            {loading ? "Loading..." : "Preview Payslip"}
           </button>
           <button
             type="submit"
@@ -832,6 +924,17 @@ const PayslipGenerator = () => {
           </button>
         </div>
       </form>
+      
+      {/* Payslip Preview Modal */}
+      {showPreview && (
+        <PayslipPreview
+          payslip={previewData}
+          onClose={() => setShowPreview(false)}
+          onSendEmail={handleSendEmail}
+          onGenerate={handleGenerateFromPreview}
+          loading={loading || emailLoading}
+        />
+      )}
     </div>
   );
 };

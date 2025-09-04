@@ -4,7 +4,8 @@ import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import PayrollTemplate from "../models/PayrollTemplate.js";
 import Department from "../models/Department.js";
-import { generateSalaryPDF } from "../utils/pdfGenerator.js";
+import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const num = (v) => {
   const n = parseFloat(v);
@@ -758,5 +759,350 @@ export const fixWorkingDaysInPayslips = async (req, res) => {
   } catch (error) {
     console.error("Fix Working Days error:", error);
     return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// Preview payslip without saving to database
+export const previewPayslip = async (req, res) => {
+  try {
+    const payload = req.body;
+    
+    // Auto-fetch employee details if employeeId is provided
+    let employeeDetails = null;
+    let employeeObjectId = payload.employeeObjectId || null;
+    
+    if (payload.employeeId && !payload.name) {
+      const employee = await Employee.findOne({ employeeId: payload.employeeId })
+        .populate('userId', 'name email')
+        .populate('department', 'dep_name');
+      
+      if (employee) {
+        employeeObjectId = employee._id;
+        employeeDetails = {
+          name: employee.userId.name,
+          email: employee.userId.email,
+          designation: employee.designation,
+          department: employee.department.dep_name,
+          joiningDate: employee.createdAt
+        };
+      }
+    } else if (payload.employeeId && !employeeObjectId) {
+      // Try to find employeeObjectId even if name is provided
+      const employee = await Employee.findOne({ employeeId: payload.employeeId });
+      if (employee) {
+        employeeObjectId = employee._id;
+      }
+    }
+    
+    const basicSalary = num(payload.basicSalary);
+    
+    // Auto-calculate allowances if template is used
+    let earnings = {
+      basicSalary,
+      da: num(payload.da),
+      hra: num(payload.hra),
+      conveyance: num(payload.conveyance),
+      medicalallowances: num(payload.medicalallowances),
+      specialallowances: num(payload.specialallowances),
+      allowances: num(payload.allowances)
+    };
+    
+    // Auto-calculate HRA if enabled
+    if (payload.autoCalculateHRA) {
+      earnings.hra = (basicSalary * (num(payload.hraPercentage) || 40)) / 100;
+    }
+    
+    // Calculate total earnings
+    const totalEarnings = Object.values(earnings).reduce((sum, val) => sum + val, 0);
+    
+    // Auto-calculate deductions
+    let deductions = {
+      pf: num(payload.pf),
+      proftax: num(payload.proftax),
+      deductions: num(payload.deductions),
+      lopamount: num(payload.lopamount)
+    };
+    
+    // Auto-calculate PF if enabled
+    if (payload.autoCalculatePF) {
+      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 12)) / 100;
+    }
+    
+    // Calculate total deductions
+    const totalDeductions = Object.values(deductions).reduce((sum, val) => sum + val, 0);
+    
+    // Calculate net salary
+    const netSalary = Math.max(0, totalEarnings - totalDeductions);
+    
+    // Create preview payslip object (not saved to database)
+    const previewPayslip = {
+      employeeId: payload.employeeId,
+      employeeObjectId: employeeObjectId,
+      name: employeeDetails?.name || payload.name,
+      email: employeeDetails?.email,
+      joiningDate: employeeDetails?.joiningDate || payload.joiningDate,
+      designation: employeeDetails?.designation || payload.designation,
+      department: employeeDetails?.department || payload.department,
+      location: payload.location,
+      workingdays: payload.workingdays,
+      lopDays: payload.lopDays || 0,
+      bankname: payload.bankname,
+      bankaccountnumber: payload.bankaccountnumber,
+      pan: payload.pan,
+      uan: payload.uan,
+      month: payload.monthName || getMonthName(payload.month),
+      year: payload.year,
+      basicSalary: earnings.basicSalary,
+      da: earnings.da,
+      hra: earnings.hra,
+      conveyance: earnings.conveyance,
+      medicalallowances: earnings.medicalallowances,
+      specialallowances: earnings.specialallowances,
+      allowances: earnings.allowances,
+      pf: deductions.pf,
+      proftax: deductions.proftax,
+      deductions: deductions.deductions,
+      lopamount: deductions.lopamount,
+      totalEarnings,
+      totalDeductions,
+      netSalary,
+      payDate: payload.payDate || new Date()
+    };
+    
+    return res.status(200).json({ 
+      success: true, 
+      payslip: previewPayslip,
+      message: "Payslip preview generated successfully"
+    });
+  } catch (error) {
+    console.error("Preview Payslip error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// Send payslip via email
+export const sendPayslipEmail = async (req, res) => {
+  try {
+    const { payslipId, employeeEmail, customMessage, payslipData } = req.body;
+    
+    if (!payslipId && !employeeEmail && !payslipData) {
+      return res.status(400).json({ success: false, error: "Payslip ID, employee email, or payslip data is required" });
+    }
+    
+    let payslip;
+    let employeeDetails;
+    
+    if (payslipId) {
+      // Get existing payslip from database
+      payslip = await Salary.findById(payslipId).populate('employeeId');
+      if (!payslip) {
+        return res.status(404).json({ success: false, error: "Payslip not found" });
+      }
+      
+      // Get employee email
+      const employee = await Employee.findById(payslip.employeeId)
+        .populate('userId', 'email');
+      employeeDetails = {
+        email: employee?.userId?.email,
+        name: payslip.name
+      };
+    } else if (payslipData) {
+      // Handle payslip data from frontend (preview mode)
+      payslip = payslipData;
+      
+      // Get employee email using employeeObjectId
+      if (payslip.employeeObjectId) {
+        const employee = await Employee.findById(payslip.employeeObjectId)
+          .populate('userId', 'email name');
+        
+        if (employee && employee.userId) {
+          employeeDetails = {
+            email: employee.userId.email,
+            name: employee.userId.name || payslip.name
+          };
+        } else {
+          return res.status(404).json({ success: false, error: "Employee not found or email not available" });
+        }
+      } else {
+        return res.status(400).json({ success: false, error: "Employee ID is required in payslip data" });
+      }
+    } else {
+      // Use provided payslip data and email
+      payslip = req.body.payslip;
+      employeeDetails = {
+        email: employeeEmail,
+        name: payslip.name
+      };
+    }
+    
+    if (!employeeDetails.email) {
+      return res.status(400).json({ success: false, error: "Employee email not found" });
+    }
+    
+    // Create email content
+    const subject = `Payslip for ${payslip.month} ${payslip.year} - ${payslip.name}`;
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h2 style="color: #2563eb; margin: 0;">SPESHWAY SOLUTIONS PVT LTD</h2>
+          <p style="color: #666; margin: 5px 0;">Hitech City, Hyderabad</p>
+          <h3 style="color: #1f2937; margin: 20px 0;">Payslip for ${payslip.month} ${payslip.year}</h3>
+        </div>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+          <h4 style="color: #374151; margin: 0 0 15px 0;">Employee Details</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div><strong>Name:</strong> ${payslip.name}</div>
+            <div><strong>Employee ID:</strong> ${payslip.employeeId}</div>
+            <div><strong>Designation:</strong> ${payslip.designation || 'N/A'}</div>
+            <div><strong>Department:</strong> ${payslip.department || 'N/A'}</div>
+            <div><strong>Working Days:</strong> ${payslip.workingdays || 0}</div>
+            <div><strong>LOP Days:</strong> ${payslip.lopDays || 0}</div>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px;">
+            <h4 style="color: #065f46; margin: 0 0 10px 0;">Earnings</h4>
+            <div style="font-size: 14px; line-height: 1.6;">
+              <div>Basic Salary: ₹${payslip.basicSalary || 0}</div>
+              <div>DA: ₹${payslip.da || 0}</div>
+              <div>HRA: ₹${payslip.hra || 0}</div>
+              <div>Conveyance: ₹${payslip.conveyance || 0}</div>
+              <div>Medical Allowances: ₹${payslip.medicalallowances || 0}</div>
+              <div>Special Allowances: ₹${payslip.specialallowances || 0}</div>
+              <div>Other Allowances: ₹${payslip.allowances || 0}</div>
+              <div style="border-top: 1px solid #065f46; margin-top: 8px; padding-top: 8px; font-weight: bold;">
+                Total Earnings: ₹${payslip.totalEarnings || (Number(payslip.basicSalary || 0) + Number(payslip.da || 0) + Number(payslip.hra || 0) + Number(payslip.conveyance || 0) + Number(payslip.medicalallowances || 0) + Number(payslip.specialallowances || 0) + Number(payslip.allowances || 0))}
+              </div>
+            </div>
+          </div>
+          
+          <div style="background-color: #fef2f2; padding: 15px; border-radius: 6px;">
+            <h4 style="color: #991b1b; margin: 0 0 10px 0;">Deductions</h4>
+            <div style="font-size: 14px; line-height: 1.6;">
+              <div>PF: ₹${payslip.pf || 0}</div>
+              <div>Professional Tax: ₹${payslip.proftax || 0}</div>
+              <div>Other Deductions: ₹${payslip.deductions || 0}</div>
+              <div>LOP Amount: ₹${payslip.lopamount || 0}</div>
+              <div style="border-top: 1px solid #991b1b; margin-top: 8px; padding-top: 8px; font-weight: bold;">
+                Total Deductions: ₹${payslip.totalDeductions || (Number(payslip.pf || 0) + Number(payslip.proftax || 0) + Number(payslip.deductions || 0) + Number(payslip.lopamount || 0))}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="background-color: #dbeafe; padding: 20px; border-radius: 6px; text-align: center; margin-bottom: 20px;">
+          <h3 style="color: #1e40af; margin: 0;">Net Salary: ₹${payslip.netSalary || 0}</h3>
+        </div>
+        
+        ${customMessage ? `<div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><p style="margin: 0; color: #374151;">${customMessage}</p></div>` : ''}
+        
+        <div style="text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+          <p>This is a system-generated payslip. For any queries, please contact HR department.</p>
+          <p>© ${new Date().getFullYear()} SPESHWAY SOLUTIONS PVT LTD. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+    
+    // Ensure payslip data structure is correct for PDF generation
+    const pdfPayslipData = {
+      ...payslip,
+      // Ensure employeeId is in the correct format for PDF generator
+      employeeId: payslip.employeeId || payslip.employeeObjectId,
+      // Ensure all required fields are present with default values
+      basicSalary: payslip.basicSalary || 0,
+      da: payslip.da || 0,
+      hra: payslip.hra || 0,
+      conveyance: payslip.conveyance || 0,
+      medicalallowances: payslip.medicalallowances || 0,
+      specialallowances: payslip.specialallowances || 0,
+      allowances: payslip.allowances || 0,
+      proftax: payslip.proftax || 0,
+      pf: payslip.pf || 0,
+      deductions: payslip.deductions || 0,
+      lopamount: payslip.lopamount || 0,
+      workingdays: payslip.workingdays || 0,
+      lopDays: payslip.lopDays || 0,
+      netSalary: payslip.netSalary || 0,
+      month: payslip.month || '',
+      year: payslip.year || new Date().getFullYear(),
+      name: payslip.name || '',
+      joiningDate: payslip.joiningDate || new Date(),
+      designation: payslip.designation || '',
+      department: payslip.department || '',
+      bankname: payslip.bankname || '',
+      bankaccountnumber: payslip.bankaccountnumber || '',
+      pan: payslip.pan || '',
+      uan: payslip.uan || ''
+    };
+    
+    console.log('PDF Payslip Data:', JSON.stringify(pdfPayslipData, null, 2));
+    
+    // Generate PDF buffer for attachment
+    let pdfBuffer;
+    try {
+      console.log('About to generate PDF with data:', JSON.stringify(pdfPayslipData, null, 2));
+      pdfBuffer = await generateSalaryPDFBuffer(pdfPayslipData);
+      console.log('PDF generation successful');
+      console.log('PDF buffer type:', typeof pdfBuffer);
+      console.log('PDF buffer is Buffer?', Buffer.isBuffer(pdfBuffer));
+    } catch (pdfError) {
+      console.error('PDF generation failed:', pdfError);
+      return res.status(500).json({ success: false, error: "Failed to generate PDF: " + pdfError.message });
+    }
+    
+    // Check if PDF buffer was generated successfully
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      console.error('PDF buffer is empty or null');
+      return res.status(500).json({ success: false, error: "Failed to generate PDF attachment" });
+    }
+    
+    console.log('PDF Buffer size:', pdfBuffer.length, 'bytes');
+    
+    // Prepare email attachment
+    const employeeIdForFilename = pdfPayslipData?.employeeId || 'Unknown';
+    const attachments = [
+      {
+        filename: `Payslip_${employeeIdForFilename}_${pdfPayslipData.month}_${pdfPayslipData.year}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }
+    ];
+    
+    console.log('Attachment details:', {
+      filename: attachments[0].filename,
+      contentSize: attachments[0].content.length,
+      contentType: attachments[0].contentType
+    });
+    
+    // Send email with PDF attachment
+    await sendEmail(employeeDetails.email, subject, htmlContent, attachments);
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: `Payslip sent successfully to ${employeeDetails.email}`,
+      sentTo: employeeDetails.email
+    });
+  } catch (error) {
+    console.error("Send Payslip Email error:", error);
+    return res.status(500).json({ success: false, error: "Failed to send email" });
+  }
+};
+
+// Download PDF from preview data
+export const downloadPreviewPDF = async (req, res) => {
+  try {
+    const { payslipData } = req.body;
+    
+    if (!payslipData) {
+      return res.status(400).json({ success: false, error: "Payslip data is required" });
+    }
+    
+    // Generate PDF using the same function as regular payslips
+    await generateSalaryPDF(res, payslipData);
+  } catch (error) {
+    console.error("Download Preview PDF error:", error);
+    return res.status(500).json({ success: false, error: "Failed to generate PDF" });
   }
 };
