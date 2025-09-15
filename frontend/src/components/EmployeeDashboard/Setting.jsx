@@ -157,7 +157,7 @@ const Setting = () => {
             </h2>
             <p className="flex items-center space-x-2 sm:space-x-3 text-sm sm:text-base">
               <FaPhone className="text-teal-400 text-base sm:text-lg flex-shrink-0" />
-              <span>+91 9100006020</span>
+              <span>+91 9154986733 || +91 9154986732</span>
             </p>
             <p className="flex items-center space-x-2 sm:space-x-3 text-sm sm:text-base">
               <FaEnvelope className="text-indigo-400 text-base sm:text-lg flex-shrink-0" />
