@@ -5,7 +5,8 @@ import {
   getAllAttendance,
   exportAttendanceExcel,
   getTodayAttendance,
-  getMonthlyAttendance,            // 🔹 new
+  getEmployeeMonthlyAttendance,    // 🔹 new employee monthly
+  getMonthlyAttendance,            // 🔹 admin monthly
   exportMonthlyAttendanceExcel,    // 🔹 new
 } from "../controllers/attendanceController.js";
 import authMiddleware from "../middleware/authMiddlware.js";
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post("/", authMiddleware, saveAttendance);
 router.get("/report", authMiddleware, getAttendanceReport);
 router.get("/today", authMiddleware, getTodayAttendance);
+router.get("/monthly", authMiddleware, getEmployeeMonthlyAttendance);  // 🔹 employee monthly
 
 // ================= Admin =================
 router.get("/admin/all", authMiddleware, getAllAttendance);          // day-wise

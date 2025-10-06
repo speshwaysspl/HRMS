@@ -181,6 +181,118 @@ export const getAllAttendance = async (req, res) => {
 };
  
 /**
+ * 🔹 Employee: Get own monthly attendance
+ */
+export const getEmployeeMonthlyAttendance = async (req, res) => {
+  try {
+    const { month } = req.query;
+    if (!month) return res.status(400).json({ message: "Month is required" });
+
+    console.log("Monthly attendance request - userId:", req.user._id, "month:", month);
+
+    const [year, mon] = month.split("-");
+    const startDate = new Date(year, mon - 1, 1);
+    const endDate = new Date(year, mon, 0);
+
+    // Get employee data from the authenticated user
+    const employee = await Employee.findOne({ userId: req.user._id }).populate('userId', 'name');
+    if (!employee) {
+      console.log("Employee not found for userId:", req.user._id);
+      return res.status(404).json({ message: "Employee profile not found" });
+    }
+
+    console.log("Employee found:", employee._id);
+
+    const records = await Attendance.find({
+      userId: employee._id,
+      date: { $gte: startDate.toISOString().split("T")[0], $lte: endDate.toISOString().split("T")[0] },
+    }).sort({ date: 1 });
+
+    console.log("Found attendance records:", records.length);
+    console.log("Records:", records);
+
+    const monthlyData = [];
+    for (let d = 1; d <= endDate.getDate(); d++) {
+      const currentDate = new Date(year, mon - 1, d).toISOString().split("T")[0];
+      const record = records.find((r) => r.date === currentDate);
+      
+      // Calculate working hours if both in and out times are available
+      let workingHours = 0;
+      let attendanceStatus = "Absent";
+      
+      // Check if there's a leave request approved for this date
+      const leaveCheck = await Leave.findOne({
+        employeeId: employee._id,
+        startDate: { $lte: new Date(currentDate) },
+        endDate: { $gte: new Date(currentDate) },
+        status: "Approved"
+      });
+      const hasApprovedLeave = !!leaveCheck;
+      
+      if (hasApprovedLeave) {
+        attendanceStatus = "Leave";
+      } else if (record?.inTime) {
+        if (record?.outTime) {
+          // Calculate working hours
+          const [inHour, inMin] = record.inTime.split(":").map(Number);
+          const [outHour, outMin] = record.outTime.split(":").map(Number);
+          
+          // Simple calculation (doesn't account for overnight shifts)
+          workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+          if (workingHours < 0) workingHours += 24; // Handle overnight shifts
+          
+          // Subtract break times if any
+          if (record.breaks && record.breaks.length > 0) {
+            record.breaks.forEach(breakPeriod => {
+              if (breakPeriod.start && breakPeriod.end) {
+                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                
+                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                if (breakHours < 0) breakHours += 24;
+                
+                workingHours -= breakHours;
+              }
+            });
+          }
+          
+          // Determine status based on working hours
+          if (workingHours >= 8) {
+            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+          } else if (workingHours >= 4) {
+            attendanceStatus = "Half-Day";
+          } else {
+            attendanceStatus = "Absent";
+          }
+        } else {
+          // Only in-time is marked, no out-time
+          attendanceStatus = "Incomplete";
+        }
+      }
+     
+      monthlyData.push({
+        employeeId: employee.employeeId,
+        name: employee.userId?.name || "N/A",
+        designation: employee.designation,
+        date: currentDate,
+        inTime: record?.inTime || "Not Marked",
+        outTime: record?.outTime || "Not Marked",
+        workMode: record?.workMode || "N/A",
+        inLocation: record?.inLocation?.area || "N/A",
+        outLocation: record?.outLocation?.area || "N/A",
+        breaks: record?.breaks || [],
+        status: attendanceStatus,
+        workingHours: workingHours.toFixed(2)
+      });
+    }
+
+    res.status(200).json(monthlyData);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching monthly attendance", error: error.message });
+  }
+};
+
+/**
  * 🔹 Admin: Get monthly attendance for a single employee
  */
 export const getMonthlyAttendance = async (req, res) => {
