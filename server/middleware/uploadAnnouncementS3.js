@@ -4,21 +4,23 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 
-// Configure S3 client
-console.log("S3 Configuration:", {
-  region: process.env.AWS_REGION,
-  bucket: process.env.AWS_S3_BUCKET_NAME,
-  hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-  hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
-});
+// Function to get S3 client (lazy initialization)
+const getS3Client = () => {
+  console.log("S3 Configuration:", {
+    region: process.env.AWS_REGION,
+    bucket: process.env.AWS_S3_BUCKET_NAME,
+    hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+    hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+  });
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+  return new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+};
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -58,6 +60,7 @@ export const uploadToS3 = async (file) => {
       ContentType: uploadParams.ContentType
     });
     
+    const s3Client = getS3Client();
     const command = new PutObjectCommand(uploadParams);
     const result = await s3Client.send(command);
     
@@ -85,6 +88,7 @@ export const deleteFromS3 = async (fileKey) => {
   };
 
   try {
+    const s3Client = getS3Client();
     const command = new DeleteObjectCommand(deleteParams);
     await s3Client.send(command);
     return { success: true };

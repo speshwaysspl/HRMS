@@ -1,6 +1,10 @@
 // backend/controllers/announcementController.js
 import Announcement from "../models/Announcement.js";
+import Employee from "../models/Employee.js";
+import User from "../models/User.js";
+import sendEmail from "../utils/sendEmail.js";
 import { uploadToS3, deleteFromS3 } from "../middleware/uploadAnnouncementS3.js";
+import { getAnnouncementEmailTemplate, getAnnouncementEmailSubject } from "../utils/emailTemplates.js";
 
 const buildImageUrl = (imageUrl) => {
   return imageUrl || null;
@@ -15,10 +19,9 @@ const addAnnouncement = async (req, res) => {
       return res.status(400).json({ success: false, error: "Title and description are required" });
     }
 
+    // Handle image upload
     let imageUrl = null;
     let imageKey = null;
-
-    // Upload image to S3 if provided
     if (req.file) {
       try {
         const uploadResult = await uploadToS3(req.file);
@@ -40,9 +43,47 @@ const addAnnouncement = async (req, res) => {
 
     await newAnnouncement.save();
 
+    // Send email notifications to all employees
+    try {
+      // Get all active employees with their user details
+      const employees = await Employee.find({ status: "active" }).populate('userId', 'email name');
+      
+      if (employees.length > 0) {
+        // Create professional email content
+        const emailSubject = getAnnouncementEmailSubject(title);
+
+        // Send personalized emails to all employees
+        const emailPromises = employees.map(employee => {
+          if (employee.userId && employee.userId.email) {
+            // Generate personalized email template for each employee
+            const emailHtml = getAnnouncementEmailTemplate({
+              title,
+              description,
+              imageUrl,
+              recipientName: employee.userId.name,
+              createdAt: new Date()
+            });
+            
+            return sendEmail(employee.userId.email, emailSubject, emailHtml)
+              .catch(error => {
+                console.error(`Failed to send email to ${employee.userId.email}:`, error);
+                return null; // Continue with other emails even if one fails
+              });
+          }
+          return Promise.resolve(null);
+        });
+
+        await Promise.allSettled(emailPromises);
+        console.log(`📧 Announcement emails sent to ${employees.length} employees`);
+      }
+    } catch (emailError) {
+      console.error("Error sending announcement emails:", emailError);
+      // Don't fail the announcement creation if email sending fails
+    }
+
     return res.status(201).json({
       success: true,
-      message: "Announcement created",
+      message: "Announcement created and notifications sent",
       announcement: {
         ...newAnnouncement.toObject(),
         imageUrl: buildImageUrl(imageUrl),

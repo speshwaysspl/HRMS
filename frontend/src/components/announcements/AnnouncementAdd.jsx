@@ -141,7 +141,7 @@ const AnnouncementAdd = () => {
               fullWidth
               required
               multiline
-              rows={{ xs: 3, sm: 4 }}
+              rows={4}
               margin="normal"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

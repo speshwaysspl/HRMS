@@ -99,7 +99,7 @@ const EditAnnouncement = () => {
             onChange={(e) => setDescription(e.target.value)}
             margin="normal"
             multiline
-            rows={{ xs: 3, sm: 4 }}
+            rows={4}
             required
             sx={{
               mb: { xs: 2, sm: 2.5 },
