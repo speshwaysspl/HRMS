@@ -8,14 +8,14 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
-import { uploadAnnouncement } from "../middleware/uploadAnnouncement.js";
+import { uploadAnnouncementS3 } from "../middleware/uploadAnnouncementS3.js";
 
 const router = express.Router();
 
 router.get("/", verifyUser, getAnnouncements);
-router.post("/", verifyUser, uploadAnnouncement.single("image"), addAnnouncement);
+router.post("/", verifyUser, uploadAnnouncementS3.single("image"), addAnnouncement);
 router.get("/:id", verifyUser, getAnnouncement);
-router.put("/:id", verifyUser, uploadAnnouncement.single("image"), updateAnnouncement);
+router.put("/:id", verifyUser, uploadAnnouncementS3.single("image"), updateAnnouncement);
 router.delete("/:id", verifyUser, deleteAnnouncement);
 
 export default router;

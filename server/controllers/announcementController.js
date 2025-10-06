@@ -1,11 +1,9 @@
 // backend/controllers/announcementController.js
 import Announcement from "../models/Announcement.js";
-import path from "path";
-import fs from "fs";
+import { uploadToS3, deleteFromS3 } from "../middleware/uploadAnnouncementS3.js";
 
-const buildImageUrl = (req, filename) => {
-  if (!filename) return null;
-  return `${req.protocol}://${req.get("host")}/uploads/announcements/${filename}`;
+const buildImageUrl = (imageUrl) => {
+  return imageUrl || null;
 };
 
 // 📌 Create
@@ -17,13 +15,27 @@ const addAnnouncement = async (req, res) => {
       return res.status(400).json({ success: false, error: "Title and description are required" });
     }
 
-    const imageFilename = req.file ? req.file.filename : null;
+    let imageUrl = null;
+    let imageKey = null;
+
+    // Upload image to S3 if provided
+    if (req.file) {
+      try {
+        const uploadResult = await uploadToS3(req.file);
+        imageUrl = uploadResult.url;
+        imageKey = uploadResult.key;
+      } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
+        return res.status(500).json({ success: false, error: "Failed to upload image" });
+      }
+    }
 
     const newAnnouncement = new Announcement({
       title,
       description,
       createdBy: req.user._id,
-      image: imageFilename,
+      image: imageUrl,
+      imageKey: imageKey, // Store S3 key for deletion
     });
 
     await newAnnouncement.save();
@@ -33,7 +45,7 @@ const addAnnouncement = async (req, res) => {
       message: "Announcement created",
       announcement: {
         ...newAnnouncement.toObject(),
-        imageUrl: buildImageUrl(req, imageFilename),
+        imageUrl: buildImageUrl(imageUrl),
       },
     });
   } catch (error) {
@@ -51,7 +63,7 @@ const getAnnouncements = async (req, res) => {
 
     const mapped = announcements.map((a) => ({
       ...a.toObject(),
-      imageUrl: buildImageUrl(req, a.image),
+      imageUrl: buildImageUrl(a.image),
     }));
 
     return res.status(200).json({ success: true, announcements: mapped });
@@ -74,7 +86,7 @@ const getAnnouncement = async (req, res) => {
       success: true,
       announcement: {
         ...announcement.toObject(),
-        imageUrl: buildImageUrl(req, announcement.image),
+        imageUrl: buildImageUrl(announcement.image),
       },
     });
   } catch (error) {
@@ -99,14 +111,25 @@ const updateAnnouncement = async (req, res) => {
 
     // Handle image update
     if (req.file) {
-      // Delete old image if exists
-      if (announcement.image) {
-        const oldImagePath = path.join("public", "uploads", "announcements", announcement.image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+      // Delete old image from S3 if exists
+      if (announcement.imageKey) {
+        try {
+          await deleteFromS3(announcement.imageKey);
+        } catch (deleteError) {
+          console.error("Error deleting old image from S3:", deleteError);
+          // Continue with upload even if delete fails
         }
       }
-      announcement.image = req.file.filename;
+
+      // Upload new image to S3
+      try {
+        const uploadResult = await uploadToS3(req.file);
+        announcement.image = uploadResult.url;
+        announcement.imageKey = uploadResult.key;
+      } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
+        return res.status(500).json({ success: false, error: "Failed to upload new image" });
+      }
     }
 
     await announcement.save();
@@ -116,7 +139,7 @@ const updateAnnouncement = async (req, res) => {
       message: "Announcement updated successfully",
       announcement: {
         ...announcement.toObject(),
-        imageUrl: buildImageUrl(req, announcement.image),
+        imageUrl: buildImageUrl(announcement.image),
       },
     });
   } catch (error) {
@@ -138,11 +161,13 @@ const deleteAnnouncement = async (req, res) => {
       return res.status(403).json({ success: false, error: "Unauthorized to delete this announcement" });
     }
 
-    // Delete image if exists
-    if (announcement.image) {
-      const imgPath = path.join("public", "uploads", "announcements", announcement.image);
-      if (fs.existsSync(imgPath)) {
-        fs.unlinkSync(imgPath);
+    // Delete image from S3 if exists
+    if (announcement.imageKey) {
+      try {
+        await deleteFromS3(announcement.imageKey);
+      } catch (deleteError) {
+        console.error("Error deleting image from S3:", deleteError);
+        // Continue with announcement deletion even if S3 delete fails
       }
     }
 

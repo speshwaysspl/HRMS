@@ -6,7 +6,8 @@ const announcementSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
-    image: { type: String, default: null },
+    image: { type: String, default: null }, // S3 URL
+    imageKey: { type: String, default: null }, // S3 object key for deletion
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
