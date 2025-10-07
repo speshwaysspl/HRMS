@@ -1,6 +1,7 @@
 import Feedback from "../models/Feedback.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
+import { createNotification } from "./notificationController.js";
 
 // Create new feedback (Employee)
 const createFeedback = async (req, res) => {
@@ -45,6 +46,26 @@ const createFeedback = async (req, res) => {
         select: 'name email'
       }
     });
+
+    // Send notification to all admins about new feedback submission
+    try {
+      const adminUsers = await User.find({ role: 'admin' });
+      const employeeName = isAnonymous ? 'Anonymous Employee' : savedFeedback.employeeId.userId.name;
+      
+      for (const admin of adminUsers) {
+        await createNotification({
+          type: 'feedback_submitted',
+          title: 'New Feedback Submitted',
+          message: `Employee ${employeeName} submitted new feedback.`,
+          recipientId: admin._id,
+          senderId: req.user.id,
+          relatedId: savedFeedback._id
+        }, req.io);
+      }
+    } catch (notificationError) {
+      console.error('Error sending feedback submission notification:', notificationError);
+      // Don't fail the feedback creation if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -304,6 +325,25 @@ const updateFeedbackStatus = async (req, res) => {
         select: 'name email'
       }
     ]);
+
+    // Send notification to employee when admin responds or updates status
+    try {
+      if (adminResponse || status) {
+        const employeeUserId = updatedFeedback.employeeId.userId._id;
+        
+        await createNotification({
+          type: 'feedback_response',
+          title: 'Feedback Update',
+          message: 'Your feedback has been reviewed/replied.',
+          recipientId: employeeUserId,
+          senderId: req.user.id,
+          relatedId: updatedFeedback._id
+        }, req.io);
+      }
+    } catch (notificationError) {
+      console.error('Error sending feedback response notification:', notificationError);
+      // Don't fail the feedback update if notification fails
+    }
 
     res.status(200).json({
       success: true,

@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['leave_request', 'leave_approved', 'leave_rejected', 'announcement']
+    enum: ['leave_request', 'leave_approved', 'leave_rejected', 'announcement', 'feedback_submitted', 'feedback_response']
   },
   title: {
     type: String,

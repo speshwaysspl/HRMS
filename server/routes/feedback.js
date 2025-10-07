@@ -13,8 +13,14 @@ import {
 
 const router = express.Router();
 
+// Middleware to attach Socket.IO instance to request
+const attachSocketIO = (req, res, next) => {
+  req.io = req.app.get('io');
+  next();
+};
+
 // Employee routes
-router.post('/', authMiddleware, createFeedback);
+router.post('/', authMiddleware, attachSocketIO, createFeedback);
 router.get('/my-feedback', authMiddleware, getEmployeeFeedback);
 router.put('/my-feedback/:id', authMiddleware, updateEmployeeFeedback);
 
@@ -24,7 +30,7 @@ router.delete('/:id', authMiddleware, deleteFeedback);
 
 // Admin routes
 router.get('/', authMiddleware, getAllFeedback);
-router.put('/:id/status', authMiddleware, updateFeedbackStatus);
+router.put('/:id/status', authMiddleware, attachSocketIO, updateFeedbackStatus);
 router.get('/admin/statistics', authMiddleware, getFeedbackStatistics);
 
 export default router;
