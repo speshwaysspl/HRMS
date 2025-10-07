@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import sendEmail from "../utils/sendEmail.js";
 import { uploadToS3, deleteFromS3 } from "../middleware/uploadAnnouncementS3.js";
 import { getAnnouncementEmailTemplate, getAnnouncementEmailSubject } from "../utils/emailTemplates.js";
+import { createAnnouncementNotification } from "./notificationController.js";
 
 const buildImageUrl = (imageUrl) => {
   return imageUrl || null;
@@ -42,6 +43,21 @@ const addAnnouncement = async (req, res) => {
     });
 
     await newAnnouncement.save();
+
+    // Send real-time notifications to all employees
+    const io = req.app.get('io');
+    console.log('🔌 IO object available:', !!io);
+    if (io) {
+      try {
+        console.log('📢 Calling createAnnouncementNotification...');
+        await createAnnouncementNotification(newAnnouncement, req.user._id, io);
+        console.log('✅ Announcement notification process completed');
+      } catch (notificationError) {
+        console.error('❌ Error sending announcement notifications:', notificationError);
+      }
+    } else {
+      console.log('⚠️ IO object not available - notifications will not be sent');
+    }
 
     // Send email notifications to all employees
     try {

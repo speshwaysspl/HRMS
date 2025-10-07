@@ -1,5 +1,6 @@
 import Employee from '../models/Employee.js'
 import Leave from '../models/Leave.js'
+import { createLeaveRequestNotification, createLeaveStatusNotification } from './notificationController.js'
 
 const addLeave = async (req, res) => {
     try {
@@ -13,6 +14,16 @@ const addLeave = async (req, res) => {
         })
 
         await newLeave.save()
+
+        // Send notification to admins
+        const io = req.app.get('io');
+        if (io) {
+            try {
+                await createLeaveRequestNotification(newLeave, io);
+            } catch (notificationError) {
+                console.error('Error sending leave request notification:', notificationError);
+            }
+        }
 
         return res.status(200).json({success: true})
 
@@ -90,10 +101,23 @@ const getLeaveDetail = async (req, res) => {
 const updateLeave = async (req, res) => {
     try {
         const {id} = req.params;
-        const leave = await Leave.findByIdAndUpdate({_id: id}, {status: req.body.status})
+        const { status } = req.body;
+        
+        const leave = await Leave.findByIdAndUpdate({_id: id}, {status: status}, {new: true})
         if(!leave) {
-        return res.status(404).json({success: false, error: "leave not founded"})
+            return res.status(404).json({success: false, error: "leave not founded"})
         }
+
+        // Send notification to employee about status change
+        const io = req.app.get('io');
+        if (io && (status === 'Approved' || status === 'Rejected')) {
+            try {
+                await createLeaveStatusNotification(leave, status, req.user._id, io);
+            } catch (notificationError) {
+                console.error('Error sending leave status notification:', notificationError);
+            }
+        }
+
         return res.status(200).json({success: true})
     } catch(error) {
         console.log(error.message)

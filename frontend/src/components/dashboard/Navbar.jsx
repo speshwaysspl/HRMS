@@ -1,8 +1,9 @@
 import React from 'react'
+import NotificationBell from '../notifications/NotificationBell'
 
 const Navbar = () => {
   return (
-    <div className="flex items-center justify-center h-12 sm:h-14 md:h-16 px-2 sm:px-4 md:px-6 shadow-lg relative bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600">
+    <div className="flex items-center justify-between h-12 sm:h-14 md:h-16 px-2 sm:px-4 md:px-6 shadow-lg relative bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600">
       
       {/* Animated Scrolling Company Name */}
       <div className="overflow-hidden whitespace-nowrap w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto">
@@ -12,6 +13,11 @@ const Navbar = () => {
             <span className="sm:hidden">SPESHWAY SOLUTIONS</span>
           </span>
         </h1>
+      </div>
+
+      {/* Notification Bell */}
+      <div className="flex-shrink-0">
+        <NotificationBell />
       </div>
 
       {/* Extra CSS */}
