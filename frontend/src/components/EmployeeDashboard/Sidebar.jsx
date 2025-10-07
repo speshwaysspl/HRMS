@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaChevronRight,
   FaSignOutAlt,
+  FaComments,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -51,6 +52,7 @@ const Sidebar = () => {
     { to: "/employee-dashboard/announcements", label: "Announcements", icon: <FaRegCalendarAlt /> },
     { to: "/employee-dashboard/attendance", label: "Attendance", icon: <FaCalendarAlt /> },
     { to: "/employee-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
+    { to: "/employee-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
     { to: "/employee-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 

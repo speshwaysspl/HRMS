@@ -18,6 +18,7 @@ import payrollTemplateRouter from "./routes/payrollTemplate.js";
 import payslipRouter from "./routes/payslip.js";
 import birthdayRouter from "./routes/birthdayRoutes.js";
 import notificationRouter from "./routes/notification.js";
+import feedbackRouter from "./routes/feedback.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import connectToDatabase from "./db/db.js";
 
@@ -68,6 +69,7 @@ app.use("/api/payroll-template", payrollTemplateRouter);
 app.use("/api/payslip", payslipRouter);
 app.use("/api/birthdays", birthdayRouter);
 app.use("/api/notifications", notificationRouter);
+app.use("/api/feedback", feedbackRouter);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

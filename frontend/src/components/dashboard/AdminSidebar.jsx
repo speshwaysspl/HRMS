@@ -17,6 +17,7 @@ import {
   FaFileInvoiceDollar,
   FaClipboardList,
   FaHistory,
+  FaComments,
 } from "react-icons/fa";
 import { AiOutlineFileText } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +35,7 @@ const AdminSidebar = () => {
     { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
     { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <AiOutlineFileText /> },
     { to: "/admin-dashboard/announcements", label: "Announcements", icon: <FaBullhorn /> },
+    { to: "/admin-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
     { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 

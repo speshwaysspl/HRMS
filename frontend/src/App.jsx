@@ -33,6 +33,7 @@ import AnnouncementView from "./components/announcements/AnnouncementView";
 import AnnouncementAdd from "./components/announcements/AnnouncementAdd";
 import EditAnnouncement from "./components/announcements/EditAnnouncement";
 import AdminAttendanceReport from "./components/attendance/AdminAttendanceReport";
+import AdminFeedback from "./components/feedback/AdminFeedback";
  
 // Employee Components
 import Summary from "./components/EmployeeDashboard/Summary";
@@ -43,6 +44,7 @@ import EmployeeAnnouncements from "./components/employee/EmployeeAnnouncements";
 import EmployeeAnnouncementDetails from "./components/employee/AnnouncementDetails";
 import Attendance from "./components/EmployeeDashboard/Attendance";
 import AttendanceReport from "./components/EmployeeDashboard/AttendanceReport";
+import EmployeeFeedback from "./components/feedback/EmployeeFeedback";
  
 function App() {
   return (
@@ -104,6 +106,9 @@ function App() {
  
           {/* Attendance Report */}
           <Route path="attendance-report" element={<AdminAttendanceReport />} />
+ 
+          {/* Feedback */}
+          <Route path="feedback" element={<AdminFeedback />} />
         </Route>
  
         {/* Employee Dashboard */}
@@ -139,6 +144,9 @@ function App() {
           {/* Attendance */}
           <Route path="attendance" element={<Attendance />} />
           <Route path="attendance-report" element={<AttendanceReport />} />
+ 
+          {/* Feedback */}
+          <Route path="feedback" element={<EmployeeFeedback />} />
         </Route>
  
         {/* Fallback */}
