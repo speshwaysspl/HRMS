@@ -5,6 +5,7 @@ import DataTable from 'react-data-table-component'
 import axios from 'axios'
 import { FaPlus, FaSearch } from 'react-icons/fa'
 import { API_BASE } from '../../utils/apiConfig'
+import StatusToggle from './StatusToggle'
 
 
 const List = () => {
@@ -161,52 +162,79 @@ const List = () => {
               {filteredEmployee.map((employee, index) => (
                 <div key={employee._id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                   <div className="bg-gradient-to-r from-teal-500 to-blue-500 h-2"></div>
-                  <div className="p-5">
+                  <div className="p-4">
+                    {/* Header with Name, ID and Serial Number */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <h4 className="text-lg font-bold text-gray-900 mb-1">{employee.name}</h4>
                         <p className="text-sm text-gray-500 font-medium">ID: {employee.employeeId}</p>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          #{employee.sno}
-                        </span>
-                        <div className="text-right">
-                          {employee.action}
+                      <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        #{employee.sno}
+                      </span>
+                    </div>
+                    
+                    {/* Employee Details Grid - Organized like table columns */}
+                    <div className="space-y-3 text-sm mb-4">
+                      {/* Primary Information */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">Department</span>
+                          <span className="text-gray-800 font-medium">{employee.dep_name}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">Designation</span>
+                          <span className="text-gray-800 font-medium">{employee.designation}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Information */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+                            <span className="font-medium text-gray-600 min-w-[50px]">Email:</span>
+                            <span className="text-gray-800 break-all text-xs">{employee.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span className="font-medium text-gray-600 min-w-[50px]">Mobile:</span>
+                            <span className="text-gray-800">{employee.mobilenumber}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Date Information */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">DOB</span>
+                          <span className="text-gray-800">{employee.dob}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">Joining Date</span>
+                          <span className="text-gray-800">{employee.joiningDate}</span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">Email:</span>
-                        <span className="text-gray-800 break-all">{employee.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">Department:</span>
-                        <span className="text-gray-800">{employee.dep_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">Designation:</span>
-                        <span className="text-gray-800">{employee.designation}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">Mobile:</span>
-                        <span className="text-gray-800">{employee.mobilenumber}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">DOB:</span>
-                        <span className="text-gray-800">{employee.dob}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                        <span className="font-medium text-gray-600 min-w-[80px]">Joined:</span>
-                        <span className="text-gray-800">{employee.joiningDate}</span>
+
+                    {/* Status and Actions Section */}
+                    <div className="border-t border-gray-100 pt-4">
+                      <div className="flex flex-col gap-3">
+                        {/* Status Toggle */}
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Status:</span>
+                          <StatusToggle
+                            employeeId={employee._id}
+                            currentStatus={employee.status}
+                            onStatusChange={employee.onStatusChange}
+                          />
+                        </div>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Actions:</span>
+                          <EmployeeButtons Id={employee._id} />
+                        </div>
                       </div>
                     </div>
                   </div>

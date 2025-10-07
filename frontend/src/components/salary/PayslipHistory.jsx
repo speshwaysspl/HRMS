@@ -372,27 +372,27 @@ const PayslipHistory = () => {
 
 
   return (
-    <div className="max-w-7xl mx-auto mt-10 bg-white p-8 rounded-md shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Payslip History & Management</h2>
-        <div className="space-x-4">
+    <div className="max-w-7xl mx-auto mt-6 sm:mt-10 bg-white p-4 sm:p-8 rounded-md shadow-md">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold">Payslip History & Management</h2>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <button
             onClick={() => navigate("/admin-dashboard/salary/payslip-generator")}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-600 text-sm sm:text-base"
           >
             Generate New Payslip
           </button>
           <button
             onClick={generateMonthlyPayslips}
             disabled={loading}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:opacity-50"
+            className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-green-600 disabled:opacity-50 text-sm sm:text-base"
           >
             {loading ? "Generating..." : "Auto Generate Monthly"}
           </button>
           <button
             onClick={showEmployeeSelectionModal}
             disabled={autoGenerating}
-            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:opacity-50"
+            className="bg-purple-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-purple-600 disabled:opacity-50 text-sm sm:text-base"
           >
             {autoGenerating ? "Generating..." : "Select Employees & Generate"}
           </button>
@@ -402,9 +402,9 @@ const PayslipHistory = () => {
 
 
       {/* Filters */}
-      <div className="bg-gray-50 p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-semibold mb-4">Filters</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="bg-gray-50 p-4 sm:p-6 rounded-lg mb-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">Filters</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID/Name</label>
             <input
@@ -485,10 +485,10 @@ const PayslipHistory = () => {
           </div>
         </div>
         
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-center sm:justify-end">
           <button
             onClick={clearFilters}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-sm"
+            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-sm w-full sm:w-auto"
           >
             Clear Filters
           </button>
@@ -499,8 +499,8 @@ const PayslipHistory = () => {
 
       {/* Payslips Table */}
       <div className="bg-white border rounded-lg">
-        <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold">
+        <div className="px-4 sm:px-6 py-4 border-b">
+          <h3 className="text-base sm:text-lg font-semibold">
             Payslip Records ({filteredPayslips.length} of {payslips.length})
           </h3>
         </div>
@@ -514,121 +514,194 @@ const PayslipHistory = () => {
             <p>No payslips found matching your criteria.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Basic Salary
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    LOP Days
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    LOP Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Deductions
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Net Salary
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Generated
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPayslips.map((payslip) => (
-                  <tr key={payslip._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payslip.name}</div>
-                      <div className="text-sm text-gray-500">{payslip.employeeId}</div>
-                      <div className="text-sm text-gray-500">{payslip.designation}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {MONTHS[payslip.month - 1]} {payslip.year}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payslip.department}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(payslip.basicSalary)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payslip.lopDays || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(payslip.lopamount || 0)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>{formatCurrency(payslip.totalDeductions)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+          <>
+            {/* Mobile Card View */}
+            <div className="block lg:hidden">
+              {filteredPayslips.map((payslip) => (
+                <div key={payslip._id} className="border-b border-gray-200 p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{payslip.name}</h4>
+                      <p className="text-sm text-gray-500">{payslip.employeeId}</p>
+                      <p className="text-sm text-gray-500">{payslip.designation}</p>
+                    </div>
+                    <div className="text-right">
                       <div className="text-sm font-semibold text-green-600">
                         {formatCurrency(payslip.netSalary)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(payslip.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <div className="text-xs text-gray-500">Net Salary</div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                    <div>
+                      <span className="text-gray-500">Period:</span>
+                      <div className="font-medium">{MONTHS[payslip.month - 1]} {payslip.year}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Department:</span>
+                      <div className="font-medium">{payslip.department}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Basic Salary:</span>
+                      <div className="font-medium">{formatCurrency(payslip.basicSalary)}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">LOP Days:</span>
+                      <div className="font-medium">{payslip.lopDays || 0}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">LOP Amount:</span>
+                      <div className="font-medium">{formatCurrency(payslip.lopamount || 0)}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Deductions:</span>
+                      <div className="font-medium">{formatCurrency(payslip.totalDeductions)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <div className="text-xs text-gray-500">
+                      Generated: {formatDate(payslip.createdAt)}
+                    </div>
+                    <div className="flex space-x-3">
                       <button
                         onClick={() => downloadPayslip(payslip._id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                         title="Download PDF"
                       >
                         Download
                       </button>
                       <button
                         onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)}
-                        className="text-green-600 hover:text-green-900"
+                        className="text-green-600 hover:text-green-900 text-sm font-medium"
                         title="View Employee Salary Details"
                       >
                         View
                       </button>
-                    </td>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Period
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Department
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Basic Salary
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      LOP Days
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      LOP Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Deductions
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Net Salary
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Generated
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPayslips.map((payslip) => (
+                    <tr key={payslip._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{payslip.name}</div>
+                        <div className="text-sm text-gray-500">{payslip.employeeId}</div>
+                        <div className="text-sm text-gray-500">{payslip.designation}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {MONTHS[payslip.month - 1]} {payslip.year}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {payslip.department}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatCurrency(payslip.basicSalary)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {payslip.lopDays || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatCurrency(payslip.lopamount || 0)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{formatCurrency(payslip.totalDeductions)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(payslip.netSalary)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(payslip.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => downloadPayslip(payslip._id)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Download PDF"
+                        >
+                          Download
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)}
+                          className="text-green-600 hover:text-green-900"
+                          title="View Employee Salary Details"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* Employee Selection Modal */}
       {showEmployeeSelection && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-4xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Select Employees for Payslip Generation</h3>
+              <h3 className="text-lg sm:text-xl font-bold">Select Employees for Payslip Generation</h3>
               <button
                 onClick={() => {
                   setShowEmployeeSelection(false);
                   setSelectedEmployees([]);
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 text-xl"
               >
                 ✕
               </button>
             </div>
 
             {/* Month and Year Selection */}
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Month:
@@ -671,7 +744,7 @@ const PayslipHistory = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Employees</option>
                 <option value="active">Active Only</option>
