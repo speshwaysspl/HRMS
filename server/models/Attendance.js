@@ -9,7 +9,7 @@ const attendanceSchema = new mongoose.Schema(
     },
     date: {
       type: String,
-      required: true, // Format: yyyy-mm-ddbduudnddihohoohho
+      required: true, // Format: yyyy-mm-ddbduudnddihohoohhoggggg
 
     },
     inTime: String,
