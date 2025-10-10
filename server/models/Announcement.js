@@ -1,4 +1,4 @@
-// backend/models/Announcement.js
+// backend/models/Announcement.jsjbsbssjbsks
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
