@@ -8,6 +8,13 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  Autocomplete,
+  Chip,
+  Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -20,6 +27,12 @@ const AnnouncementAdd = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
+  const [scope, setScope] = useState('all'); // 'all' or 'specific'
+  const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [selectedRecipients, setSelectedRecipients] = useState([]);
+  const [recipientOptions, setRecipientOptions] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -37,6 +50,11 @@ const AnnouncementAdd = () => {
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("description", description.trim());
+      formData.append("scope", scope);
+      if (scope === 'specific' && selectedRecipients.length > 0) {
+        // send recipients as a JSON string (backend will parse)
+        formData.append('recipients', JSON.stringify(selectedRecipients));
+      }
       if (image) formData.append("image", image);
 
       const token = localStorage.getItem("token");
@@ -73,6 +91,51 @@ const AnnouncementAdd = () => {
       setLoading(false);
     }
   };
+
+  // Fetch employees for recipient selection
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_BASE}/api/employee`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.data && res.data.employees) {
+          setEmployees(res.data.employees);
+        } else if (Array.isArray(res.data)) {
+          setEmployees(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch employees for recipients', err);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+  // Fetch departments and build recipient options
+  React.useEffect(() => {
+    const fetchDepsAndBuildOptions = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const depRes = await axios.get(`${API_BASE}/api/department`, { headers: { Authorization: `Bearer ${token}` } });
+        const deps = Array.isArray(depRes.data) ? depRes.data : depRes.data?.departments || [];
+        setDepartments(deps);
+
+        // Build recipient options when employees are available
+        if (employees && employees.length) {
+          const opts = employees.map((emp) => ({
+            label: emp.userId ? emp.userId.name : emp.employeeId,
+            userId: emp.userId ? emp.userId._id : emp._id,
+            department: emp.department,
+            employeeId: emp.employeeId,
+            email: emp.userId?.email || '',
+          }));
+          setRecipientOptions(opts);
+        }
+      } catch (err) {
+        console.error('Failed to fetch departments or build options', err);
+      }
+    };
+    fetchDepsAndBuildOptions();
+  }, [employees]);
 
   return (
     <MotionBox
@@ -153,6 +216,85 @@ const AnnouncementAdd = () => {
                 }
               }}
             />
+
+            <div style={{ marginTop: 12, marginBottom: 8 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>Send To</label>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type="radio" name="scope" value="all" checked={scope==='all'} onChange={() => setScope('all')} />
+                  <span>All Employees</span>
+                </label>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type="radio" name="scope" value="specific" checked={scope==='specific'} onChange={() => setScope('specific')} />
+                  <span>Specific Employees</span>
+                </label>
+              </div>
+
+              {scope === 'specific' && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'center' }}>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <InputLabel id="dep-select-label">Department</InputLabel>
+                      <Select
+                        labelId="dep-select-label"
+                        value={selectedDepartment}
+                        label="Department"
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                      >
+                        <MenuItem value={'all'}>All Departments</MenuItem>
+                        {departments.map((d) => (
+                          <MenuItem key={d._id} value={d._id}>{d.dep_name}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <div style={{ flex: 1 }} />
+                  </div>
+
+                  <Autocomplete
+                    multiple
+                    options={recipientOptions.filter((opt) => selectedDepartment === 'all' || (opt.department?._id || opt.department) === selectedDepartment)}
+                    getOptionLabel={(option) => option.label}
+                    groupBy={(option) => {
+                      // try to resolve department name from departments array
+                      const dep = departments.find((d) => d._id === (option.department?._id || option.department));
+                      return dep ? dep.dep_name : 'Other';
+                    }}
+                    value={recipientOptions.filter((opt) => selectedRecipients.includes(opt.userId))}
+                    onChange={(e, value) => {
+                      setSelectedRecipients(value.map((v) => v.userId));
+                    }}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip
+                          key={option.userId}
+                          label={option.label}
+                          {...getTagProps({ index })}
+                        />
+                      ))
+                    }
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.userId}>
+                        <Avatar sx={{ mr: 1, width: 30, height: 30 }}>{option.label?.charAt(0)}</Avatar>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{option.label}</div>
+                          <div style={{ fontSize: 12, color: '#666' }}>{option.email || option.employeeId || ''}</div>
+                        </div>
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select employees (search by name or email)"
+                        placeholder="Type to search..."
+                      />
+                    )}
+                    disableCloseOnSelect
+                    sx={{ width: '100%' }}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Upload Button with animation */}
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

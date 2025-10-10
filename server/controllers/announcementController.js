@@ -14,7 +14,7 @@ const buildImageUrl = (imageUrl) => {
 // 📌 Create
 const addAnnouncement = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, scope = 'all', recipients = [] } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ success: false, error: "Title and description are required" });
@@ -34,9 +34,23 @@ const addAnnouncement = async (req, res) => {
       }
     }
 
+    // recipients may come as a JSON string when sent in multipart/form-data
+    let recipientsArr = [];
+    try {
+      if (typeof recipients === 'string' && recipients.trim() !== '') {
+        recipientsArr = JSON.parse(recipients);
+      } else if (Array.isArray(recipients)) {
+        recipientsArr = recipients;
+      }
+    } catch (err) {
+      recipientsArr = [];
+    }
+
     const newAnnouncement = new Announcement({
       title,
       description,
+      scope,
+      recipients: scope === 'specific' ? recipientsArr : [],
       createdBy: req.user._id,
       image: imageUrl,
       imageKey: imageKey, // Store S3 key for deletion
@@ -44,34 +58,35 @@ const addAnnouncement = async (req, res) => {
 
     await newAnnouncement.save();
 
-    // Send real-time notifications to all employees
+    // Create notifications in DB and emit real-time pop notifications to intended recipients (all or specific)
     const io = req.app.get('io');
+    const ioForNotification = io; // Always emit pop notifications to intended recipients
     console.log('🔌 IO object available:', !!io);
-    if (io) {
-      try {
-        console.log('📢 Calling createAnnouncementNotification...');
-        await createAnnouncementNotification(newAnnouncement, req.user._id, io);
-        console.log('✅ Announcement notification process completed');
-      } catch (notificationError) {
-        console.error('❌ Error sending announcement notifications:', notificationError);
-      }
-    } else {
-      console.log('⚠️ IO object not available - notifications will not be sent');
+    try {
+      console.log('📢 Calling createAnnouncementNotification...');
+      const targetRecipients = newAnnouncement.scope === 'specific' ? newAnnouncement.recipients : null;
+      await createAnnouncementNotification(newAnnouncement, req.user._id, ioForNotification, targetRecipients);
+      console.log('✅ Announcement notification process completed');
+    } catch (notificationError) {
+      console.error('❌ Error sending announcement notifications:', notificationError);
     }
 
     // Send email notifications to all employees
     try {
-      // Get all active employees with their user details
-      const employees = await Employee.find({ status: "active" }).populate('userId', 'email name');
-      
-      if (employees.length > 0) {
-        // Create professional email content
+      // Determine target employees for emails: all active or specific recipients mapped to Employee.userId
+      let employeesList = [];
+
+      if (newAnnouncement.scope === 'specific' && newAnnouncement.recipients && newAnnouncement.recipients.length > 0) {
+        employeesList = await Employee.find({ status: 'active', userId: { $in: newAnnouncement.recipients } }).populate('userId', 'email name');
+      } else {
+        employeesList = await Employee.find({ status: 'active' }).populate('userId', 'email name');
+      }
+
+      if (employeesList.length > 0) {
         const emailSubject = getAnnouncementEmailSubject(title);
 
-        // Send personalized emails to all employees
-        const emailPromises = employees.map(employee => {
+        const emailPromises = employeesList.map(employee => {
           if (employee.userId && employee.userId.email) {
-            // Generate personalized email template for each employee
             const emailHtml = getAnnouncementEmailTemplate({
               title,
               description,
@@ -79,18 +94,16 @@ const addAnnouncement = async (req, res) => {
               recipientName: employee.userId.name,
               createdAt: new Date()
             });
-            
-            return sendEmail(employee.userId.email, emailSubject, emailHtml)
-              .catch(error => {
-                console.error(`Failed to send email to ${employee.userId.email}:`, error);
-                return null; // Continue with other emails even if one fails
-              });
+            return sendEmail(employee.userId.email, emailSubject, emailHtml).catch(error => {
+              console.error(`Failed to send email to ${employee.userId.email}:`, error);
+              return null;
+            });
           }
           return Promise.resolve(null);
         });
 
         await Promise.allSettled(emailPromises);
-        console.log(`📧 Announcement emails sent to ${employees.length} employees`);
+        console.log(`📧 Announcement emails processed for ${employeesList.length} employees`);
       }
     } catch (emailError) {
       console.error("Error sending announcement emails:", emailError);
@@ -114,7 +127,14 @@ const addAnnouncement = async (req, res) => {
 // 📌 Read All
 const getAnnouncements = async (req, res) => {
   try {
-    const announcements = await Announcement.find()
+    const filter = (req.user?.role === 'admin')
+      ? {}
+      : { $or: [
+          { scope: 'all' },
+          { scope: 'specific', recipients: req.user._id }
+        ] };
+
+    const announcements = await Announcement.find(filter)
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
 
@@ -139,6 +159,17 @@ const getAnnouncement = async (req, res) => {
       return res.status(404).json({ success: false, error: "Announcement not found" });
     }
 
+    // Restrict visibility for non-admin users to only relevant announcements
+    if (req.user?.role !== 'admin') {
+      const isRecipient = announcement.scope === 'all' || (
+        announcement.scope === 'specific' && Array.isArray(announcement.recipients) &&
+        announcement.recipients.some((r) => r.toString() === req.user._id.toString())
+      );
+      if (!isRecipient) {
+        return res.status(403).json({ success: false, error: "Unauthorized to view this announcement" });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       announcement: {
@@ -155,16 +186,34 @@ const getAnnouncement = async (req, res) => {
 // 📌 Update
 const updateAnnouncement = async (req, res) => {
   try {
-    const { title, description } = req.body;
     const announcement = await Announcement.findById(req.params.id);
 
     if (!announcement) {
       return res.status(404).json({ success: false, error: "Announcement not found" });
     }
 
-    // Update text fields
+    const { title, description, scope = 'all', recipients = [] } = req.body;
+
+    // parse recipients if sent as JSON string
+    let recipientsArr = [];
+    try {
+      if (typeof recipients === 'string' && recipients.trim() !== '') {
+        recipientsArr = JSON.parse(recipients);
+      } else if (Array.isArray(recipients)) {
+        recipientsArr = recipients;
+      }
+    } catch (err) {
+      recipientsArr = [];
+    }
+
     announcement.title = title || announcement.title;
     announcement.description = description || announcement.description;
+    announcement.scope = scope || announcement.scope;
+    if (scope === 'specific') {
+      announcement.recipients = recipientsArr;
+    } else {
+      announcement.recipients = [];
+    }
 
     // Handle image update
     if (req.file) {

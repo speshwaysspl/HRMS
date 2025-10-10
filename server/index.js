@@ -17,14 +17,49 @@ import payslipRouter from "./routes/payslip.js";
 import birthdayRouter from "./routes/birthdayRoutes.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import connectToDatabase from "./db/db.js";
+import { createServer } from "http";
+import { Server as SocketIOServer } from "socket.io";
+import notificationRouter from "./routes/notification.js";
+import feedbackRouter from "./routes/feedback.js";
 
 dotenv.config();
 connectToDatabase();
 
 const app = express();
 
+// Initialize HTTP server and Socket.IO
+const httpServer = createServer(app);
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5173", "http://localhost:5174"].filter(Boolean);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true
+  }
+});
+
+// Store io instance in app for controllers/routes to use
+app.set('io', io);
+// Also attach io to each request for places using req.io
+app.use((req, res, next) => { req.io = io; next(); });
+
+// Handle client connections and room joining
+io.on('connection', (socket) => {
+  console.log('🔗 Socket client connected');
+  socket.on('join', (userId) => {
+    if (userId) {
+      const roomName = `user_${userId}`;
+      console.log(`🏠 Socket joining room: ${roomName}`);
+      socket.join(roomName);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Socket client disconnected');
+  });
+});
+
 app.use(cors({ 
-  origin: process.env.CLIENT_URL || "http://localhost:5173", 
+  origin: allowedOrigins, 
   credentials: true 
 }));
 app.use(express.json());
@@ -51,11 +86,12 @@ app.use("/api/announcement", announcementRouter);
 app.use("/api/payroll-template", payrollTemplateRouter);
 app.use("/api/payslip", payslipRouter);
 app.use("/api/birthdays", birthdayRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/feedback", feedbackRouter);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  
   // Initialize birthday wishes scheduler
   initializeBirthdayScheduler();
 });

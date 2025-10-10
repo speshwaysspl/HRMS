@@ -2,42 +2,30 @@ import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
 
-// Create and broadcast notification
+// Create and broadcast a single notification
 const createNotification = async (notificationData, io) => {
   try {
-    console.log(`📝 Creating notification for recipient: ${notificationData.recipientId}`);
-    
     const notification = new Notification(notificationData);
     await notification.save();
-    console.log(`💾 Notification saved to database with ID: ${notification._id}`);
-    
-    // Populate sender and recipient details
     await notification.populate('senderId', 'name email');
     await notification.populate('recipientId', 'name email');
-    console.log(`👤 Populated notification - From: ${notification.senderId.name}, To: ${notification.recipientId.name}`);
-    
-    // Emit to specific user room
+
     const roomName = `user_${notificationData.recipientId}`;
-    console.log(`📡 Emitting notification to room: ${roomName}`);
-    io.to(roomName).emit('newNotification', notification);
-    console.log(`✅ Notification emitted successfully`);
-    
+    if (io) io.to(roomName).emit('newNotification', notification);
     return notification;
   } catch (error) {
-    console.error('❌ Error creating notification:', error);
+    console.error('Error creating notification:', error);
     throw error;
   }
 };
 
-// Create notification for leave request (Employee → Admin)
+// Create notifications for leave request (Employee -> all Admins)
 const createLeaveRequestNotification = async (leaveData, io) => {
   try {
-    // Get admin users
     const adminUsers = await User.find({ role: 'admin' });
     const employee = await Employee.findById(leaveData.employeeId).populate('userId', 'name');
-    
     const notifications = [];
-    
+
     for (const admin of adminUsers) {
       const notificationData = {
         type: 'leave_request',
@@ -47,11 +35,8 @@ const createLeaveRequestNotification = async (leaveData, io) => {
         senderId: employee.userId._id,
         relatedId: leaveData._id
       };
-      
-      const notification = await createNotification(notificationData, io);
-      notifications.push(notification);
+      notifications.push(await createNotification(notificationData, io));
     }
-    
     return notifications;
   } catch (error) {
     console.error('Error creating leave request notification:', error);
@@ -59,148 +44,96 @@ const createLeaveRequestNotification = async (leaveData, io) => {
   }
 };
 
-// Create notification for leave status update (Admin → Employee)
+// Create notification for leave status update (Admin -> Employee)
 const createLeaveStatusNotification = async (leaveData, status, adminId, io) => {
   try {
     const employee = await Employee.findById(leaveData.employeeId).populate('userId');
     const admin = await User.findById(adminId);
-    
     const statusText = status === 'Approved' ? 'approved' : 'rejected';
-    
-    const notificationData = {
+    const data = {
       type: status === 'Approved' ? 'leave_approved' : 'leave_rejected',
       title: `Leave Request ${status}`,
-      message: `Your leave request for ${leaveData.leaveType} has been ${statusText} by ${admin.name}`,
+      message: `Your leave request for ${leaveData.leaveType} has been ${statusText} by ${admin?.name || 'admin'}`,
       recipientId: employee.userId._id,
       senderId: adminId,
       relatedId: leaveData._id
     };
-    
-    const notification = await createNotification(notificationData, io);
-    return notification;
+    return await createNotification(data, io);
   } catch (error) {
     console.error('Error creating leave status notification:', error);
     throw error;
   }
 };
 
-// Create notification for announcement (Admin → All Employees)
-const createAnnouncementNotification = async (announcementData, adminId, io) => {
+// Create notifications for an announcement. If `recipients` (array of User ids) is provided,
+// target only those users. Otherwise, use announcementData.recipients if present, or all active employees.
+const createAnnouncementNotification = async (announcementData, adminId, io, recipients = null) => {
   try {
-    console.log('🔔 Creating announcement notification...');
-    console.log('📢 Announcement data:', announcementData);
-    console.log('👤 Admin ID:', adminId);
-
-    console.log('🔍 Querying employees for notifications...');
-    
-    // Get all active employees
-    const employees = await Employee.find({}).populate('userId', 'name email role');
-    
-    console.log(`📊 Found ${employees.length} employees for notifications`);
-    
-    if (employees.length === 0) {
-      console.log('⚠️ No employees found for notifications');
-      return;
+    let employees = [];
+    if (Array.isArray(recipients) && recipients.length) {
+      employees = await Employee.find({ userId: { $in: recipients }, status: 'active' }).populate('userId', 'name email role');
+    } else if (Array.isArray(announcementData?.recipients) && announcementData.recipients.length) {
+      employees = await Employee.find({ userId: { $in: announcementData.recipients }, status: 'active' }).populate('userId', 'name email role');
+    } else {
+      employees = await Employee.find({ status: 'active' }).populate('userId', 'name email role');
     }
 
-    // Get admin details
-    const admin = await User.findById(adminId);
-    console.log('👨‍💼 Admin details:', admin?.name);
-
-    // Create notification for each employee
-    for (const employee of employees) {
-      if (employee.userId && employee.userId._id) {
-        console.log(`📤 Creating notification for employee: ${employee.userId?.name} (${employee.userId?._id})`);
-        
-        const notificationData = {
-          type: 'announcement',
-          title: 'New Announcement',
-          message: announcementData.title,
-          senderId: adminId,
-          recipientId: employee.userId._id
-        };
-        
-        // Only add relatedId if it's a valid ObjectId
-        if (announcementData._id && announcementData._id.toString().length === 24) {
-          notificationData.relatedId = announcementData._id;
-        }
-        
-        await createNotification(notificationData, io);
-      } else {
-        console.log(`⚠️ Skipping employee with missing userId:`, employee.employeeId);
-      }
+    const created = [];
+    for (const emp of employees) {
+      if (!emp.userId || !emp.userId._id) continue;
+      const data = {
+        type: 'announcement',
+        title: 'New Announcement',
+        message: announcementData?.title || announcementData?.description || 'Announcement',
+        senderId: adminId,
+        recipientId: emp.userId._id,
+        relatedId: announcementData?._id
+      };
+      created.push(await createNotification(data, io));
     }
+    return created;
   } catch (error) {
-    console.error('❌ Error creating announcement notification:', error);
+    console.error('Error creating announcement notifications:', error);
+    throw error;
   }
 };
 
-// Get user notifications
+// Get notifications for a user with pagination
 const getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    
-    const notifications = await Notification.find({ recipientId: userId })
-      .populate('senderId', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-    
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const notifications = await Notification.find({ recipientId: userId }).populate('senderId', 'name email').sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit);
     const totalNotifications = await Notification.countDocuments({ recipientId: userId });
     const unreadCount = await Notification.countDocuments({ recipientId: userId, isRead: false });
-    
-    return res.status(200).json({
-      success: true,
-      notifications,
-      totalNotifications,
-      unreadCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalNotifications / limit)
-    });
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
+    return res.status(200).json({ success: true, notifications, totalNotifications, unreadCount, currentPage: page, totalPages: Math.ceil(totalNotifications / limit) });
+  } catch (err) {
+    console.error('getUserNotifications error', err);
     return res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
   }
 };
 
-// Mark notification as read
 const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    
     await Notification.findByIdAndUpdate(notificationId, { isRead: true });
-    
     return res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
-    return res.status(500).json({ success: false, error: 'Failed to mark notification as read' });
+  } catch (err) {
+    console.error('markAsRead error', err);
+    return res.status(500).json({ success: false, error: 'Failed to mark as read' });
   }
 };
 
-// Mark all notifications as read for a user
 const markAllAsRead = async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    await Notification.updateMany(
-      { recipientId: userId, isRead: false },
-      { isRead: true }
-    );
-    
+    await Notification.updateMany({ recipientId: userId, isRead: false }, { isRead: true });
     return res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    return res.status(500).json({ success: false, error: 'Failed to mark all notifications as read' });
+  } catch (err) {
+    console.error('markAllAsRead error', err);
+    return res.status(500).json({ success: false, error: 'Failed to mark all as read' });
   }
 };
 
-export {
-  createNotification,
-  createLeaveRequestNotification,
-  createLeaveStatusNotification,
-  createAnnouncementNotification,
-  getUserNotifications,
-  markAsRead,
-  markAllAsRead
-};
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, getUserNotifications, markAsRead, markAllAsRead };
