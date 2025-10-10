@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -104,6 +104,16 @@ const NotificationBell = () => {
                 >
                   <CheckCheck size={14} />
                   <span>Mark all read</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAllNotifications}
+                  className="text-sm text-red-600 hover:text-red-800 flex items-center space-x-1"
+                  title="Clear all notifications"
+                >
+                  <Trash2 size={14} />
+                  <span>Clear all</span>
                 </button>
               )}
               <button

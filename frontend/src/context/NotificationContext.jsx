@@ -271,6 +271,26 @@ export const NotificationProvider = ({ children }) => {
     setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
   };
 
+  const clearAllNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/api/notifications/clear-all/${user._id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+    }
+  };
+
   const value = {
     notifications,
     unreadCount,
@@ -278,7 +298,8 @@ export const NotificationProvider = ({ children }) => {
     markAsRead,
     markAllAsRead,
     clearNotification,
-    fetchNotifications
+    fetchNotifications,
+    clearAllNotifications
   };
 
   return (
