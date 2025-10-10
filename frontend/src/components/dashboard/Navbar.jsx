@@ -16,7 +16,7 @@ const Navbar = () => {
       </div>
 
       {/* Notification Bell */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 text-white notification-bell-wrapper">
         <NotificationBell />
       </div>
 
@@ -30,8 +30,8 @@ const Navbar = () => {
           }
 
           @keyframes scroll {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
           }
 
           .animate-gradient {
@@ -48,6 +48,13 @@ const Navbar = () => {
             .animate-scroll {
               animation: scroll 8s linear infinite;
             }
+          }
+
+          /* Ensure NotificationBell (svg) appears white */
+          .notification-bell-wrapper svg {
+            fill: white !important;
+            color: white !important;
+            stroke: white !important;
           }
         `}
       </style>

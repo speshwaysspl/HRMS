@@ -24,13 +24,13 @@ router.post('/', authMiddleware, attachSocketIO, createFeedback);
 router.get('/my-feedback', authMiddleware, getEmployeeFeedback);
 router.put('/my-feedback/:id', authMiddleware, updateEmployeeFeedback);
 
+// Admin routes (declare specific paths BEFORE parameterized ':id' to avoid route collisions)
+router.get('/admin/statistics', authMiddleware, getFeedbackStatistics);
+router.get('/', authMiddleware, getAllFeedback);
+router.put('/:id/status', authMiddleware, attachSocketIO, updateFeedbackStatus);
+
 // Shared routes (both employee and admin can access)
 router.get('/:id', authMiddleware, getFeedbackById);
 router.delete('/:id', authMiddleware, deleteFeedback);
-
-// Admin routes
-router.get('/', authMiddleware, getAllFeedback);
-router.put('/:id/status', authMiddleware, attachSocketIO, updateFeedbackStatus);
-router.get('/admin/statistics', authMiddleware, getFeedbackStatistics);
 
 export default router;
