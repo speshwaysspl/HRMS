@@ -136,4 +136,23 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, getUserNotifications, markAsRead, markAllAsRead };
+// Clear all notifications for a user
+const clearAllNotifications = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Allow clearing only for the authenticated user's own notifications
+    const authUserId = (req.user && (req.user._id || req.user.id)) ? (req.user._id || req.user.id).toString() : null;
+    if (!authUserId || authUserId !== userId) {
+      return res.status(403).json({ success: false, error: 'Unauthorized to clear notifications' });
+    }
+
+    await Notification.deleteMany({ recipientId: userId });
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('clearAllNotifications error', err);
+    return res.status(500).json({ success: false, error: 'Failed to clear notifications' });
+  }
+};
+
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications };
