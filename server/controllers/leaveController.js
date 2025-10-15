@@ -38,10 +38,10 @@ const getLeave = async (req, res) => {
         const {id, role} = req.params;
         let leaves
         if(role === "admin") {
-            leaves = await Leave.find({employeeId: id})
+            leaves = await Leave.find({employeeId: id}).sort({ appliedAt: -1 })
         } else {
             const employee = await Employee.findOne({userId: id})
-            leaves = await Leave.find({employeeId: employee._id})
+            leaves = await Leave.find({employeeId: employee._id}).sort({ appliedAt: -1 })
         }
         
         return res.status(200).json({success: true, leaves})
@@ -65,7 +65,7 @@ const getLeaves = async (req, res) => {
                     select: 'name'
                 }
             ]
-        })
+        }).sort({ appliedAt: -1 })
 
         return res.status(200).json({success: true, leaves})
     } catch(error) {
