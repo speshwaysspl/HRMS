@@ -197,21 +197,23 @@ const Login = () => {
                   left: "12px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  opacity: 0.9,
+                  opacity: 1,
                   fill: "none",
+                  zIndex: 10,
+                  pointerEvents: "none",
                 }}
               >
                 <path
                   d="M3 6.5v11A2.5 2.5 0 0 0 5.5 20h13A2.5 2.5 0 0 0 21 17.5v-11A2.5 2.5 0 0 0 18.5 4h-13A2.5 2.5 0 0 0 3 6.5z"
-                  stroke="#CFEFE7"
-                  strokeWidth="1.2"
+                  stroke="#3B82F6"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M21 7.2l-8 5-8-5"
-                  stroke="#CFEFE7"
-                  strokeWidth="1.2"
+                  stroke="#3B82F6"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -281,14 +283,17 @@ const Login = () => {
               {/* lock icon left */}
               <svg
                 viewBox="0 0 24 24"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 style={{
                   position: "absolute",
                   left: "12px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  opacity: 0.9,
+                  opacity: 1,
+                  fill: "none",
+                  zIndex: 10,
+                  pointerEvents: "none",
                 }}
               >
                 <rect
@@ -297,14 +302,14 @@ const Login = () => {
                   width="18"
                   height="11"
                   rx="2"
-                  stroke="#CFEFE7"
-                  strokeWidth="1.2"
+                  stroke="#3B82F6"
+                  strokeWidth="1.5"
                   fill="none"
                 />
                 <path
                   d="M7 10V8a5 5 0 0 1 10 0v2"
-                  stroke="#CFEFE7"
-                  strokeWidth="1.2"
+                  stroke="#3B82F6"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
