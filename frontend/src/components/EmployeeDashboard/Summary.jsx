@@ -8,7 +8,10 @@ import {
   FaExclamationTriangle,
   FaAward,
   FaSpinner,
-  FaChevronRight
+  FaChevronRight,
+  FaClipboardList,
+  FaCalendarCheck,
+  FaCoffee
 } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 import { motion } from 'framer-motion'
@@ -386,6 +389,102 @@ const Summary = () => {
             )
           })}
         </div>
+      </motion.div>
+
+      {/* Attendance and Work Policy Guidance Section */}
+      <motion.div variants={itemVariants} className="w-full">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <FaClock className="text-white text-lg" />
+          </div>
+          Attendance & Work Policy
+        </h2>
+        <motion.div 
+          className="w-full bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300"
+          whileHover={{ y: -2 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          {/* Header with icon */}
+          <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-100">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <FaClipboardList className="text-white text-2xl" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-800 mb-1">Important Guidelines</h3>
+              <p className="text-gray-600">Please follow these policies for smooth operations</p>
+            </div>
+          </div>
+
+          {/* Policy items */}
+          <div className="grid gap-4 md:gap-6">
+            {[
+              {
+                icon: <FaCalendarCheck className="text-green-600" />,
+                title: "Daily Attendance",
+                description: "Employees are required to mark their attendance daily.",
+                color: "from-green-50 to-emerald-50",
+                borderColor: "border-green-200",
+                iconBg: "bg-green-100"
+              },
+              {
+                icon: <FaClock className="text-blue-600" />,
+                title: "Working Hours",
+                description: "A minimum of eight (8) working hours is mandatory to be considered a full working day.",
+                color: "from-blue-50 to-sky-50",
+                borderColor: "border-blue-200",
+                iconBg: "bg-blue-100"
+              },
+              {
+                icon: <FaExclamationTriangle className="text-amber-600" />,
+                title: "Partial Attendance",
+                description: "Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.",
+                color: "from-amber-50 to-yellow-50",
+                borderColor: "border-amber-200",
+                iconBg: "bg-amber-100"
+              },
+              {
+                icon: <FaCoffee className="text-orange-600" />,
+                title: "Break Time Recording",
+                description: "It is mandatory to record break time on a daily basis.",
+                color: "from-orange-50 to-red-50",
+                borderColor: "border-orange-200",
+                iconBg: "bg-orange-100"
+              },
+              {
+                icon: <FaCalendarAlt className="text-purple-600" />,
+                title: "Leave & WFH Requests",
+                description: "Leave and Work From Home (WFH) requests must be submitted at least one day in advance.",
+                color: "from-purple-50 to-pink-50",
+                borderColor: "border-purple-200",
+                iconBg: "bg-purple-100"
+              }
+            ].map((policy, index) => (
+              <motion.div
+                key={index}
+                className={`w-full bg-gradient-to-r ${policy.color} rounded-xl p-5 border ${policy.borderColor} hover:shadow-lg hover:border-opacity-60 transition-all duration-300 group`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-start gap-4 w-full">
+                  <div className={`flex-shrink-0 w-12 h-12 ${policy.iconBg} rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300`}>
+                    {policy.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-gray-800 mb-2 text-base">{policy.title}</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed">{policy.description}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200 group-hover:shadow-md transition-all duration-300">
+                      <span className="text-sm font-bold text-gray-600">{index + 1}</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
 
 
