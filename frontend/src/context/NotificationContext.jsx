@@ -32,28 +32,17 @@ export const NotificationProvider = ({ children }) => {
       const socket = socketRef.current;
 
       socket.on('connect', () => {
-        console.log('🔗 Connected to notification server');
         setIsConnected(true);
         // Join user's personal notification room
-        console.log(`🏠 Joining notification room for user: ${user._id}`);
         socket.emit('join', user._id);
       });
 
       socket.on('disconnect', () => {
-        console.log('❌ Disconnected from notification server');
         setIsConnected(false);
       });
 
       // Listen for new notifications
       socket.on('newNotification', (notification) => {
-        console.log('🔔 New notification received:', notification);
-        console.log('📝 Notification details:', {
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          from: notification.senderId?.name,
-          to: notification.recipientId?.name
-        });
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
@@ -62,7 +51,6 @@ export const NotificationProvider = ({ children }) => {
       });
 
       socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
         setIsConnected(false);
       });
 
@@ -215,7 +203,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(data.unreadCount || 0);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      // Silently handle error - notifications will remain empty
     }
   };
 
@@ -241,7 +229,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      // Silently handle error - notification will remain unread
     }
   };
 
@@ -263,7 +251,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      // Silently handle error - notifications will remain unread
     }
   };
 
@@ -287,7 +275,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error('Error clearing notifications:', error);
+      // Silently handle error - notifications will remain
     }
   };
 

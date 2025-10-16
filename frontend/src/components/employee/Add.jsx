@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
+import { DESIGNATIONS } from "../../utils/constants";
 
 const Add = () => {
   const [departments, setDepartments] = useState([]);
@@ -14,96 +15,7 @@ const Add = () => {
   const navigate = useNavigate()
 
   // All available designations organized by technology/domain
-  const allDesignations = [
-    // Java Technology
-    "Java Developer", "Junior Java Developer", "Senior Java Developer", "Java Full Stack Developer",
-    "Java Backend Developer", "Java Spring Developer", "Java Microservices Developer",
-    "Java Enterprise Developer", "Java Architect", "Java Team Lead",
-    
-    // Salesforce
-    "Salesforce Developer", "Salesforce Administrator", "Salesforce Consultant",
-    "Salesforce Architect", "Salesforce Business Analyst", "Salesforce Technical Lead",
-    "Salesforce Lightning Developer", "Salesforce Integration Specialist",
-    
-    // SAP
-    "SAP Developer", "SAP Consultant", "SAP Functional Consultant", "SAP Technical Consultant",
-    "SAP ABAP Developer", "SAP HANA Developer", "SAP Basis Administrator",
-    "SAP Business Analyst", "SAP Architect", "SAP Project Manager",
-    
-    // Python Technology
-    "Python Developer", "Junior Python Developer", "Senior Python Developer",
-    "Python Full Stack Developer", "Python Backend Developer", "Python Django Developer",
-    "Python Flask Developer", "Python Automation Engineer", "Python Architect",
-    
-    // DevOps
-    "DevOps Engineer", "Junior DevOps Engineer", "Senior DevOps Engineer",
-    "DevOps Architect", "DevOps Consultant", "Site Reliability Engineer",
-    "Infrastructure Engineer", "Build and Release Engineer", "DevOps Team Lead",
-    "CI/CD Engineer", "Container Engineer", "Kubernetes Engineer",
-    
-    // AWS Cloud
-    "AWS Developer", "AWS Solutions Architect", "AWS Cloud Engineer",
-    "AWS DevOps Engineer", "AWS Data Engineer", "AWS Security Engineer",
-    "AWS Consultant", "AWS Technical Lead", "AWS Infrastructure Engineer",
-    "AWS Lambda Developer", "AWS Migration Specialist",
-    
-    // Data Science
-     "Data Scientist", "Junior Data Scientist", "Senior Data Scientist",
-     "Data Analyst", "Data Engineer", "Business Intelligence Analyst",
-     "Data Architect", "Data Science Manager", "Quantitative Analyst",
-     "Statistical Analyst", "Research Scientist", "Data Science Consultant",
-     "Power BI Developer", "Senior Power BI Developer", "Junior Power BI Developer",
-     "Power BI Analyst", "Power BI Consultant", "Power BI Architect",
-     "Business Intelligence Developer", "BI Report Developer", "Dashboard Developer",
-    
-    // Generative AI
-     "AI Engineer", "Machine Learning Engineer", "Gen AI Developer",
-     "AI/ML Consultant", "NLP Engineer", "Computer Vision Engineer",
-     "Deep Learning Engineer", "AI Research Scientist", "ML Ops Engineer",
-     "AI Product Manager", "Prompt Engineer", "Senior Prompt Engineer", "Junior Prompt Engineer",
-      "Prompt Engineering Specialist", "Conversational AI Designer", "AI Prompt Architect",
-      "AI Solutions Architect", "LLM Engineer", "AI Ethics Specialist", "AI Backend Developer",
-    
-    // General IT Roles
-    "Software Engineer", "Senior Software Engineer", "Junior Software Engineer",
-    "Associate Software Engineer", "Software Developer", "Senior Software Developer", "Junior Software Developer", "Lead Software Engineer",
-     "Principal Software Engineer", "Staff Software Engineer", "Junior Frontend Developer",
-     "Frontend Developer", "Senior Frontend Developer", "Junior Backend Developer",
-     "Backend Developer", "Senior Backend Developer", "Junior Full Stack Developer",
-     "Full Stack Developer", "Senior Full Stack Developer", "Mobile App Developer",
-     "iOS Developer", "Android Developer", "React Native Developer", "Flutter Developer",
-     "Game Developer", "Web Developer", "WordPress Developer", "Shopify Developer",
-     "Cloud Engineer", "Azure Engineer", "Google Cloud Engineer",
-     "Junior QA Engineer", "QA Engineer", "Senior QA Engineer", "Lead QA Engineer",
-      "QA Team Lead", "QA Manager", "Test Automation Engineer", "Senior Test Automation Engineer",
-      "Junior Test Automation Engineer", "Performance Test Engineer", "Senior Performance Test Engineer",
-      "Manual Tester", "Senior Manual Tester", "Junior Manual Tester", "Selenium Tester",
-      "Senior Selenium Tester", "Junior Selenium Tester", "API Test Engineer", "Mobile Test Engineer",
-      "Game Tester", "Usability Tester", "Security Tester", "Database Tester",
-      "ETL Tester", "Compatibility Tester", "Regression Tester", "Load Test Engineer",
-      "Stress Test Engineer", "Volume Test Engineer", "Test Analyst", "Senior Test Analyst",
-      "Junior Test Analyst", "Test Consultant", "Test Architect", "SDET (Software Development Engineer in Test)",
-      "Senior SDET", "Junior SDET", "Quality Assurance Specialist", "Quality Control Analyst",
-     "Cybersecurity Analyst", "Security Engineer", "Penetration Tester",
-     "Information Security Specialist", "Network Engineer", "Network Administrator",
-     "Database Administrator", "Database Developer", "SQL Developer",
-     "System Administrator", "Linux Administrator", "Windows Administrator",
-     "Technical Lead", "Team Lead", "Engineering Manager", "Technical Manager",
-     "Product Manager", "Project Manager", "Program Manager", "Scrum Master",
-     "Agile Coach", "Business Analyst", "Systems Analyst", "Requirements Analyst",
-     "HR Manager", "HR Executive", "HR Recruiter", "Senior HR Recruiter", "Junior HR Recruiter",
-     "HR Assistant", "HR Coordinator", "HR Business Partner", "HR Generalist",
-     "Talent Acquisition Specialist", "Recruitment Consultant", "HR Analyst",
-     "UI Designer", "UX Designer", "UI/UX Designer", "Graphic Designer", "Web Designer",
-     "Technical Writer", "Documentation Specialist", "IT Support Specialist",
-     "Help Desk Technician", "Desktop Support Technician", "IT Consultant",
-     "Solutions Architect", "Software Architect", "Enterprise Architect",
-     "Cloud Architect", "Security Architect", "Blockchain Developer",
-     "Smart Contract Developer", "IoT Developer", "Embedded Systems Engineer",
-     "Firmware Engineer", "Hardware Engineer", "Research and Development Engineer",
-     "Software Development Manager", "Chief Technology Officer (CTO)",
-     "VP Engineering", "Director of Engineering"
-  ];
+  const allDesignations = DESIGNATIONS;
 
   useEffect(() => {
     const getDepartments = async () => {

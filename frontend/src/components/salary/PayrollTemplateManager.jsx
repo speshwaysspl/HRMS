@@ -4,18 +4,7 @@ import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
-
-const BANKS = [
-  "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank",
-  "Punjab National Bank", "Bank of Baroda", "Yes Bank", "IndusInd Bank", "Union Bank of India",
-  "Canara Bank", "Central Bank of India", "Bank of India", "Indian Bank", "Bank of Maharashtra",
-  "UCO Bank", "Indian Overseas Bank", "Oriental Bank of Commerce", "Allahabad Bank", "Syndicate Bank",
-  "Corporation Bank", "Dena Bank", "Andhra Bank", "Bharat Bank", "Central Bank of India",
-  "Indian Bank", "Indian Overseas Bank", "Punjab & Sind Bank", "United Bank of India", "South Indian Bank",
-  "Tamilnad Mercantile Bank", "Karur Vysya Bank", "Lakshmi Vilas Bank", "City Union Bank", "Federal Bank",
-  "DCB Bank", "RBL Bank", "IDFC FIRST Bank", "Bandhan Bank", "AU Small Finance Bank", "ESAF Small Finance Bank",
-  "Jana Small Finance Bank", "Equitas Small Finance Bank", "Suryoday Small Finance Bank", "Fincare Small Finance Bank"
-];
+import { BANKS } from "../../utils/constants";
 
 const PayrollTemplateManager = () => {
   const [template, setTemplate] = useState({
@@ -79,18 +68,30 @@ const PayrollTemplateManager = () => {
         setTemplates(response.data.templates);
       }
     } catch (error) {
-      console.error("Error loading templates:", error);
+      // Silently handle error - templates will remain empty
     }
   };
 
   // Auto-fetch employee details when employee ID is entered
   const handleEmployeeIdChange = async (e) => {
     const empId = e.target.value;
-    setTemplate(prev => ({ ...prev, employeeId: empId }));
+    setTemplate(prev => ({ 
+      ...prev, 
+      employeeId: empId,
+      // Clear previous employee data when typing new ID
+      ...(empId.length < 1 && {
+        employeeObjectId: "",
+        employeeName: "",
+        designation: "",
+        department: "",
+        templateName: ""
+      })
+    }));
     
-    if (empId.length >= 3) { // Start fetching after 3 characters
+    if (empId.length >= 1) { // Start fetching after 1 character
       try {
-        const response = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
+        // Use dedicated employee search endpoint for better performance
+        const response = await axios.get(`${API_BASE}/api/employee/search?employeeId=${empId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
           }
@@ -98,19 +99,42 @@ const PayrollTemplateManager = () => {
         
         if (response.data.success) {
           const employee = response.data.employee;
-          setTemplate(prev => ({
-            ...prev,
-            employeeObjectId: employee._id,
-            employeeName: employee.name,
-            designation: employee.designation,
-            department: employee.department,
-            templateName: `${employee.name} - Default Template`
-          }));
+          
+          // Fetch full employee details using the employee ID endpoint
+          const detailsResponse = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          });
+          
+          if (detailsResponse.data.success) {
+            const employeeDetails = detailsResponse.data.employee;
+            setTemplate(prev => ({
+              ...prev,
+              employeeObjectId: employeeDetails._id,
+              employeeName: employeeDetails.name,
+              designation: employeeDetails.designation,
+              department: employeeDetails.department,
+              templateName: `${employeeDetails.name} - Default Template`
+            }));
+          }
         }
       } catch (error) {
-        console.error("Error fetching employee details:", error);
         if (error.response && error.response.status === 404) {
-          console.log("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
+          // Clear fields when employee not found
+          setTemplate(prev => ({
+            ...prev,
+            employeeObjectId: "",
+            employeeName: "",
+            designation: "",
+            department: "",
+            templateName: ""
+          }));
+          
+          // Show user-friendly error message
+          alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
+        } else {
+          console.error("Error fetching employee details:", error);
         }
       }
     }
@@ -282,7 +306,6 @@ const PayrollTemplateManager = () => {
         loadTemplates();
       }
     } catch (error) {
-      console.error("Error saving template:", error);
       alert(error.response?.data?.error || "Error saving template");
     } finally {
       setLoading(false);
@@ -316,7 +339,6 @@ const PayrollTemplateManager = () => {
         loadTemplates();
       }
     } catch (error) {
-      console.error("Error deleting template:", error);
       alert(error.response?.data?.error || "Error deleting template");
     }
   };
@@ -334,7 +356,6 @@ const PayrollTemplateManager = () => {
         loadTemplates();
       }
     } catch (error) {
-      console.error("Error setting default template:", error);
       alert(error.response?.data?.error || "Error setting default template");
     }
   };

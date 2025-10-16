@@ -18,7 +18,7 @@ const View = () => {
       try {
         // If no ID is provided (main salary dashboard), don't make API call
         if (!id || id === undefined || id === null || id === '') {
-          console.log('No ID provided, skipping API call');
+    
           setSalaries([]);
     
           return;
@@ -26,7 +26,7 @@ const View = () => {
         
         // Additional validation to ensure we have a valid user role
         if (!user || !user.role) {
-          console.error('User or user role not available');
+  
           return;
         }
         
@@ -295,7 +295,7 @@ const View = () => {
   return (
     <div className="overflow-x-auto p-5">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Salary Management</h2>
+        <h2 className="text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Salary Management</h2>
         {user?.role === 'admin' && (
           <div className="space-x-3">
             <button

@@ -26,7 +26,6 @@ const AnnouncementButtons = ({ Id }) => {
       // Simple refresh — you can improve by lifting state up
       window.location.reload();
     } catch (err) {
-      console.error("Delete error", err);
       alert(err.response?.data?.error || "Could not delete announcement");
     }
   };

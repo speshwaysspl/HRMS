@@ -5,24 +5,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
+import { BANKS, MONTHS } from "../../utils/constants";
 import PayslipPreview from "./PayslipPreview";
-
-const BANKS = [
-  "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank",
-  "Punjab National Bank", "Bank of Baroda", "Yes Bank", "IndusInd Bank", "Union Bank of India",
-  "Canara Bank", "Central Bank of India", "Bank of India", "Indian Bank", "Bank of Maharashtra",
-  "UCO Bank", "Indian Overseas Bank", "Oriental Bank of Commerce", "Allahabad Bank", "Syndicate Bank",
-  "Corporation Bank", "Dena Bank", "Andhra Bank", "Bharat Bank", "Central Bank of India",
-  "Indian Bank", "Indian Overseas Bank", "Punjab & Sind Bank", "United Bank of India", "South Indian Bank",
-  "Tamilnad Mercantile Bank", "Karur Vysya Bank", "Lakshmi Vilas Bank", "City Union Bank", "Federal Bank",
-  "DCB Bank", "RBL Bank", "IDFC FIRST Bank", "Bandhan Bank", "AU Small Finance Bank", "ESAF Small Finance Bank",
-  "Jana Small Finance Bank", "Equitas Small Finance Bank", "Suryoday Small Finance Bank", "Fincare Small Finance Bank"
-];
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
 
 const PayslipGenerator = () => {
   const [payslip, setPayslip] = useState({
@@ -87,7 +71,7 @@ const PayslipGenerator = () => {
     const empId = e.target.value;
     setPayslip(prev => ({ ...prev, employeeId: empId }));
     
-    if (empId.length >= 3) { // Start fetching after 3 characters
+    if (empId.length >= 1) { // Start fetching after 1 character
       try {
         const response = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
           headers: {
@@ -96,26 +80,12 @@ const PayslipGenerator = () => {
         });
         
         if (response.data.success) {
-          // Log the entire response to understand its structure
-          console.log("API Response:", response.data);
-          
           const employee = response.data.employee;
-          
-          // Log the employee data to check available fields
-          console.log("Employee data:", employee);
-          console.log("Employee fields:", Object.keys(employee));
-          
-          // Get the joining date from the employee data
-          console.log("Employee joining date:", employee.joiningDate);
           
           // Format the joining date if found in IST
           const formattedJoiningDate = employee.joiningDate ? toISTDateString(new Date(employee.joiningDate)) : "";
           
-          // Alert if no joining date was found
-          if (!formattedJoiningDate) {
-            console.warn("No joining date found for employee ID:", payslip.employeeId);
-            // You could show an alert to the user here if needed
-          }
+          // Note: Joining date may be missing for some employees
           
           setPayslip(prev => ({
             ...prev,
@@ -145,9 +115,8 @@ const PayslipGenerator = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching employee details:", error);
         if (error.response && error.response.status === 404) {
-          console.log("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
+          alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
         }
       }
     }
@@ -201,7 +170,6 @@ const PayslipGenerator = () => {
       
       return daysInMonth;
     } catch (error) {
-      console.error("Error calculating working days:", error);
       // Fallback calculation for total calendar days
       const daysInMonth = new Date(year, month, 0).getDate();
       
@@ -241,7 +209,6 @@ const PayslipGenerator = () => {
         }));
       }
     } catch (error) {
-      console.error("Error calculating LOP:", error);
       alert("Error calculating LOP. Please try again.");
     }
   };
@@ -380,7 +347,6 @@ const PayslipGenerator = () => {
         navigate("/admin-dashboard/salary");
       }
     } catch (error) {
-      console.error("Error generating payslip:", error);
       alert(error.response?.data?.error || "Error generating payslip");
     } finally {
       setLoading(false);
@@ -406,7 +372,6 @@ const PayslipGenerator = () => {
         setShowPreview(true);
       }
     } catch (error) {
-      console.error("Error generating preview:", error);
       alert(error.response?.data?.error || "Error generating preview");
     } finally {
       setLoading(false);
@@ -433,7 +398,6 @@ const PayslipGenerator = () => {
         alert("Payslip sent to employee email successfully!");
       }
     } catch (error) {
-      console.error("Error sending email:", error);
       alert(error.response?.data?.error || "Error sending email");
     } finally {
       setEmailLoading(false);
@@ -460,7 +424,6 @@ const PayslipGenerator = () => {
         navigate("/admin-dashboard/salary");
       }
     } catch (error) {
-      console.error("Error generating payslip:", error);
       alert(error.response?.data?.error || "Error generating payslip");
     } finally {
       setLoading(false);

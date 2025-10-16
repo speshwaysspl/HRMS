@@ -37,6 +37,7 @@ import AdminFeedback from "./components/feedback/AdminFeedback";
  
 // Employee Components
 import Summary from "./components/EmployeeDashboard/Summary";
+import Profile from "./components/EmployeeDashboard/Profile";
 import LeaveList from "./components/leave/List";
 import AddLeave from "./components/leave/Add";
 import Setting from "./components/EmployeeDashboard/Setting";
@@ -125,7 +126,7 @@ function App() {
           <Route index element={<Summary />} />
  
           {/* Profile */}
-          <Route path="profile/:id" element={<View />} />
+          <Route path="profile/:id" element={<Profile />} />
  
           {/* Leaves */}
           <Route path="leaves/:id" element={<LeaveList />} />

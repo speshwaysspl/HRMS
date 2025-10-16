@@ -63,12 +63,11 @@ const GoogleMap = React.forwardRef(({ center, zoom, children }, mapRef) => {
       // Add zoom change listener to ensure marker visibility
       newMap.addListener('zoom_changed', () => {
         const currentZoom = newMap.getZoom();
-        console.log('🔍 Zoom changed to:', currentZoom);
       });
 
-      // Add map click listener for debugging
+      // Add map click listener
       newMap.addListener('click', (event) => {
-        console.log('🗺️ Map clicked at:', event.latLng.toJSON());
+        // Map click handled
       });
 
       setMap(newMap);
@@ -240,16 +239,12 @@ const Attendance = () => {
     return new Promise((resolve, reject) => {
       // Check if geolocation is supported
       if (!navigator.geolocation) {
-        console.error("Geolocation is not supported by this browser.");
         reject(new Error("Geolocation not supported"));
         return;
       }
 
-      console.log("🔍 Requesting current location...");
-      
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
-          console.log("✅ Location obtained:", coords);
           const { latitude, longitude, accuracy } = coords;
           let area = "Unknown Area";
           let locationAccuracy = "Unknown";
@@ -274,23 +269,21 @@ const Attendance = () => {
               geocoder.geocode({ location: latlng }, (results, status) => {
                 if (status === "OK" && results[0]) {
                   area = results[0].formatted_address;
-                  console.log("📍 Address resolved:", area);
                 } else {
-                  console.warn("Geocoding failed:", status);
+                  // Geocoding failed, using coordinates only
                 }
                 resolve({ latitude, longitude, area, accuracy: locationAccuracy });
               });
             } else {
-              console.warn("Google Maps not loaded, using coordinates only");
+              // Google Maps not loaded, using coordinates only
               resolve({ latitude, longitude, area, accuracy: locationAccuracy });
             }
           } catch (err) {
-            console.error("Error fetching location from Google:", err);
+            // Error fetching location from Google, using coordinates only
             resolve({ latitude, longitude, area, accuracy: locationAccuracy });
           }
         },
         (error) => {
-          console.error("❌ Geolocation error:", error);
           let errorMessage = "Unknown location error";
           
           switch (error.code) {
@@ -305,7 +298,6 @@ const Attendance = () => {
               break;
           }
           
-          console.error("Location error details:", errorMessage);
           reject(new Error(errorMessage));
         },
         { 
@@ -318,14 +310,11 @@ const Attendance = () => {
   }, []);
  
   useEffect(() => {
-    console.log("🚀 Initializing location detection...");
     getLocation()
       .then((loc) => {
-        console.log("✅ Location set successfully:", loc);
         setTracker((prev) => ({ ...prev, ...loc }));
       })
       .catch((error) => {
-        console.error("❌ Failed to get location:", error);
         // Set a default location or show error message
         setTracker((prev) => ({ 
           ...prev, 
@@ -359,7 +348,7 @@ const Attendance = () => {
           }));
         }
       } catch (err) {
-        console.error("Error fetching today record:", err);
+        // Error fetching today's record
       }
     };
     fetchToday();
@@ -382,7 +371,7 @@ const Attendance = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
-      console.error("Error saving breaks:", err);
+      // Error saving breaks
     }
   };
 
@@ -434,7 +423,6 @@ const Attendance = () => {
  
       setTodayRecord(attendanceData);
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || "Error saving attendance.");
     } finally {
       setLoading(false);
@@ -444,7 +432,7 @@ const Attendance = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex justify-center py-4 md:py-8 px-4">
       <div className="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-4 md:p-6">
-        <h2 className="text-2xl md:text-4xl font-extrabold text-blue-600 mb-4 md:mb-6 text-center">
+        <h2 className="text-2xl md:text-4xl font-extrabold text-blue-600 mb-4 md:mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
           Attendance Tracker
         </h2>
  
@@ -609,7 +597,6 @@ const Attendance = () => {
                       setLoading(false);
                     })
                     .catch((error) => {
-                      console.error("Location retry failed:", error);
                       setTracker((prev) => ({ 
                         ...prev, 
                         area: `Location Error: ${error.message}` 

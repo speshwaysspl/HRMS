@@ -208,7 +208,7 @@ const EmployeeFeedback = () => {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2', fontFamily: 'Times New Roman, serif' }}>
           My Feedback
         </Typography>
         <Button

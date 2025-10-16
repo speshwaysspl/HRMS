@@ -60,7 +60,6 @@ const PayslipHistory = () => {
         setPayslips(response.data.payslips);
       }
     } catch (error) {
-      console.error("Error loading payslips:", error);
       alert("Error loading payslip history");
     } finally {
       setLoading(false);
@@ -77,7 +76,7 @@ const PayslipHistory = () => {
         setDepartments(response.data.departments);
       }
     } catch (error) {
-      console.error("Error loading departments:", error);
+      // Silently handle error - departments will remain empty
     }
   };
 
@@ -174,7 +173,6 @@ const PayslipHistory = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading payslip:", error);
       alert("Error downloading payslip. Please try again.");
     }
   };
@@ -198,7 +196,6 @@ const PayslipHistory = () => {
         loadPayslips();
       }
     } catch (error) {
-      console.error("Error generating monthly payslips:", error);
       
       // Handle specific error for no default templates
       if (error.response?.data?.details) {
@@ -270,7 +267,7 @@ const PayslipHistory = () => {
         setEmployees(employeesWithTemplates);
       }
     } catch (error) {
-      console.error("Error fetching employees:", error);
+      // Silently handle error - employees will remain empty
     }
   };
 
@@ -346,7 +343,6 @@ const PayslipHistory = () => {
         setSelectedEmployees([]);
       }
     } catch (error) {
-      console.error("Error generating selected payslips:", error);
       
       if (error.response?.data?.details) {
         const details = error.response.data.details;

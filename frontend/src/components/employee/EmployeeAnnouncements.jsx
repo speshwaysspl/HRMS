@@ -59,7 +59,7 @@ const EmployeeAnnouncements = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2">📢 Announcements</h1>
+          <h1 className="text-2xl md:text-4xl font-bold text-blue-600 mb-2" style={{ fontFamily: 'Times New Roman, serif' }}>📢 Announcements</h1>
           <p className="text-gray-600 text-sm md:text-base">Stay updated with the latest company news</p>
         </motion.div>
 

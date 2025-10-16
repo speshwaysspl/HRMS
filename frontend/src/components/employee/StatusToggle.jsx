@@ -33,10 +33,10 @@ const StatusToggle = ({ employeeId, currentStatus, onStatusChange }) => {
           onStatusChange(employeeId, newStatus);
         }
       } else {
-        console.error('Failed to update status:', response.data.error);
+        alert('Failed to update status: ' + response.data.error);
       }
     } catch (error) {
-      console.error('Error updating status:', error);
+      alert('Error updating status');
     } finally {
       setIsLoading(false);
     }

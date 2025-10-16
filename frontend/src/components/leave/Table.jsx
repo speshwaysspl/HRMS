@@ -66,7 +66,7 @@ const Table = () => {
       {filteredLeaves ? (
         <div className="p-4 md:p-6">
           <div className="text-center mb-4 md:mb-6">
-            <h3 className="text-xl md:text-2xl font-bold">Manage Leaves</h3>
+            <h3 className="text-xl md:text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Manage Leaves</h3>
           </div>
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-4">
             <input

@@ -40,9 +40,8 @@ const AdminSidebar = () => {
   ];
 
   const salaryLinks = [
-    { to: "/admin-dashboard/employees", label: "View Salary Records", icon: <FaClipboardList /> },
-    { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaFileInvoiceDollar /> },
     { to: "/admin-dashboard/salary/template-manager", label: "Manage Templates", icon: <FaClipboardList /> },
+    { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaFileInvoiceDollar /> },
     { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History", icon: <FaHistory /> },
   ];
 
@@ -90,7 +89,7 @@ const AdminSidebar = () => {
         className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col ${isDesktop ? 'translate-x-0' : ''}`}
       >
         {/* Header */}
-       <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-16 flex items-center justify-center shadow-md px-5">
+       <div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5">
   {/* Logo Image */}
   <img 
     src="/images/Logo.jpg"
@@ -131,7 +130,7 @@ const AdminSidebar = () => {
               >
                 {link.icon}
               </motion.span>
-              <span className="text-sm font-semibold tracking-wide">
+              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
                 {link.label}
               </span>
               <FaChevronRight className="ml-auto text-xs opacity-70" />
@@ -159,7 +158,7 @@ const AdminSidebar = () => {
               >
                 <FaMoneyBillWave />
               </motion.span>
-              <span className="text-sm font-semibold tracking-wide">
+              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
                 Salary Management
               </span>
               <motion.span
@@ -195,7 +194,7 @@ const AdminSidebar = () => {
                       onClick={() => !isDesktop && setIsOpen(false)}
                     >
                       <span className="text-base">{subLink.icon}</span>
-                      <span className="font-medium">{subLink.label}</span>
+                      <span className="font-medium" style={{ fontFamily: 'Times New Roman, serif' }}>{subLink.label}</span>
                     </NavLink>
                   ))}
                 </motion.div>
@@ -217,7 +216,7 @@ const AdminSidebar = () => {
             >
               <FaSignOutAlt />
             </motion.span>
-            <span className="text-sm font-semibold tracking-wide">
+            <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
               Logout
             </span>
             <FaChevronRight className="ml-auto text-xs opacity-70" />

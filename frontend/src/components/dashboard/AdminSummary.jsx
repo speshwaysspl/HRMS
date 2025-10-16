@@ -52,7 +52,7 @@ const AdminSummary = () => {
         if (error.response) {
           alert(error.response.data.error);
         }
-        console.log(error.message);
+
       }
     };
     fetchSummary();

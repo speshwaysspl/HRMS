@@ -28,7 +28,7 @@ const EditAnnouncement = () => {
           if (a.image) setPreview(`${API_BASE}/${a.image}`);
         }
       } catch (error) {
-        console.error("Failed to load announcement:", error);
+        alert("Failed to load announcement");
       }
     };
     fetchAnnouncement();
@@ -49,7 +49,7 @@ const EditAnnouncement = () => {
 
       navigate("/admin-dashboard/announcements");
     } catch (error) {
-      console.error("Failed to update announcement:", error);
+      alert("Failed to update announcement");
     }
   };
 

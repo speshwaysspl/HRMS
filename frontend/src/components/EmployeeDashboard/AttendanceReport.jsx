@@ -35,15 +35,68 @@ const AttendanceReport = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         
-        const hasApprovedLeave = leaveResponse.data.some(leave => 
+        const approvedLeave = leaveResponse.data.find(leave => 
           leave.status === "Approved" && 
           new Date(leave.startDate) <= new Date(selectedDate) && 
           new Date(leave.endDate) >= new Date(selectedDate)
         );
         
-        if (hasApprovedLeave) {
-          setAttendanceStatus("Leave");
-          setAttendance(null); // No attendance record needed for leave days
+        if (approvedLeave) {
+          // Check if it's work from home leave
+          if (approvedLeave.leaveType === "Work from Home") {
+            // For work from home, we need to check attendance record for time conditions
+            const { data: attendanceData } = await axios.get(
+              `${API_BASE}/api/attendance/report?date=${selectedDate}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            const record = attendanceData?.length > 0 ? attendanceData[0] : null;
+            
+            if (record?.inTime && record?.outTime) {
+              // Calculate working hours for WFH
+              const [inHour, inMin] = record.inTime.split(":").map(Number);
+              const [outHour, outMin] = record.outTime.split(":").map(Number);
+              
+              let workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+              if (workingHours < 0) workingHours += 24;
+              
+              // Subtract break times if any
+              if (record.breaks && record.breaks.length > 0) {
+                record.breaks.forEach(breakPeriod => {
+                  if (breakPeriod.start && breakPeriod.end) {
+                    const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                    const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                    
+                    let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                    if (breakHours < 0) breakHours += 24;
+                    
+                    workingHours -= breakHours;
+                  }
+                });
+              }
+              
+              // Combine WFH with time-based status
+              if (workingHours >= 8) {
+                setAttendanceStatus(workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present");
+              } else if (workingHours >= 4) {
+                setAttendanceStatus("Work from Home - Half Day");
+              } else if (workingHours > 0) {
+                setAttendanceStatus("Work from Home - Incomplete");
+              } else {
+                setAttendanceStatus("Work from Home - Not Marked");
+              }
+              setAttendance(record);
+            } else if (record?.inTime && !record?.outTime) {
+              setAttendanceStatus("Work from Home - Incomplete");
+              setAttendance(record);
+            } else {
+              setAttendanceStatus("Work from Home - Not Marked");
+              setAttendance(null);
+            }
+          } else {
+            setAttendanceStatus("Leave");
+            setAttendance(null);
+          }
           setLoading(false);
           return;
         }
@@ -98,15 +151,14 @@ const AttendanceReport = () => {
             // Only in-time is marked, no out-time
             status = "Incomplete";
           } else {
-            status = "Absent";
+            status = "Not Yet";
           }
           
           setAttendanceStatus(status);
         } else {
-          setAttendanceStatus("Absent");
+          setAttendanceStatus("Not Yet");
         }
       } catch (err) {
-        console.error(err);
         setAttendance(null);
       } finally {
         setLoading(false);
@@ -129,10 +181,9 @@ const AttendanceReport = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("Monthly API Response:", data);
+      
       setMonthlyData(data);
     } catch (err) {
-      console.error("Error fetching monthly attendance:", err);
       setMonthlyData([]);
     } finally {
       setMonthlyLoading(false);
@@ -174,7 +225,7 @@ const AttendanceReport = () => {
  
   return (
     <div className="p-8 min-h-screen bg-gray-100">
-      <h2 className="text-4xl font-extrabold text-blue-700 mb-6 text-center">
+      <h2 className="text-4xl font-extrabold text-blue-700 mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
         Attendance Report
       </h2>
 
@@ -241,7 +292,7 @@ const AttendanceReport = () => {
       {/* Daily Report Content */}
       {viewMode === "daily" && (
         <>
-          {attendanceStatus === "Leave" ? (
+          {attendanceStatus === "Leave" || attendanceStatus.startsWith("Work from Home") ? (
             <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-300 space-y-4">
               <div className="mb-4">
                 <strong>Status: </strong>
@@ -250,7 +301,9 @@ const AttendanceReport = () => {
                 </span>
               </div>
               <p className="text-center text-lg text-gray-600">
-                You are on approved leave for {selectedDate}
+                {attendanceStatus.startsWith("Work from Home")
+                  ? `You are working from home on ${selectedDate}` 
+                  : `You are on approved leave for ${selectedDate}`}
               </p>
             </div>
           ) : !attendance ? (
@@ -261,17 +314,31 @@ const AttendanceReport = () => {
             <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-300 space-y-4">
               <div className="mb-4">
                 <strong>Status: </strong>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${attendanceStatus === "Present" 
-                  ? "bg-green-100 text-green-600" 
-                  : attendanceStatus === "Present + Overtime" 
-                  ? "bg-green-200 text-green-800" 
-                  : attendanceStatus === "Half-Day" 
-                  ? "bg-orange-100 text-orange-600" 
-                  : attendanceStatus === "Incomplete" 
-                  ? "bg-yellow-100 text-yellow-600" 
-                  : attendanceStatus === "Leave" 
-                  ? "bg-blue-100 text-blue-600" 
-                  : "bg-red-100 text-red-600"}`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  attendanceStatus === "Present" 
+                    ? "bg-green-100 text-green-600" 
+                    : attendanceStatus === "Present + Overtime" 
+                    ? "bg-green-200 text-green-800" 
+                    : attendanceStatus === "Half-Day" 
+                    ? "bg-orange-100 text-orange-600" 
+                    : attendanceStatus === "Incomplete" 
+                    ? "bg-yellow-100 text-yellow-600" 
+                    : attendanceStatus === "Leave" 
+                    ? "bg-blue-100 text-blue-600" 
+                    : attendanceStatus === "Work from Home - Present" 
+                    ? "bg-purple-100 text-purple-600" 
+                    : attendanceStatus === "Work from Home + Overtime" 
+                    ? "bg-purple-200 text-purple-800" 
+                    : attendanceStatus === "Work from Home - Half Day" 
+                    ? "bg-purple-50 text-purple-500" 
+                    : attendanceStatus === "Work from Home - Incomplete" 
+                    ? "bg-yellow-100 text-yellow-600" 
+                    : attendanceStatus === "Work from Home - Not Marked" 
+                    ? "bg-gray-100 text-gray-600" 
+                    : attendanceStatus === "Not Yet" 
+                    ? "bg-gray-100 text-gray-600" 
+                    : "bg-red-100 text-red-600"
+                }`}>
                   {attendanceStatus}
                 </span>
               </div>
@@ -334,7 +401,7 @@ const AttendanceReport = () => {
                 </div>
                 <div className="bg-red-50 p-4 rounded-lg text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {monthlyData.filter(d => d.status === "Absent").length}
+                    {monthlyData.filter(d => d.status === "Absent" || d.status === "Leave").length}
                   </div>
                   <div className="text-sm text-gray-600">Absent Days</div>
                 </div>
@@ -344,11 +411,11 @@ const AttendanceReport = () => {
                   </div>
                   <div className="text-sm text-gray-600">Half Days</div>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {monthlyData.filter(d => d.status === "Leave").length}
+                <div className="bg-purple-50 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {monthlyData.filter(d => d.status.startsWith("Work from Home")).length}
                   </div>
-                  <div className="text-sm text-gray-600">Leave Days</div>
+                  <div className="text-sm text-gray-600">Work from Home</div>
                 </div>
               </div>
 
@@ -383,6 +450,18 @@ const AttendanceReport = () => {
                               ? "bg-yellow-100 text-yellow-600" 
                               : record.status === "Leave" 
                               ? "bg-blue-100 text-blue-600" 
+                              : record.status === "Work from Home - Present" 
+                              ? "bg-purple-100 text-purple-600" 
+                              : record.status === "Work from Home + Overtime" 
+                              ? "bg-purple-200 text-purple-800" 
+                              : record.status === "Work from Home - Half Day" 
+                              ? "bg-purple-50 text-purple-500" 
+                              : record.status === "Work from Home - Incomplete" 
+                              ? "bg-yellow-100 text-yellow-600" 
+                              : record.status === "Work from Home - Not Marked" 
+                              ? "bg-gray-100 text-gray-600" 
+                              : record.status === "Not Yet" 
+                              ? "bg-gray-100 text-gray-600" 
                               : "bg-red-100 text-red-600"
                           }`}>
                             {record.status}
