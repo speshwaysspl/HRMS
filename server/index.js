@@ -29,7 +29,7 @@ const app = express();
 
 // Initialize HTTP server and Socket.IO
 const httpServer = createServer(app);
-const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5174","https://speshwayhrms.com"].filter(Boolean);
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5174","https://speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: allowedOrigins,
