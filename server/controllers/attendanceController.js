@@ -106,7 +106,7 @@ export const getAllAttendance = async (req, res) => {
         const record = await Attendance.findOne({ userId: emp._id, date });
         // Calculate working hours if both in and out times are available
         let workingHours = 0;
-        let attendanceStatus = "Absent";
+        let attendanceStatus = "Not Yet";
         
         // Check if there's a leave request approved for this date
         const leaveCheck = await Leave.findOne({
@@ -118,7 +118,50 @@ export const getAllAttendance = async (req, res) => {
         const hasApprovedLeave = !!leaveCheck;
         
         if (hasApprovedLeave) {
-          attendanceStatus = "Leave";
+          // Check if it's work from home leave
+          if (leaveCheck.leaveType === "Work from Home") {
+            // For work from home, also check time conditions if attendance record exists
+            if (record?.inTime && record?.outTime) {
+              // Calculate working hours for WFH
+              const [inHour, inMin] = record.inTime.split(":").map(Number);
+              const [outHour, outMin] = record.outTime.split(":").map(Number);
+              
+              workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+              if (workingHours < 0) workingHours += 24;
+              
+              // Subtract break times if any
+              if (record.breaks && record.breaks.length > 0) {
+                record.breaks.forEach(breakPeriod => {
+                  if (breakPeriod.start && breakPeriod.end) {
+                    const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                    const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                    
+                    let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                    if (breakHours < 0) breakHours += 24;
+                    
+                    workingHours -= breakHours;
+                  }
+                });
+              }
+              
+              // Combine WFH with time-based status
+              if (workingHours >= 8) {
+                attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+              } else if (workingHours >= 4) {
+                attendanceStatus = "Work from Home - Half Day";
+              } else if (workingHours > 0) {
+                attendanceStatus = "Work from Home - Incomplete";
+              } else {
+                attendanceStatus = "Work from Home - Not Marked";
+              }
+            } else if (record?.inTime && !record?.outTime) {
+              attendanceStatus = "Work from Home - Incomplete";
+            } else {
+              attendanceStatus = "Work from Home - Not Marked";
+            }
+          } else {
+            attendanceStatus = "Leave";
+          }
         } else if (record?.inTime) {
           if (record?.outTime) {
             // Calculate working hours
@@ -155,6 +198,15 @@ export const getAllAttendance = async (req, res) => {
           } else {
             // Only in-time is marked, no out-time
             attendanceStatus = "Incomplete";
+          }
+        } else {
+          // No attendance record - check if date has passed
+          const today = new Date();
+          const currentDateObj = new Date(date);
+          
+          // If the date has passed and no attendance record exists, mark as Absent
+          if (currentDateObj < today && !hasApprovedLeave) {
+            attendanceStatus = "Absent";
           }
         }
        
@@ -218,7 +270,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
       
       // Calculate working hours if both in and out times are available
       let workingHours = 0;
-      let attendanceStatus = "Absent";
+      let attendanceStatus = "Not Yet";
       
       // Check if there's a leave request approved for this date
       const leaveCheck = await Leave.findOne({
@@ -230,7 +282,50 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
       const hasApprovedLeave = !!leaveCheck;
       
       if (hasApprovedLeave) {
-        attendanceStatus = "Leave";
+        // Check if it's work from home leave
+        if (leaveCheck.leaveType === "Work from Home") {
+          // For work from home, also check time conditions if attendance record exists
+          if (record?.inTime && record?.outTime) {
+            // Calculate working hours for WFH
+            const [inHour, inMin] = record.inTime.split(":").map(Number);
+            const [outHour, outMin] = record.outTime.split(":").map(Number);
+            
+            workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+            if (workingHours < 0) workingHours += 24;
+            
+            // Subtract break times if any
+            if (record.breaks && record.breaks.length > 0) {
+              record.breaks.forEach(breakPeriod => {
+                if (breakPeriod.start && breakPeriod.end) {
+                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                  
+                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                  if (breakHours < 0) breakHours += 24;
+                  
+                  workingHours -= breakHours;
+                }
+              });
+            }
+            
+            // Combine WFH with time-based status
+            if (workingHours >= 8) {
+              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+            } else if (workingHours >= 4) {
+              attendanceStatus = "Work from Home - Half Day";
+            } else if (workingHours > 0) {
+              attendanceStatus = "Work from Home - Incomplete";
+            } else {
+              attendanceStatus = "Work from Home - Not Marked";
+            }
+          } else if (record?.inTime && !record?.outTime) {
+            attendanceStatus = "Work from Home - Incomplete";
+          } else {
+            attendanceStatus = "Work from Home - Not Marked";
+          }
+        } else {
+          attendanceStatus = "Leave";
+        }
       } else if (record?.inTime) {
         if (record?.outTime) {
           // Calculate working hours
@@ -267,6 +362,15 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
         } else {
           // Only in-time is marked, no out-time
           attendanceStatus = "Incomplete";
+        }
+      } else {
+        // No attendance record - check if date has passed
+        const today = new Date();
+        const currentDateObj = new Date(currentDate);
+        
+        // If the date has passed and no attendance record exists, mark as Absent
+        if (currentDateObj < today && !hasApprovedLeave) {
+          attendanceStatus = "Absent";
         }
       }
      
@@ -329,7 +433,7 @@ export const getMonthlyAttendance = async (req, res) => {
       const record = records.find((r) => r.date === currentDate);
       // Calculate working hours if both in and out times are available
       let workingHours = 0;
-      let attendanceStatus = "Absent";
+      let attendanceStatus = "Not Yet";
       
       // Check if there's a leave request approved for this date
       const leaveCheck = await Leave.findOne({
@@ -341,7 +445,50 @@ export const getMonthlyAttendance = async (req, res) => {
       const hasApprovedLeave = !!leaveCheck;
       
       if (hasApprovedLeave) {
-        attendanceStatus = "Leave";
+        // Check if it's work from home leave
+        if (leaveCheck.leaveType === "Work from Home") {
+          // For work from home, also check time conditions if attendance record exists
+          if (record?.inTime && record?.outTime) {
+            // Calculate working hours for WFH
+            const [inHour, inMin] = record.inTime.split(":").map(Number);
+            const [outHour, outMin] = record.outTime.split(":").map(Number);
+            
+            workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+            if (workingHours < 0) workingHours += 24;
+            
+            // Subtract break times if any
+            if (record.breaks && record.breaks.length > 0) {
+              record.breaks.forEach(breakPeriod => {
+                if (breakPeriod.start && breakPeriod.end) {
+                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                  
+                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                  if (breakHours < 0) breakHours += 24;
+                  
+                  workingHours -= breakHours;
+                }
+              });
+            }
+            
+            // Combine WFH with time-based status
+            if (workingHours >= 8) {
+              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+            } else if (workingHours >= 4) {
+              attendanceStatus = "Work from Home - Half Day";
+            } else if (workingHours > 0) {
+              attendanceStatus = "Work from Home - Incomplete";
+            } else {
+              attendanceStatus = "Work from Home - Not Marked";
+            }
+          } else if (record?.inTime && !record?.outTime) {
+            attendanceStatus = "Work from Home - Incomplete";
+          } else {
+            attendanceStatus = "Work from Home - Not Marked";
+          }
+        } else {
+          attendanceStatus = "Leave";
+        }
       } else if (record?.inTime) {
         if (record?.outTime) {
           // Calculate working hours
@@ -378,6 +525,15 @@ export const getMonthlyAttendance = async (req, res) => {
         } else {
           // Only in-time is marked, no out-time
           attendanceStatus = "Incomplete";
+        }
+      } else {
+        // No attendance record - check if date has passed
+        const today = new Date();
+        const currentDateObj = new Date(currentDate);
+        
+        // If the date has passed and no attendance record exists, mark as Absent
+        if (currentDateObj < today && !hasApprovedLeave) {
+          attendanceStatus = "Absent";
         }
       }
      
@@ -433,7 +589,50 @@ export const exportAttendanceExcel = async (req, res) => {
         let attendanceStatus = "Absent";
         
         if (hasApprovedLeave) {
-          attendanceStatus = "Leave";
+          // Check if it's work from home leave
+          if (leaveCheck.leaveType === "Work from Home") {
+            // For work from home, also check time conditions if attendance record exists
+            if (record?.inTime && record?.outTime) {
+              // Calculate working hours for WFH
+              const [inHour, inMin] = record.inTime.split(":").map(Number);
+              const [outHour, outMin] = record.outTime.split(":").map(Number);
+              
+              workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+              if (workingHours < 0) workingHours += 24;
+              
+              // Subtract break times if any
+              if (record.breaks && record.breaks.length > 0) {
+                record.breaks.forEach(breakPeriod => {
+                  if (breakPeriod.start && breakPeriod.end) {
+                    const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                    const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                    
+                    let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                    if (breakHours < 0) breakHours += 24;
+                    
+                    workingHours -= breakHours;
+                  }
+                });
+              }
+              
+              // Combine WFH with time-based status
+              if (workingHours >= 8) {
+                attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+              } else if (workingHours >= 4) {
+                attendanceStatus = "Work from Home - Half Day";
+              } else if (workingHours > 0) {
+                attendanceStatus = "Work from Home - Incomplete";
+              } else {
+                attendanceStatus = "Work from Home - Not Marked";
+              }
+            } else if (record?.inTime && !record?.outTime) {
+              attendanceStatus = "Work from Home - Incomplete";
+            } else {
+              attendanceStatus = "Work from Home - Not Marked";
+            }
+          } else {
+            attendanceStatus = "Leave";
+          }
         } else if (record?.inTime) {
           if (record?.outTime) {
             // Calculate working hours
@@ -583,7 +782,50 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
       const hasApprovedLeave = !!leaveCheck;
       
       if (hasApprovedLeave) {
-        attendanceStatus = "Leave";
+        // Check if it's work from home leave
+        if (leaveCheck.leaveType === "Work from Home") {
+          // For work from home, also check time conditions if attendance record exists
+          if (record?.inTime && record?.outTime) {
+            // Calculate working hours for WFH
+            const [inHour, inMin] = record.inTime.split(":").map(Number);
+            const [outHour, outMin] = record.outTime.split(":").map(Number);
+            
+            workingHours = (outHour - inHour) + (outMin - inMin) / 60;
+            if (workingHours < 0) workingHours += 24;
+            
+            // Subtract break times if any
+            if (record.breaks && record.breaks.length > 0) {
+              record.breaks.forEach(breakPeriod => {
+                if (breakPeriod.start && breakPeriod.end) {
+                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
+                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
+                  
+                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
+                  if (breakHours < 0) breakHours += 24;
+                  
+                  workingHours -= breakHours;
+                }
+              });
+            }
+            
+            // Combine WFH with time-based status
+            if (workingHours >= 8) {
+              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+            } else if (workingHours >= 4) {
+              attendanceStatus = "Work from Home - Half Day";
+            } else if (workingHours > 0) {
+              attendanceStatus = "Work from Home - Incomplete";
+            } else {
+              attendanceStatus = "Work from Home - Not Marked";
+            }
+          } else if (record?.inTime && !record?.outTime) {
+            attendanceStatus = "Work from Home - Incomplete";
+          } else {
+            attendanceStatus = "Work from Home - Not Marked";
+          }
+        } else {
+          attendanceStatus = "Leave";
+        }
       } else if (record?.inTime) {
         if (record?.outTime) {
           // Calculate working hours

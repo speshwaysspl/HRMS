@@ -49,7 +49,7 @@ const List = () => {
               setFilteredEmployee(data)
             }
           } catch (error) {
-            console.log(error.message)
+    
             if(error.response && !error.response.data.success) {
               alert(error.response.data.error)
             }

@@ -24,7 +24,7 @@ const Detail = () => {
           setLeave(responnse.data.leave);
         }
       } catch (error) {
-        console.log("Errrror: " + error)
+
         if (error.response && !error.response.data.success) {
           alert(error.response.data.error);
         }

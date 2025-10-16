@@ -19,7 +19,6 @@ export const fetchAnnouncements = async () => {
     }
     return [];
   } catch (err) {
-    console.error("fetchAnnouncements error", err);
     return [];
   }
 };

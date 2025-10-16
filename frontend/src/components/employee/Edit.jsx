@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
+import { DESIGNATIONS } from "../../utils/constants";
 
 const Edit = () => {
   const [employee, setEmployee] = useState({
@@ -24,93 +25,7 @@ const Edit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // Comprehensive list of IT designations
-  const allDesignations = [
-    // Java
-    "Java Developer", "Senior Java Developer", "Junior Java Developer",
-    "Java Full Stack Developer", "Java Backend Developer", "Java Architect",
-    "Spring Boot Developer", "Java Team Lead", "Java Technical Lead",
-
-    // Salesforce
-    "Salesforce Developer", "Senior Salesforce Developer", "Junior Salesforce Developer",
-    "Salesforce Administrator", "Salesforce Consultant", "Salesforce Architect",
-    "Salesforce Business Analyst", "Salesforce Technical Lead", "CRM Developer",
-
-    // SAP
-    "SAP Developer", "SAP Consultant", "SAP Functional Consultant",
-    "SAP Technical Consultant", "SAP ABAP Developer", "SAP Basis Administrator",
-    "SAP FICO Consultant", "SAP MM Consultant", "SAP SD Consultant",
-    "SAP HANA Developer", "SAP Architect", "SAP Project Manager",
-
-    // Python
-    "Python Developer", "Senior Python Developer", "Junior Python Developer",
-    "Python Full Stack Developer", "Python Backend Developer", "Django Developer",
-    "Flask Developer", "Python Data Engineer", "Python Automation Engineer",
-
-    // DevOps
-    "DevOps Engineer", "Senior DevOps Engineer", "Junior DevOps Engineer",
-    "DevOps Architect", "Site Reliability Engineer", "Infrastructure Engineer",
-    "CI/CD Engineer", "Cloud DevOps Engineer", "DevOps Consultant",
-    "Build and Release Engineer", "Platform Engineer", "DevSecOps Engineer",
-
-    // AWS
-    "AWS Developer", "AWS Solutions Architect", "AWS Cloud Engineer",
-    "AWS DevOps Engineer", "AWS Data Engineer", "AWS Security Engineer",
-    "AWS Consultant", "Cloud Infrastructure Engineer", "AWS Lambda Developer",
-
-    // Data Science
-    "Data Scientist", "Senior Data Scientist", "Junior Data Scientist",
-    "Data Analyst", "Senior Data Analyst", "Junior Data Analyst",
-    "Machine Learning Engineer", "Data Engineer", "Big Data Engineer",
-    "Business Intelligence Analyst", "Statistical Analyst", "Research Scientist",
-    "Power BI Developer", "Senior Power BI Developer", "Junior Power BI Developer",
-    "Power BI Analyst", "Power BI Consultant", "Power BI Architect",
-    "Business Intelligence Developer", "BI Report Developer", "Dashboard Developer",
-
-    // Generative AI
-    "AI Engineer", "Machine Learning Specialist", "AI Research Engineer",
-    "AI/ML Consultant", "NLP Engineer", "Computer Vision Engineer",
-    "Deep Learning Engineer", "AI Research Scientist", "ML Ops Engineer",
-    "AI Product Manager", "Prompt Engineer", "Senior Prompt Engineer", "Junior Prompt Engineer",
-    "Prompt Engineering Specialist", "Conversational AI Designer", "AI Prompt Architect",
-    "AI Solutions Architect", "LLM Engineer", "AI Ethics Specialist", "AI Backend Developer",
-
-    // General IT Roles
-    "Software Engineer", "Senior Software Engineer", "Junior Software Engineer",
-    "Associate Software Engineer", "Software Developer", "Senior Software Developer", "Junior Software Developer",
-    "Full Stack Developer", "Frontend Developer", "Backend Developer",
-    "Web Developer", "Mobile App Developer", "iOS Developer", "Android Developer",
-    "React Developer", "Angular Developer", "Vue.js Developer", "Node.js Developer",
-    "PHP Developer", ".NET Developer", "C# Developer", "C++ Developer",
-    "JavaScript Developer", "TypeScript Developer", "Ruby Developer",
-    "Go Developer", "Rust Developer", "Kotlin Developer", "Swift Developer",
-    "Database Developer", "Database Administrator", "SQL Developer",
-    "System Administrator", "Network Administrator", "Security Engineer",
-    "Cybersecurity Analyst", "Information Security Analyst", "Penetration Tester",
-    "Ethical Hacker", "Security Consultant", "IT Support Specialist",
-    "Technical Support Engineer", "Help Desk Technician", "IT Consultant",
-    "Solutions Architect", "Enterprise Architect", "Cloud Architect",
-    "Technical Architect", "Software Architect", "System Analyst",
-    "Business Analyst", "Technical Writer", "Documentation Specialist",
-    "Scrum Master", "Agile Coach", "Project Manager", "Technical Project Manager",
-    "Product Manager", "Product Owner", "Engineering Manager",
-    "Technical Lead", "Team Lead", "Development Manager",
-    "CTO", "VP of Engineering", "Director of Technology",
-    "UI/UX Designer", "UI Designer", "UX Designer", "Graphic Designer",
-    "Quality Assurance Engineer", "QA Engineer", "Test Engineer",
-    "Junior QA Engineer", "Senior QA Engineer", "QA Lead", "Test Lead",
-    "QA Manager", "Test Manager", "Quality Analyst", "Manual Tester",
-    "Automation Tester", "SDET", "Performance Test Engineer", "Load Test Engineer",
-    "Security Tester", "Mobile Test Engineer", "API Test Engineer",
-    "Game Tester", "Usability Tester", "Accessibility Tester",
-    "Test Automation Architect", "QA Consultant", "Testing Specialist",
-    "Selenium Tester", "Cypress Tester", "Appium Tester",
-
-    // HR Roles
-    "HR Manager", "HR Executive", "HR Recruiter", "HR Assistant",
-    "HR Coordinator", "HR Business Partner", "HR Generalist",
-    "Talent Acquisition Specialist", "Recruitment Consultant", "HR Analyst"
-  ];
+  const allDesignations = DESIGNATIONS;
 
   useEffect(() => {
     const getDepartments = async () => {

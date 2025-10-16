@@ -37,7 +37,6 @@ const AdminAttendanceReport = () => {
         setErrorMsg(errorMessage);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
       setErrorMsg(err.response?.data?.message || err.message || errorMessage);
     } finally {
       setLoading(false);
@@ -83,7 +82,7 @@ const AdminAttendanceReport = () => {
       }
     } catch (error) {
       // Silently handle errors for better UX
-      console.log('Employee not found or error fetching details');
+      
     } finally {
       setIsAutoFetching(false);
     }
@@ -287,8 +286,14 @@ const AdminAttendanceReport = () => {
             <option value="Present + Overtime">Present + Overtime</option>
             <option value="Half-Day">Half-Day</option>
             <option value="Absent">Absent</option>
+            <option value="Not Yet">Not Yet</option>
             <option value="Leave">Leave</option>
             <option value="Incomplete">Incomplete</option>
+            <option value="Work from Home - Present">Work from Home - Present</option>
+            <option value="Work from Home + Overtime">Work from Home + Overtime</option>
+            <option value="Work from Home - Half Day">Work from Home - Half Day</option>
+            <option value="Work from Home - Incomplete">Work from Home - Incomplete</option>
+            <option value="Work from Home - Not Marked">Work from Home - Not Marked</option>
           </select>
         </div>
  
@@ -322,6 +327,8 @@ const AdminAttendanceReport = () => {
                         ? "bg-yellow-100 text-yellow-600"
                         : att.status === "Leave"
                         ? "bg-blue-100 text-blue-600"
+                        : att.status === "Not Yet"
+                        ? "bg-gray-100 text-gray-600"
                         : "bg-red-100 text-red-600"
                     }`}>
                       {att.status}
@@ -414,6 +421,8 @@ const AdminAttendanceReport = () => {
                           ? "bg-yellow-100 text-yellow-600"
                           : att.status === "Leave"
                           ? "bg-blue-100 text-blue-600"
+                          : att.status === "Not Yet"
+                          ? "bg-gray-100 text-gray-600"
                           : "bg-red-100 text-red-600"
                         }`}>
                           {att.status}

@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, X, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications();
 
   // Close dropdown when clicking outside
@@ -21,10 +25,84 @@ const NotificationBell = () => {
     };
   }, []);
 
+  // Listen for custom event to trigger notification bell
+  useEffect(() => {
+    const handleTriggerNotificationBell = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener('triggerNotificationBell', handleTriggerNotificationBell);
+    return () => {
+      window.removeEventListener('triggerNotificationBell', handleTriggerNotificationBell);
+    };
+  }, []);
+
   const handleNotificationClick = (notification) => {
     if (!notification.isRead) {
       markAsRead(notification._id);
     }
+
+    // Navigate based on notification type and user role
+    const navigateToNotificationTarget = () => {
+      if (!user || !user.role) return;
+
+      const isAdmin = user.role === 'admin';
+      const isEmployee = user.role === 'employee';
+
+      switch (notification.type) {
+        case 'leave_request':
+          if (isAdmin) {
+            // Admin should go to leave management page
+            navigate('/admin-dashboard/leaves');
+          } else if (isEmployee) {
+            // Employee should go to their leave history
+            navigate(`/employee-dashboard/leaves/${user._id}`);
+          }
+          break;
+
+        case 'leave_approved':
+        case 'leave_rejected':
+          if (isEmployee) {
+            // Employee should go to their leave history to see the status
+            navigate(`/employee-dashboard/leaves/${user._id}`);
+          } else if (isAdmin) {
+            // Admin should go to leave management page
+            navigate('/admin-dashboard/leaves');
+          }
+          break;
+
+        case 'announcement':
+          if (isAdmin) {
+            // Admin should go to announcement management
+            if (notification.relatedId) {
+              navigate(`/admin-dashboard/announcements/${notification.relatedId}`);
+            } else {
+              navigate('/admin-dashboard/announcements');
+            }
+          } else if (isEmployee) {
+            // Employee should go to announcement details or list
+            if (notification.relatedId) {
+              navigate(`/employee-dashboard/announcements/${notification.relatedId}`);
+            } else {
+              navigate('/employee-dashboard/announcements');
+            }
+          }
+          break;
+
+        default:
+          // For unknown notification types, navigate to dashboard
+          if (isAdmin) {
+            navigate('/admin-dashboard');
+          } else if (isEmployee) {
+            navigate('/employee-dashboard');
+          }
+          break;
+      }
+    };
+
+    // Close the dropdown and navigate
+    setIsOpen(false);
+    navigateToNotificationTarget();
   };
 
   const getNotificationIcon = (type) => {

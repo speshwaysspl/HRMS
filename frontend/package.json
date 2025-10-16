@@ -12,11 +12,8 @@
   "dependencies": {
     "@emotion/styled": "^11.14.1",
     "@googlemaps/react-wrapper": "^1.2.0",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "dayjs": "^1.11.13",
-    "exceljs": "^4.4.0",
-    "file-saver": "^2.0.5",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "framer-motion": "^12.23.12",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",

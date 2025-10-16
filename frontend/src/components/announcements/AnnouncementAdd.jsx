@@ -82,7 +82,6 @@ const AnnouncementAdd = () => {
         alert(response.data.error || "Failed to add announcement");
       }
     } catch (error) {
-      console.error("Add Announcement Error:", error);
       alert(
         error.response?.data?.error ||
           "Something went wrong while adding announcement"
@@ -104,7 +103,7 @@ const AnnouncementAdd = () => {
           setEmployees(res.data);
         }
       } catch (err) {
-        console.error('Failed to fetch employees for recipients', err);
+        // Failed to fetch employees, continue with empty list
       }
     };
     fetchEmployees();
@@ -131,7 +130,7 @@ const AnnouncementAdd = () => {
           setRecipientOptions(opts);
         }
       } catch (err) {
-        console.error('Failed to fetch departments or build options', err);
+        // Failed to fetch departments, continue with current options
       }
     };
     fetchDepsAndBuildOptions();

@@ -20,7 +20,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
           setLogoUrl(logoPath);
         }
       } catch (error) {
-        console.error('Error fetching logo:', error);
+        // Logo fetch failed, continue without logo
       }
     };
     
@@ -82,7 +82,6 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading PDF:", error);
       alert("Failed to download PDF");
     } finally {
       setDownloadLoading(false);

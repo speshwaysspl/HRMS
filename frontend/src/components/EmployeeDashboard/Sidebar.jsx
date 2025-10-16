@@ -78,7 +78,7 @@ const Sidebar = () => {
       >
       {/* Top Logo */}
      {/* Top Logo with Name Side by Side */}
-<div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-16 flex items-center justify-center shadow-md px-5">
+<div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5">
   {/* Logo Image */}
   <img 
     src="/images/Logo.jpg"
@@ -119,7 +119,7 @@ const Sidebar = () => {
               >
                 {link.icon}
               </motion.span>
-              <span className="text-sm font-semibold tracking-wide">
+              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
                 {link.label}
               </span>
               <FaChevronRight className="ml-auto text-xs opacity-70" />
@@ -146,7 +146,7 @@ const Sidebar = () => {
             >
               <FaSignOutAlt />
             </motion.span>
-            <span className="text-sm font-semibold tracking-wide">
+            <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
               Logout
             </span>
             <FaChevronRight className="ml-auto text-xs opacity-70" />

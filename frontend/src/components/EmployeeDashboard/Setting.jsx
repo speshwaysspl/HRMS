@@ -78,7 +78,7 @@ const Setting = () => {
             className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-100 rounded-full mix-blend-multiply filter blur-2xl opacity-40"
           />
 
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-3 sm:mb-4 md:mb-6 text-center text-teal-700 relative z-10">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-3 sm:mb-4 md:mb-6 text-center text-teal-700 relative z-10" style={{ fontFamily: 'Times New Roman, serif' }}>
             🔒 Change Password
           </h2>
 

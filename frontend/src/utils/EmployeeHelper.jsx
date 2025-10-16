@@ -96,7 +96,7 @@ export const getEmployees = async (id) => {
         },
       }
     );
-    console.log(responnse)
+
     if (responnse.data.success) {
       employees = responnse.data.employees;
     }
