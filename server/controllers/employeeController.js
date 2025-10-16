@@ -20,7 +20,7 @@ const addEmployee = async (req, res) => {
       role,
     } = req.body;
  
-    // Check if user exists
+    // Check if user existsjjjj
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
