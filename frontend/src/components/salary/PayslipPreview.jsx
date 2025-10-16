@@ -303,13 +303,6 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
           >
             {loading ? 'Sending...' : 'Send to Employee'}
           </button>
-          <button
-            onClick={onGenerate}
-            disabled={loading}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Generating...' : 'Generate & Save'}
-          </button>
         </div>
       </div>
     </div>
