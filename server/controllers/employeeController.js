@@ -57,11 +57,16 @@ const addEmployee = async (req, res) => {
     const emailHtml = `
       <h2>Welcome to the SPESHWAY SOLUTION PVT LTD, ${name} 🎉</h2>
       <p>Dear ${name},</p>
-      <p>We are delighted to welcome you to Speshway Solution Pvt Ltd. We are excited to have you onboard as [Your Designation] and look forward to working together towards achieving great success.
+      <p>We are delighted to welcome you to Speshway Solution Pvt Ltd. We are excited to have you onboard as ${designation} and look forward to working together towards achieving great success.
       </p>
      
-      <p>Your login email is: <b>${email}</b></p>
-      <p>  password :<b>${password} </b> </p>
+      <p>Your login credentials are:</p>
+      <p>Email: <b>${email}</b></p>
+      <p>Password: <b>${password}</b></p>
+      
+      <p>You can login to the system using the following link:</p>
+      <p><a href="https://www.speshwayhrms.com/" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Login to SPESHWAY HRMS</a></p>
+      <p>Or copy and paste this URL in your browser: <b>https://www.speshwayhrms.com/</b></p>
  
       <p>
 We believe your skills and talent will be a great addition to our team. Together, we look forward to achieving new milestones and building a bright future.
