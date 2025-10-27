@@ -432,7 +432,7 @@ const PayslipGenerator = () => {
 
   return (
     <div className="max-w-6xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center md:text-left">Generate Payslip</h2>
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center md:text-left" style={{ fontFamily: 'Times New Roman, serif' }}>Generate Payslip</h2>
       
       <form onSubmit={handleSubmit}>
         {/* Employee Selection */}

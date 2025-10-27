@@ -18,6 +18,7 @@ import { motion } from 'framer-motion'
 import axios from 'axios'
 import { API_BASE } from '../../utils/apiConfig'
 import { useNavigate } from 'react-router-dom'
+import { getEmployeeDailyMessage } from '../../utils/greetingUtils'
 
 const Summary = () => {
   const { user } = useAuth()
@@ -96,33 +97,11 @@ const Summary = () => {
     return 'Good Evening'
   }
 
-  // Optimized daily motivational messages
-  const motivationalMessage = React.useMemo(() => {
-    if (!user) return "Welcome to your dashboard! 🌟"
-    
-    const designation = user?.designation?.toLowerCase() || dashboardData?.employee?.designation?.toLowerCase() || 'general'
-    const today = new Date()
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)) + 1
-    
-    // Compact message templates
-    const messages = {
-      'java developer': ["Code with passion! ☕", "Build robust solutions! 🏗️", "Java expertise shines! ⚡"],
-      'python developer': ["Pythonic solutions! 🐍", "Clean code, clear logic! 🚀", "Data science magic! 📊"],
-      'frontend developer': ["Beautiful user experiences! 🎨", "React to challenges! ⚛️", "CSS magic! 🪄"],
-      'backend developer': ["Solid foundations! 🏗️", "API excellence! 🌐", "Scalable solutions! 📈"],
-      'devops engineer': ["Automation success! 🤖", "CI/CD mastery! 🎨", "Cloud architecture! ☁️"],
-      'data scientist': ["Data insights! 📊", "Predictive modeling! 🔮", "Analytics excellence! 📈"],
-      'ui/ux designer': ["Delightful experiences! 😊", "Intuitive interfaces! 🎨", "User-centered design! 👥"],
-      'project manager': ["Team orchestration! 🎼", "Project success! 🚂", "Agile excellence! 🔄"],
-      'qa engineer': ["Quality assurance! ✅", "Bug hunting! 🐛", "Testing perfection! 🎯"],
-      'general': ["Productive day ahead! 🚀", "Excellence in action! 🏆", "Team success! 🌟"]
-    }
-    
-    const prefixes = ["Ready for", "Time for", "Let's achieve", "Today brings", "Focus on"]
-    const designationMessages = messages[designation] || messages['general']
-    
-    return `${prefixes[dayOfYear % prefixes.length]} ${designationMessages[dayOfYear % designationMessages.length]}`
-  }, [user, dashboardData])
+  // Daily motivational messages varying by designation and department
+  const motivationalMessage = React.useMemo(
+    () => getEmployeeDailyMessage(user, dashboardData),
+    [user, dashboardData]
+  )
 
 
 

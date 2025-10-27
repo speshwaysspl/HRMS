@@ -365,7 +365,7 @@ const PayrollTemplateManager = () => {
   return (
     <div className="max-w-7xl mx-auto mt-10 bg-white p-8 rounded-md shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Payroll Template Manager</h2>
+        <h2 className="text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Payroll Template Manager</h2>
         <button
           onClick={() => {
             resetForm();

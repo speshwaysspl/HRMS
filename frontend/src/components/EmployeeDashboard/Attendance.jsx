@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Wrapper } from "@googlemaps/react-wrapper";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, toISTTimeString } from "../../utils/dateTimeUtils";
+import { reverseGeocodeFast, buildAccuracyLabel, parseAccuracyMeters } from "../../utils/geocodeUtils";
 
 // Google Maps component
 const GoogleMap = React.forwardRef(({ center, zoom, children }, mapRef) => {
@@ -234,7 +235,10 @@ const Attendance = () => {
     area: "",
   });
  
-  // Get user location + area using Google Geocoding API
+  // Track best accuracy across watch updates
+  const bestAccuracyRef = useRef(Infinity);
+
+  // Get user location + area using fast REST geocoding
   const getLocation = useCallback(() => {
     return new Promise((resolve, reject) => {
       // Check if geolocation is supported
@@ -246,42 +250,14 @@ const Attendance = () => {
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
           const { latitude, longitude, accuracy } = coords;
+          const locationAccuracy = buildAccuracyLabel(accuracy);
           let area = "Unknown Area";
-          let locationAccuracy = "Unknown";
-          
-          // Determine location accuracy level
-          if (accuracy <= 10) {
-            locationAccuracy = "Excellent (±" + Math.round(accuracy) + "m)";
-          } else if (accuracy <= 50) {
-            locationAccuracy = "Good (±" + Math.round(accuracy) + "m)";
-          } else if (accuracy <= 100) {
-            locationAccuracy = "Fair (±" + Math.round(accuracy) + "m)";
-          } else {
-            locationAccuracy = "Poor (±" + Math.round(accuracy) + "m)";
-          }
-          
           try {
-            // Wait for Google Maps to be loaded
-            if (window.google && window.google.maps && window.google.maps.Geocoder) {
-              const geocoder = new window.google.maps.Geocoder();
-              const latlng = { lat: latitude, lng: longitude };
-              
-              geocoder.geocode({ location: latlng }, (results, status) => {
-                if (status === "OK" && results[0]) {
-                  area = results[0].formatted_address;
-                } else {
-                  // Geocoding failed, using coordinates only
-                }
-                resolve({ latitude, longitude, area, accuracy: locationAccuracy });
-              });
-            } else {
-              // Google Maps not loaded, using coordinates only
-              resolve({ latitude, longitude, area, accuracy: locationAccuracy });
-            }
-          } catch (err) {
-            // Error fetching location from Google, using coordinates only
-            resolve({ latitude, longitude, area, accuracy: locationAccuracy });
+            area = await reverseGeocodeFast(latitude, longitude);
+          } catch (_) {
+            // keep Unknown Area
           }
+          resolve({ latitude, longitude, area, accuracy: locationAccuracy });
         },
         (error) => {
           let errorMessage = "Unknown location error";
@@ -313,6 +289,7 @@ const Attendance = () => {
     getLocation()
       .then((loc) => {
         setTracker((prev) => ({ ...prev, ...loc }));
+        bestAccuracyRef.current = parseAccuracyMeters(loc.accuracy);
       })
       .catch((error) => {
         // Set a default location or show error message
@@ -324,6 +301,43 @@ const Attendance = () => {
         }));
       });
   }, [getLocation]);
+
+  // Watch position to refine accuracy and re-geocode on improvement
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      async ({ coords }) => {
+        const { latitude, longitude, accuracy } = coords;
+        const newAcc = Math.round(accuracy || Infinity);
+        if (newAcc + 15 < bestAccuracyRef.current) {
+          bestAccuracyRef.current = newAcc;
+          const area = await reverseGeocodeFast(latitude, longitude);
+          setTracker((prev) => ({
+            ...prev,
+            latitude,
+            longitude,
+            area,
+            accuracy: buildAccuracyLabel(newAcc),
+          }));
+          // Center map if available
+          if (mapRef.current) {
+            try {
+              mapRef.current.setCenter({ lat: latitude, lng: longitude });
+            } catch (_) {}
+          }
+        }
+      },
+      () => {},
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 15000,
+      }
+    );
+    return () => {
+      if (typeof watchId === 'number') navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
  
   // Fetch today’s record on mount
   useEffect(() => {

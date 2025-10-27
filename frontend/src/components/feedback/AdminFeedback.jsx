@@ -48,6 +48,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
+import { formatDMYWithTime } from '../../utils/dateUtils';
 
 const AdminFeedback = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -169,15 +170,7 @@ const AdminFeedback = () => {
     }
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (date) => formatDMYWithTime(date);
 
 
 
@@ -190,7 +183,7 @@ const AdminFeedback = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 3 }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 3, fontFamily: 'Times New Roman, serif' }}>
         Feedback Management
       </Typography>
 

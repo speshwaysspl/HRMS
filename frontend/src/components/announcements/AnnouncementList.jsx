@@ -77,6 +77,7 @@ const AnnouncementList = () => {
     >
       <motion.h3
         className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6 md:mb-8 text-gray-800 px-2"
+        style={{ fontFamily: 'Times New Roman, serif' }}
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}

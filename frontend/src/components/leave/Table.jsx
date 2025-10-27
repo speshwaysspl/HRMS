@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { columns, LeaveButtons } from "../../utils/LeaveHelper";
 import axios from "axios";
@@ -9,6 +10,7 @@ import { API_BASE } from "../../utils/apiConfig";
 const Table = () => {
   const [leaves, setLeaves] = useState(null);
   const [filteredLeaves, setFilteredLeaves] = useState(null);
+  const location = useLocation();
 
   const fetchLeaves = async () => {
     try {
@@ -43,6 +45,20 @@ const Table = () => {
   useEffect(() => {
     fetchLeaves();
   }, []);
+
+  // Apply initial filter if a status is provided via query param
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const status = params.get('status');
+    if (status && leaves) {
+      if (status === 'All') {
+        setFilteredLeaves(leaves);
+      } else {
+        const data = leaves.filter((leave) => leave.status.toLowerCase().includes(status.toLowerCase()));
+        setFilteredLeaves(data);
+      }
+    }
+  }, [location.search, leaves]);
 
   const filterByInput = (e) => {
     const data = leaves.filter((leave) =>

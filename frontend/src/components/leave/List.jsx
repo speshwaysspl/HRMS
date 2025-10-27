@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatDMY } from "../../utils/dateUtils";
 
 const List = () => {
   const [leaves, setLeaves] = useState(null);
@@ -111,12 +112,12 @@ const List = () => {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                 <span className="font-medium text-gray-600 min-w-[60px]">From:</span>
-                <span className="text-gray-800">{new Date(leave.startDate).toLocaleDateString()}</span>
+                <span className="text-gray-800">{formatDMY(leave.startDate)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                 <span className="font-medium text-gray-600 min-w-[60px]">To:</span>
-                <span className="text-gray-800">{new Date(leave.endDate).toLocaleDateString()}</span>
+                <span className="text-gray-800">{formatDMY(leave.endDate)}</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-orange-500 rounded-full mt-1"></span>
@@ -161,10 +162,10 @@ const List = () => {
                   </td>
                   <td className="px-6 py-3">{leave.leaveType}</td>
                   <td className="px-6 py-3">
-                    {new Date(leave.startDate).toLocaleDateString()}
+                    {formatDMY(leave.startDate)}
                   </td>
                   <td className="px-6 py-3">
-                    {new Date(leave.endDate).toLocaleDateString()}
+                    {formatDMY(leave.endDate)}
                   </td>
                   <td className="px-6 py-3">{leave.reason}</td>
                   <td

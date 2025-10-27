@@ -6,6 +6,7 @@ import axios from 'axios'
 import { FaPlus, FaSearch } from 'react-icons/fa'
 import { API_BASE } from '../../utils/apiConfig'
 import StatusToggle from './StatusToggle'
+import { formatDMY } from '../../utils/dateUtils'
 
 
 const List = () => {
@@ -37,8 +38,8 @@ const List = () => {
                    name: emp.userId.name,
                    email: emp.userId.email,
                    designation: emp.designation,
-                   dob: new Date(emp.dob).toLocaleDateString(),
-                   joiningDate: emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : 'N/A',
+                   dob: formatDMY(emp.dob),
+                   joiningDate: emp.joiningDate ? formatDMY(emp.joiningDate) : 'N/A',
                    mobilenumber: emp.mobilenumber || 'N/A',
                    status: emp.status || 'active',
                    onStatusChange: handleStatusChange,
@@ -121,7 +122,7 @@ const List = () => {
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-6 md:mb-8">
-          <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-2">
+          <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-2" style={{ fontFamily: 'Times New Roman, serif' }}>
             Manage Employees
           </h3>
           <p className="text-gray-600 text-sm md:text-base">Efficiently manage your workforce with our comprehensive employee management system</p>

@@ -3,6 +3,7 @@ import { Bell, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
+import { formatDMY } from '../../utils/dateUtils';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -149,7 +150,7 @@ const NotificationBell = () => {
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
     
-    return notificationDate.toLocaleDateString();
+    return formatDMY(notificationDate);
   };
 
   return (
