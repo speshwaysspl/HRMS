@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { columns, EmployeeButtons } from '../../utils/EmployeeHelper'
 import DataTable from 'react-data-table-component'
@@ -12,7 +12,7 @@ import { formatDMY } from '../../utils/dateUtils'
 const List = () => {
     const [employees, setEmployees] = useState([])
     const [empLoading, setEmpLoading] = useState(false)
-    const [filteredEmployee, setFilteredEmployee] = useState([])
+    const [searchQuery, setSearchQuery] = useState('')
 
 
     useEffect(() => {
@@ -47,7 +47,6 @@ const List = () => {
                  };
                });
               setEmployees(data);
-              setFilteredEmployee(data)
             }
           } catch (error) {
     
@@ -62,26 +61,67 @@ const List = () => {
         fetchEmployees();
       }, []);
 
-      const handleFilter = (e) => {
-        const records = employees.filter((emp) => (
-          emp.name.toLowerCase().includes(e.target.value.toLowerCase())
-        ))
-        setFilteredEmployee(records)
-      }
+      const handleFilter = useCallback((e) => {
+        setSearchQuery(e.target.value);
+      }, [])
 
-      const handleStatusChange = (employeeId, newStatus) => {
+      const handleStatusChange = useCallback((employeeId, newStatus) => {
         const serverStatus = newStatus.toLowerCase();
         setEmployees(prevEmployees => 
           prevEmployees.map(emp => 
             emp._id === employeeId ? { ...emp, status: serverStatus } : emp
           )
         );
-        setFilteredEmployee(prevFiltered => 
-          prevFiltered.map(emp => 
-            emp._id === employeeId ? { ...emp, status: serverStatus } : emp
-          )
-        );
-      };
+      }, [])
+
+      const filteredEmployee = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return employees;
+        return employees.filter(emp => emp.name.toLowerCase().includes(q));
+      }, [employees, searchQuery]);
+
+      const tableStyles = useMemo(() => ({
+        headRow: {
+          style: {
+            backgroundColor: '#f8fafc',
+            borderBottom: '2px solid #e2e8f0',
+            minHeight: '52px',
+          },
+        },
+        headCells: {
+          style: {
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#374151',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+          },
+        },
+        rows: {
+          style: {
+            minHeight: '60px',
+            '&:hover': {
+              backgroundColor: '#f1f5f9',
+              cursor: 'pointer',
+            },
+            borderBottom: '1px solid #f1f5f9',
+          },
+        },
+        cells: {
+          style: {
+            fontSize: '14px',
+            color: '#374151',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+          },
+        },
+        pagination: {
+          style: {
+            borderTop: '2px solid #e2e8f0',
+            backgroundColor: '#f8fafc',
+          },
+        },
+      }), [])
 
 
 
@@ -263,48 +303,7 @@ const List = () => {
                 data={filteredEmployee} 
                 pagination 
                 responsive
-                customStyles={{
-                  headRow: {
-                    style: {
-                      backgroundColor: '#f8fafc',
-                      borderBottom: '2px solid #e2e8f0',
-                      minHeight: '52px',
-                    },
-                  },
-                  headCells: {
-                    style: {
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                    },
-                  },
-                  rows: {
-                    style: {
-                      minHeight: '60px',
-                      '&:hover': {
-                        backgroundColor: '#f1f5f9',
-                        cursor: 'pointer',
-                      },
-                      borderBottom: '1px solid #f1f5f9',
-                    },
-                  },
-                  cells: {
-                    style: {
-                      fontSize: '14px',
-                      color: '#374151',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                    },
-                  },
-                  pagination: {
-                    style: {
-                      borderTop: '2px solid #e2e8f0',
-                      backgroundColor: '#f8fafc',
-                    },
-                  },
-                }}
+                customStyles={tableStyles}
                 paginationComponentOptions={{
                   rowsPerPageText: 'Rows per page:',
                   rangeSeparatorText: 'of',

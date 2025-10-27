@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
 import { formatDMY } from "../../utils/dateUtils";
 import MonthPicker from "../common/MonthPicker";
+import { FixedSizeList as List } from "react-window";
  
 const AttendanceReport = () => {
   const location = useLocation();
@@ -21,6 +22,15 @@ const AttendanceReport = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // Current month in YYYY-MM format
   const [monthlyData, setMonthlyData] = useState([]);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
+
+  // Memoized monthly summary counts to avoid repeated filtering
+  const monthlySummary = useMemo(() => {
+    const present = monthlyData.filter(d => d.status === "Present" || d.status === "Present + Overtime").length;
+    const absent = monthlyData.filter(d => d.status === "Absent" || d.status === "Leave").length;
+    const halfDay = monthlyData.filter(d => d.status === "Half-Day").length;
+    const wfh = monthlyData.filter(d => d.status?.startsWith("Work from Home")).length;
+    return { present, absent, halfDay, wfh };
+  }, [monthlyData]);
  
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -392,92 +402,88 @@ const AttendanceReport = () => {
                 Monthly Attendance Report - {selectedMonth}
               </h3>
               
-              {/* Monthly Summary */}
+              {/* Monthly Summary (memoized) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-green-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {monthlyData.filter(d => d.status === "Present" || d.status === "Present + Overtime").length}
-                  </div>
+                  <div className="text-2xl font-bold text-green-600">{monthlySummary.present}</div>
                   <div className="text-sm text-gray-600">Present Days</div>
                 </div>
                 <div className="bg-red-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {monthlyData.filter(d => d.status === "Absent" || d.status === "Leave").length}
-                  </div>
+                  <div className="text-2xl font-bold text-red-600">{monthlySummary.absent}</div>
                   <div className="text-sm text-gray-600">Absent Days</div>
                 </div>
                 <div className="bg-orange-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {monthlyData.filter(d => d.status === "Half-Day").length}
-                  </div>
+                  <div className="text-2xl font-bold text-orange-600">{monthlySummary.halfDay}</div>
                   <div className="text-sm text-gray-600">Half Days</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {monthlyData.filter(d => d.status.startsWith("Work from Home")).length}
-                  </div>
+                  <div className="text-2xl font-bold text-purple-600">{monthlySummary.wfh}</div>
                   <div className="text-sm text-gray-600">Work from Home</div>
                 </div>
               </div>
 
-              {/* Monthly Data Table */}
+              {/* Monthly Data Virtualized List */}
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">Date</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">In Time</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">Out Time</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">Work Mode</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">Working Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {monthlyData.map((record, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2">
-                          {formatDMY(record.date)}
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2">
+                {/* Header */}
+                <div className="grid grid-cols-6 bg-gray-50 border border-gray-300">
+                  <div className="px-4 py-2 text-left font-semibold">Date</div>
+                  <div className="px-4 py-2 text-left font-semibold">Status</div>
+                  <div className="px-4 py-2 text-left font-semibold">In Time</div>
+                  <div className="px-4 py-2 text-left font-semibold">Out Time</div>
+                  <div className="px-4 py-2 text-left font-semibold">Work Mode</div>
+                  <div className="px-4 py-2 text-left font-semibold">Working Hours</div>
+                </div>
+                {/* Virtualized Rows */}
+                <List
+                  height={Math.min(384, Math.max(192, monthlyData.length * 48))}
+                  itemCount={monthlyData.length}
+                  itemSize={48}
+                  width={"100%"}
+                >
+                  {({ index, style }) => {
+                    const record = monthlyData[index];
+                    return (
+                      <div style={style} className="grid grid-cols-6 border border-gray-200 hover:bg-gray-50">
+                        <div className="px-4 py-2">{formatDMY(record.date)}</div>
+                        <div className="px-4 py-2">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            record.status === "Present" 
-                              ? "bg-green-100 text-green-600" 
-                              : record.status === "Present + Overtime" 
-                              ? "bg-green-200 text-green-800" 
-                              : record.status === "Half-Day" 
-                              ? "bg-orange-100 text-orange-600" 
-                              : record.status === "Incomplete" 
-                              ? "bg-yellow-100 text-yellow-600" 
-                              : record.status === "Leave" 
-                              ? "bg-blue-100 text-blue-600" 
-                              : record.status === "Work from Home - Present" 
-                              ? "bg-purple-100 text-purple-600" 
-                              : record.status === "Work from Home + Overtime" 
-                              ? "bg-purple-200 text-purple-800" 
-                              : record.status === "Work from Home - Half Day" 
-                              ? "bg-purple-50 text-purple-500" 
-                              : record.status === "Work from Home - Incomplete" 
-                              ? "bg-yellow-100 text-yellow-600" 
-                              : record.status === "Work from Home - Not Marked" 
-                              ? "bg-gray-100 text-gray-600" 
-                              : record.status === "Not Yet" 
-                              ? "bg-gray-100 text-gray-600" 
+                            record.status === "Present"
+                              ? "bg-green-100 text-green-600"
+                              : record.status === "Present + Overtime"
+                              ? "bg-green-200 text-green-800"
+                              : record.status === "Half-Day"
+                              ? "bg-orange-100 text-orange-600"
+                              : record.status === "Incomplete"
+                              ? "bg-yellow-100 text-yellow-600"
+                              : record.status === "Leave"
+                              ? "bg-blue-100 text-blue-600"
+                              : record.status === "Work from Home - Present"
+                              ? "bg-purple-100 text-purple-600"
+                              : record.status === "Work from Home + Overtime"
+                              ? "bg-purple-200 text-purple-800"
+                              : record.status === "Work from Home - Half Day"
+                              ? "bg-purple-50 text-purple-500"
+                              : record.status === "Work from Home - Incomplete"
+                              ? "bg-yellow-100 text-yellow-600"
+                              : record.status === "Work from Home - Not Marked"
+                              ? "bg-gray-100 text-gray-600"
+                              : record.status === "Not Yet"
+                              ? "bg-gray-100 text-gray-600"
                               : "bg-red-100 text-red-600"
                           }`}>
                             {record.status}
                           </span>
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2">{record.inTime}</td>
-                        <td className="border border-gray-300 px-4 py-2">{record.outTime}</td>
-                        <td className="border border-gray-300 px-4 py-2">{record.workMode}</td>
-                        <td className="border border-gray-300 px-4 py-2">
+                        </div>
+                        <div className="px-4 py-2">{record.inTime}</div>
+                        <div className="px-4 py-2">{record.outTime}</div>
+                        <div className="px-4 py-2">{record.workMode}</div>
+                        <div className="px-4 py-2">
                           {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </List>
               </div>
             </div>
           )}

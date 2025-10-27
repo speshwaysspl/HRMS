@@ -67,6 +67,18 @@ const AdminSidebar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDesktop, isOpen]);
 
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (!isDesktop && isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isDesktop, isOpen]);
+
   return (
     <>
       {/* Mobile Hamburger Button */}
@@ -94,6 +106,9 @@ const AdminSidebar = () => {
   <img 
     src="/images/Logo.jpg"
     alt="Company Logo" 
+    loading="lazy"
+    width="48"
+    height="48"
     className="w-12 h-12 rounded-full shadow-lg border-2 border-white mr-3"
     onError={(e) => {
       e.target.style.display = 'none';
@@ -102,7 +117,7 @@ const AdminSidebar = () => {
   />
   
   {/* Company Name */}
-  <h1 className="text-white font-bold text-lg sm:text-xl">HR Portal</h1>
+  <h1 className="text-white font-bold text-lg sm:text-xl">HRMS Portal</h1>
 </div>
 
 
