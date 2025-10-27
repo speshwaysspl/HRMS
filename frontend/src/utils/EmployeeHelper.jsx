@@ -14,13 +14,11 @@ export const columns = [
   {
     name: "Employee ID",
     selector: (row) => row.employeeId,
-    sortable: true,
     width: "120px",
   },
   {
     name: "Name",
     selector: (row) => row.name,
-    sortable: true,
     width: "120px",
   },
   {
@@ -31,19 +29,16 @@ export const columns = [
   {
     name: "Designation",
     selector: (row) => row.designation,
-    sortable: true,
     width: "150px",
   },
   {
     name: "DOB",
     selector: (row) => row.dob,
-    sortable: true,
     width: "130px",
   },
   {
     name: "Joining Date",
     selector: (row) => row.joiningDate,
-    sortable: true,
     width: "130px",
   },
   {

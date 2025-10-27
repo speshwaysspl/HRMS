@@ -1,58 +1,74 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
  
-// Pages
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+// Pages (lazy-loaded for performance)
+const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
-import AdminDashboard from "./pages/AdminDashboard";
-import EmployeeDashboard from "./pages/EmployeeDashboard";
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const EmployeeDashboard = lazy(() => import("./pages/EmployeeDashboard"));
  
 // Utils
 import PrivateRoutes from "./utils/PrivateRoutes";
 import RoleBaseRoutes from "./utils/RoleBaseRoutes";
  
-// Admin Components
-import AdminSummary from "./components/dashboard/AdminSummary";
-import DepartmentList from "./components/department/DepartmentList";
-import AddDepartment from "./components/department/AddDepartment";
-import EditDepartment from "./components/department/EditDepartment";
-import List from "./components/employee/List";
-import Add from "./components/employee/Add";
-import View from "./components/employee/View";
-import Edit from "./components/employee/Edit";
+// Admin Components (lazy-loaded)
+const AdminSummary = lazy(() => import("./components/dashboard/AdminSummary"));
+const DepartmentList = lazy(() => import("./components/department/DepartmentList"));
+const AddDepartment = lazy(() => import("./components/department/AddDepartment"));
+const EditDepartment = lazy(() => import("./components/department/EditDepartment"));
+const List = lazy(() => import("./components/employee/List"));
+const Add = lazy(() => import("./components/employee/Add"));
+const View = lazy(() => import("./components/employee/View"));
+const Edit = lazy(() => import("./components/employee/Edit"));
 
-import ViewSalary from "./components/salary/View";
-import PayslipGenerator from "./components/salary/PayslipGenerator";
-import PayrollTemplateManager from "./components/salary/PayrollTemplateManager";
-import PayslipHistory from "./components/salary/PayslipHistory";
-import Table from "./components/leave/Table";
-import Detail from "./components/leave/Detail";
-import AnnouncementList from "./components/announcements/AnnouncementList";
-import AnnouncementView from "./components/announcements/AnnouncementView";
-import AnnouncementAdd from "./components/announcements/AnnouncementAdd";
-import EditAnnouncement from "./components/announcements/EditAnnouncement";
-import AdminAttendanceReport from "./components/attendance/AdminAttendanceReport";
-import AdminFeedback from "./components/feedback/AdminFeedback";
+const ViewSalary = lazy(() => import("./components/salary/View"));
+const PayslipGenerator = lazy(() => import("./components/salary/PayslipGenerator"));
+const PayrollTemplateManager = lazy(() => import("./components/salary/PayrollTemplateManager"));
+const PayslipHistory = lazy(() => import("./components/salary/PayslipHistory"));
+const Table = lazy(() => import("./components/leave/Table"));
+const Detail = lazy(() => import("./components/leave/Detail"));
+const AnnouncementList = lazy(() => import("./components/announcements/AnnouncementList"));
+const AnnouncementView = lazy(() => import("./components/announcements/AnnouncementView"));
+const AnnouncementAdd = lazy(() => import("./components/announcements/AnnouncementAdd"));
+const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
+const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
+const AdminFeedback = lazy(() => import("./components/feedback/AdminFeedback"));
  
-// Employee Components
-import Summary from "./components/EmployeeDashboard/Summary";
-import Profile from "./components/EmployeeDashboard/Profile";
-import LeaveList from "./components/leave/List";
-import AddLeave from "./components/leave/Add";
-import Setting from "./components/EmployeeDashboard/Setting";
-import EmployeeAnnouncements from "./components/employee/EmployeeAnnouncements";
-import EmployeeAnnouncementDetails from "./components/employee/AnnouncementDetails";
-import Attendance from "./components/EmployeeDashboard/Attendance";
-import AttendanceReport from "./components/EmployeeDashboard/AttendanceReport";
-import EmployeeFeedback from "./components/feedback/EmployeeFeedback";
+// Employee Components (lazy-loaded)
+const Summary = lazy(() => import("./components/EmployeeDashboard/Summary"));
+const Profile = lazy(() => import("./components/EmployeeDashboard/Profile"));
+const LeaveList = lazy(() => import("./components/leave/List"));
+const AddLeave = lazy(() => import("./components/leave/Add"));
+const Setting = lazy(() => import("./components/EmployeeDashboard/Setting"));
+const EmployeeAnnouncements = lazy(() => import("./components/employee/EmployeeAnnouncements"));
+const EmployeeAnnouncementDetails = lazy(() => import("./components/employee/AnnouncementDetails"));
+const Attendance = lazy(() => import("./components/EmployeeDashboard/Attendance"));
+const AttendanceReport = lazy(() => import("./components/EmployeeDashboard/AttendanceReport"));
+const EmployeeFeedback = lazy(() => import("./components/feedback/EmployeeFeedback"));
  
 function App() {
+  // Preload most-visited routes after idle to reduce navigation latency
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1500));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const id = idle(() => {
+      // Warm up chunks for dashboards and summaries
+      import("./pages/AdminDashboard");
+      import("./pages/EmployeeDashboard");
+      import("./components/dashboard/AdminSummary");
+      import("./components/EmployeeDashboard/Summary");
+      import("./components/EmployeeDashboard/AttendanceReport");
+    });
+    return () => cancel(id);
+  }, []);
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="p-6 text-center text-gray-600">Loading...</div>}>
       <Routes>
-        {/* Redirect root */}
-        <Route path="/" element={<Navigate to="/admin-dashboard" replace />} />
+        {/* Redirect root to Login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
  
         {/* Auth Routes */}
         <Route path="login" element={<Login />} />
@@ -156,6 +172,7 @@ function App() {
           element={<div className="p-8 text-center">Page Not Found</div>}
         />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
