@@ -370,7 +370,7 @@ const PayslipHistory = () => {
   return (
     <div className="max-w-7xl mx-auto mt-6 sm:mt-10 bg-white p-4 sm:p-8 rounded-md shadow-md">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-xl sm:text-2xl font-bold">Payslip History & Management</h2>
+        <h2 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Payslip History & Management</h2>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <button
             onClick={() => navigate("/admin-dashboard/salary/payslip-generator")}

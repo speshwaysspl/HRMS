@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatDMY } from "../../utils/dateUtils";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -373,7 +374,7 @@ const View = () => {
                 <td className="px-6 py-3 border-b">{Number(salary.allowances).toFixed(2)}</td>
                 <td className="px-6 py-3 border-b">{Number(salary.deductions).toFixed(2)}</td>
                 <td className="px-6 py-3 border-b">{Number(salary.netSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b">{new Date(salary.payDate).toLocaleDateString()}</td>
+                <td className="px-6 py-3 border-b">{formatDMY(salary.payDate)}</td>
                 <td className="px-6 py-3 border-b">
                   <div className="flex space-x-2">
                     <button

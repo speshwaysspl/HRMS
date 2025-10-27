@@ -39,6 +39,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
+import { formatDMYWithTime } from '../../utils/dateUtils';
 
 const EmployeeFeedback = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -194,15 +195,7 @@ const EmployeeFeedback = () => {
 
 
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (date) => formatDMYWithTime(date);
 
   return (
     <Box sx={{ p: 3 }}>

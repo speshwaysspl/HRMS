@@ -29,20 +29,20 @@ const AdminSidebar = () => {
   const [salaryDropdownOpen, setSalaryDropdownOpen] = useState(false);
 
   const links = [
-    { to: "/admin-dashboard", label: "Dashboard", icon: <FaTachometerAlt />, end: true },
-    { to: "/admin-dashboard/employees", label: "Employees", icon: <FaUsers /> },
-    { to: "/admin-dashboard/departments", label: "Departments", icon: <FaBuilding /> },
+    { to: "/admin-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true },
+    { to: "/admin-dashboard/employees", label: "Manage Employees", icon: <FaUsers /> },
+    { to: "/admin-dashboard/departments", label: "Manage Departments", icon: <FaBuilding /> },
     { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
-    { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <AiOutlineFileText /> },
-    { to: "/admin-dashboard/announcements", label: "Announcements", icon: <FaBullhorn /> },
-    { to: "/admin-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
+    { to: "/admin-dashboard/attendance-report", label: "Admin Attendance Report", icon: <AiOutlineFileText /> },
+    { to: "/admin-dashboard/announcements", label: "Announcements Management", icon: <FaBullhorn /> },
+    { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaComments /> },
     { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 
   const salaryLinks = [
-    { to: "/admin-dashboard/salary/template-manager", label: "Manage Templates", icon: <FaClipboardList /> },
+    { to: "/admin-dashboard/salary/template-manager", label: "Payroll Template Manager", icon: <FaClipboardList /> },
     { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaFileInvoiceDollar /> },
-    { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History", icon: <FaHistory /> },
+    { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History & Management", icon: <FaHistory /> },
   ];
 
   // Track window resize for responsive behavior

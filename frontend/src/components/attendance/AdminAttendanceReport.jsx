@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
+import { formatDMY } from "../../utils/dateUtils";
  
 const AdminAttendanceReport = () => {
   const [selectedDate, setSelectedDate] = useState(toISTDateString(new Date()));
@@ -198,7 +199,10 @@ const AdminAttendanceReport = () => {
  
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <h2 className="text-2xl md:text-4xl font-bold text-blue-700 mb-6 md:mb-8 text-center drop-shadow">
+      <h2
+        className="text-2xl md:text-4xl font-bold text-blue-700 mb-6 md:mb-8 text-center drop-shadow"
+        style={{ fontFamily: 'Times New Roman, serif' }}
+      >
         📊 Admin Attendance Report
       </h2>
 
@@ -335,7 +339,7 @@ const AdminAttendanceReport = () => {
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="font-medium">Date (IST):</span> {att.date}</div>
+                    <div><span className="font-medium">Date (IST):</span> {formatDMY(att.date)}</div>
                     <div><span className="font-medium">Designation:</span> {att.designation}</div>
                     <div><span className="font-medium">In (IST):</span> {att.inTime || 'N/A'}</div>
                     <div><span className="font-medium">Out (IST):</span> {att.outTime || 'N/A'}</div>
@@ -391,7 +395,7 @@ const AdminAttendanceReport = () => {
                       <td className="px-3 py-2 text-sm">{att.employeeId}</td>
                       <td className="px-3 py-2 text-sm font-medium">{att.name}</td>
                       <td className="px-3 py-2 text-sm">{att.designation}</td>
-                      <td className="px-3 py-2 text-sm">{att.date}</td>
+                      <td className="px-3 py-2 text-sm">{formatDMY(att.date)}</td>
                       <td className="px-3 py-2 text-sm">{att.inTime || 'N/A'}</td>
                       <td className="px-3 py-2 text-sm">{att.outTime || 'N/A'}</td>
                       <td className="px-3 py-2 text-sm">{att.workMode}</td>

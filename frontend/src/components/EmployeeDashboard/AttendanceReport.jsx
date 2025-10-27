@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
+import { formatDMY } from "../../utils/dateUtils";
 import MonthPicker from "../common/MonthPicker";
  
 const AttendanceReport = () => {
@@ -436,7 +437,7 @@ const AttendanceReport = () => {
                     {monthlyData.map((record, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="border border-gray-300 px-4 py-2">
-                          {new Date(record.date).toLocaleDateString()}
+                          {formatDMY(record.date)}
                         </td>
                         <td className="border border-gray-300 px-4 py-2">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaEdit } from "react-icons/fa";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatDMY } from "../../utils/dateUtils";
 
 const View = () => {
   const { id } = useParams();
@@ -172,11 +173,7 @@ const View = () => {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-600 mb-1">Date of Birth</p>
                       <p className="text-gray-900 font-semibold">
-                        {new Date(employee.dob).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                        {formatDMY(employee.dob)}
                       </p>
                     </div>
                   </div>
@@ -218,11 +215,7 @@ const View = () => {
                       <p className="text-sm font-medium text-gray-600 mb-1">Joining Date</p>
                       <p className="text-gray-900 font-semibold">
                         {employee.joiningDate 
-                          ? new Date(employee.joiningDate).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })
+                          ? formatDMY(employee.joiningDate)
                           : 'N/A'
                         }
                       </p>

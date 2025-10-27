@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../../utils/apiConfig";
 import axios from "axios";
+import { formatDMY } from "../../utils/dateUtils";
 
 const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) => {
   const [logoUrl, setLogoUrl] = useState(null);
@@ -33,7 +34,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-IN');
+    return formatDMY(date);
   };
 
   // Calculate totals to match PDF

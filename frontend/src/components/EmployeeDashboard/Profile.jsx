@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { API_BASE } from "../../utils/apiConfig";
+import { formatDMY } from "../../utils/dateUtils";
 
 const Profile = () => {
   const { id } = useParams();
@@ -151,7 +152,7 @@ const Profile = () => {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-600 mb-1">Date of Birth</p>
                       <p className="text-gray-900 font-semibold">
-                        {employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Not provided'}
+                        {employee.dob ? formatDMY(employee.dob) : 'Not provided'}
                       </p>
                     </div>
                   </div>
@@ -202,7 +203,7 @@ const Profile = () => {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-600 mb-1">Joining Date</p>
                       <p className="text-gray-900 font-semibold">
-                        {employee.joiningDate ? new Date(employee.joiningDate).toLocaleDateString() : 'Not provided'}
+                        {employee.joiningDate ? formatDMY(employee.joiningDate) : 'Not provided'}
                       </p>
                     </div>
                   </div>
