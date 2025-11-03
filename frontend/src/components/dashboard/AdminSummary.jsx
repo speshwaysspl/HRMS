@@ -103,7 +103,7 @@ const AdminSummary = () => {
         </div>
         <div className="flex-1">
           <div className="text-sm md:text-base opacity-90">{getGreeting()},</div>
-          <div className="text-2xl md:text-3xl font-extrabold tracking-tight">{user?.name || 'Admin'}</div>
+         
           <div className="text-xs md:text-sm opacity-90 mt-1">{dailyQuote}</div>
         </div>
       </motion.div>

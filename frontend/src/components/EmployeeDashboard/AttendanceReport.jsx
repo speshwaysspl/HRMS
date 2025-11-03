@@ -235,17 +235,17 @@ const AttendanceReport = () => {
   if (loading) return <div className="p-8 text-center">Loading attendance...</div>;
  
   return (
-    <div className="p-8 min-h-screen bg-gray-100">
-      <h2 className="text-4xl font-extrabold text-blue-700 mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
+    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
+      <h2 className="text-3xl md:text-4xl font-extrabold text-blue-700 mb-4 md:mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
         Attendance Report
       </h2>
 
       {/* View Mode Tabs */}
-      <div className="mb-6 flex justify-center">
-        <div className="bg-white rounded-lg p-1 shadow-md">
+      <div className="mb-4 md:mb-6 flex justify-center">
+        <div className="bg-white rounded-lg p-1 shadow-md w-full max-w-xs">
           <button
             onClick={() => setViewMode("daily")}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
+            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-all ${
               viewMode === "daily"
                 ? "bg-blue-600 text-white shadow-md"
                 : "text-gray-600 hover:text-blue-600"
@@ -255,7 +255,7 @@ const AttendanceReport = () => {
           </button>
           <button
             onClick={() => setViewMode("monthly")}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
+            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-all ${
               viewMode === "monthly"
                 ? "bg-blue-600 text-white shadow-md"
                 : "text-gray-600 hover:text-blue-600"
@@ -424,8 +424,8 @@ const AttendanceReport = () => {
 
               {/* Monthly Data Virtualized List */}
               <div className="overflow-x-auto">
-                {/* Header */}
-                <div className="grid grid-cols-6 bg-gray-50 border border-gray-300">
+                {/* Desktop Header - Hidden on Mobile */}
+                <div className="hidden md:grid grid-cols-6 bg-gray-50 border border-gray-300">
                   <div className="px-4 py-2 text-left font-semibold">Date</div>
                   <div className="px-4 py-2 text-left font-semibold">Status</div>
                   <div className="px-4 py-2 text-left font-semibold">In Time</div>
@@ -433,57 +433,112 @@ const AttendanceReport = () => {
                   <div className="px-4 py-2 text-left font-semibold">Work Mode</div>
                   <div className="px-4 py-2 text-left font-semibold">Working Hours</div>
                 </div>
-                {/* Virtualized Rows */}
-                <List
-                  height={Math.min(384, Math.max(192, monthlyData.length * 48))}
-                  itemCount={monthlyData.length}
-                  itemSize={48}
-                  width={"100%"}
-                >
-                  {({ index, style }) => {
-                    const record = monthlyData[index];
-                    return (
-                      <div style={style} className="grid grid-cols-6 border border-gray-200 hover:bg-gray-50">
-                        <div className="px-4 py-2">{formatDMY(record.date)}</div>
-                        <div className="px-4 py-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            record.status === "Present"
-                              ? "bg-green-100 text-green-600"
-                              : record.status === "Present + Overtime"
-                              ? "bg-green-200 text-green-800"
-                              : record.status === "Half-Day"
-                              ? "bg-orange-100 text-orange-600"
-                              : record.status === "Incomplete"
-                              ? "bg-yellow-100 text-yellow-600"
-                              : record.status === "Leave"
-                              ? "bg-blue-100 text-blue-600"
-                              : record.status === "Work from Home - Present"
-                              ? "bg-purple-100 text-purple-600"
-                              : record.status === "Work from Home + Overtime"
-                              ? "bg-purple-200 text-purple-800"
-                              : record.status === "Work from Home - Half Day"
-                              ? "bg-purple-50 text-purple-500"
-                              : record.status === "Work from Home - Incomplete"
-                              ? "bg-yellow-100 text-yellow-600"
-                              : record.status === "Work from Home - Not Marked"
-                              ? "bg-gray-100 text-gray-600"
-                              : record.status === "Not Yet"
-                              ? "bg-gray-100 text-gray-600"
-                              : "bg-red-100 text-red-600"
-                          }`}>
-                            {record.status}
-                          </span>
+                
+                {/* Mobile View - Card Layout */}
+                <div className="md:hidden">
+                  {monthlyData.map((record, index) => (
+                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-semibold">{formatDMY(record.date)}</div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          record.status === "Present"
+                            ? "bg-green-100 text-green-600"
+                            : record.status === "Present + Overtime"
+                            ? "bg-green-200 text-green-800"
+                            : record.status === "Half-Day"
+                            ? "bg-orange-100 text-orange-600"
+                            : record.status === "Incomplete"
+                            ? "bg-yellow-100 text-yellow-600"
+                            : record.status === "Leave"
+                            ? "bg-blue-100 text-blue-600"
+                            : record.status === "Work from Home - Present"
+                            ? "bg-purple-100 text-purple-600"
+                            : record.status === "Work from Home + Overtime"
+                            ? "bg-purple-200 text-purple-800"
+                            : record.status === "Work from Home - Half Day"
+                            ? "bg-purple-50 text-purple-500"
+                            : record.status === "Work from Home - Incomplete"
+                            ? "bg-yellow-100 text-yellow-600"
+                            : record.status === "Work from Home - Not Marked"
+                            ? "bg-gray-100 text-gray-600"
+                            : record.status === "Not Yet"
+                            ? "bg-gray-100 text-gray-600"
+                            : "bg-red-100 text-red-600"
+                        }`}>
+                          {record.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-500">In:</span> {record.inTime || "-"}
                         </div>
-                        <div className="px-4 py-2">{record.inTime}</div>
-                        <div className="px-4 py-2">{record.outTime}</div>
-                        <div className="px-4 py-2">{record.workMode}</div>
-                        <div className="px-4 py-2">
-                          {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
+                        <div>
+                          <span className="text-gray-500">Out:</span> {record.outTime || "-"}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Mode:</span> {record.workMode}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Hours:</span> {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
                         </div>
                       </div>
-                    );
-                  }}
-                </List>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Desktop View - Virtualized List */}
+                <div className="hidden md:block">
+                  <List
+                    height={Math.min(384, Math.max(192, monthlyData.length * 48))}
+                    itemCount={monthlyData.length}
+                    itemSize={48}
+                    width={"100%"}
+                  >
+                    {({ index, style }) => {
+                      const record = monthlyData[index];
+                      return (
+                        <div style={style} className="grid grid-cols-6 border border-gray-200 hover:bg-gray-50">
+                          <div className="px-4 py-2">{formatDMY(record.date)}</div>
+                          <div className="px-4 py-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              record.status === "Present"
+                                ? "bg-green-100 text-green-600"
+                                : record.status === "Present + Overtime"
+                                ? "bg-green-200 text-green-800"
+                                : record.status === "Half-Day"
+                                ? "bg-orange-100 text-orange-600"
+                                : record.status === "Incomplete"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : record.status === "Leave"
+                                ? "bg-blue-100 text-blue-600"
+                                : record.status === "Work from Home - Present"
+                                ? "bg-purple-100 text-purple-600"
+                                : record.status === "Work from Home + Overtime"
+                                ? "bg-purple-200 text-purple-800"
+                                : record.status === "Work from Home - Half Day"
+                                ? "bg-purple-50 text-purple-500"
+                                : record.status === "Work from Home - Incomplete"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : record.status === "Work from Home - Not Marked"
+                                ? "bg-gray-100 text-gray-600"
+                                : record.status === "Not Yet"
+                                ? "bg-gray-100 text-gray-600"
+                                : "bg-red-100 text-red-600"
+                            }`}>
+                              {record.status}
+                            </span>
+                          </div>
+                          <div className="px-4 py-2">{record.inTime}</div>
+                          <div className="px-4 py-2">{record.outTime}</div>
+                          <div className="px-4 py-2">{record.workMode}</div>
+                          <div className="px-4 py-2">
+                            {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
+                          </div>
+                        </div>
+                      );
+                    }}
+                  </List>
+                </div>
               </div>
             </div>
           )}

@@ -3,6 +3,9 @@ import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/apiConfig';
 
+// Add notification sound
+const notificationSound = new Audio('/notification-sound.mp3');
+
 const NotificationContext = createContext();
 
 export const useNotifications = () => {
@@ -42,12 +45,17 @@ export const NotificationProvider = ({ children }) => {
       });
 
       // Listen for new notifications
-      socket.on('newNotification', (notification) => {
+      socket.on('notification', (notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
         // Show popup notification
         showPopupNotification(notification);
+        
+        // Request notification permission on first notification if not already set
+        if (("Notification" in window) && Notification.permission === "default") {
+          Notification.requestPermission();
+        }
       });
 
       socket.on('connect_error', (error) => {
@@ -62,16 +70,79 @@ export const NotificationProvider = ({ children }) => {
 
   // Show popup notification
   const showPopupNotification = (notification) => {
+    // Play notification sound
+    try {
+      notificationSound.play().catch(err => console.log("Error playing sound:", err));
+    } catch (error) {
+      console.error("Error playing notification sound:", error);
+    }
+
+    // Check if browser notifications are supported
+    if (!("Notification" in window)) {
+      console.log("This browser does not support system notifications");
+      // Fall back to in-app notification
+      showInAppNotification(notification);
+      return;
+    }
+
+    // Check if permission is already granted
+    if (Notification.permission === "granted") {
+      createNotification(notification);
+    } 
+    // Otherwise, request permission
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          createNotification(notification);
+        } else {
+          // Fall back to in-app notification if permission denied
+          showInAppNotification(notification);
+        }
+      });
+    } else {
+      // Fall back to in-app notification if permission denied
+      showInAppNotification(notification);
+    }
+  };
+
+  // Create the actual notification
+  const createNotification = (notification) => {
+    const title = notification.title || "New Notification";
+    const options = {
+      body: notification.message || "",
+      icon: "/images/logo.png", // Corrected path to notification icon
+      tag: notification._id, // Unique identifier for the notification
+      requireInteraction: true, // Keep notification visible until user interacts with it
+      silent: false // Ensure browser plays its own sound too
+    };
+
+    try {
+      const systemNotification = new Notification(title, options);
+      
+      // Handle notification click
+      systemNotification.onclick = () => {
+        window.focus(); // Focus on the window
+        // Trigger the notification bell dropdown to open
+        window.dispatchEvent(new Event('triggerNotificationBell'));
+      };
+    } catch (error) {
+      console.error("Error creating system notification:", error);
+      showInAppNotification(notification);
+    }
+  };
+  
+  // Show in-app popup notification as fallback
+  const showInAppNotification = (notification) => {
     // Create a temporary popup element
     const popup = document.createElement('div');
     popup.className = 'notification-popup';
     popup.innerHTML = `
       <div class="notification-popup-content">
         <div class="notification-popup-header">
-          <h4>${notification.title}</h4>
+          <h4>${notification.title || 'New Notification'}</h4>
           <button class="notification-popup-close">&times;</button>
         </div>
-        <p>${notification.message}</p>
+        <p>${notification.message || ''}</p>
       </div>
     `;
 
@@ -83,10 +154,11 @@ export const NotificationProvider = ({ children }) => {
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       z-index: 10000;
       max-width: 350px;
       animation: slideIn 0.3s ease-out;
+      opacity: 1;
     `;
 
     const content = popup.querySelector('.notification-popup-content');
@@ -133,51 +205,57 @@ export const NotificationProvider = ({ children }) => {
       justify-content: center;
     `;
 
-    // Add animation keyframes
-    if (!document.querySelector('#notification-popup-styles')) {
-      const style = document.createElement('style');
-      style.id = 'notification-popup-styles';
-      style.textContent = `
+    // Add animation styles to document if not already present
+    if (!document.getElementById('notification-animations')) {
+      const styleSheet = document.createElement('style');
+      styleSheet.id = 'notification-animations';
+      styleSheet.textContent = `
         @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-        @keyframes slideOut {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
         }
       `;
-      document.head.appendChild(style);
+      document.head.appendChild(styleSheet);
     }
 
-    // Close functionality
-    const closePopup = () => {
-      popup.style.animation = 'slideOut 0.3s ease-in';
+    // Add to DOM
+    document.body.appendChild(popup);
+
+    // Add click event to close button
+    const closeButton = popup.querySelector('.notification-popup-close');
+    closeButton.style.cssText = `
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 8px;
+    `;
+    
+    closeButton.addEventListener('click', () => {
+      popup.style.animation = 'fadeOut 0.3s forwards';
       setTimeout(() => {
-        if (popup.parentNode) {
-          popup.parentNode.removeChild(popup);
+        if (document.body.contains(popup)) {
+          document.body.removeChild(popup);
         }
       }, 300);
-    };
+    });
 
-    closeBtn.addEventListener('click', closePopup);
-
-    // Auto close after 5 seconds
-    setTimeout(closePopup, 5000);
-
-    document.body.appendChild(popup);
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (document.body.contains(popup)) {
+        popup.style.animation = 'fadeOut 0.3s forwards';
+        setTimeout(() => {
+          if (document.body.contains(popup)) {
+            document.body.removeChild(popup);
+          }
+        }, 300);
+      }
+    }, 5000);
   };
 
   // Fetch initial notifications

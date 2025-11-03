@@ -159,7 +159,6 @@ const EmployeeFeedback = () => {
       title: '',
       category: 'General',
       description: '',
-      isAnonymous: false,
       rating: 0,
       tags: []
     });
@@ -172,7 +171,6 @@ const EmployeeFeedback = () => {
         title: feedback.title,
         category: feedback.category,
         description: feedback.description,
-        isAnonymous: feedback.isAnonymous,
         tags: feedback.tags || [],
         rating: feedback.rating || 0
       });
@@ -441,7 +439,7 @@ const EmployeeFeedback = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <Box>
                   <Typography component="legend" sx={{ mb: 1 }}>Rating (Optional)</Typography>
                   <Rating
@@ -451,17 +449,6 @@ const EmployeeFeedback = () => {
                     }}
                   />
                 </Box>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isAnonymous}
-                      onChange={(e) => setFormData(prev => ({ ...prev, isAnonymous: e.target.checked }))}
-                    />
-                  }
-                  label="Submit Anonymously"
-                />
               </Grid>
             </Grid>
           </DialogContent>
