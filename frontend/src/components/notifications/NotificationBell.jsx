@@ -26,13 +26,14 @@ const NotificationBell = () => {
     };
   }, []);
 
-  // Listen for custom event to trigger notification bell
+  // Event listener for external triggers to open notification dropdown
   useEffect(() => {
     const handleTriggerNotificationBell = () => {
       setIsOpen(true);
     };
-
+    
     window.addEventListener('triggerNotificationBell', handleTriggerNotificationBell);
+    
     return () => {
       window.removeEventListener('triggerNotificationBell', handleTriggerNotificationBell);
     };
@@ -89,6 +90,20 @@ const NotificationBell = () => {
             }
           }
           break;
+          
+        case 'feedback_submitted':
+          if (isAdmin) {
+            // Admin should go to feedback management page
+            navigate('/admin-dashboard/feedback');
+          }
+          break;
+          
+        case 'feedback_response':
+          if (isEmployee) {
+            // Employee should go to their feedback page
+            navigate('/employee-dashboard/feedback');
+          }
+          break;
 
         default:
           // For unknown notification types, navigate to dashboard
@@ -116,6 +131,10 @@ const NotificationBell = () => {
         return '❌';
       case 'announcement':
         return '📢';
+      case 'feedback_submitted':
+        return '📋';
+      case 'feedback_response':
+        return '💬';
       default:
         return '🔔';
     }

@@ -339,7 +339,7 @@ const Attendance = () => {
     };
   }, []);
  
-  // Fetch today’s record on mount
+  // Fetch today's record on mount
   useEffect(() => {
     const fetchToday = async () => {
       const token = localStorage.getItem("token");
@@ -348,6 +348,31 @@ const Attendance = () => {
         const res = await axios.get(`${API_BASE}/api/attendance/today`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        
+        // Check for ongoing break in localStorage
+        const savedBreak = localStorage.getItem('ongoingBreak');
+        let breaks = res.data?.breaks || [];
+        
+        if (savedBreak) {
+          try {
+            const ongoingBreak = JSON.parse(savedBreak);
+            // If there's an ongoing break in localStorage, add it to breaks
+            if (!ongoingBreak.end) {
+              // Check if this break is already in the breaks array
+              const existingBreakIndex = breaks.findIndex(b => !b.end);
+              if (existingBreakIndex >= 0) {
+                // Replace the existing ongoing break
+                breaks[existingBreakIndex] = ongoingBreak;
+              } else {
+                // Add the ongoing break to the breaks array
+                breaks.push(ongoingBreak);
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing saved break:", e);
+          }
+        }
+        
         if (res.data) {
           setTodayRecord(res.data);
           setTracker((prev) => ({
@@ -355,7 +380,7 @@ const Attendance = () => {
             inTime: res.data.inTime || "",
             outTime: res.data.outTime || "",
             workMode: res.data.workMode || prev.workMode,
-            breaks: res.data.breaks || [],
+            breaks: breaks,
             latitude: res.data.inLocation?.latitude || prev.latitude,
             longitude: res.data.inLocation?.longitude || prev.longitude,
             area: res.data.inLocation?.area || prev.area,
@@ -380,6 +405,13 @@ const Attendance = () => {
         date: today,
         breaks: tracker.breaks,
       };
+
+      // Check if there's an ongoing break
+      const ongoingBreakIndex = tracker.breaks.findIndex(b => !b.end);
+      if (ongoingBreakIndex >= 0) {
+        // Save the ongoing break to localStorage
+        localStorage.setItem('ongoingBreak', JSON.stringify(tracker.breaks[ongoingBreakIndex]));
+      }
 
       await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -516,6 +548,8 @@ const Attendance = () => {
                       updated[idx].end = now;
                       return { ...prev, breaks: updated };
                     });
+                    // Remove from localStorage when break ends
+                    localStorage.removeItem('ongoingBreak');
                     // Save breaks to backend after state update
                     setTimeout(() => saveBreaksToBackend(), 100);
                   }}
@@ -530,10 +564,22 @@ const Attendance = () => {
           <button
             onClick={async () => {
               const now = getCurrentTime();
+              const newBreak = { start: now, end: "" };
+              
+              // Update tracker state
               setTracker((prev) => ({
                 ...prev,
-                breaks: [...prev.breaks, { start: now, end: "" }],
+                breaks: [...prev.breaks, newBreak],
               }));
+              
+              // Store the ongoing break in localStorage immediately
+              const ongoingBreak = {
+                start: now,
+                end: "",
+                timestamp: new Date().getTime()
+              };
+              localStorage.setItem('ongoingBreak', JSON.stringify(ongoingBreak));
+              
               // Save breaks to backend after state update
               setTimeout(() => saveBreaksToBackend(), 100);
             }}
