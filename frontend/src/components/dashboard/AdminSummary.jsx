@@ -102,10 +102,15 @@ const AdminSummary = () => {
           <FaUser className="text-xl md:text-2xl" />
         </div>
         <div className="flex-1">
-          <div className="text-sm md:text-base opacity-90">{getGreeting()},</div>
-         
-          <div className="text-xs md:text-sm opacity-90 mt-1">{dailyQuote}</div>
-        </div>
+  <div className="text-xl md:text-2xl font-semibold opacity-90">
+    {getGreeting()},
+  </div>
+
+  <div className="text-lg md:text-xl opacity-90 mt-2">
+    {dailyQuote}
+  </div>
+</div>
+
       </motion.div>
 
       {/* Heading */}

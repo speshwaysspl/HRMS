@@ -132,7 +132,7 @@ const PayrollTemplateManager = () => {
           }));
           
           // Show user-friendly error message
-          alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
+          // alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
         } else {
           console.error("Error fetching employee details:", error);
         }
@@ -557,6 +557,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter DA amount"
+                    required
                   />
                 </div>
                 
@@ -569,6 +570,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter HRA amount"
+                    required
                   />
                 </div>
                 
@@ -581,6 +583,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter conveyance amount"
+                    required
                   />
                 </div>
                 
@@ -593,6 +596,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter medical allowances"
+                    required
                   />
                 </div>
                 
@@ -605,6 +609,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter special allowances"
+                    required
                   />
                 </div>
                 
@@ -617,6 +622,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter other allowances"
+                    required
                   />
                 </div>
                 
