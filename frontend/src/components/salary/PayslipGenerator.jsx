@@ -116,7 +116,7 @@ const PayslipGenerator = () => {
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
+          // alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
         }
       }
     }
@@ -567,6 +567,7 @@ const PayslipGenerator = () => {
                 min="0"
                 max="31"
                 placeholder="Enter LOP days"
+                onWheel={(e) => e.target.blur()}
               />
             </div>
             
@@ -590,6 +591,7 @@ const PayslipGenerator = () => {
                 step="0.01"
                 readOnly={payslip.autoCalculateLOP}
                 placeholder="Enter LOP amount"
+                onWheel={(e) => e.target.blur()}
               />
             </div>
           </div>
@@ -736,6 +738,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
                 placeholder="Enter DA amount"
+                required
               />
             </div>
             
@@ -748,6 +751,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
                 placeholder="Enter HRA amount"
+                required
               />
             </div>
             
@@ -760,6 +764,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 placeholder="Enter conveyance amount"
+                required
               />
             </div>
             
@@ -772,6 +777,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 placeholder="Enter medical allowances"
+                required
               />
             </div>
             
@@ -784,6 +790,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 placeholder="Enter special allowances"
+                required
               />
             </div>
             
@@ -796,6 +803,7 @@ const PayslipGenerator = () => {
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 placeholder="Enter other allowances"
+                required
               />
             </div>
             
