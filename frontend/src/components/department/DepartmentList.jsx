@@ -53,8 +53,9 @@ const DepartmentList = () => {
   }, []);
 
   const filterDepartments = (e) => {
+    const q = e.target.value.toLowerCase().trim();
     const records = departments.filter((dep) =>
-      dep.dep_name.toLowerCase().includes(e.target.value.toLowerCase())
+      (dep.dep_name || "").toLowerCase().includes(q)
     );
     setFilteredDepartments(records);
   };

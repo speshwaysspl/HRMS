@@ -153,19 +153,19 @@ const getAllFeedback = async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build query
     const query = {};
     if (status) query.status = status;
     if (category) query.category = category;
     if (priority) query.priority = priority;
     
-    // Search functionality
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
-      ];
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = `^${escaped}$`;
+      const users = await User.find({ name: { $regex: pattern, $options: 'i' } }, { _id: 1 });
+      const employees = await Employee.find({ userId: { $in: users.map(u => u._id) } }, { _id: 1 });
+      const employeeIds = employees.map(e => e._id);
+      query.employeeId = { $in: employeeIds };
+      query.isAnonymous = false;
     }
 
     const sortOptions = {};

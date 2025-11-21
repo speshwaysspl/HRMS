@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Login = () => {
   const { login } = useAuth();
@@ -246,11 +247,11 @@ const Login = () => {
                 required
                 style={{
                   width: "100%",
-                  padding: "12px 42px 12px 42px",
+                  padding: "12px 50px 12px 42px",
                   borderRadius: "10px",
                   border: "1px solid rgba(255,255,255,0.08)",
                   background: "transparent",
-                  color: "#fff",
+                  color: showPassword ? "#111827" : "#fff",
                   outline: "none",
                   transition: "box-shadow 180ms, border 180ms",
                   boxShadow: focused.password
@@ -259,7 +260,6 @@ const Login = () => {
                 }}
               />
 
-              {/* show/hide button */}
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
@@ -269,15 +269,23 @@ const Login = () => {
                   right: "10px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  background: "transparent",
-                  border: "none",
-                  color: "#CFEFE7",
+                  background: "rgba(17,24,39,0.35)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  color: "#fff",
                   cursor: "pointer",
                   padding: "6px",
-                  fontSize: "13px",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 20,
                 }}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? (
+                  <FiEyeOff size={16} />
+                ) : (
+                  <FiEye size={16} />
+                )}
               </button>
 
               {/* lock icon left */}

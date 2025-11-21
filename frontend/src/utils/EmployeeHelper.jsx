@@ -56,7 +56,8 @@ export const columns = [
   {
     name: "Action",
     selector: (row) => row.action,
-    center: "true",
+    center: true,
+    width: "260px",
   },
 ];
 
@@ -111,7 +112,7 @@ export const EmployeeButtons = ({ Id }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
       <button
         className="px-3 py-1.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
         onClick={() => navigate(`/admin-dashboard/employees/${Id}`)}

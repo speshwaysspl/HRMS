@@ -19,6 +19,25 @@ const AddDepartment = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const name = department.dep_name?.trim().toLowerCase();
+      if (!name) {
+        alert("Department name is required");
+        return;
+      }
+      const existing = await axios.get(`${API_BASE}/api/department`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (existing.data?.success) {
+        const exists = existing.data.departments.some(
+          (d) => (d.dep_name || "").trim().toLowerCase() === name
+        );
+        if (exists) {
+          alert("Department already exists");
+          return;
+        }
+      }
       const response = await axios.post(
         `${API_BASE}/api/department/add`,
         department,

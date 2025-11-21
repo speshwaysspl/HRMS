@@ -543,7 +543,7 @@ const PayslipGenerator = () => {
                 name="workingdays"
                 value={calculatingWorkingDays ? "" : payslip.workingdays}
                 onChange={handleChange}
-                className={`mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base ${
+                className={`mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base appearance-none ${
                   calculatingWorkingDays ? 'bg-orange-50 animate-pulse' : 'bg-blue-50'
                 }`}
                 min="1"
@@ -563,7 +563,7 @@ const PayslipGenerator = () => {
                 name="lopDays"
                 value={payslip.lopDays}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-gray-300 rounded-md appearance-none"
                 min="0"
                 max="31"
                 placeholder="Enter LOP days"
@@ -584,7 +584,7 @@ const PayslipGenerator = () => {
                 name="lopamount"
                 value={payslip.autoCalculateLOP ? calculations.lopAmount : payslip.lopamount}
                 onChange={handleChange}
-                className={`mt-1 p-2 block w-full border border-gray-300 rounded-md ${
+                className={`mt-1 p-2 block w-full border border-gray-300 rounded-md appearance-none ${
                   payslip.autoCalculateLOP ? 'bg-green-50' : ''
                 }`}
                 min="0"
@@ -601,7 +601,15 @@ const PayslipGenerator = () => {
               <input
                 type="checkbox"
                 checked={payslip.autoCalculateLOP}
-                onChange={(e) => setPayslip(prev => ({ ...prev, autoCalculateLOP: e.target.checked }))}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setPayslip(prev => ({
+                    ...prev,
+                    autoCalculateLOP: checked,
+                    lopDays: checked ? prev.lopDays : 0,
+                    lopamount: checked ? prev.lopamount : 0
+                  }));
+                }}
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">

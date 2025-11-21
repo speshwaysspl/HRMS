@@ -44,12 +44,14 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
     Number(payslip.hra || 0) +
     Number(payslip.conveyance || 0) +
     Number(payslip.medicalallowances || 0) +
-    Number(payslip.specialallowances || 0);
+    Number(payslip.specialallowances || 0) +
+    Number(payslip.allowances || 0);
 
   const totalDeductions =
     Number(payslip.proftax || 0) +
     Number(payslip.pf || 0) +
-    Number(payslip.lopamount || 0);
+    Number(payslip.lopamount || 0) +
+    Number(payslip.deductions || 0);
 
   const netPay = totalEarnings - totalDeductions;
 
@@ -216,6 +218,10 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
                     <span>SPECIAL ALLOWANCE</span>
                     <span>{Number(payslip.specialallowances || 0).toFixed(0)}</span>
                   </div>
+                  <div className="flex justify-between text-sm">
+                    <span>OTHER ALLOWANCE</span>
+                    <span>{Number(payslip.allowances || 0).toFixed(0)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -237,6 +243,10 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
                   <div className="flex justify-between text-sm">
                     <span>LOSS OF PAY</span>
                     <span>{Number(payslip.lopamount || 0).toFixed(0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>OTHER DEDUCTIONS</span>
+                    <span>{Number(payslip.deductions || 0).toFixed(0)}</span>
                   </div>
                 </div>
               </div>
