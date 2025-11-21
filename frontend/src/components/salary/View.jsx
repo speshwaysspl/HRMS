@@ -297,7 +297,7 @@ const View = () => {
     <div className="overflow-x-auto p-5">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Salary Management</h2>
-        {user?.role === 'admin' && (
+        {user?.role === 'admin' && !id && (
           <div className="space-x-3">
             <button
               onClick={() => navigate("/admin-dashboard/salary/payslip-generator")}

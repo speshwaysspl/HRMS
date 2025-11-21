@@ -104,7 +104,8 @@ const generateSalaryPDFContent = (doc, salary) => {
   cursorY += 100;
 
   /** -------------------- EARNINGS & DEDUCTIONS -------------------- **/
-  doc.rect(20, cursorY, pageWidth - 40, 140).stroke();
+  const rowHeight = 18;
+  const rowGap = 3;
 
   const earningsRows = [
     ["BASIC", salary.basicSalary],
@@ -113,12 +114,20 @@ const generateSalaryPDFContent = (doc, salary) => {
     ["CONVEYANCE", salary.conveyance],
     ["MEDICAL ALLOWANCE", salary.medicalallowances],
     ["SPECIAL ALLOWANCE", salary.specialallowances],
+    ["OTHER ALLOWANCE", salary.allowances],
   ];
   const deductionRows = [
     ["PROF TAX", salary.proftax],
     ["PF", salary.pf],
     ["LOSS OF PAY", salary.lopamount],
+    ["OTHER DEDUCTIONS", salary.deductions],
   ];
+
+  const maxRows = Math.max(earningsRows.length, deductionRows.length);
+  const headerHeight = 20;
+  const paddingBottom = 15;
+  const sectionHeight = headerHeight + (maxRows * (rowHeight + rowGap)) + paddingBottom;
+  doc.rect(20, cursorY, pageWidth - 40, sectionHeight).stroke();
 
   doc.font("Times-Bold").fontSize(10);
   doc.text("Earnings", 25, cursorY + 5);
@@ -126,8 +135,7 @@ const generateSalaryPDFContent = (doc, salary) => {
   doc.text("Deductions", pageWidth / 2 + 5, cursorY + 5);
   doc.text("Actual", pageWidth - 130, cursorY + 5);
 
-  let rowY = cursorY + 20;
-  const rowHeight = 18;
+  let rowY = cursorY + headerHeight;
   const formatAmt = (amt) => Number(amt || 0).toFixed(0);
 
   for (let i = 0; i < Math.max(earningsRows.length, deductionRows.length); i++) {
@@ -151,39 +159,38 @@ const generateSalaryPDFContent = (doc, salary) => {
     Number(salary.hra || 0) +
     Number(salary.conveyance || 0) +
     Number(salary.medicalallowances || 0) +
-    Number(salary.specialallowances || 0);
+    Number(salary.specialallowances || 0) +
+    Number(salary.allowances || 0);
 
   const totalDeductions =
     Number(salary.proftax || 0) +
     Number(salary.pf || 0) +
-    Number(salary.lopamount || 0);
+    Number(salary.lopamount || 0) +
+    Number(salary.deductions || 0);
 
   const netPay = totalEarnings - totalDeductions;
 
-  rowY += 5;
+  const gapBelowBox = 18;
+  const totalsY = cursorY + sectionHeight + gapBelowBox;
   doc
     .font("Times-Bold")
     .fontSize(10)
-    .text(`Total Earnings: ${formatCurrency(totalEarnings)}`, 25, rowY)
-    .text(`Total Deductions: ${formatCurrency(totalDeductions)}`, pageWidth / 2 + 5, rowY);
+    .text(`Total Earnings: ${formatCurrency(totalEarnings)}`, 25, totalsY)
+    .text(`Total Deductions: ${formatCurrency(totalDeductions)}`, pageWidth / 2 + 5, totalsY);
 
-  rowY += 25;
+  const netY = totalsY + 25;
   doc
     .font("Times-Italic")
     .fontSize(12)
-    .text(`Net Pay for the month: ${formatCurrency(netPay)}`, 25, rowY)
+    .text(`Net Pay for the month: ${formatCurrency(netPay)}`, 25, netY)
     .font("Times-Italic")
     .fontSize(10)
-    .text(
-      `(${toWords(netPay).replace(/\b\w/g, (c) => c.toUpperCase())} Rupees Only)`,
-      25,
-      rowY + 15
-    );
+    .text(`(${toWords(netPay).replace(/\b\w/g, (c) => c.toUpperCase())} Rupees Only)`, 25, netY + 15);
 
   doc
     .fontSize(12)
     .font("Times-Roman")
-    .text("This is a system generated and does not require signature", 0, rowY + 80, {
+    .text("This is a system generated and does not require signature", 0, netY + 80, {
       width: pageWidth,
       align: "center",
     });

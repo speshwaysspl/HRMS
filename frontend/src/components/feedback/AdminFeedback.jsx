@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -42,23 +42,27 @@ import {
   Reply as ReplyIcon,
   Close as CloseIcon,
   FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  Search as SearchIcon
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
+ 
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
 import { formatDMYWithTime } from '../../utils/dateUtils';
-
 const AdminFeedback = () => {
   const [feedbacks, setFeedbacks] = useState([]);
+  const [allFeedbacks, setAllFeedbacks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewingFeedback, setViewingFeedback] = useState(null);
   const [respondingFeedback, setRespondingFeedback] = useState(null);
   const [adminResponse, setAdminResponse] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [activeTab, setActiveTab] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  
+  
   const [filters, setFilters] = useState({
     category: '',
     sortBy: 'createdAt',
@@ -79,16 +83,19 @@ const AdminFeedback = () => {
 
   useEffect(() => {
     fetchFeedbacks();
-  }, [filters, pagination.page, pagination.rowsPerPage, searchTerm]);
+  }, [filters]);
+
+  
 
   const fetchFeedbacks = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: pagination.page + 1,
-        limit: pagination.rowsPerPage,
-        search: searchTerm,
-        ...filters
+        page: 1,
+        limit: 1000,
+        category: filters.category,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
 
       const response = await axios.get(`${API_BASE}/api/feedback?${params}`, {
@@ -96,11 +103,9 @@ const AdminFeedback = () => {
       });
 
       if (response.data.success) {
-        setFeedbacks(response.data.data.feedbacks);
-        setPagination(prev => ({
-          ...prev,
-          totalItems: response.data.data.pagination.totalItems
-        }));
+        const items = response.data.data.feedbacks || [];
+        setAllFeedbacks(items);
+        setPagination(prev => ({ ...prev, page: 0 }));
       }
     } catch (error) {
       showSnackbar('Failed to fetch feedback', 'error');
@@ -108,6 +113,35 @@ const AdminFeedback = () => {
       setLoading(false);
     }
   };
+
+  const filteredFeedbacks = useMemo(() => {
+    let items = allFeedbacks.slice();
+    if (filters.category) {
+      items = items.filter(f => (f.category || '') === filters.category);
+    }
+    if (dateFrom || dateTo) {
+      const start = dateFrom ? new Date(dateFrom) : null;
+      const end = dateTo ? new Date(dateTo) : null;
+      if (end) end.setHours(23, 59, 59, 999);
+      items = items.filter(f => {
+        const d = new Date(f.createdAt);
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return items;
+  }, [allFeedbacks, filters.category, dateFrom, dateTo]);
+
+  const pagedFeedbacks = useMemo(() => {
+    const start = pagination.page * pagination.rowsPerPage;
+    return filteredFeedbacks.slice(start, start + pagination.rowsPerPage);
+  }, [filteredFeedbacks, pagination.page, pagination.rowsPerPage]);
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, totalItems: filteredFeedbacks.length }));
+  }, [filteredFeedbacks.length]);
 
 
 
@@ -200,42 +234,65 @@ const AdminFeedback = () => {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} sm={3} md={3}>
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Search feedback..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                  }}
+                  type="date"
+                  label="From Date"
+                  InputLabelProps={{ shrink: true }}
+                  value={dateFrom}
+                  onChange={(e) => { setPagination(prev => ({ ...prev, page: 0 })); setDateFrom(e.target.value); }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={12} sm={3} md={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="date"
+                  label="To Date"
+                  InputLabelProps={{ shrink: true }}
+                  value={dateTo}
+                  onChange={(e) => { setPagination(prev => ({ ...prev, page: 0 })); setDateTo(e.target.value); }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={2} md={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={() => {
+                    setFilters({ category: '', sortBy: 'createdAt', sortOrder: 'desc' });
+                    setPagination(prev => ({ ...prev, page: 0 }));
+                    setSearchQuery('');
+                    setDateFrom('');
+                    setDateTo('');
+                    fetchFeedbacks();
+                  }}
+                  fullWidth
+                >
+                  Refresh
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={5} md={3}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Category</InputLabel>
+                  <InputLabel id="category-label">Category</InputLabel>
                   <Select
                     value={filters.category}
+                    labelId="category-label"
                     label="Category"
                     onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                    MenuProps={{
+                      disableScrollLock: true,
+                      PaperProps: { sx: { maxHeight: 240 } }
+                    }}
+                    sx={{ minWidth: 200 }}
                   >
-                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value=""><em>All</em></MenuItem>
                     {categories.map(category => (
                       <MenuItem key={category} value={category}>{category}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  variant="outlined"
-                  startIcon={<RefreshIcon />}
-                  onClick={fetchFeedbacks}
-                  fullWidth
-                >
-                  Refresh
-                </Button>
               </Grid>
             </Grid>
           </CardContent>
@@ -259,7 +316,7 @@ const AdminFeedback = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {feedbacks.map((feedback) => (
+                {pagedFeedbacks.map((feedback) => (
                   <TableRow key={feedback._id} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -340,7 +397,7 @@ const AdminFeedback = () => {
           </TableContainer>
           <TablePagination
             component="div"
-            count={pagination.totalItems}
+            count={filteredFeedbacks.length}
             page={pagination.page}
             onPageChange={(e, newPage) => setPagination(prev => ({ ...prev, page: newPage }))}
             rowsPerPage={pagination.rowsPerPage}

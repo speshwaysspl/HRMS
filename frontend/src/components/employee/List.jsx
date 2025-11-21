@@ -99,12 +99,14 @@ const List = () => {
         },
         rows: {
           style: {
-            minHeight: '60px',
+            minHeight: '68px',
+            paddingTop: '10px',
+            paddingBottom: '10px',
             '&:hover': {
               backgroundColor: '#f1f5f9',
               cursor: 'pointer',
             },
-            borderBottom: '1px solid #f1f5f9',
+            borderBottom: '12px solid #f8fafc',
           },
         },
         cells: {

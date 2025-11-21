@@ -23,6 +23,11 @@ const Setting = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState(null);
+  const [show, setShow] = useState({
+    oldPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,27 +36,49 @@ const Setting = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (setting.newPassword !== setting.confirmPassword) {
+    const pwd = setting.newPassword || "";
+    const confirm = setting.confirmPassword || "";
+    const lengthOk = pwd.length >= 8 && pwd.length <= 18;
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasLower = /[a-z]/.test(pwd);
+    const hasDigit = /[0-9]/.test(pwd);
+    const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+
+    if (!lengthOk) {
+      setError("New password must be 8–18 characters");
+      return;
+    }
+    if (!(hasUpper && hasLower && hasDigit && hasSpecial)) {
+      setError("New password must include uppercase, lowercase, number, and special character");
+      return;
+    }
+    if ((setting.oldPassword || "") === pwd) {
+      setError("Old and new password cannot be the same");
+      return;
+    }
+    if (pwd !== confirm) {
       setError("❌ Passwords do not match");
-    } else {
-      try {
-        const response = await axios.put(
-          `${API_BASE}/api/setting/change-password`,
-          setting,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        if (response.data.success) {
-          navigate("/admin-dashboard/employees");
-          setError("");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${API_BASE}/api/setting/change-password`,
+        setting,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      } catch (error) {
-        if (error.response && !error.response.data.success) {
-          setError(error.response.data.error);
-        }
+      );
+      if (response.data.success) {
+        navigate("/admin-dashboard/employees");
+        setError("");
+      }
+    } catch (error) {
+      if (error.response && !error.response.data.success) {
+        const msg = String(error.response.data.error || "");
+        setError(msg.includes("wrong") ? "Wrong old password" : msg);
       }
     }
   };
@@ -112,23 +139,34 @@ const Setting = () => {
                     ? "New Password"
                     : "Confirm Password"}
                 </label>
-                <motion.input
-                  type="password"
-                  name={field}
-                  placeholder={
-                    field === "oldPassword"
-                      ? "Enter old password"
-                      : field === "newPassword"
-                      ? "Enter new password"
-                      : "Re-enter new password"
-                  }
-                  onChange={handleChange}
-                  whileFocus={{ scale: 1.02, borderColor: "#14b8a6" }}
-                  className="mt-1 w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition"
-                  required
-                />
+                <div className="relative">
+                  <motion.input
+                    type={show[field] ? "text" : "password"}
+                    name={field}
+                    placeholder={
+                      field === "oldPassword"
+                        ? "Enter old password"
+                        : field === "newPassword"
+                        ? "Enter new password"
+                        : "Re-enter new password"
+                    }
+                    onChange={handleChange}
+                    whileFocus={{ scale: 1.02, borderColor: "#14b8a6" }}
+                    className="mt-1 w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow((s) => ({ ...s, [field]: !s[field] }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-teal-600"
+                  >
+                    {show[field] ? "Hide" : "Show"}
+                  </button>
+                </div>
               </motion.div>
             ))}
+
+            {/* helper text removed per request */}
 
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: "#0f766e" }}
