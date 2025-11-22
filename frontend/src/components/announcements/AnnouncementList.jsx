@@ -30,8 +30,9 @@ const columns = [
   },
   {
     name: "Action",
-    cell: (row) => <AnnouncementButtons Id={row._id} />,
-    width: "180px",
+    cell: (row) => <div className="w-full"><AnnouncementButtons Id={row._id} /></div>,
+    center: true,
+    width: "220px",
   },
 ];
 

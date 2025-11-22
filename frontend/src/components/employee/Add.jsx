@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ const Add = () => {
   const [designationSearch, setDesignationSearch] = useState('');
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate()
 
   // All available designations organized by technology/domain
@@ -88,7 +90,7 @@ const Add = () => {
   return (
     <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
       <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Add New Employee</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Name */}
           <div>
@@ -275,17 +277,29 @@ const Add = () => {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              placeholder="******"
-              onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password || ''}
+                onChange={handleChange}
+                placeholder="******"
+                autoComplete="new-password"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
+                className="mt-1 p-2 pr-10 block w-full border border-gray-300 rounded-md"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600"
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           {/* Role - Hidden field with default value */}

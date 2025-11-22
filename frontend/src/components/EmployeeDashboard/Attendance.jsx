@@ -223,8 +223,10 @@ const GoogleMarker = ({ position, map, title }) => {
 const Attendance = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [accLoading, setAccLoading] = useState(false);
   const [todayRecord, setTodayRecord] = useState(null);
   const mapRef = React.useRef(null);
+  const hasGoogleKey = false;
   const [tracker, setTracker] = useState({
     inTime: "",
     outTime: "",
@@ -278,15 +280,69 @@ const Attendance = () => {
         },
         { 
           enableHighAccuracy: true, 
-          timeout: 20000, // Increased timeout
-          maximumAge: 60000 // Reduced cache age for fresher location
+          timeout: 45000,
+          maximumAge: 0
         }
       );
     });
   }, []);
+
+  const getLocationLowAccuracy = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported"));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          const { latitude, longitude, accuracy } = coords;
+          const locationAccuracy = buildAccuracyLabel(accuracy);
+          let area = "Unknown Area";
+          try {
+            area = await reverseGeocodeFast(latitude, longitude);
+          } catch (_) {}
+          resolve({ latitude, longitude, area, accuracy: locationAccuracy });
+        },
+        (error) => {
+          reject(error);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 8000,
+          maximumAge: 300000,
+        }
+      );
+    });
+  }, []);
+
+  const fetchIpLocation = useCallback(async () => {
+    try {
+      const res = await fetch("https://ipapi.co/json/");
+      if (!res.ok) throw new Error("IP lookup failed");
+      const data = await res.json();
+      const latitude = Number(data.latitude);
+      const longitude = Number(data.longitude);
+      const area = [data.city, data.region, data.country_name].filter(Boolean).join(", ");
+      return { latitude, longitude, area, accuracy: "IP-based" };
+    } catch (_) {
+      throw new Error("Fallback location failed");
+    }
+  }, []);
+
+  const getLocationWithFallback = useCallback(async () => {
+    try {
+      return await getLocation();
+    } catch (err) {
+      try {
+        return await getLocationLowAccuracy();
+      } catch (_) {
+        return await fetchIpLocation();
+      }
+    }
+  }, [getLocation, getLocationLowAccuracy, fetchIpLocation]);
  
   useEffect(() => {
-    getLocation()
+    getLocationWithFallback()
       .then((loc) => {
         setTracker((prev) => ({ ...prev, ...loc }));
         bestAccuracyRef.current = parseAccuracyMeters(loc.accuracy);
@@ -300,7 +356,7 @@ const Attendance = () => {
           longitude: null 
         }));
       });
-  }, [getLocation]);
+  }, [getLocationWithFallback]);
 
   // Watch position to refine accuracy and re-geocode on improvement
   useEffect(() => {
@@ -309,7 +365,7 @@ const Attendance = () => {
       async ({ coords }) => {
         const { latitude, longitude, accuracy } = coords;
         const newAcc = Math.round(accuracy || Infinity);
-        if (newAcc + 15 < bestAccuracyRef.current) {
+        if (newAcc < bestAccuracyRef.current - 5) {
           bestAccuracyRef.current = newAcc;
           const area = await reverseGeocodeFast(latitude, longitude);
           setTracker((prev) => ({
@@ -337,6 +393,45 @@ const Attendance = () => {
     return () => {
       if (typeof watchId === 'number') navigator.geolocation.clearWatch(watchId);
     };
+  }, []);
+
+  const improveAccuracy = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported"));
+        return;
+      }
+      let bestAcc = Infinity;
+      let bestCoords = null;
+      const watchId = navigator.geolocation.watchPosition(
+        async ({ coords }) => {
+          const { latitude, longitude, accuracy } = coords;
+          const a = Math.round(accuracy || Infinity);
+          if (a < bestAcc) {
+            bestAcc = a;
+            bestCoords = { latitude, longitude };
+            const area = await reverseGeocodeFast(latitude, longitude);
+            setTracker((prev) => ({
+              ...prev,
+              latitude,
+              longitude,
+              area,
+              accuracy: buildAccuracyLabel(a),
+            }));
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 45000 }
+      );
+      setTimeout(() => {
+        if (typeof watchId === 'number') navigator.geolocation.clearWatch(watchId);
+        if (bestCoords) {
+          resolve(bestCoords);
+        } else {
+          reject(new Error('No improved fix'));
+        }
+      }, 20000);
+    });
   }, []);
  
   // Fetch today's record on mount
@@ -635,12 +730,32 @@ const Attendance = () => {
                 </button>
                 <button
                   onClick={() => {
+                    const url = `https://www.openstreetmap.org/?mlat=${tracker.latitude}&mlon=${tracker.longitude}#map=17/${tracker.latitude}/${tracker.longitude}`;
+                    window.open(url, '_blank');
+                  }}
+                  className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Open in OSM
+                </button>
+                <button
+                  onClick={() => {
                     navigator.clipboard.writeText(`${tracker.latitude}, ${tracker.longitude}`);
                     alert('Coordinates copied to clipboard!');
                   }}
                   className="px-3 py-1 bg-gray-500 text-white text-xs rounded-lg hover:bg-gray-600 transition-colors"
                 >
                   Copy Coordinates
+                </button>
+                <button
+                  onClick={() => {
+                    setAccLoading(true);
+                    improveAccuracy()
+                      .finally(() => setAccLoading(false));
+                  }}
+                  disabled={accLoading}
+                  className="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  {accLoading ? 'Improving…' : 'Improve Accuracy'}
                 </button>
               </div>
             </div>
@@ -651,7 +766,7 @@ const Attendance = () => {
               <button
                 onClick={() => {
                   setLoading(true);
-                  getLocation()
+                  getLocationWithFallback()
                     .then((loc) => {
                       setTracker((prev) => ({ ...prev, ...loc }));
                       setLoading(false);
@@ -673,75 +788,79 @@ const Attendance = () => {
           )}
 
           {tracker.latitude && tracker.longitude && (
-
             <div className="relative">
-              <Wrapper apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-                <GoogleMap
-                  ref={mapRef}
-                  center={{ lat: tracker.latitude, lng: tracker.longitude }}
-                  zoom={17}
-                >
-                  <GoogleMarker
-                    position={{ lat: tracker.latitude, lng: tracker.longitude }}
-                    title={tracker.area}
-                  />
-                </GoogleMap>
-              </Wrapper>
-              
-              {/* Map Controls Overlay */}
-              <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-2 space-y-2">
-                <button
-                  onClick={() => {
-                    setLoading(true);
-                    // Refresh location
-                    getLocation().then((loc) => {
-                      setTracker((prev) => ({ ...prev, ...loc }));
-                      // Center map on new location
-                      if (mapRef.current) {
-                        mapRef.current.setCenter({ lat: loc.latitude, lng: loc.longitude });
-                        mapRef.current.setZoom(17);
-                      }
-                      setLoading(false);
-                    }).catch(() => {
-                      setLoading(false);
-                      alert('Failed to get current location. Please check your location permissions.');
-                    });
-                  }}
-                  disabled={loading}
-                  className="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                  title="Refresh Location"
-                >
-                  {loading ? '⏳' : '🔄'}
-                </button>
-                <button
-                  onClick={() => {
-                    // Center map on current location
-                    if (mapRef.current && tracker.latitude && tracker.longitude) {
-                      mapRef.current.setCenter({ lat: tracker.latitude, lng: tracker.longitude });
-                      mapRef.current.setZoom(17);
-                      
-                      // Add a small bounce animation to the map
-                      const currentZoom = mapRef.current.getZoom();
-                      mapRef.current.setZoom(currentZoom - 1);
-                      setTimeout(() => {
-                        mapRef.current.setZoom(17);
-                      }, 200);
-                    }
-                  }}
-                  className="flex items-center justify-center w-10 h-10 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                  title="Center on Location"
-                >
-                  🎯
-                </button>
-              </div>
+              {hasGoogleKey ? (
+                <Wrapper apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+                  <GoogleMap
+                    ref={mapRef}
+                    center={{ lat: tracker.latitude, lng: tracker.longitude }}
+                    zoom={17}
+                  >
+                    <GoogleMarker
+                      position={{ lat: tracker.latitude, lng: tracker.longitude }}
+                      title={tracker.area}
+                    />
+                  </GoogleMap>
+                </Wrapper>
+              ) : (
+                <iframe
+                  title="OpenStreetMap"
+                  style={{ height: "300px", width: "100%", borderRadius: "12px", border: "1px solid #e5e7eb" }}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${(tracker.longitude-0.01).toFixed(6)}%2C${(tracker.latitude-0.01).toFixed(6)}%2C${(tracker.longitude+0.01).toFixed(6)}%2C${(tracker.latitude+0.01).toFixed(6)}&layer=mapnik&marker=${tracker.latitude.toFixed(6)}%2C${tracker.longitude.toFixed(6)}`}
+                />
+              )}
 
-              {/* Map Legend */}
-              <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
-                <div className="flex items-center space-x-2 text-sm">
-                  <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                  <span className="text-gray-700">Your Location</span>
+              {hasGoogleKey && (
+                <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-2 space-y-2">
+                  <button
+                    onClick={() => {
+                      setLoading(true);
+                      getLocationWithFallback().then((loc) => {
+                        setTracker((prev) => ({ ...prev, ...loc }));
+                        if (mapRef.current) {
+                          mapRef.current.setCenter({ lat: loc.latitude, lng: loc.longitude });
+                          mapRef.current.setZoom(17);
+                        }
+                        setLoading(false);
+                      }).catch(() => {
+                        setLoading(false);
+                        alert('Failed to get current location. Please check your location permissions.');
+                      });
+                    }}
+                    disabled={loading}
+                    className="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    title="Refresh Location"
+                  >
+                    {loading ? '⏳' : '🔄'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (mapRef.current && tracker.latitude && tracker.longitude) {
+                        mapRef.current.setCenter({ lat: tracker.latitude, lng: tracker.longitude });
+                        mapRef.current.setZoom(17);
+                        const currentZoom = mapRef.current.getZoom();
+                        mapRef.current.setZoom(currentZoom - 1);
+                        setTimeout(() => {
+                          mapRef.current.setZoom(17);
+                        }, 200);
+                      }
+                    }}
+                    className="flex items-center justify-center w-10 h-10 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    title="Center on Location"
+                  >
+                    🎯
+                  </button>
                 </div>
-              </div>
+              )}
+
+              {hasGoogleKey && (
+                <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                    <span className="text-gray-700">Your Location</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

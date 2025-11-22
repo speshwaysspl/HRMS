@@ -23,6 +23,7 @@ const Setting = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState("");
   const [show, setShow] = useState({
     oldPassword: false,
     newPassword: false,
@@ -72,8 +73,14 @@ const Setting = () => {
         }
       );
       if (response.data.success) {
-        navigate("/admin-dashboard/employees");
         setError("");
+        setSuccess("Password updated successfully.");
+        setSetting((prev) => ({
+          ...prev,
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
       }
     } catch (error) {
       if (error.response && !error.response.data.success) {
@@ -124,6 +131,21 @@ const Setting = () => {
             )}
           </AnimatePresence>
 
+          {/* Animated Success */}
+          <AnimatePresence>
+            {success && (
+              <motion.p
+                className="text-green-600 text-center mb-4 font-medium"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                {success}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 relative z-10">
             {["oldPassword", "newPassword", "confirmPassword"].map((field, i) => (
               <motion.div
@@ -143,6 +165,7 @@ const Setting = () => {
                   <motion.input
                     type={show[field] ? "text" : "password"}
                     name={field}
+                    value={setting[field]}
                     placeholder={
                       field === "oldPassword"
                         ? "Enter old password"
