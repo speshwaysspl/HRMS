@@ -58,7 +58,6 @@ const AdminFeedback = () => {
   const [adminResponse, setAdminResponse] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [activeTab, setActiveTab] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   
@@ -263,7 +262,6 @@ const AdminFeedback = () => {
                   onClick={() => {
                     setFilters({ category: '', sortBy: 'createdAt', sortOrder: 'desc' });
                     setPagination(prev => ({ ...prev, page: 0 }));
-                    setSearchQuery('');
                     setDateFrom('');
                     setDateTo('');
                     fetchFeedbacks();
