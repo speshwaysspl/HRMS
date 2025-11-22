@@ -22,7 +22,7 @@ import { Server as SocketIOServer } from "socket.io";
 import notificationRouter from "./routes/notification.js";
 import feedbackRouter from "./routes/feedback.js";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 connectToDatabase();
 
 const app = express();

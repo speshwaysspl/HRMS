@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import axios from "axios";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
@@ -251,7 +251,7 @@ const Login = () => {
                   borderRadius: "10px",
                   border: "1px solid rgba(255,255,255,0.08)",
                   background: "transparent",
-                  color: showPassword ? "#111827" : "#fff",
+                  color: "#fff",
                   outline: "none",
                   transition: "box-shadow 180ms, border 180ms",
                   boxShadow: focused.password

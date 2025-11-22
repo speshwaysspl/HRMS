@@ -7,11 +7,13 @@ import { NotificationProvider } from './context/NotificationContext.jsx'
 import { MotionConfig } from 'framer-motion'
 
 createRoot(document.getElementById('root')).render(
-  <AuthContext>
-    <NotificationProvider>
-      <MotionConfig reducedMotion="user">
-        <App />
-      </MotionConfig>
-    </NotificationProvider>
-  </AuthContext>,
+  <StrictMode>
+    <AuthContext>
+      <NotificationProvider>
+        <MotionConfig reducedMotion="user">
+          <App />
+        </MotionConfig>
+      </NotificationProvider>
+    </AuthContext>
+  </StrictMode>
 )
