@@ -28,6 +28,16 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
     fetchLogo();
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   const formatCurrency = (amount) => {
     return `INR ${Number(amount || 0).toFixed(2)}`;
   };

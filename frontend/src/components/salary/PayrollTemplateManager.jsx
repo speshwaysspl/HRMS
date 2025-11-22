@@ -41,6 +41,7 @@ const PayrollTemplateManager = () => {
   const [loading, setLoading] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [panError, setPanError] = useState("");
   const [calculations, setCalculations] = useState({
     totalEarnings: 0,
     totalDeductions: 0,
@@ -191,20 +192,20 @@ const PayrollTemplateManager = () => {
     const { name, value, type, checked } = e.target;
     
     if (name === "pan") {
-      // PAN card validation: 5 letters, 4 digits, 1 letter (ABCDE1234F)
-      const panRegex = /^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$/;
-      const upperValue = value.toUpperCase();
-      
-      // Only allow valid PAN format characters and limit to 10 characters
-      if (upperValue.length <= 10 && (upperValue === '' || panRegex.test(upperValue))) {
+      const upperValue = value.toUpperCase().replace(/\s+/g, "");
+      // Allow only letters and digits while typing, limit to 10
+      const partialRegex = /^[A-Z0-9]{0,10}$/;
+      if (partialRegex.test(upperValue)) {
         setTemplate(prev => ({
           ...prev,
           [name]: upperValue
         }));
-      }
-      // Show alert for invalid format
-      else if (upperValue.length === 10 && !isValidPAN(upperValue)) {
-        alert("Invalid PAN format. Please enter in format: ABCDE1234F (5 letters, 4 digits, 1 letter)");
+        // Inline error when non-empty but not valid PAN
+        if (upperValue && !isValidPAN(upperValue)) {
+          setPanError("A PAN must be 10 characters: first 5 letters, next 4 digits, last 1 letter (e.g., ABCDE1234F).");
+        } else {
+          setPanError("");
+        }
       }
     } else {
       setTemplate(prev => ({
@@ -281,7 +282,7 @@ const PayrollTemplateManager = () => {
     
     // Validate PAN format if PAN is provided
     if (template.pan && !isValidPAN(template.pan)) {
-      alert("Invalid PAN format. Please enter in format: ABCDE1234F (5 letters, 4 digits, 1 letter)");
+      setPanError("A PAN must be 10 characters: first 5 letters, next 4 digits, last 1 letter (e.g., ABCDE1234F).");
       return;
     }
     
@@ -511,12 +512,13 @@ const PayrollTemplateManager = () => {
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                   placeholder="ABCDE1234F"
                   maxLength="10"
-                  pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                  title="PAN format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
                   style={{
                     textTransform: 'uppercase'
                   }}
                 />
+                {panError && (
+                  <div className="text-red-600 text-xs mt-1">{panError}</div>
+                )}
               </div>
               
               <div>

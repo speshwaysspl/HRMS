@@ -31,10 +31,25 @@ const AnnouncementButtons = ({ Id }) => {
   };
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button onClick={handleView} className="px-3 py-1 bg-blue-500 text-white rounded">View</button>
-      <button onClick={handleEdit} className="px-3 py-1 bg-green-500 text-white rounded">Edit</button>
-      <button onClick={handleDelete} className="px-3 py-1 bg-red-500 text-white rounded">Delete</button>
+    <div className="flex items-center justify-center gap-2 w-full">
+      <button
+        onClick={handleView}
+        className="px-2 py-1 min-w-[56px] text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-md whitespace-nowrap"
+      >
+        View
+      </button>
+      <button
+        onClick={handleEdit}
+        className="px-2 py-1 min-w-[56px] text-xs font-medium bg-green-500 hover:bg-green-600 text-white rounded-md whitespace-nowrap"
+      >
+        Edit
+      </button>
+      <button
+        onClick={handleDelete}
+        className="px-2 py-1 min-w-[56px] text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded-md whitespace-nowrap"
+      >
+        Delete
+      </button>
     </div>
   );
 };
