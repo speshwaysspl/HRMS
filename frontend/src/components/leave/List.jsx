@@ -63,12 +63,7 @@ const List = () => {
         </h3>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mb-4 gap-3 sm:gap-0">
-        <input
-          type="text"
-          placeholder="🔍 Search by Department Name"
-          className="px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm sm:text-base"
-        />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-4">
         {user.role === "employee" && (
           <Link
             to="/employee-dashboard/add-leave"

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
+import sendEmail from "../utils/sendEmail.js";
  
 // Login
 const login = async (req, res) => {
@@ -51,28 +51,20 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
     await user.save();
  
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
- 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
- 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Password Reset Request",
-      html: `<p>Click the link to reset your password (valid 1 hour):</p>
-             <a href="${resetLink}">${resetLink}</a>`
-    });
+    const clientUrl = process.env.CLIENT_URL || "https://www.speshwayhrms.com";
+    const resetLink = `${clientUrl}/reset-password/${token}`;
+
+    await sendEmail(
+      email,
+      "Password Reset Request",
+      `<p>Click the link to reset your password (valid 1 hour):</p>
+       <a href="${resetLink}">${resetLink}</a>`
+    );
  
     res.json({ success: true, message: "If that email exists, a reset link was sent." });
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.json({ success: true, message: "If that email exists, a reset link was sent." });
   }
 };
  

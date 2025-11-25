@@ -623,13 +623,20 @@ const Attendance = () => {
           </div>
         </div>
  
-        {/* Breaks */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">Break Times</h3>
+          {tracker.breaks.some(b => !b.end) && (
+            <div className="mb-3 p-4 rounded-xl bg-amber-100 border-2 border-amber-500 text-amber-800 shadow">
+              <span className="font-bold">On Break</span>
+              <span className="ml-2">started at {tracker.breaks.find(b => !b.end)?.start}</span>
+            </div>
+          )}
           {tracker.breaks.map((b, idx) => (
             <div
               key={idx}
-              className="flex justify-between bg-yellow-50 p-3 rounded-xl mb-2"
+              className={`flex justify-between p-3 rounded-xl mb-2 ${
+                b.end ? 'bg-yellow-50' : 'bg-amber-200 border border-amber-500 shadow-md animate-pulse'
+              }`}
             >
               <p>
                 Break {idx + 1}: {b.start} - {b.end || "Ongoing"}
@@ -649,7 +656,7 @@ const Attendance = () => {
                     setTimeout(() => saveBreaksToBackend(), 100);
                   }}
                   disabled={!!todayRecord?.outTime || loading}
-                  className="px-3 py-1 bg-green-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg ring-2 ring-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   End
                 </button>

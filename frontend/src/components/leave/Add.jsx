@@ -109,7 +109,7 @@ const Add = () => {
               className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
               required
             >
-              <option value="">Select Department</option>
+              <option value="">Select Leave Type</option>
               <option value="Sick Leave">Sick Leave</option>
               <option value="Casual Leave">Casual Leave</option>
               <option value="Annual Leave">Annual Leave</option>
@@ -157,7 +157,8 @@ const Add = () => {
               name="reason"
               placeholder="Reason"
               onChange={handleChange}
-              className="w-full border border-gray-300"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              rows="4"
               required
             ></textarea>
           </div>
