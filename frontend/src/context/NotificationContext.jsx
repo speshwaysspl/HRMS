@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/apiConfig';
 
@@ -21,52 +20,69 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef(null);
+  const mode = import.meta.env.VITE_NOTIFICATIONS_MODE || 'managed_ws';
+  const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || '';
+  const pollMs = Number(import.meta.env.VITE_NOTIFICATIONS_POLL_INTERVAL_MS) || 30000;
+  const lastIdsRef = useRef(new Set());
 
   // Initialize socket connection
   useEffect(() => {
-    if (user && user._id) {
-      // Create socket connection
-      socketRef.current = io(API_BASE, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
-
-      const socket = socketRef.current;
-
-      socket.on('connect', () => {
-        setIsConnected(true);
-        // Join user's personal notification room
-        socket.emit('join', user._id);
-      });
-
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
-
-      // Listen for new notifications
-      socket.on('notification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show popup notification
-        showPopupNotification(notification);
-        
-        // Request notification permission on first notification if not already set
-        if (("Notification" in window) && Notification.permission === "default") {
-          Notification.requestPermission();
-        }
-      });
-
-      socket.on('connect_error', (error) => {
-        setIsConnected(false);
-      });
-
-      return () => {
-        socket.disconnect();
+    if (!user || !user._id) return;
+    if (mode === 'managed_ws') {
+      const connectWith = (url) => {
+        if (!url) return () => {};
+        const ws = new WebSocket(`${url}?userId=${user._id}`);
+        ws.onopen = () => setIsConnected(true);
+        ws.onclose = () => setIsConnected(false);
+        ws.onmessage = (evt) => {
+          try {
+            const notification = JSON.parse(evt.data);
+            setNotifications(prev => [notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            showPopupNotification(notification);
+          } catch {}
+        };
+        return () => { ws.close(); };
       };
+      if (wsUrl) {
+        return connectWith(wsUrl);
+      } else {
+        let cleanup = () => {};
+        (async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/notifications/ws-url`, { headers: { Authorization: `Bearer ${token}` } });
+            if (res.ok) {
+              const data = await res.json();
+              cleanup = connectWith(data.url || '');
+            }
+          } catch {}
+        })();
+        return () => cleanup();
+      }
+    } else {
+      let timer = null;
+      const poll = async () => {
+        const token = localStorage.getItem('token');
+        try {
+          const res = await fetch(`${API_BASE}/api/notifications/user/${user._id}`, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+          if (res.ok) {
+            const data = await res.json();
+            const items = data.notifications || [];
+            const prevIds = lastIdsRef.current;
+            const currentIds = new Set(items.map(n => n._id));
+            items.forEach(n => { if (!prevIds.has(n._id)) { showPopupNotification(n); } });
+            lastIdsRef.current = currentIds;
+            setNotifications(items);
+            setUnreadCount(data.unreadCount || 0);
+          }
+        } catch {}
+      };
+      poll();
+      timer = setInterval(poll, pollMs);
+      return () => { if (timer) clearInterval(timer); };
     }
-  }, [user]);
+  }, [user, mode, pollMs]);
 
   // Show popup notification
   const showPopupNotification = (notification) => {

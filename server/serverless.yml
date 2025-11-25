@@ -1,0 +1,64 @@
+service: hrms-server
+frameworkVersion: '3'
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  memorySize: 512
+  timeout: 30
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource: "*"
+  environment:
+    NODE_OPTIONS: --enable-source-maps
+    CLIENT_URL: ${env:CLIENT_URL}
+    MONGODB_URL: ${env:MONGODB_URL}
+    MONGODB_DB: ${env:MONGODB_DB}
+    JWT_SECRET: ${env:JWT_SECRET}
+    AWS_REGION: ${env:AWS_REGION}
+    AWS_S3_BUCKET_NAME: ${env:AWS_S3_BUCKET_NAME}
+    AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY}
+    SMTP_HOST: ${env:SMTP_HOST}
+    SMTP_PORT: ${env:SMTP_PORT}
+    SMTP_USER: ${env:SMTP_USER}
+    SMTP_PASS: ${env:SMTP_PASS}
+
+functions:
+  api:
+    handler: lambda.handler
+    events:
+      - httpApi:
+          method: '*'
+          path: '/{proxy+}'
+  birthdayScheduler:
+    handler: scheduled.handler
+    events:
+      - schedule: cron(30 18 * * ? *)
+  wsConnect:
+    handler: websocket.connect
+    events:
+      - websocket: $connect
+  wsDisconnect:
+    handler: websocket.disconnect
+    events:
+      - websocket: $disconnect
+  wsDefault:
+    handler: websocket.defaultHandler
+    events:
+      - websocket: $default
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+custom:
+  serverless-offline:
+    httpPort: 5000
+    websocketPort: 5001

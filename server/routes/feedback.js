@@ -15,7 +15,8 @@ const router = express.Router();
 
 // Middleware to attach Socket.IO instance to request
 const attachSocketIO = (req, res, next) => {
-  req.io = req.app.get('io');
+  const io = req.app.get('io');
+  req.io = io || req.io || { to: () => ({ emit: () => {} }), emit: () => {} };
   next();
 };
 

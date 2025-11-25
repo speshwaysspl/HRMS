@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
+import { broadcastToUser } from '../utils/websocketPublish.js';
 
 // Create and broadcast a single notification
 const createNotification = async (notificationData, io) => {
@@ -12,6 +13,7 @@ const createNotification = async (notificationData, io) => {
 
     const roomName = `user_${notificationData.recipientId}`;
     if (io) io.to(roomName).emit('newNotification', notification);
+    await broadcastToUser(notificationData.recipientId, notification);
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -156,3 +158,19 @@ const clearAllNotifications = async (req, res) => {
 };
 
 export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications };
+const getWebSocketUrl = async (req, res) => {
+  try {
+    if (process.env.IS_OFFLINE === 'true') {
+      const port = process.env.WS_PORT || 5001;
+      return res.status(200).json({ success: true, url: `ws://localhost:${port}` });
+    }
+    const endpoint = process.env.WS_API_ENDPOINT || '';
+    if (!endpoint) return res.status(200).json({ success: true, url: '' });
+    const url = endpoint.replace('https://', 'wss://');
+    return res.status(200).json({ success: true, url });
+  } catch {
+    return res.status(200).json({ success: true, url: '' });
+  }
+};
+
+export { getWebSocketUrl };

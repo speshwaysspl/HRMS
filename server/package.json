@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon --env-file=.env index.js",
+    "dev": "serverless offline --httpPort 5000 --websocketPort 5001",
     "build": "echo \"Backend build complete\""
   },
   "keywords": [],
@@ -16,7 +15,7 @@
     "@aws-sdk/client-dynamodb": "^3.888.0",
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/lib-dynamodb": "^3.888.0",
-    "aws-sdk": "^2.1692.0",
+    
     "axios": "^1.11.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -26,14 +25,21 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.2",
     "multer": "^1.4.5-lts.1",
-    "node-cron": "^4.2.1",
+    
     "nodemailer": "^7.0.5",
-    "nodemon": "^3.1.4",
+    
     "number-to-words": "^1.2.4",
     "path": "^0.12.7",
     "pdfkit": "^0.17.1",
-    "socket.io": "^4.8.1",
+    
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.901.0",
+    "serverless-http": "^3.2.0",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "serverless": "^3.39.0",
+    "serverless-offline": "^13.7.4",
+    "serverless-dotenv-plugin": "^6.0.0"
   },
   "description": ""
 }
