@@ -30,13 +30,7 @@ const PayslipHistory = () => {
   });
   const [departments, setDepartments] = useState([]);
 
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [showEmployeeSelection, setShowEmployeeSelection] = useState(false);
-  const [autoGenerating, setAutoGenerating] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
 
   const navigate = useNavigate();
 
@@ -177,43 +171,7 @@ const PayslipHistory = () => {
     }
   };
 
-  const generateMonthlyPayslips = async () => {
-    if (!window.confirm("This will generate payslips for all employees for the current month. Continue?")) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const response = await axios.post(`${API_BASE}/api/payslip/auto-generate-monthly`, {
-        month: new Date().getMonth() + 1,
-        year: new Date().getFullYear()
-      }, {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.data.success) {
-        alert(`Successfully generated ${response.data.generated} payslips!`);
-        loadPayslips();
-      }
-    } catch (error) {
-      
-      // Handle specific error for no default templates
-      if (error.response?.data?.details) {
-        const details = error.response.data.details;
-        const message = `${error.response.data.error}\n\n` +
-          `${details.message}\n\n` +
-          `Active Templates: ${details.totalActiveTemplates}\n` +
-          `Default Templates: ${details.defaultActiveTemplates}\n\n` +
-          `Solution: ${details.solution}\n\n` +
-          `Please go to Payroll Templates to create or update templates.`;
-        alert(message);
-      } else {
-        alert(error.response?.data?.error || "Error generating monthly payslips");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -228,142 +186,7 @@ const PayslipHistory = () => {
     return formatISTDate(new Date(dateString));
   };
 
-  // Fetch all employees with their status
-  const fetchAllEmployees = async () => {
-    try {
-      const response = await axios.get(`${API_BASE}/api/employee`, {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.data.success) {
-        const employeesWithTemplates = [];
-        
-        for (const employee of response.data.employees) {
-          // Check if employee has a default payroll template
-          try {
-            const templateResponse = await axios.get(`${API_BASE}/api/payroll-template/employee/${employee.employeeId}`, {
-              headers: getAuthHeaders()
-            });
-            
-            const hasDefaultTemplate = templateResponse.data.success && 
-              templateResponse.data.templates.some(template => template.isDefault && template.isActive);
-            
-            employeesWithTemplates.push({
-              ...employee,
-              hasDefaultTemplate,
-              templateName: hasDefaultTemplate ? 
-                templateResponse.data.templates.find(t => t.isDefault && t.isActive)?.templateName || 'Default Template' : 
-                'No Default Template'
-            });
-          } catch (error) {
-            employeesWithTemplates.push({
-              ...employee,
-              hasDefaultTemplate: false,
-              templateName: 'No Template'
-            });
-          }
-        }
-        
-        setEmployees(employeesWithTemplates);
-      }
-    } catch (error) {
-      // Silently handle error - employees will remain empty
-    }
-  };
-
-  // Handle employee selection
-  const handleEmployeeSelection = (employeeId, isSelected) => {
-    if (isSelected) {
-      setSelectedEmployees(prev => [...prev, employeeId]);
-    } else {
-      setSelectedEmployees(prev => prev.filter(id => id !== employeeId));
-    }
-  };
-
-  // Select all employees based on current filter
-  const handleSelectAll = () => {
-    const filteredEmployees = getFilteredEmployees();
-    setSelectedEmployees(filteredEmployees.map(emp => emp._id));
-  };
-
-  // Deselect all employees
-  const handleDeselectAll = () => {
-    setSelectedEmployees([]);
-  };
-
-  // Get filtered employees based on status
-  const getFilteredEmployees = () => {
-    if (statusFilter === 'active') {
-      return employees.filter(emp => emp.status === 'active');
-    } else if (statusFilter === 'inactive') {
-      return employees.filter(emp => emp.status === 'inactive');
-    }
-    return employees;
-  };
-
-  // Generate payslips for selected employees
-  const generateSelectedEmployeesPayslips = async () => {
-    if (selectedEmployees.length === 0) {
-      alert("Please select at least one employee to generate payslips.");
-      return;
-    }
-
-    const selectedActiveEmployees = selectedEmployees.filter(empId => {
-      const employee = employees.find(emp => emp._id === empId);
-      return employee && employee.status === 'active';
-    });
-
-    if (selectedActiveEmployees.length === 0) {
-      alert("No active employees selected. Only active employees can have payslips generated.");
-      return;
-    }
-
-    if (!window.confirm(`This will generate payslips for ${selectedActiveEmployees.length} selected active employees for ${MONTHS[selectedMonth - 1]} ${selectedYear}. Continue?`)) {
-      return;
-    }
-
-    try {
-      setAutoGenerating(true);
-      const response = await axios.post(`${API_BASE}/api/payslip/auto-generate-selected`, {
-        month: selectedMonth,
-        year: selectedYear,
-        selectedEmployees: selectedActiveEmployees
-      }, {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.data.success) {
-        let message = `Successfully generated ${response.data.generated} payslips!`;
-        if (response.data.errors && response.data.errors.length > 0) {
-          message += `\n\nSkipped ${response.data.errors.length} employees due to errors.`;
-        }
-        alert(message);
-        loadPayslips();
-        setShowEmployeeSelection(false);
-        setSelectedEmployees([]);
-      }
-    } catch (error) {
-      
-      if (error.response?.data?.details) {
-        const details = error.response.data.details;
-        const message = `${error.response.data.error}\n\n` +
-          `${details.message}\n\n` +
-          `Solution: ${details.solution}\n\n` +
-          `Please go to Payroll Templates to create or update templates.`;
-        alert(message);
-      } else {
-        alert(error.response?.data?.error || "Error generating payslips for selected employees");
-      }
-    } finally {
-      setAutoGenerating(false);
-    }
-  };
-
-  // Show employee selection modal
-  const showEmployeeSelectionModal = async () => {
-    await fetchAllEmployees();
-    setShowEmployeeSelection(true);
-  };
+  
 
 
 
@@ -378,20 +201,8 @@ const PayslipHistory = () => {
           >
             Generate New Payslip
           </button>
-          <button
-            onClick={generateMonthlyPayslips}
-            disabled={loading}
-            className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-green-600 disabled:opacity-50 text-sm sm:text-base"
-          >
-            {loading ? "Generating..." : "Auto Generate Monthly"}
-          </button>
-          <button
-            onClick={showEmployeeSelectionModal}
-            disabled={autoGenerating}
-            className="bg-purple-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-purple-600 disabled:opacity-50 text-sm sm:text-base"
-          >
-            {autoGenerating ? "Generating..." : "Select Employees & Generate"}
-          </button>
+          
+          
         </div>
       </div>
 
@@ -679,175 +490,9 @@ const PayslipHistory = () => {
         )}
       </div>
 
-      {/* Employee Selection Modal */}
-      {showEmployeeSelection && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-4xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg sm:text-xl font-bold">Select Employees for Payslip Generation</h3>
-              <button
-                onClick={() => {
-                  setShowEmployeeSelection(false);
-                  setSelectedEmployees([]);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ✕
-              </button>
-            </div>
+      
 
-            {/* Month and Year Selection */}
-            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Month:
-                </label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {MONTHS.map((month, index) => (
-                    <option key={index + 1} value={index + 1}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Year:
-                </label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Status:
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Employees</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-              </select>
-            </div>
-
-            {/* Selection Controls */}
-            <div className="mb-4 flex gap-2">
-              <button
-                onClick={handleSelectAll}
-                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-              >
-                Select All ({getFilteredEmployees().length})
-              </button>
-              <button
-                onClick={handleDeselectAll}
-                className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
-              >
-                Deselect All
-              </button>
-              <span className="text-sm text-gray-600 self-center ml-2">
-                Selected: {selectedEmployees.length} employees
-              </span>
-            </div>
-
-            {/* Employee List */}
-            <div className="max-h-96 overflow-y-auto border border-gray-200 rounded">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Select
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Employee ID
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Template
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {getFilteredEmployees().map((employee) => (
-                    <tr key={employee._id} className={employee.status === 'inactive' ? 'bg-gray-50' : ''}>
-                      <td className="px-4 py-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmployees.includes(employee._id)}
-                          onChange={(e) => handleEmployeeSelection(employee._id, e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm font-medium text-gray-900">
-                        {employee.employeeId}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-900">
-                        {employee.userId?.name || 'N/A'}
-                      </td>
-                      <td className="px-4 py-2 text-sm">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          employee.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {employee.status || 'active'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-900">
-                        <span className={employee.hasDefaultTemplate ? 'text-green-600' : 'text-red-600'}>
-                          {employee.templateName}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowEmployeeSelection(false);
-                  setSelectedEmployees([]);
-                }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={generateSelectedEmployeesPayslips}
-                disabled={selectedEmployees.length === 0 || autoGenerating}
-                className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:opacity-50"
-              >
-                {autoGenerating ? 'Generating...' : `Generate Payslips (${selectedEmployees.length})`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
     </div>
   );

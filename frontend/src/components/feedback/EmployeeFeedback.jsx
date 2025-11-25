@@ -134,25 +134,7 @@ const EmployeeFeedback = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this feedback?')) return;
-
-    try {
-      const response = await axios.delete(`${API_BASE}/api/feedback/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-
-      if (response.data.success) {
-        showSnackbar('Feedback deleted successfully', 'success');
-        fetchFeedbacks();
-      }
-    } catch (error) {
-      showSnackbar(
-        error.response?.data?.error || 'Failed to delete feedback',
-        'error'
-      );
-    }
-  };
+  
 
   const resetForm = () => {
     setFormData({
@@ -281,7 +263,7 @@ const EmployeeFeedback = () => {
                     )}
 
                     <Typography variant="caption" color="text.secondary">
-                      Submitted: {formatDate(feedback.createdAt)}
+                      Submitted: {formatDate(feedback.updatedAt || feedback.createdAt)}
                     </Typography>
 
                     {feedback.adminResponse?.message && (
@@ -319,17 +301,7 @@ const EmployeeFeedback = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      {feedback.status === 'Pending' && (
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDelete(feedback._id)}
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      {/* Delete action removed */}
                     </Box>
                   </Box>
                 </Card>
@@ -402,20 +374,24 @@ const EmployeeFeedback = () => {
           </IconButton>
         </DialogTitle>
         <form onSubmit={handleSubmit}>
-          <DialogContent sx={{ pt: 3 }}>
-            <Grid container spacing={3}>
+          <DialogContent sx={{ pt: 3, bgcolor: 'grey.50' }}>
+            <Grid container spacing={3} alignItems="flex-start">
               <Grid item xs={12}>
                 <TextField
                   fullWidth
+                  size="small"
+                  variant="outlined"
                   label="Title"
+                  InputLabelProps={{ shrink: true }}
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   required
+                  sx={{ '& .MuiInputBase-root': { borderRadius: 2, minHeight: 44 } }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Category</InputLabel>
+              <Grid item xs={12}>
+                <FormControl fullWidth size="small" sx={{ '& .MuiInputBase-root': { borderRadius: 2, minHeight: 44 } }}>
+                  <InputLabel shrink>Category</InputLabel>
                   <Select
                     value={formData.category}
                     label="Category"
@@ -431,17 +407,21 @@ const EmployeeFeedback = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
+                  size="small"
+                  variant="outlined"
                   label="Description"
+                  InputLabelProps={{ shrink: true }}
                   multiline
-                  rows={4}
+                  rows={5}
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   required
+                  sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
                 />
               </Grid>
               <Grid item xs={12}>
-                <Box>
-                  <Typography component="legend" sx={{ mb: 1 }}>Rating (Optional)</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography component="span">Rating (Optional)</Typography>
                   <Rating
                     value={formData.rating}
                     onChange={(event, newValue) => {
@@ -452,13 +432,17 @@ const EmployeeFeedback = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={handleCloseDialog}>Cancel</Button>
+          <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+            <Button onClick={handleCloseDialog} color="inherit">Cancel</Button>
             <Button 
               type="submit" 
               variant="contained" 
               startIcon={<SendIcon />}
               disabled={loading}
+              sx={{
+                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
+              }}
             >
               {editingFeedback ? 'Update' : 'Submit'} Feedback
             </Button>
@@ -499,7 +483,7 @@ const EmployeeFeedback = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" color="text.secondary">Submitted:</Typography>
-                  <Typography variant="body1">{formatDate(viewingFeedback.createdAt)}</Typography>
+                  <Typography variant="body1">{formatDate(viewingFeedback.updatedAt || viewingFeedback.createdAt)}</Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">Description:</Typography>

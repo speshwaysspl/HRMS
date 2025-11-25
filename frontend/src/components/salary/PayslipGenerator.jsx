@@ -91,6 +91,7 @@ const PayslipGenerator = () => {
             ...prev,
             employeeObjectId: employee._id,
             name: employee.name,
+            email: employee.email,
             designation: employee.designation,
             department: employee.department,
             joiningDate: formattedJoiningDate,
@@ -386,9 +387,12 @@ const PayslipGenerator = () => {
 
     try {
       setEmailLoading(true);
-      const response = await axios.post(`${API_BASE}/api/payslip/send-email`, {
-        payslipData: previewData
-      }, {
+      // Prefer sending explicit email to improve reliability
+      const payload = payslip?.email
+        ? { payslip: previewData, employeeEmail: payslip.email }
+        : { payslipData: previewData };
+
+      const response = await axios.post(`${API_BASE}/api/payslip/send-email`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }

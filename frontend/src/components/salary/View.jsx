@@ -341,24 +341,24 @@ const View = () => {
       ) : salaries.length === 0 ? (
         <p className="text-center text-gray-500">No Records Found</p>
       ) : (
-        <table className="w-full text-sm text-left text-gray-700 border border-gray-200 rounded">
+        <table className="w-full text-sm text-gray-700 border border-gray-200 rounded">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 border-b">SNO</th>
-              <th className="px-6 py-3 border-b">Emp ID</th>
-              <th className="px-6 py-3 border-b">Salary</th>
-              <th className="px-6 py-3 border-b">Allowance</th>
-              <th className="px-6 py-3 border-b">Deduction</th>
-              <th className="px-6 py-3 border-b">Total</th>
-              <th className="px-6 py-3 border-b">Pay Date</th>
-              <th className="px-6 py-3 border-b">Actions</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">SNO</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Emp ID</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Salary</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Allowance</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Deduction</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Total</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Joining Date</th>
+              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {salaries.map((salary, index) => (
               <tr key={salary._id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                <td className="px-6 py-3 border-b">{index + 1}</td>
-                <td className="px-6 py-3 border-b">
+                <td className="px-6 py-3 border-b text-center">{index + 1}</td>
+                <td className="px-6 py-3 border-b text-center">
                   {(() => {
                     if (salary.employeeId) {
                       if (typeof salary.employeeId === 'object' && salary.employeeId.employeeId) {
@@ -370,13 +370,13 @@ const View = () => {
                     return 'N/A';
                   })()} 
                 </td>
-                <td className="px-6 py-3 border-b">{Number(salary.basicSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b">{Number(salary.allowances).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b">{Number(salary.deductions).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b">{Number(salary.netSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b">{formatDMY(salary.payDate)}</td>
-                <td className="px-6 py-3 border-b">
-                  <div className="flex space-x-2">
+                <td className="px-6 py-3 border-b text-center">{Number(salary.basicSalary).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b text-center">{Number(salary.allowances).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b text-center">{Number(salary.deductions).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b text-center">{Number(salary.netSalary).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b text-center whitespace-nowrap">{salary.joiningDate ? formatDMY(salary.joiningDate) : (salary.payDate ? formatDMY(salary.payDate) : '-')}</td>
+                <td className="px-6 py-3 border-b text-center">
+                  <div className="flex space-x-2 justify-center">
                     <button
                       onClick={() =>
                         downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)

@@ -11,7 +11,7 @@ const changePassword = async (req, res) => {
         }
         const isMatch = await bcrypt.compare(oldPassword, user.password)
         if(!isMatch) {
-        return res.status(404).json({success: false, error: "wront old password"})
+        return res.status(404).json({success: false, error: "wrong old password"})
         }
 
         const hashPassword = await bcrypt.hash(newPassword, 10)
