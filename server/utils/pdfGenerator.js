@@ -114,7 +114,6 @@ const generateSalaryPDFContent = (doc, salary) => {
     ["CONVEYANCE", salary.conveyance],
     ["MEDICAL ALLOWANCE", salary.medicalallowances],
     ["SPECIAL ALLOWANCE", salary.specialallowances],
-    ["OTHER ALLOWANCE", salary.allowances],
   ];
   const deductionRows = [
     ["PROF TAX", salary.proftax],
@@ -159,8 +158,7 @@ const generateSalaryPDFContent = (doc, salary) => {
     Number(salary.hra || 0) +
     Number(salary.conveyance || 0) +
     Number(salary.medicalallowances || 0) +
-    Number(salary.specialallowances || 0) +
-    Number(salary.allowances || 0);
+    Number(salary.specialallowances || 0);
 
   const totalDeductions =
     Number(salary.proftax || 0) +

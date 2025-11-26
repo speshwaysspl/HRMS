@@ -9,6 +9,7 @@ import { BANKS, MONTHS } from "../../utils/constants";
 import PayslipPreview from "./PayslipPreview";
 
 const PayslipGenerator = () => {
+  const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   const [payslip, setPayslip] = useState({
     employeeId: "",
     employeeObjectId: "",
@@ -24,16 +25,15 @@ const PayslipGenerator = () => {
     bankaccountnumber: "",
     pan: "",
     uan: "",
-    month: new Date().getMonth() + 1,
-    monthName: MONTHS[new Date().getMonth()],
-    year: new Date().getFullYear(),
+    month: istNow.getMonth() + 1,
+    monthName: MONTHS[istNow.getMonth()],
+    year: istNow.getFullYear(),
     basicSalary: "",
     da: "",
     hra: "",
     conveyance: "",
     medicalallowances: "",
     specialallowances: "",
-    allowances: "",
     deductions: "",
     pf: "",
     proftax: "",
@@ -141,7 +141,6 @@ const PayslipGenerator = () => {
       conveyance: template.conveyance || "",
       medicalallowances: template.medicalallowances || "",
       specialallowances: template.specialallowances || "",
-      allowances: template.allowances || "",
       deductions: template.deductions || "",
       pf: template.pf || "",
       proftax: template.proftax || "",
@@ -227,8 +226,7 @@ const PayslipGenerator = () => {
                          hra + 
                          (parseFloat(payslip.conveyance) || 0) + 
                          (parseFloat(payslip.medicalallowances) || 0) + 
-                         (parseFloat(payslip.specialallowances) || 0) + 
-                         (parseFloat(payslip.allowances) || 0);
+                         (parseFloat(payslip.specialallowances) || 0);
     
     // Calculate LOP amount based on total earnings
     let lopAmount = 0;
@@ -271,7 +269,7 @@ const PayslipGenerator = () => {
       setPayslip(prev => ({ ...prev, proftax: professionalTax.toFixed(2) }));
     }
   }, [payslip.basicSalary, payslip.da, payslip.hra, payslip.conveyance, payslip.medicalallowances, 
-      payslip.specialallowances, payslip.allowances, payslip.pf, payslip.proftax, payslip.deductions,
+      payslip.specialallowances, payslip.pf, payslip.proftax, payslip.deductions,
       payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateLOP]);
 
   // Auto-update working days when month or year changes
@@ -345,7 +343,7 @@ const PayslipGenerator = () => {
       
       if (response.data.success) {
         alert("Payslip generated successfully!");
-        navigate("/admin-dashboard/salary");
+        navigate("/admin-dashboard/salary/payslip-history");
       }
     } catch (error) {
       alert(error.response?.data?.error || "Error generating payslip");
@@ -425,7 +423,7 @@ const PayslipGenerator = () => {
       if (response.data.success) {
         alert("Payslip generated successfully!");
         setShowPreview(false);
-        navigate("/admin-dashboard/salary");
+        navigate("/admin-dashboard/salary/payslip-history");
       }
     } catch (error) {
       alert(error.response?.data?.error || "Error generating payslip");
@@ -438,7 +436,7 @@ const PayslipGenerator = () => {
     <div className="max-w-6xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
       <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center md:text-left" style={{ fontFamily: 'Times New Roman, serif' }}>Generate Payslip</h2>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
         {/* Employee Selection */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
           <div>
@@ -806,18 +804,7 @@ const PayslipGenerator = () => {
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Other Allowances</label>
-              <input
-                type="text"
-                name="allowances"
-                value={payslip.allowances}
-                onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-                placeholder="Enter other allowances"
-                required
-              />
-            </div>
+            
             
             <div className="bg-green-100 p-3 rounded-md sm:col-span-2 lg:col-span-1">
               <label className="block text-xs md:text-sm font-medium text-gray-700">Total Earnings</label>

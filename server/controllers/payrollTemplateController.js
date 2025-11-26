@@ -55,7 +55,6 @@ export const createTemplate = async (req, res) => {
       conveyance: num(payload.conveyance),
       medicalallowances: num(payload.medicalallowances),
       specialallowances: num(payload.specialallowances),
-      allowances: num(payload.allowances),
       
       proftax: num(payload.proftax),
       pf: Number(pf.toFixed(2)),
@@ -113,8 +112,7 @@ export const getEmployeeTemplates = async (req, res) => {
                            (template.hra || 0) +
                            (template.conveyance || 0) +
                            (template.medicalallowances || 0) +
-                           (template.specialallowances || 0) +
-                           (template.allowances || 0);
+                           (template.specialallowances || 0);
       
       // Calculate total deductions
       const totalDeductions = (template.proftax || 0) +
@@ -170,8 +168,7 @@ export const getAllTemplates = async (req, res) => {
                            (template.hra || 0) +
                            (template.conveyance || 0) +
                            (template.medicalallowances || 0) +
-                           (template.specialallowances || 0) +
-                           (template.allowances || 0);
+                           (template.specialallowances || 0);
       
       // Calculate total deductions
       const totalDeductions = (template.proftax || 0) +
@@ -261,7 +258,6 @@ export const updateTemplate = async (req, res) => {
       conveyance: num(payload.conveyance) || template.conveyance,
       medicalallowances: num(payload.medicalallowances) || template.medicalallowances,
       specialallowances: num(payload.specialallowances) || template.specialallowances,
-      allowances: num(payload.allowances) || template.allowances,
       
       proftax: num(payload.proftax) || template.proftax,
       pf: Number(pf.toFixed(2)),

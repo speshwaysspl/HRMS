@@ -12,15 +12,23 @@ export const saveAttendance = async (req, res) => {
   try {
     const employee = await Employee.findOne({ userId: req.user._id });
     if (!employee) return res.status(404).json({ message: "Employee profile not found" });
- 
+
     const { inTime, outTime, workMode, breaks, inLocation, outLocation, date } = req.body;
     let attendance = await Attendance.findOne({ userId: employee._id, date });
- 
+
+    // Validate breaks: only one ongoing break (without end) allowed
+    if (Array.isArray(breaks)) {
+      const ongoingCount = breaks.filter(b => b && !b.end).length;
+      if (ongoingCount > 1) {
+        return res.status(400).json({ message: "Only one active break is allowed. End current break before starting another." });
+      }
+    }
+
     if (!attendance) {
       if (!inTime) return res.status(400).json({ message: "In Time is required for first entry" });
       attendance = new Attendance({
         userId: employee._id,
- 
+
                
         date,
         inTime,
@@ -39,6 +47,10 @@ export const saveAttendance = async (req, res) => {
       }
       // Update breaks if provided
       if (breaks) {
+        // If already logged out, do not allow starting/keeping an ongoing break
+        if (attendance.outTime && breaks.some(b => b && !b.end)) {
+          return res.status(400).json({ message: "Cannot start or keep an active break after logout." });
+        }
         attendance.breaks = breaks;
       }
       // Update work mode if provided

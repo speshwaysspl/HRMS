@@ -347,7 +347,6 @@ const View = () => {
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">SNO</th>
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">Emp ID</th>
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">Salary</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Allowance</th>
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">Deduction</th>
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">Total</th>
               <th className="px-6 py-3 border-b text-center whitespace-nowrap">Joining Date</th>
@@ -371,7 +370,6 @@ const View = () => {
                   })()} 
                 </td>
                 <td className="px-6 py-3 border-b text-center">{Number(salary.basicSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b text-center">{Number(salary.allowances).toFixed(2)}</td>
                 <td className="px-6 py-3 border-b text-center">{Number(salary.deductions).toFixed(2)}</td>
                 <td className="px-6 py-3 border-b text-center">{Number(salary.netSalary).toFixed(2)}</td>
                 <td className="px-6 py-3 border-b text-center whitespace-nowrap">{salary.joiningDate ? formatDMY(salary.joiningDate) : (salary.payDate ? formatDMY(salary.payDate) : '-')}</td>

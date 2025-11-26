@@ -28,7 +28,6 @@ const payrollTemplateSchema = new Schema(
     conveyance: { type: Number, default: 0, min: 0 },
     medicalallowances: { type: Number, default: 0, min: 0 },
     specialallowances: { type: Number, default: 0, min: 0 },
-    allowances: { type: Number, default: 0, min: 0 }, // Other allowances
     
     // Salary Structure - Deductions
     proftax: { type: Number, default: 0, min: 0 }, // Professional Tax
@@ -67,8 +66,7 @@ payrollTemplateSchema.virtual('totalEarnings').get(function() {
     (this.hra || 0) +
     (this.conveyance || 0) +
     (this.medicalallowances || 0) +
-    (this.specialallowances || 0) +
-    (this.allowances || 0)
+    (this.specialallowances || 0)
   );
 });
 
