@@ -25,7 +25,6 @@ const PayrollTemplateManager = () => {
     conveyance: "",
     medicalallowances: "",
     specialallowances: "",
-    allowances: "",
     deductions: "",
     pf: "",
     proftax: "",
@@ -156,8 +155,7 @@ const PayrollTemplateManager = () => {
                          hra + 
                          (parseFloat(template.conveyance) || 0) + 
                          (parseFloat(template.medicalallowances) || 0) + 
-                         (parseFloat(template.specialallowances) || 0) + 
-                         (parseFloat(template.allowances) || 0);
+                         (parseFloat(template.specialallowances) || 0);
     
     // Auto-calculate Professional Tax based on total earnings
     let professionalTax = parseFloat(template.proftax) || 0;
@@ -186,7 +184,7 @@ const PayrollTemplateManager = () => {
       setTemplate(prev => ({ ...prev, proftax: professionalTax.toFixed(2) }));
     }
   }, [template.basicSalary, template.da, template.hra, template.conveyance, template.medicalallowances, 
-      template.specialallowances, template.allowances, template.pf, template.proftax, template.deductions]);
+      template.specialallowances, template.pf, template.proftax, template.deductions]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -259,7 +257,6 @@ const PayrollTemplateManager = () => {
       conveyance: "",
       medicalallowances: "",
       specialallowances: "",
-      allowances: "",
       deductions: "",
       pf: "",
       proftax: "",
@@ -611,19 +608,6 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                     placeholder="Enter special allowances"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Other Allowances</label>
-                  <input
-                    type="text"
-                    name="allowances"
-                    value={template.allowances}
-                    onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-                    placeholder="Enter other allowances"
                     required
                   />
                 </div>

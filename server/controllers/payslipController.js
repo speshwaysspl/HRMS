@@ -86,15 +86,13 @@ export const generatePayslip = async (req, res) => {
     
     const basicSalary = num(payload.basicSalary);
     
-    // Auto-calculate allowances if template is used
     let earnings = {
       basicSalary,
       da: num(payload.da),
       hra: num(payload.hra),
       conveyance: num(payload.conveyance),
       medicalallowances: num(payload.medicalallowances),
-      specialallowances: num(payload.specialallowances),
-      allowances: num(payload.allowances)
+      specialallowances: num(payload.specialallowances)
     };
     
     // Auto-calculate HRA if enabled
@@ -291,7 +289,7 @@ export const autoGenerateMonthlyPayslips = async (req, res) => {
         
         const totalEarnings = template.basicSalary + template.da + hra + 
                              template.conveyance + template.medicalallowances + 
-                             template.specialallowances + template.allowances;
+                             template.specialallowances;
         
         const totalDeductions = pf + template.proftax + template.deductions + (template.lopamount || 0);
         const netSalary = Math.max(0, totalEarnings - totalDeductions);
@@ -332,7 +330,6 @@ export const autoGenerateMonthlyPayslips = async (req, res) => {
           conveyance: template.conveyance,
           medicalallowances: template.medicalallowances,
           specialallowances: template.specialallowances,
-          allowances: template.allowances,
           proftax: template.proftax,
           pf: Number(pf.toFixed(2)),
           deductions: template.deductions,
@@ -439,9 +436,8 @@ export const autoGenerateSelectedPayslips = async (req, res) => {
         const conveyance = num(template.conveyance);
         const medicalallowances = num(template.medicalallowances);
         const specialallowances = num(template.specialallowances);
-        const allowances = num(template.allowances);
         
-        const totalEarnings = basicSalary + da + hra + conveyance + medicalallowances + specialallowances + allowances;
+        const totalEarnings = basicSalary + da + hra + conveyance + medicalallowances + specialallowances;
         
         // Calculate deductions
         const pf = num(template.pf);
@@ -484,7 +480,6 @@ export const autoGenerateSelectedPayslips = async (req, res) => {
           conveyance,
           medicalallowances,
           specialallowances,
-          allowances,
           
           // Deductions
           pf,
@@ -803,8 +798,7 @@ export const previewPayslip = async (req, res) => {
       hra: num(payload.hra),
       conveyance: num(payload.conveyance),
       medicalallowances: num(payload.medicalallowances),
-      specialallowances: num(payload.specialallowances),
-      allowances: num(payload.allowances)
+      specialallowances: num(payload.specialallowances)
     };
     
     // Auto-calculate HRA if enabled
@@ -858,7 +852,6 @@ export const previewPayslip = async (req, res) => {
       conveyance: earnings.conveyance,
       medicalallowances: earnings.medicalallowances,
       specialallowances: earnings.specialallowances,
-      allowances: earnings.allowances,
       pf: deductions.pf,
       proftax: deductions.proftax,
       deductions: deductions.deductions,
@@ -971,9 +964,9 @@ export const sendPayslipEmail = async (req, res) => {
               <div>Conveyance: ₹${payslip.conveyance || 0}</div>
               <div>Medical Allowances: ₹${payslip.medicalallowances || 0}</div>
               <div>Special Allowances: ₹${payslip.specialallowances || 0}</div>
-              <div>Other Allowances: ₹${payslip.allowances || 0}</div>
+              
               <div style="border-top: 1px solid #065f46; margin-top: 8px; padding-top: 8px; font-weight: bold;">
-                Total Earnings: ₹${payslip.totalEarnings || (Number(payslip.basicSalary || 0) + Number(payslip.da || 0) + Number(payslip.hra || 0) + Number(payslip.conveyance || 0) + Number(payslip.medicalallowances || 0) + Number(payslip.specialallowances || 0) + Number(payslip.allowances || 0))}
+                Total Earnings: ₹${payslip.totalEarnings || (Number(payslip.basicSalary || 0) + Number(payslip.da || 0) + Number(payslip.hra || 0) + Number(payslip.conveyance || 0) + Number(payslip.medicalallowances || 0) + Number(payslip.specialallowances || 0))}
               </div>
             </div>
           </div>
@@ -1017,7 +1010,6 @@ export const sendPayslipEmail = async (req, res) => {
       conveyance: payslip.conveyance || 0,
       medicalallowances: payslip.medicalallowances || 0,
       specialallowances: payslip.specialallowances || 0,
-      allowances: payslip.allowances || 0,
       proftax: payslip.proftax || 0,
       pf: payslip.pf || 0,
       deductions: payslip.deductions || 0,

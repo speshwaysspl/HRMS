@@ -77,7 +77,7 @@ const List = () => {
       const filteredEmployee = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return employees;
-        return employees.filter(emp => emp.name.toLowerCase().includes(q));
+        return employees.filter(emp => emp.name.toLowerCase().includes(q) || String(emp.employeeId || '').toLowerCase().includes(q));
       }, [employees, searchQuery]);
 
       const tableStyles = useMemo(() => ({
@@ -176,7 +176,7 @@ const List = () => {
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search employees by name..."
+                placeholder="Search by name or employee ID..."
                 className="w-full sm:w-80 pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
                 onChange={handleFilter}
               />

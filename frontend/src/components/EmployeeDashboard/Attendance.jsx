@@ -685,7 +685,7 @@ const Attendance = () => {
               // Save breaks to backend after state update
               setTimeout(() => saveBreaksToBackend(), 100);
             }}
-            disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading}
+            disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading || tracker.breaks.some(b => !b.end)}
             className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             + Start Break
