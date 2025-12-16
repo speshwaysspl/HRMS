@@ -274,7 +274,7 @@ Hyderabad Telangana 500081.
 
         {/* Bottom bar */}
         <div className="text-center text-gray-400 text-xs sm:text-sm mt-6 sm:mt-8 border-t border-gray-700 pt-3 sm:pt-4">
-          © {new Date().getFullYear()} Your Company. All Rights Reserved.
+          © {new Date().getFullYear()} SPESHWAY SOLUTIONS PRIVATE LIMITED. All Rights Reserved.
         </div>
       </motion.footer>
     </div>

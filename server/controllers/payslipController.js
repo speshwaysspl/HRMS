@@ -937,8 +937,8 @@ export const sendPayslipEmail = async (req, res) => {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h2 style="color: #2563eb; margin: 0;">SPESHWAY SOLUTIONS PVT LTD</h2>
-          <p style="color: #666; margin: 5px 0;">Hitech City, Hyderabad</p>
+          <h2 style="color: #2563eb; margin: 0;">SPESHWAY SOLUTIONS PRIVATE LIMITED</h2>
+          <p style="color: #666; margin: 5px 0;">Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha, Hyderabad Telangana 500081</p>
           <h3 style="color: #1f2937; margin: 20px 0;">Payslip for ${payslip.month} ${payslip.year}</h3>
         </div>
         
@@ -993,7 +993,7 @@ export const sendPayslipEmail = async (req, res) => {
         
         <div style="text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
           <p>This is a system-generated payslip. For any queries, please contact HR department.</p>
-          <p>© ${new Date().getFullYear()} SPESHWAY SOLUTIONS PVT LTD. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} SPESHWAY SOLUTIONS PRIVATE LIMITED. All rights reserved.</p>
         </div>
       </div>
     `;

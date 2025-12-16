@@ -65,7 +65,7 @@ export const isToday = (date) => {
 export const getBirthdayMessage = (employee) => {
   const name = employee.userId?.name || 'Employee';
   
-  return `🎉 Happy Birthday ${name}! 🎂\n\nWishing you a wonderful day filled with happiness and joy. May this new year of your life bring you success, good health, and prosperity.\n\nFrom all of us at SPESHWAY SOLUTIONS PVT LTD`;
+  return `🎉 Happy Birthday ${name}! 🎂\n\nWishing you a wonderful day filled with happiness and joy. May this new year of your life bring you success, good health, and prosperity.\n\nFrom all of us at SPESHWAY SOLUTIONS PRIVATE LIMITED`;
 };
 
 /**
@@ -118,7 +118,7 @@ export const getBirthdayEmailTemplate = (employee) => {
             
             <div class="footer">
                 <p>With warm wishes,</p>
-                <p class="company-name">SPESHWAY SOLUTIONS PVT LTD</p>
+                <p class="company-name">SPESHWAY SOLUTIONS PRIVATE LIMITED</p>
             </div>
         </div>
     </body>
