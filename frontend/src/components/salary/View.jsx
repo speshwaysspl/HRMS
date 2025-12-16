@@ -157,8 +157,8 @@ const View = () => {
                 <div style={{display: 'none', fontSize: '10px', textAlign: 'center', color: '#666'}}>Logo</div>
               </div>
               <div style={{flex: 1, textAlign: 'center', position: 'absolute', left: 0, right: 0}}>
-                <div style={{fontFamily: 'Times, serif', fontSize: '16px', fontWeight: 'bold', marginBottom: '2px'}}>SPESHWAY SOLUTIONS PVT LTD</div>
-                <div style={{fontFamily: 'Times, serif', fontSize: '10px', marginBottom: '2px'}}>Hitech City, Hyderabad</div>
+                <div style={{fontFamily: 'Times, serif', fontSize: '16px', fontWeight: 'bold', marginBottom: '2px'}}>SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
+                <div style={{fontFamily: 'Times, serif', fontSize: '10px', marginBottom: '2px'}}>Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha, Hyderabad Telangana 500081</div>
                 <div style={{fontFamily: 'Times, serif', fontSize: '11px', fontWeight: 'bold'}}>Payslip for the month of {salary.month} {salary.year}</div>
               </div>
             </div>
@@ -270,7 +270,7 @@ const View = () => {
 
             {/* Footer */}
              <div className="mt-8 text-center">
-               <div className="font-bold mb-1" style={{fontFamily: 'Times, serif', fontSize: '9px', color: '#0066cc'}}>SPESHWAY SOLUTIONS PVT LTD</div>
+               <div className="font-bold mb-1" style={{fontFamily: 'Times, serif', fontSize: '9px', color: '#0066cc'}}>SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
                <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha</div>
                <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Hyderabad Telangana 500081 | Email: info@speshway.com</div>
              </div>
