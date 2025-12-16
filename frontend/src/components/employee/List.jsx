@@ -7,9 +7,18 @@ import { FaPlus, FaSearch } from 'react-icons/fa'
 import { API_BASE } from '../../utils/apiConfig'
 import StatusToggle from './StatusToggle'
 import { formatDMY } from '../../utils/dateUtils'
+import useMeta from '../../utils/useMeta'
 
 
 const List = () => {
+    useMeta({
+      title: 'Employees — Speshway HRMS',
+      description: 'Browse and manage employee records.',
+      keywords: 'employees, HRMS',
+      image: '/images/Logo.jpg',
+      url: `${window.location.origin}/admin-dashboard/employees`,
+      robots: 'noindex,nofollow'
+    })
     const [employees, setEmployees] = useState([])
     const [empLoading, setEmpLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')

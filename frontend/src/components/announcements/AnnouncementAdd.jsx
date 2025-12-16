@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -19,11 +19,22 @@ import {
 import { motion } from "framer-motion";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const MotionBox = motion.create(Box);
 const MotionTypography = motion.create(Typography);
 
 const AnnouncementAdd = () => {
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements/add`, []);
+  useMeta({
+    title: "Add Announcement — Speshway HRMS",
+    description: "Publish a new company announcement.",
+    keywords: "add announcement, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
+    type: "article"
+  });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
@@ -342,7 +353,7 @@ const AnnouncementAdd = () => {
               >
                 <img
                   src={URL.createObjectURL(image)}
-                  alt="Preview"
+                  alt={title ? `Preview: ${title}` : 'Announcement image preview'}
                   style={{
                     width: "100%",
                     maxWidth: "200px",

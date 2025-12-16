@@ -12,10 +12,19 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const Setting = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  useMeta({
+    title: "Settings — Speshway HRMS",
+    description: "Update your account password and preferences.",
+    keywords: "settings, account, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/employee-dashboard/setting`,
+    robots: "noindex,nofollow"
+  });
   const [setting, setSetting] = useState({
     userId: user._id,
     oldPassword: "",

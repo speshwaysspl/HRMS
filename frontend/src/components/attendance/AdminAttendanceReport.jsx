@@ -3,8 +3,17 @@ import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
 import { formatDMY } from "../../utils/dateUtils";
+import useMeta from "../../utils/useMeta";
  
 const AdminAttendanceReport = () => {
+  useMeta({
+    title: "Admin Attendance Report — Speshway HRMS",
+    description: "Search and review attendance across employees.",
+    keywords: "admin attendance, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/admin-dashboard/attendance-report`,
+    robots: "noindex,nofollow"
+  });
   const [selectedDate, setSelectedDate] = useState(toISTDateString(new Date()));
   const [selectedMonth, setSelectedMonth] = useState(toISTDateString(new Date()).substring(0, 7));
   const [employeeId, setEmployeeId] = useState("");

@@ -1,12 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import React, { useEffect, useState, useMemo } from "react";
+import { Box, Button, TextField } from "@mui/material";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const EditAnnouncement = () => {
   const { id } = useParams();
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements/edit/${id}`, [id]);
+  useMeta({
+    title: "Edit Announcement — Speshway HRMS",
+    description: "Update an existing company announcement.",
+    keywords: "edit announcement, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
+    type: "article"
+  });
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
@@ -137,7 +148,6 @@ const EditAnnouncement = () => {
 
           {preview && (
             <motion.div
-              mt={2}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
@@ -149,7 +159,7 @@ const EditAnnouncement = () => {
             >
               <img
                 src={preview}
-                alt="Preview"
+                alt={title ? `Preview: ${title}` : 'Announcement image preview'}
                 style={{
                   width: "100%",
                   maxWidth: "200px",

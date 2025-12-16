@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom"; // ✅ Import Link
 import { API_BASE } from "../utils/apiConfig";
+import useMeta from "../utils/useMeta";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const canonical = useMemo(() => `${window.location.origin}/forgot-password`, []);
+  useMeta({
+    title: "Forgot Password — Speshway HRMS",
+    description: "Reset your Speshway HRMS password securely via email.",
+    keywords: "reset password, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

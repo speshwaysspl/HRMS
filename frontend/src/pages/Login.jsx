@@ -1,10 +1,11 @@
 // src/pages/Login.jsx
 import axios from "axios";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import useMeta from "../utils/useMeta";
 
 const Login = () => {
   const { login } = useAuth();
@@ -18,6 +19,15 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState({ email: false, password: false });
+
+  const canonical = useMemo(() => `${window.location.origin}/login`, []);
+  useMeta({
+    title: "Login — Speshway HRMS",
+    description: "Access your Speshway HRMS account to manage attendance, leaves, payslips and more.",
+    keywords: "HRMS login, employee portal, Speshway",
+    url: canonical,
+    image: "/images/Logo.jpg",
+  });
 
   const validateEmail = (e) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());

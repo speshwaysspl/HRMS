@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
  
-// Pages (lazy-loaded for performance)
-const Login = lazy(() => import("./pages/Login"));
+// Pages
+import Login from "./pages/Login";
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 

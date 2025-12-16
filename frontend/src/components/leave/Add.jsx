@@ -4,9 +4,18 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 const Add = () => {
     const {user} = useAuth()
+    useMeta({
+      title: 'Apply Leave — Speshway HRMS',
+      description: 'Request leave with dates and type.',
+      keywords: 'apply leave, HRMS',
+      image: '/images/Logo.jpg',
+      url: `${window.location.origin}/employee-dashboard/add-leave`,
+      robots: 'noindex,nofollow'
+    });
 
     const [leave, setLeave] = useState({
         userId: user._id,

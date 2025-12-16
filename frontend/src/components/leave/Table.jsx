@@ -4,10 +4,19 @@ import DataTable from "react-data-table-component";
 import { columns, LeaveButtons } from "../../utils/LeaveHelper";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 
 //
 const Table = () => {
+  useMeta({
+    title: "Leaves — Speshway HRMS",
+    description: "Manage leave requests and statuses.",
+    keywords: "leaves, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/admin-dashboard/leaves`,
+    robots: "noindex,nofollow"
+  });
   const [leaves, setLeaves] = useState(null);
   const [filteredLeaves, setFilteredLeaves] = useState(null);
   const location = useLocation();

@@ -1,13 +1,23 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 const Detail = () => {
   const { id } = useParams();
   const [leave, setLeave] = useState(null);
   const navigate = useNavigate()
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/leaves/${id}`, [id]);
+  useMeta({
+    title: 'Leave Details — Speshway HRMS',
+    description: 'Review and update a leave request.',
+    keywords: 'leave details, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   useEffect(() => {
     const fetchLeave = async () => {

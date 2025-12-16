@@ -1,10 +1,11 @@
 // src/components/salary/View.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
+import useMeta from "../../utils/useMeta";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -13,6 +14,15 @@ const View = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const canonical = useMemo(() => `${window.location.origin}/employee-dashboard/salary/${id || ''}`, [id]);
+  useMeta({
+    title: 'Salary — Speshway HRMS',
+    description: 'View salary details and payslips.',
+    keywords: 'salary, payslip, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   useEffect(() => {
     const fetchSalaries = async () => {

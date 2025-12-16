@@ -3,8 +3,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const AddDepartment = () => {
+  useMeta({
+    title: "Add Department — Speshway HRMS",
+    description: "Create a new department record.",
+    keywords: "add department, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/admin-dashboard/add-department`,
+    robots: "noindex,nofollow"
+  });
   const [department, setDepartment] = useState({
     dep_name: "",
     description: "",
