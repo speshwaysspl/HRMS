@@ -1,16 +1,27 @@
 // frontend/src/pages/EmployeeAnnouncements.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 const EmployeeAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const canonical = useMemo(() => `${window.location.origin}/employee-dashboard/announcements`, []);
+  useMeta({
+    title: "Announcements — Speshway HRMS",
+    description: "Latest company announcements for employees.",
+    keywords: "announcements, employee, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
+    type: "article"
+  });
 
   useEffect(() => {
     const loadData = async () => {

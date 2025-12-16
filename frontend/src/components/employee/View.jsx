@@ -1,15 +1,25 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaEdit } from "react-icons/fa";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
+import useMeta from "../../utils/useMeta";
 
 const View = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/employees/${id}`, [id]);
+  useMeta({
+    title: employee?.userId?.name ? `${employee.userId.name} — Employee` : 'Employee — Speshway HRMS',
+    description: employee?.designation ? `${employee.designation} in ${employee?.department?.dep_name || ''}` : 'Employee profile and details.',
+    keywords: 'employee profile, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   useEffect(() => {
     const fetchEmployee = async () => {

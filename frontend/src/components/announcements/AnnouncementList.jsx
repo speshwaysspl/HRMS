@@ -1,11 +1,12 @@
 // src/components/announcement/AnnouncementList.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { fetchAnnouncements } from "../../utils/AnnouncementHelper";
 import AnnouncementButtons from "../../utils/AnnouncementButtons";
 import { motion } from "framer-motion";
 import { formatISTDate } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 const columns = [
   { name: "S.No", selector: (row) => row.sno, width: "80px" },
@@ -40,6 +41,15 @@ const AnnouncementList = () => {
   const [rawAnnouncements, setRawAnnouncements] = useState([]);
   const [formatted, setFormatted] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements`, []);
+  useMeta({
+    title: "Announcements — Speshway HRMS",
+    description: "Browse and manage company announcements.",
+    keywords: "announcements, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+  });
 
   useEffect(() => {
     const fetchData = async () => {

@@ -6,8 +6,17 @@ import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
 import { formatDMY } from "../../utils/dateUtils";
 import MonthPicker from "../common/MonthPicker";
 import { FixedSizeList as List } from "react-window";
+import useMeta from "../../utils/useMeta";
  
 const AttendanceReport = () => {
+  useMeta({
+    title: "Attendance Report — Speshway HRMS",
+    description: "View daily and monthly attendance summaries.",
+    keywords: "attendance report, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/employee-dashboard/attendance-report`,
+    robots: "noindex,nofollow"
+  });
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const initialDate = params.get("date") || toISTDateString(new Date());

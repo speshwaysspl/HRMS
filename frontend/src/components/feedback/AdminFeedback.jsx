@@ -49,7 +49,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
 import { formatDMYWithTime } from '../../utils/dateUtils';
+import useMeta from '../../utils/useMeta';
 const AdminFeedback = () => {
+  useMeta({
+    title: 'Admin Feedback — Speshway HRMS',
+    description: 'Review and respond to employee feedback.',
+    keywords: 'admin feedback, HRMS',
+    image: '/images/Logo.jpg',
+    url: `${window.location.origin}/admin-dashboard/feedback`,
+    robots: 'noindex,nofollow'
+  });
   const [feedbacks, setFeedbacks] = useState([]);
   const [allFeedbacks, setAllFeedbacks] = useState([]);
   const [loading, setLoading] = useState(false);

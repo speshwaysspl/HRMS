@@ -1,15 +1,16 @@
 import nodemailer from "nodemailer";
 
 const sendEmail = async (to, subject, html, attachments = []) => {
+
   try {
-    // Validate required environment variables
     if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('Missing required SMTP configuration. Please check environment variables.');
+      console.warn('Missing SMTP configuration. Skipping email send.');
+      return null;
     }
 
-    // Validate email recipient
     if (!to || !to.includes('@')) {
-      throw new Error('Invalid recipient email address');
+      console.warn('Invalid recipient email address. Skipping email send.');
+      return null;
     }
 
     console.log(`📧 Attempting to send email to: ${to}`);
@@ -63,7 +64,8 @@ const sendEmail = async (to, subject, html, attachments = []) => {
       command: error.command,
       response: error.response
     });
-    throw new Error(`Email sending failed: ${error.message}`);
+    console.warn(`Email sending failed: ${error.message}`);
+    return null;
   }
 };
 

@@ -19,6 +19,7 @@ import axios from 'axios'
 import { API_BASE } from '../../utils/apiConfig'
 import { useNavigate } from 'react-router-dom'
 import { getEmployeeDailyMessage } from '../../utils/greetingUtils'
+import useMeta from '../../utils/useMeta'
 
 const Summary = () => {
   const { user } = useAuth()
@@ -27,6 +28,14 @@ const Summary = () => {
   const [loading, setLoading] = useState(true)
   const [clickedAction, setClickedAction] = useState(null)
   const [error, setError] = useState(null)
+
+  useMeta({
+    title: 'Employee Overview — Speshway HRMS',
+    description: 'Personal dashboard with quick actions and monthly stats.',
+    keywords: 'employee overview, HRMS',
+    image: '/images/Logo.jpg',
+    url: `${window.location.origin}/employee-dashboard`
+  })
 
 
 

@@ -1,16 +1,51 @@
 // src/components/announcement/AnnouncementView.jsx
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion } from "framer-motion";
+
+
 import { formatISTDate } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 const AnnouncementView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [announcement, setAnnouncement] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements/${id}`, [id]);
+  useMeta({
+    title: announcement?.title ? `${announcement.title} — Announcement` : "Announcement — Speshway HRMS",
+    description: announcement?.description || "View announcement details.",
+    keywords: "announcement, HRMS",
+    url: canonical,
+    image: announcement?.imageUrl || "/images/Logo.jpg",
+    type: "article",
+    robots: "noindex,nofollow",
+    jsonLd: announcement && {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": announcement.title,
+      "image": announcement.imageUrl ? [announcement.imageUrl] : undefined,
+      "datePublished": announcement.createdAt,
+      "dateModified": announcement.updatedAt || announcement.createdAt,
+      "author": {
+        "@type": "Organization",
+        "name": "Speshway HRMS"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Speshway HRMS",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "/images/Logo.jpg"
+        }
+      },
+      "mainEntityOfPage": canonical
+    }
+  });
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
@@ -60,14 +95,14 @@ const AnnouncementView = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <motion.h2
+      <motion.h1
         className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent px-2"
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 120 }}
       >
         Announcement Details
-      </motion.h2>
+      </motion.h1>
 
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"

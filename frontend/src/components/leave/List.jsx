@@ -1,17 +1,27 @@
 // src/components/leave/List.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
+import useMeta from "../../utils/useMeta";
 
 const List = () => {
   const [leaves, setLeaves] = useState(null);
   let sno = 1;
   const { id } = useParams();
   const { user } = useAuth();
+  const canonical = useMemo(() => `${window.location.origin}/employee-dashboard/leaves/${id}`, [id]);
+  useMeta({
+    title: 'My Leaves — Speshway HRMS',
+    description: 'View and manage your leave applications.',
+    keywords: 'leaves, employee, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   const fetchLeaves = async () => {
     try {

@@ -1,12 +1,22 @@
 // src/components/salary/PayrollTemplateManager.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { BANKS } from "../../utils/constants";
+import useMeta from "../../utils/useMeta";
 
 const PayrollTemplateManager = () => {
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/template-manager`, []);
+  useMeta({
+    title: "Payroll Templates — Speshway HRMS",
+    description: "Create and manage payroll templates for employees.",
+    keywords: "payroll templates, HRMS",
+    image: "/images/Logo.jpg",
+    url: canonical,
+    robots: "noindex,nofollow"
+  });
   const [template, setTemplate] = useState({
     employeeId: "",
     employeeObjectId: "",

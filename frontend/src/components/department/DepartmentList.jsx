@@ -5,8 +5,17 @@ import { columns, DepartmentButtons } from "../../utils/DepartmentHelper";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const DepartmentList = () => {
+  useMeta({
+    title: "Departments — Speshway HRMS",
+    description: "Manage and search departments.",
+    keywords: "departments, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/admin-dashboard/departments`,
+    robots: "noindex,nofollow"
+  });
   const [departments, setDepartments] = useState([]);
   const [depLoading, setDepLoading] = useState(false);
   const [filteredDepartments, setFilteredDepartments] = useState([]);

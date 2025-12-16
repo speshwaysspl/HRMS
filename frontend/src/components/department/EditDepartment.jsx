@@ -1,14 +1,24 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
+import useMeta from "../../utils/useMeta";
 
 const EditDepartment = () => {
   const { id } = useParams();
   const [department, setDepartment] = useState({});
   const [depLoading, setDepLoading] = useState(false);
   const navigate = useNavigate();
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/department/${id}`, [id]);
+  useMeta({
+    title: department?.dep_name ? `Edit ${department.dep_name} — Department` : 'Edit Department — Speshway HRMS',
+    description: 'Update department details.',
+    keywords: 'edit department, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   useEffect(() => {
     const fetchDepartments = async () => {

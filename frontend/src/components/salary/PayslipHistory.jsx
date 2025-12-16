@@ -1,9 +1,10 @@
 // src/components/salary/PayslipHistory.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
+import useMeta from "../../utils/useMeta";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
@@ -17,6 +18,15 @@ const MONTHS = [
 ];
 
 const PayslipHistory = () => {
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/payslip-history`, []);
+  useMeta({
+    title: "Payslip History — Speshway HRMS",
+    description: "Filter and review generated payslips.",
+    keywords: "payslip history, payroll, HRMS",
+    image: "/images/Logo.jpg",
+    url: canonical,
+    robots: "noindex,nofollow"
+  });
   const [payslips, setPayslips] = useState([]);
   const [filteredPayslips, setFilteredPayslips] = useState([]);
   const [loading, setLoading] = useState(false);

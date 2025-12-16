@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { useAuth } from "../../context/AuthContext";
 import { getAdminDailyMessage } from "../../utils/greetingUtils";
+import useMeta from "../../utils/useMeta";
 
 const StatCard = ({ icon, text, number, color, onClick }) => {
   return (
@@ -44,6 +45,13 @@ const AdminSummary = () => {
   const [summary, setSummary] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  useMeta({
+    title: "Admin Overview — Speshway HRMS",
+    description: "Quick stats across employees, departments and leaves.",
+    keywords: "admin overview, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/admin-dashboard`
+  });
   
   // Greeting based on IST
   const getGreeting = () => {

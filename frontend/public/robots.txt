@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin-dashboard/
+Disallow: /employee-dashboard/
+Disallow: /reset-password/
+Disallow: /forgot-password/
+
+Sitemap: https://speshwayhrms.com/sitemap.xml

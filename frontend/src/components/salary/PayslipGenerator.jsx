@@ -1,5 +1,5 @@
 // src/components/salary/PayslipGenerator.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -7,8 +7,18 @@ import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import { BANKS, MONTHS } from "../../utils/constants";
 import PayslipPreview from "./PayslipPreview";
+import useMeta from "../../utils/useMeta";
 
 const PayslipGenerator = () => {
+  const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/payslip-generator`, []);
+  useMeta({
+    title: "Payslip Generator — Speshway HRMS",
+    description: "Generate payslips for employees.",
+    keywords: "payslip, payroll, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+    robots: "noindex,nofollow"
+  });
   const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   const [payslip, setPayslip] = useState({
     employeeId: "",

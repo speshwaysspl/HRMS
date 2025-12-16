@@ -40,8 +40,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
 import { formatDMYWithTime } from '../../utils/dateUtils';
+import useMeta from '../../utils/useMeta';
 
 const EmployeeFeedback = () => {
+  useMeta({
+    title: 'Feedback — Speshway HRMS',
+    description: 'Submit and track your feedback and suggestions.',
+    keywords: 'employee feedback, HRMS',
+    image: '/images/Logo.jpg',
+    url: `${window.location.origin}/employee-dashboard/feedback`,
+    robots: 'noindex,nofollow'
+  });
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);

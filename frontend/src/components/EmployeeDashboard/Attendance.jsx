@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Wrapper } from "@googlemaps/react-wrapper";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, toISTTimeString } from "../../utils/dateTimeUtils";
 import { reverseGeocodeFast, buildAccuracyLabel, parseAccuracyMeters } from "../../utils/geocodeUtils";
+import useMeta from "../../utils/useMeta";
+const GoogleWrapper = React.lazy(() => import("@googlemaps/react-wrapper").then(m => ({ default: m.Wrapper })));
 
 // Google Maps component
 const GoogleMap = React.forwardRef(({ center, zoom, children }, mapRef) => {
@@ -221,6 +222,14 @@ const GoogleMarker = ({ position, map, title }) => {
 };
  
 const Attendance = () => {
+  useMeta({
+    title: "Attendance — Speshway HRMS",
+    description: "Mark in/out, track breaks and view current location.",
+    keywords: "attendance, HRMS",
+    image: "/images/Logo.jpg",
+    url: `${window.location.origin}/employee-dashboard/attendance`,
+    robots: "noindex,nofollow"
+  });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [accLoading, setAccLoading] = useState(false);
@@ -300,7 +309,7 @@ const Attendance = () => {
           let area = "Unknown Area";
           try {
             area = await reverseGeocodeFast(latitude, longitude);
-          } catch (_) {}
+          } catch (_) { void 0; }
           resolve({ latitude, longitude, area, accuracy: locationAccuracy });
         },
         (error) => {
@@ -379,7 +388,7 @@ const Attendance = () => {
           if (mapRef.current) {
             try {
               mapRef.current.setCenter({ lat: latitude, lng: longitude });
-            } catch (_) {}
+            } catch (_) { void 0; }
           }
         }
       },
@@ -797,18 +806,20 @@ const Attendance = () => {
           {tracker.latitude && tracker.longitude && (
             <div className="relative">
               {hasGoogleKey ? (
-                <Wrapper apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-                  <GoogleMap
-                    ref={mapRef}
-                    center={{ lat: tracker.latitude, lng: tracker.longitude }}
-                    zoom={17}
-                  >
-                    <GoogleMarker
-                      position={{ lat: tracker.latitude, lng: tracker.longitude }}
-                      title={tracker.area}
-                    />
-                  </GoogleMap>
-                </Wrapper>
+                <React.Suspense fallback={<div style={{height: "300px"}}>Loading map…</div>}>
+                  <GoogleWrapper apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+                    <GoogleMap
+                      ref={mapRef}
+                      center={{ lat: tracker.latitude, lng: tracker.longitude }}
+                      zoom={17}
+                    >
+                      <GoogleMarker
+                        position={{ lat: tracker.latitude, lng: tracker.longitude }}
+                        title={tracker.area}
+                      />
+                    </GoogleMap>
+                  </GoogleWrapper>
+                </React.Suspense>
               ) : (
                 <iframe
                   title="OpenStreetMap"

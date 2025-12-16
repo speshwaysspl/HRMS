@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../utils/apiConfig";
+import useMeta from "../utils/useMeta";
  
 export default function ResetPassword() {
   const { token } = useParams();
@@ -12,6 +13,14 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const canonical = useMemo(() => `${window.location.origin}/reset-password/${token || ""}`,[token]);
+  useMeta({
+    title: "Reset Password — Speshway HRMS",
+    description: "Create a new password for your Speshway HRMS account.",
+    keywords: "reset password, HRMS",
+    url: canonical,
+    image: "/images/Logo.jpg",
+  });
  
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,14 +1,24 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
+import useMeta from "../../utils/useMeta";
 
 const Profile = () => {
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const canonical = useMemo(() => `${window.location.origin}/employee-dashboard/profile/${id}`, [id]);
+  useMeta({
+    title: employee?.userId?.name ? `${employee.userId.name} — Profile` : 'My Profile — Speshway HRMS',
+    description: 'View your personal details and employment information.',
+    keywords: 'profile, HRMS',
+    image: '/images/Logo.jpg',
+    url: canonical,
+    robots: 'noindex,nofollow'
+  });
 
   useEffect(() => {
     const fetchEmployee = async () => {
