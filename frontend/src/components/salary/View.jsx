@@ -286,9 +286,20 @@ const View = () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
+        responseType: "arraybuffer",
       });
-      const blob = new Blob([response.data], { type: "application/pdf" });
+      const contentType = response.headers?.['content-type'] || '';
+      let data = response.data;
+      if (contentType.includes('application/json')) {
+        const text = new TextDecoder().decode(data);
+        const obj = JSON.parse(text);
+        const b64 = obj?.data || obj?.pdf || '';
+        const byteChars = atob(b64);
+        const byteNums = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+        data = new Uint8Array(byteNums);
+      }
+      const blob = new Blob([data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       const datePart = new Date(payDate).toISOString().split("T")[0];

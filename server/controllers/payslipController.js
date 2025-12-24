@@ -623,6 +623,11 @@ export const downloadPayslipPDF = async (req, res) => {
       return res.status(404).json({ success: false, error: "Payslip not found" });
     }
     
+    if (req.query.base64 === 'true') {
+      const buffer = await generateSalaryPDFBuffer(salary);
+      const b64 = buffer.toString('base64');
+      return res.status(200).json({ success: true, data: b64 });
+    }
     generateSalaryPDF(res, salary);
   } catch (error) {
     console.error("Download Payslip PDF error:", error);
@@ -1091,7 +1096,11 @@ export const downloadPreviewPDF = async (req, res) => {
       return res.status(400).json({ success: false, error: "Payslip data is required" });
     }
     
-    // Generate PDF using the same function as regular payslips
+    if (req.query.base64 === 'true') {
+      const buffer = await generateSalaryPDFBuffer(payslipData);
+      const b64 = buffer.toString('base64');
+      return res.status(200).json({ success: true, data: b64 });
+    }
     await generateSalaryPDF(res, payslipData);
   } catch (error) {
     console.error("Download Preview PDF error:", error);

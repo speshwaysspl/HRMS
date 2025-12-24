@@ -1,7 +1,7 @@
 // backend/controllers/salaryController.js
 import Salary from "../models/Salary.js";
 import Employee from "../models/Employee.js";
-import { generateSalaryPDF } from "../utils/pdfGenerator.js";
+import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
 
 const num = (v) => {
   const n = parseFloat(v);
@@ -59,6 +59,11 @@ export const downloadSalaryPDF = async (req, res) => {
     const salary = await Salary.findById(id).populate("employeeId", "employeeId name");
     if (!salary) {
       return res.status(404).json({ success: false, error: "Salary record not found" });
+    }
+    if (req.query.base64 === 'true') {
+      const buffer = await generateSalaryPDFBuffer(salary);
+      const b64 = buffer.toString('base64');
+      return res.status(200).json({ success: true, data: b64 });
     }
     generateSalaryPDF(res, salary);
   } catch (error) {

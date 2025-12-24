@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
+import { sendToUser } from '../services/websocketService.js';
 
 // Create and broadcast a single notification
 const createNotification = async (notificationData, io) => {
@@ -12,6 +13,13 @@ const createNotification = async (notificationData, io) => {
 
     const roomName = `user_${notificationData.recipientId}`;
     if (io) io.to(roomName).emit('newNotification', notification);
+    
+    // Also try sending via AWS WebSocket
+    await sendToUser(notificationData.recipientId, {
+        type: 'newNotification',
+        notification
+    });
+
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);

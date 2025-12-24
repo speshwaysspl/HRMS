@@ -22,49 +22,116 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
+  const pollIntervalRef = useRef(null);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const backoffRef = useRef(1000);
+  const WS_BASE = import.meta?.env?.VITE_WS_URL; 
 
-  // Initialize socket connection
   useEffect(() => {
     if (user && user._id) {
-      // Create socket connection
-      socketRef.current = io(API_BASE, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
-
-      const socket = socketRef.current;
-
-      socket.on('connect', () => {
-        setIsConnected(true);
-        // Join user's personal notification room
-        socket.emit('join', user._id);
-      });
-
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
-
-      // Listen for new notifications
-      socket.on('newNotification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show popup notification
-        showPopupNotification(notification);
-        
-        // Request notification permission on first notification if not already set
-        if (("Notification" in window) && Notification.permission === "default") {
-          Notification.requestPermission();
+      const startPolling = () => {
+        if (!pollIntervalRef.current) {
+          fetchNotifications();
+          pollIntervalRef.current = setInterval(fetchNotifications, 30000);
         }
-      });
-
-      socket.on('connect_error', (error) => {
-        setIsConnected(false);
-      });
-
-      return () => {
-        socket.disconnect();
       };
+      const stopPolling = () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      };
+      const handleIncoming = (payload) => {
+        if (!payload) return;
+        const notification = payload.notification || payload;
+        if (notification && (notification.title || notification.message || notification._id)) {
+          setNotifications(prev => [notification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          showPopupNotification(notification);
+          if (("Notification" in window) && Notification.permission === "default") {
+            Notification.requestPermission();
+          }
+        }
+      };
+      const connectNativeWS = () => {
+        if (!WS_BASE) return;
+        try {
+          wsRef.current = new WebSocket(WS_BASE);
+        } catch (_) {
+          startPolling();
+          return;
+        }
+        const ws = wsRef.current;
+        ws.onopen = () => {
+          setIsConnected(true);
+          stopPolling();
+          backoffRef.current = 1000;
+          const joinMsg = JSON.stringify({ action: 'join', userId: user._id });
+          try { ws.send(joinMsg); } catch (_) {}
+        };
+        ws.onmessage = (evt) => {
+          try {
+            const data = JSON.parse(evt.data);
+            const type = data.type || data.event;
+            if (type === 'newNotification' || type === 'notification' || data.notification || data.title) {
+              handleIncoming(data);
+            }
+          } catch (_) {}
+        };
+        const scheduleReconnect = () => {
+          setIsConnected(false);
+          startPolling();
+          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+          const delay = Math.min(backoffRef.current, 30000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            backoffRef.current = Math.min(backoffRef.current * 2, 30000);
+            connectNativeWS();
+          }, delay);
+        };
+        ws.onerror = () => scheduleReconnect();
+        ws.onclose = () => scheduleReconnect();
+      };
+      const connectSocketIO = () => {
+        socketRef.current = io(API_BASE, { withCredentials: true, transports: ['websocket', 'polling'] });
+        const socket = socketRef.current;
+        socket.on('connect', () => {
+          setIsConnected(true);
+          socket.emit('join', user._id);
+          stopPolling();
+        });
+        socket.on('disconnect', () => {
+          setIsConnected(false);
+          startPolling();
+        });
+        socket.on('newNotification', (notification) => {
+          handleIncoming(notification);
+        });
+        socket.on('connect_error', () => {
+          setIsConnected(false);
+          startPolling();
+        });
+      };
+      if (WS_BASE) {
+        connectNativeWS();
+      } else {
+        connectSocketIO();
+      }
+      return () => {
+        if (socketRef.current) {
+          try { socketRef.current.disconnect(); } catch (_) {}
+          socketRef.current = null;
+        }
+        if (wsRef.current) {
+          try { wsRef.current.close(); } catch (_) {}
+          wsRef.current = null;
+        }
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+        stopPolling();
+      }
     }
   }, [user]);
 
