@@ -20,10 +20,14 @@ const normalizeMongoUri = (raw) => {
 const connectToDatabase = async () => {
     try {
         const uri = normalizeMongoUri(process.env.MONGODB_URL);
-        await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
+        await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 5000,
+            family: 4 // Use IPv4, skip trying IPv6
+        });
         console.log("MongoDB connected");
     } catch (error) {
-        console.log(error);
+        console.log("MongoDB Connection Error: ", error);
+        throw error;
     }
 };
 

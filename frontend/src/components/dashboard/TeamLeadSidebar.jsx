@@ -2,50 +2,23 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
-  FaBuilding,
-  FaCalendarAlt,
-  FaCogs,
-  FaMoneyBillWave,
   FaTachometerAlt,
   FaUsers,
-  FaBullhorn,
   FaBars,
   FaTimes,
   FaChevronRight,
-  FaChevronDown,
   FaSignOutAlt,
-  FaFileInvoiceDollar,
-  FaClipboardList,
-  FaHistory,
-  FaComments,
-  FaCalendarCheck,
 } from "react-icons/fa";
-import { AiOutlineFileText } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
 
-const AdminSidebar = () => {
+const TeamLeadSidebar = () => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-  const [salaryDropdownOpen, setSalaryDropdownOpen] = useState(false);
 
   const links = [
-    { to: "/admin-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true },
-    { to: "/admin-dashboard/employees", label: "Manage Employees", icon: <FaUsers /> },
-    { to: "/admin-dashboard/teams", label: "Manage Teams", icon: <FaUsers /> },
-    { to: "/admin-dashboard/departments", label: "Manage Departments", icon: <FaBuilding /> },
-    { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
-    { to: "/admin-dashboard/calendar", label: "Calendar", icon: <FaCalendarCheck /> },
-    { to: "/admin-dashboard/attendance-report", label: "Admin Attendance Report", icon: <AiOutlineFileText /> },
-    { to: "/admin-dashboard/announcements", label: "Announcements Management", icon: <FaBullhorn /> },
-    { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaComments /> },
-    { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
-  ];
-
-  const salaryLinks = [
-    { to: "/admin-dashboard/salary/template-manager", label: "Payroll Template Manager", icon: <FaClipboardList /> },
-    { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaFileInvoiceDollar /> },
-    { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History & Management", icon: <FaHistory /> },
+    { to: "/team-lead-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true },
+    { to: "/team-lead-dashboard/teams", label: "My Teams", icon: <FaUsers /> },
   ];
 
   // Track window resize for responsive behavior
@@ -105,24 +78,23 @@ const AdminSidebar = () => {
       >
         {/* Header */}
        <div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5">
-  {/* Logo Image */}
-  <img 
-    src="/images/Logo.jpg"
-    alt="Company Logo" 
-    loading="lazy"
-    width="48"
-    height="48"
-    className="w-12 h-12 rounded-full shadow-lg border-2 border-white mr-3"
-    onError={(e) => {
-      e.target.style.display = 'none';
-      e.target.nextSibling.style.marginLeft = '0';
-    }}
-  />
-  
-  {/* Company Name */}
-  <h1 className="text-white font-bold text-lg sm:text-xl">HRMS Portal</h1>
-</div>
-
+          {/* Logo Image */}
+          <img 
+            src="/images/Logo.jpg"
+            alt="Company Logo" 
+            loading="lazy"
+            width="48"
+            height="48"
+            className="w-12 h-12 rounded-full shadow-lg border-2 border-white mr-3"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.marginLeft = '0';
+            }}
+          />
+          
+          {/* Company Name */}
+          <h1 className="text-white font-bold text-lg sm:text-xl">HRMS Portal</h1>
+        </div>
 
         {/* Links */}
         <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
@@ -161,66 +133,7 @@ const AdminSidebar = () => {
             </NavLink>
           ))}
 
-          {/* Salary Dropdown */}
-          <div className="space-y-1">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSalaryDropdownOpen(!salaryDropdownOpen)}
-              className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white"
-            >
-              <motion.span
-                whileHover={{ scale: 1.3, rotate: 12 }}
-                transition={{ type: "spring", stiffness: 250 }}
-                className="text-xl"
-              >
-                <FaMoneyBillWave />
-              </motion.span>
-              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-                Salary Management
-              </span>
-              <motion.span
-                animate={{ rotate: salaryDropdownOpen ? 90 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="ml-auto text-xs opacity-70"
-              >
-                {salaryDropdownOpen ? <FaChevronDown /> : <FaChevronRight />}
-              </motion.span>
-            </motion.button>
-
-            <AnimatePresence>
-              {salaryDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="ml-4 space-y-1 overflow-hidden"
-                >
-                  {salaryLinks.map((subLink, subIdx) => (
-                    <NavLink
-                      key={subIdx}
-                      to={subLink.to}
-                      className={({ isActive }) =>
-                        `group relative flex items-center space-x-3 py-2 px-3 rounded-lg transition-all duration-300 text-sm
-                         ${
-                           isActive
-                             ? "bg-gradient-to-r from-teal-400 to-green-400 text-white shadow-lg"
-                             : "hover:bg-gradient-to-r hover:from-blue-400 hover:to-purple-400 hover:text-white text-gray-300"
-                         }`
-                      }
-                      onClick={() => !isDesktop && setIsOpen(false)}
-                    >
-                      <span className="text-base">{subLink.icon}</span>
-                      <span className="font-medium" style={{ fontFamily: 'Times New Roman, serif' }}>{subLink.label}</span>
-                    </NavLink>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Logout Button - After Salary Management */}
+          {/* Logout Button */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -259,4 +172,4 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default TeamLeadSidebar;

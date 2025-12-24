@@ -57,7 +57,7 @@ export const columns = [
     name: "Action",
     selector: (row) => row.action,
     center: true,
-    width: "260px",
+    width: "450px",
   },
 ];
 
@@ -108,7 +108,7 @@ export const getEmployees = async (id) => {
 
 
 
-export const EmployeeButtons = ({ Id }) => {
+export const EmployeeButtons = ({ Id, onDelete }) => {
   const navigate = useNavigate();
 
   return (
@@ -136,6 +136,12 @@ export const EmployeeButtons = ({ Id }) => {
         onClick={() => navigate(`/admin-dashboard/employees/leaves/${Id}`)}
       >
         Leave
+      </button>
+      <button
+        className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+        onClick={() => onDelete(Id)}
+      >
+        Delete
       </button>
     </div>
   );

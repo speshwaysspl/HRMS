@@ -98,6 +98,134 @@ const createAnnouncementNotification = async (announcementData, adminId, io, rec
   }
 };
 
+const createHolidayNotification = async (eventData, adminId, io) => {
+  try {
+    const employees = await Employee.find({ status: 'active' }).populate('userId', 'name email role');
+    const created = [];
+    for (const emp of employees) {
+      if (!emp.userId || !emp.userId._id) continue;
+      const message = `${eventData?.title || 'Holiday'} on ${new Date(eventData?.date).toDateString()}`;
+      const data = {
+        type: 'holiday',
+        title: 'New Holiday Added',
+        message,
+        senderId: adminId,
+        recipientId: emp.userId._id,
+        relatedId: eventData?._id
+      };
+      created.push(await createNotification(data, io));
+    }
+    return created;
+  } catch (error) {
+    console.error('Error creating holiday notifications:', error);
+    throw error;
+  }
+};
+
+// Create notifications for general events (meeting, event, other)
+const createEventNotification = async (eventData, adminId, io) => {
+  try {
+    // Delegate to holiday-specific builder when type is holiday
+    if (eventData?.type === 'holiday') {
+      return await createHolidayNotification(eventData, adminId, io);
+    }
+    const employees = await Employee.find({ status: 'active' }).populate('userId', 'name email role');
+    const created = [];
+    for (const emp of employees) {
+      if (!emp.userId || !emp.userId._id) continue;
+      const dateStr = eventData?.date ? new Date(eventData.date).toDateString() : '';
+      const isMeeting = eventData?.type === 'meeting';
+      const title = isMeeting ? 'New Meeting Scheduled' : 'New Event Added';
+      const message = dateStr ? `${eventData?.title || 'Event'} on ${dateStr}` : `${eventData?.title || 'Event'}`;
+      const data = {
+        // Preserve the event type for client-side handling ('meeting' | 'event' | 'other')
+        type: eventData?.type || 'event',
+        title,
+        message,
+        senderId: adminId,
+        recipientId: emp.userId._id,
+        relatedId: eventData?._id
+      };
+      created.push(await createNotification(data, io));
+    }
+    return created;
+  } catch (error) {
+    console.error('Error creating event notifications:', error);
+    throw error;
+  }
+};
+
+// Create notification for task assignment (Admin/Team Lead -> Employee)
+const createTaskAssignmentNotification = async (taskData, assignerId, io) => {
+  try {
+    // taskData.assignedTo is the Employee ID. We need the User ID.
+    const employee = await Employee.findById(taskData.assignedTo).populate('userId');
+    if (!employee || !employee.userId) {
+        console.error('Employee user not found for task assignment notification');
+        return;
+    }
+    
+    const assigner = await User.findById(assignerId);
+    
+    const data = {
+      type: 'task_assigned',
+      title: 'New Task Assigned',
+      message: `You have been assigned a new task: "${taskData.title}" by ${assigner?.name || 'management'}`,
+      recipientId: employee.userId._id,
+      senderId: assignerId,
+      relatedId: taskData._id
+    };
+    return await createNotification(data, io);
+  } catch (error) {
+    console.error('Error creating task assignment notification:', error);
+    throw error;
+  }
+};
+
+// Create notification for task update (Admin/Team Lead -> Employee)
+const createTaskUpdateNotification = async (taskData, assignerId, io) => {
+  try {
+    const employee = await Employee.findById(taskData.assignedTo).populate('userId');
+    if (!employee || !employee.userId) return;
+
+    const assigner = await User.findById(assignerId);
+    
+    const data = {
+      type: 'task_updated',
+      title: 'Task Updated',
+      message: `Your task "${taskData.title}" has been updated by ${assigner?.name || 'management'}`,
+      recipientId: employee.userId._id,
+      senderId: assignerId,
+      relatedId: taskData._id
+    };
+    return await createNotification(data, io);
+  } catch (error) {
+    console.error('Error creating task update notification:', error);
+    throw error;
+  }
+};
+
+// Create notification for task submission/update (Employee -> Team Lead/Admin)
+const createTaskSubmissionNotification = async (taskData, employeeUserId, io) => {
+  try {
+    const employeeUser = await User.findById(employeeUserId);
+    
+    // Notify the person who assigned the task (Team Lead or Admin)
+    const data = {
+      type: 'task_submitted',
+      title: 'Task Update',
+      message: `${employeeUser?.name || 'Employee'} updated task "${taskData.title}" (Status: ${taskData.status})`,
+      recipientId: taskData.assignedBy, // The user ID of who assigned it
+      senderId: employeeUserId,
+      relatedId: taskData._id
+    };
+    return await createNotification(data, io);
+  } catch (error) {
+    console.error('Error creating task submission notification:', error);
+    throw error;
+  }
+};
+
 // Get notifications for a user with pagination
 const getUserNotifications = async (req, res) => {
   try {
@@ -155,4 +283,4 @@ const clearAllNotifications = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications };
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications };

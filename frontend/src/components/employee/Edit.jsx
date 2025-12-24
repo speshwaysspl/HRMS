@@ -118,6 +118,28 @@ const Edit = () => {
       return;
     }
 
+    // Validate Date of Birth
+    if (employee.dob) {
+      const dobDate = new Date(employee.dob);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (dobDate > today) {
+        alert("Date of Birth cannot be in the future");
+        return;
+      }
+    }
+
+    // Validate Joining Date
+    if (employee.joiningDate) {
+      const joiningDate = new Date(employee.joiningDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (joiningDate > today) {
+        alert("Joining Date cannot be in the future");
+        return;
+      }
+    }
+
     // Filter out null and empty values
     const cleanedEmployee = Object.keys(employee).reduce((acc, key) => {
       if (employee[key] !== null && employee[key] !== "") {
@@ -213,6 +235,7 @@ const Edit = () => {
                   value={employee.dob}
                   onChange={handleChange}
                   placeholder="DOB"
+                  max={new Date().toISOString().split('T')[0]}
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 />
               </div>
@@ -228,6 +251,7 @@ const Edit = () => {
                   value={employee.joiningDate}
                   onChange={handleChange}
                   placeholder="Joining Date"
+                  max={new Date().toISOString().split('T')[0]}
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                   required
                 />
@@ -349,7 +373,7 @@ const Edit = () => {
               type="submit"
               className="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded"
             >
-              Edit Employee
+              Save Employee
             </button>
           </form>
         </div>

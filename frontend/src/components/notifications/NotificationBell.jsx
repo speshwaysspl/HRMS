@@ -62,6 +62,16 @@ const NotificationBell = () => {
           }
           break;
 
+        case 'holiday':
+        case 'meeting':
+        case 'event':
+          if (isAdmin) {
+            navigate('/admin-dashboard/calendar');
+          } else if (isEmployee) {
+            navigate('/employee-dashboard/calendar');
+          }
+          break;
+
         case 'leave_approved':
         case 'leave_rejected':
           if (isEmployee) {
@@ -91,6 +101,30 @@ const NotificationBell = () => {
           }
           break;
           
+        case 'task_assigned':
+        case 'task_updated':
+          if (isEmployee) {
+            navigate('/employee-dashboard/tasks');
+          }
+          break;
+
+        case 'task_submitted':
+          if (isAdmin) {
+             // Admin task list - currently just /admin-dashboard/teams usually leads to tasks via team details, 
+             // but if there is a general task view it would be better.
+             // For now, let's assume they want to go to the Team Lead Dashboard style task view or just navigate them safely.
+             // Actually, Admin has no direct "All Tasks" route visible in App.jsx except via TeamDetail.
+             // But Team Lead has /team-lead-dashboard/tasks.
+             // Let's check App.jsx again for Admin routes.
+             // Admin has /admin-dashboard/team/:id.
+             // If we know the team ID, we could go there. But we only have relatedId (Task ID).
+             navigate('/admin-dashboard/teams'); // Safest bet for now
+          } else {
+             // Team Lead
+             navigate('/team-lead-dashboard/tasks');
+          }
+          break;
+
         case 'feedback_submitted':
           if (isAdmin) {
             // Admin should go to feedback management page
@@ -129,8 +163,16 @@ const NotificationBell = () => {
         return '✅';
       case 'leave_rejected':
         return '❌';
+      case 'holiday':
+      case 'meeting':
+      case 'event':
+        return '📅';
       case 'announcement':
         return '📢';
+      case 'task_assigned':
+      case 'task_updated':
+      case 'task_submitted':
+        return '📋';
       case 'feedback_submitted':
         return '📋';
       case 'feedback_response':
@@ -148,6 +190,8 @@ const NotificationBell = () => {
         return 'bg-green-50 border-green-200';
       case 'leave_rejected':
         return 'bg-red-50 border-red-200';
+      case 'holiday':
+        return 'bg-yellow-50 border-yellow-200';
       case 'announcement':
         return 'bg-purple-50 border-purple-200';
       default:

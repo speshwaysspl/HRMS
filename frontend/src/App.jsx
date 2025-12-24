@@ -1,17 +1,26 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
- 
+
 // Pages
 import Login from "./pages/Login";
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
+const NotFound = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-gray-600">404 - Page Not Found</div>;
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const EmployeeDashboard = lazy(() => import("./pages/EmployeeDashboard"));
- 
+const TeamLeadDashboard = lazy(() => import("./pages/TeamLeadDashboard"));
+
 // Utils
 import PrivateRoutes from "./utils/PrivateRoutes";
 import RoleBaseRoutes from "./utils/RoleBaseRoutes";
+
+// Team & Task Components (lazy-loaded)
+const TeamList = lazy(() => import("./components/team/TeamList"));
+const CreateTeam = lazy(() => import("./components/team/CreateTeam"));
+const TeamDetail = lazy(() => import("./components/team/TeamDetail"));
+const TaskList = lazy(() => import("./components/task/TaskList"));
  
 // Admin Components (lazy-loaded)
 const AdminSummary = lazy(() => import("./components/dashboard/AdminSummary"));
@@ -35,7 +44,8 @@ const AnnouncementAdd = lazy(() => import("./components/announcements/Announceme
 const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
 const AdminFeedback = lazy(() => import("./components/feedback/AdminFeedback"));
- 
+const AdminCalendar = lazy(() => import("./components/calendar/AdminCalendar"));
+
 // Employee Components (lazy-loaded)
 const Summary = lazy(() => import("./components/EmployeeDashboard/Summary"));
 const Profile = lazy(() => import("./components/EmployeeDashboard/Profile"));
@@ -47,7 +57,10 @@ const EmployeeAnnouncementDetails = lazy(() => import("./components/employee/Ann
 const Attendance = lazy(() => import("./components/EmployeeDashboard/Attendance"));
 const AttendanceReport = lazy(() => import("./components/EmployeeDashboard/AttendanceReport"));
 const EmployeeFeedback = lazy(() => import("./components/feedback/EmployeeFeedback"));
- 
+const EmployeeCalendar = lazy(() => import("./components/calendar/EmployeeCalendar"));
+const DocumentUpload = lazy(() => import("./components/employee/DocumentUpload"));
+const DocumentList = lazy(() => import("./components/employee/DocumentList"));
+
 function App() {
   // Preload most-visited routes after idle to reduce navigation latency
   useEffect(() => {
@@ -74,6 +87,8 @@ function App() {
         <Route path="login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />}></Route>
         <Route path="/reset-password/:token" element={<ResetPassword />}></Route>
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
 
        
  
@@ -126,8 +141,32 @@ function App() {
  
           {/* Feedback */}
           <Route path="feedback" element={<AdminFeedback />} />
+          <Route path="calendar" element={<AdminCalendar />} />
+          
+          {/* Teams */}
+          <Route path="teams" element={<TeamList />} />
+          <Route path="create-team" element={<CreateTeam />} />
+          <Route path="team/:id" element={<TeamDetail />} />
+          <Route path="documents" element={<DocumentList />} />
         </Route>
  
+        {/* Team Lead Dashboard */}
+        <Route
+          path="team-lead-dashboard"
+          element={
+            <PrivateRoutes>
+              <RoleBaseRoutes requiredRole={["team_lead"]}>
+                <TeamLeadDashboard />
+              </RoleBaseRoutes>
+            </PrivateRoutes>
+          }
+        >
+          <Route index element={<TeamList />} />
+          <Route path="teams" element={<TeamList />} />
+           <Route path="team/:id" element={<TeamDetail />} />
+          <Route path="tasks" element={<TaskList />} />
+        </Route>
+
         {/* Employee Dashboard */}
         <Route
           path="employee-dashboard"
@@ -161,9 +200,10 @@ function App() {
           {/* Attendance */}
           <Route path="attendance" element={<Attendance />} />
           <Route path="attendance-report" element={<AttendanceReport />} />
- 
-          {/* Feedback */}
           <Route path="feedback" element={<EmployeeFeedback />} />
+          <Route path="calendar" element={<EmployeeCalendar />} />
+          <Route path="documents" element={<DocumentList />} />
+          <Route path="tasks" element={<TaskList />} />
         </Route>
  
         {/* Fallback */}

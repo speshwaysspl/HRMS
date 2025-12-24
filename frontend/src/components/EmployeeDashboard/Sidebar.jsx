@@ -13,6 +13,9 @@ import {
   FaChevronRight,
   FaSignOutAlt,
   FaComments,
+  FaCalendarCheck,
+  FaClipboardList,
+  FaFolderOpen,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,7 +64,9 @@ const Sidebar = () => {
     { to: `/employee-dashboard/profile/${user?._id}`, label: "My Profile", icon: <FaUsers /> },
     { to: `/employee-dashboard/leaves/${user?._id}`, label: "Leaves", icon: <FaBuilding /> },
     { to: `/employee-dashboard/salary/${user?._id}`, label: "Salary", icon: <FaMoneyBillWave /> },
+    { to: "/employee-dashboard/tasks", label: "My Tasks", icon: <FaClipboardList /> },
     { to: "/employee-dashboard/announcements", label: "Announcements", icon: <FaRegCalendarAlt /> },
+    { to: "/employee-dashboard/calendar", label: "Calendar", icon: <FaCalendarCheck /> },
     { to: "/employee-dashboard/attendance", label: "Attendance", icon: <FaCalendarAlt /> },
     { to: "/employee-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
     { to: "/employee-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
@@ -111,7 +116,7 @@ const Sidebar = () => {
 
 
         {/* Links */}
-        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1`}>
+        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
           {navLinks.map((link, idx) => (
             <NavLink
               key={idx}

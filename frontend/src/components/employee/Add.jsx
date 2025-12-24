@@ -65,6 +65,28 @@ const Add = () => {
       return;
     }
 
+    // Validate Date of Birth
+    if (formData.dob) {
+      const dobDate = new Date(formData.dob);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+      if (dobDate > today) {
+        alert("Date of Birth cannot be in the future");
+        return;
+      }
+    }
+
+    // Validate Joining Date
+    if (formData.joiningDate) {
+      const joiningDate = new Date(formData.joiningDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (joiningDate > today) {
+        alert("Joining Date cannot be in the future");
+        return;
+      }
+    }
+
     try {
       const response = await axios.post(
         `${API_BASE}/api/employee/add`,
@@ -147,6 +169,7 @@ const Add = () => {
               name="dob"
               onChange={handleChange}
               placeholder="DOB"
+              max={new Date().toISOString().split('T')[0]}
               className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
             />
           </div>
@@ -161,6 +184,7 @@ const Add = () => {
               name="joiningDate"
               onChange={handleChange}
               placeholder="Joining Date"
+              max={new Date().toISOString().split('T')[0]}
               className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
               required
             />
@@ -302,14 +326,22 @@ const Add = () => {
             </div>
           </div>
 
-          {/* Role - Hidden field with default value */}
-          <input
-            type="hidden"
-            name="role"
-            value="employee"
-          />
-
-
+          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Role
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              required
+            >
+              <option value="employee">Employee</option>
+              <option value="team_lead">Team Lead</option>
+            </select>
+          </div>
         </div>
 
         <button
