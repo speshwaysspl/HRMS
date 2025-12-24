@@ -202,19 +202,48 @@ const generateSalaryPDFContent = (doc, salary) => {
  * Generate PDF and stream to response
  */
 export const generateSalaryPDF = async (res, salary) => {
-  const fileName = `Payslip_${salary?.employeeId?.employeeId || salary?.employeeId}_${
-    new Date(salary.payDate).toISOString().split("T")[0]
-  }.pdf`;
+  // Build a safe filename even if some fields are missing (Lambda-safe)
+  const employeePart = salary?.employeeId?.employeeId || salary?.employeeId || "Unknown";
+  const dateInput = salary?.payDate ? new Date(salary.payDate) : new Date();
+  const datePart = isNaN(dateInput.getTime())
+    ? new Date().toISOString().split("T")[0]
+    : dateInput.toISOString().split("T")[0];
+  const fileName = `Payslip_${employeePart}_${datePart}.pdf`;
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-
+  // Generate into a Buffer to avoid streaming issues on Lambda/API Gateway
   const doc = new PDFDocument({ size: "A4", margin: 20 });
-  doc.pipe(res);
+  const chunks = [];
 
-  generateSalaryPDFContent(doc, salary);
+  return new Promise((resolve, reject) => {
+    try {
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+        res.setHeader("Content-Length", pdfBuffer.length);
+        res.end(pdfBuffer);
+        resolve();
+      });
+      doc.on("error", (err) => {
+        console.error("PDF generation error:", err);
+        // Ensure we send a JSON error response if possible
+        try {
+          res.status(500).json({ success: false, error: "PDF generation error" });
+        } catch (_) {}
+        reject(err);
+      });
 
-  doc.end();
+      generateSalaryPDFContent(doc, salary);
+      doc.end();
+    } catch (error) {
+      console.error("Unhandled PDF generation error:", error);
+      try {
+        res.status(500).json({ success: false, error: "PDF generation error" });
+      } catch (_) {}
+      reject(error);
+    }
+  });
 };
 
 /**

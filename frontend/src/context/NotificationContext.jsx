@@ -45,7 +45,7 @@ export const NotificationProvider = ({ children }) => {
       });
 
       // Listen for new notifications
-      socket.on('notification', (notification) => {
+      socket.on('newNotification', (notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         

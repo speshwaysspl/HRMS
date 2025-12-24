@@ -1,0 +1,74 @@
+               MANUAL TESTING:
+              =================
+1.SDLC
+2.Methodologies
+  a.Waterfall model
+  b.Spiral model
+  c.V- model
+  d.Prototype model
+  e.Derived model
+  f.Hybrid model
+  g.Agile model
+3.Types of testings:
+  a.WBT
+  b.BBT
+  c.GBT
+  d.Acceptance Testing
+4.Types of Block box testings:
+  a.functional testing
+  b.integration testing
+  c.system testing
+  d.acceptance testing
+  e.smoke testing
+  f.ad-hoc testing
+  g.exploratory testing
+  h.usability testing
+  i.performance testing
+  j.regression testing
+  k.compatability testing
+  l.releability testing
+  m.recovery testing
+  n.globalization testing
+5.Test Scenarios
+6.Test cases
+7.Test case design techniques
+8.STLC
+9.RTM
+10.Defect Life cycle
+
+                       Java
+                      ======
+1.Jdk
+2.Variables
+3.Data types
+4.Control statements
+5.Looping statements
+6.OOPS
+  a.inheritance
+  b.polymorpysm
+  c.encopsulation
+  d.abstraction
+7.constructor
+8.Access specifiers
+9.String
+10.Arrays
+
+
+                   Automation
+                  ============
+
+1.WebDriver methods
+2.Locators
+3.WebElement methods
+4.Keyboard stock handling
+   a.robot
+   b.Actions
+5.Scroll handling
+6.Dropdown
+7.Mouse Actions
+8.Hidden pop-ups
+9.Alerts
+10.Window handlings
+11.Frames
+12.ScreenShot
+13.Auto Suggestions

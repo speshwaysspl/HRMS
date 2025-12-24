@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { columns, EmployeeButtons } from '../../utils/EmployeeHelper'
 import DataTable from 'react-data-table-component'
 import axios from 'axios'
-import { FaPlus, FaSearch } from 'react-icons/fa'
+import * as XLSX from 'xlsx'
+import { FaPlus, FaSearch, FaFileExcel } from 'react-icons/fa'
 import { API_BASE } from '../../utils/apiConfig'
 import StatusToggle from './StatusToggle'
 import { formatDMY } from '../../utils/dateUtils'
@@ -23,6 +24,28 @@ const List = () => {
     const [empLoading, setEmpLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
+    const handleDelete = useCallback(async (id) => {
+      if(!window.confirm("Are you sure you want to delete this employee?")) return;
+      try {
+        const response = await axios.delete(
+          `${API_BASE}/api/employee/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (response.data.success) {
+          setEmployees(prevEmployees => prevEmployees.filter(emp => emp._id !== id));
+        }
+      } catch (error) {
+        if(error.response && !error.response.data.success) {
+          alert(error.response.data.error)
+        } else {
+          alert("Server Error in deleting employee")
+        }
+      }
+    }, []);
 
     useEffect(() => {
         const fetchEmployees = async () => {
@@ -48,11 +71,12 @@ const List = () => {
                    email: emp.userId.email,
                    designation: emp.designation,
                    dob: formatDMY(emp.dob),
+                   gender: emp.gender,
                    joiningDate: emp.joiningDate ? formatDMY(emp.joiningDate) : 'N/A',
                    mobilenumber: emp.mobilenumber || 'N/A',
                    status: emp.status || 'active',
                    onStatusChange: handleStatusChange,
-                   action: (<EmployeeButtons Id={emp._id} />),
+                   action: (<EmployeeButtons Id={emp._id} onDelete={handleDelete} />),
                  };
                });
               setEmployees(data);
@@ -68,7 +92,7 @@ const List = () => {
         };
     
         fetchEmployees();
-      }, []);
+      }, [handleDelete]);
 
       const handleFilter = useCallback((e) => {
         setSearchQuery(e.target.value);
@@ -82,6 +106,26 @@ const List = () => {
           )
         );
       }, [])
+
+      const handleExport = () => {
+        const exportData = employees.map(emp => ({
+            "Employee ID": emp.employeeId,
+            "Name": emp.name,
+            "Department": emp.dep_name,
+            "Designation": emp.designation,
+            "DOB": emp.dob,
+            "Gender": emp.gender || 'N/A',
+            "Joining Date": emp.joiningDate,
+            "Mobile Number": emp.mobilenumber,
+            "Email": emp.email,
+            "Status": emp.status
+        }));
+    
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+        XLSX.writeFile(workbook, "employees.xlsx");
+      };
 
       const filteredEmployee = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
@@ -190,13 +234,22 @@ const List = () => {
                 onChange={handleFilter}
               />
             </div>
-            <Link
-              to="/admin-dashboard/add-employee"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 rounded-lg text-white font-medium hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              <FaPlus className="text-sm" />
-              Add New Employee
-            </Link>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleExport}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <FaFileExcel className="text-sm" />
+                Export
+              </button>
+              <Link
+                to="/admin-dashboard/add-employee"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 rounded-lg text-white font-medium hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <FaPlus className="text-sm" />
+                Add New Employee
+              </Link>
+            </div>
           </div>
         </div>
         {/* Mobile Card View */}
@@ -285,7 +338,7 @@ const List = () => {
                         {/* Action Buttons */}
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-gray-600">Actions:</span>
-                          <EmployeeButtons Id={employee._id} />
+                          <EmployeeButtons Id={employee._id} onDelete={handleDelete} />
                         </div>
                       </div>
                     </div>
