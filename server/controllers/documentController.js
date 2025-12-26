@@ -1,6 +1,7 @@
 import Document from "../models/Document.js";
 import Employee from "../models/Employee.js";
 import Team from "../models/Team.js";
+import { uploadToS3 } from "../middleware/uploadDocument.js";
 
 // Upload Document
 export const uploadDocument = async (req, res) => {
@@ -14,10 +15,19 @@ export const uploadDocument = async (req, res) => {
       return res.status(404).json({ success: false, error: "Employee record not found" });
     }
 
+    let fileUrl;
+    try {
+        const uploadResult = await uploadToS3(req.file, 'documents');
+        fileUrl = uploadResult.url;
+    } catch (error) {
+        console.error("Document upload error:", error);
+        return res.status(500).json({ success: false, error: "Failed to upload document" });
+    }
+
     const newDocument = new Document({
       employeeId: employee._id,
       uploadedBy: req.user._id,
-      fileUrl: `/uploads/documents/${req.file.filename}`,
+      fileUrl: fileUrl,
       fileType: req.file.mimetype,
       originalName: req.file.originalname,
     });

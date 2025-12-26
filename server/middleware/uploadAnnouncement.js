@@ -3,6 +3,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+const uploadDir = path.resolve("public", "uploads", "announcements");
+
+// Ensure upload directory exists
+// if (!fs.existsSync(uploadDir)) {
+//   fs.mkdirSync(uploadDir, { recursive: true });
+// }
+
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {

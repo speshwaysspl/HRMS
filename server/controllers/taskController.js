@@ -70,7 +70,17 @@ export const updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, comments, description } = req.body;
-    const workProof = req.file ? `uploads/${req.file.filename}` : undefined;
+    
+    let workProof;
+    if (req.file) {
+        try {
+            const uploadResult = await uploadToS3(req.file, 'tasks');
+            workProof = uploadResult.url;
+        } catch (error) {
+            console.error("Task file upload error:", error);
+            return res.status(500).json({ success: false, error: "Failed to upload file" });
+        }
+    }
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
