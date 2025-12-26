@@ -1,24 +1,20 @@
 import multer from "multer";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
 import path from "path";
-import fs from "fs";
 
-const uploadDir = path.resolve("public", "uploads", "documents");
+// Function to get S3 client
+const getS3Client = () => {
+  return new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+};
 
-// Ensure upload directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, unique);
-  },
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
     // Allow images, pdfs, docs
@@ -43,5 +39,46 @@ export const uploadDocument = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter,
 });
+
+export const uploadToS3 = async (file, folder = 'documents') => {
+  const fileExtension = path.extname(file.originalname);
+  const fileName = `${folder}/${uuidv4()}${fileExtension}`;
+  
+  const uploadParams = {
+    Bucket: process.env.AWS_S3_BUCKET_NAME,
+    Key: fileName,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  try {
+    const s3Client = getS3Client();
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+    
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    return { success: true, url: s3Url, key: fileName };
+  } catch (error) {
+    console.error("S3 upload error:", error);
+    throw new Error(`Failed to upload document to S3: ${error.message}`);
+  }
+};
+
+export const deleteFromS3 = async (fileKey) => {
+  const deleteParams = {
+    Bucket: process.env.AWS_S3_BUCKET_NAME,
+    Key: fileKey,
+  };
+
+  try {
+    const s3Client = getS3Client();
+    const command = new DeleteObjectCommand(deleteParams);
+    await s3Client.send(command);
+    return { success: true };
+  } catch (error) {
+    console.error("S3 delete error:", error);
+    throw new Error("Failed to delete document from S3");
+  }
+};
 
 export default uploadDocument;

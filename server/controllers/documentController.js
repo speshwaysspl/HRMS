@@ -149,7 +149,16 @@ export const deleteDocument = async (req, res) => {
         }
 
         await Document.findByIdAndDelete(id);
-        // Also delete file from fs? Optional but good practice.
+        
+        // Delete file from S3 if key exists
+        if (document.fileKey) {
+            try {
+                await deleteFromS3(document.fileKey);
+            } catch (err) {
+                console.error("Failed to delete file from S3:", err);
+                // Continue even if S3 delete fails
+            }
+        }
         
         return res.status(200).json({ success: true, message: "Document deleted" });
 

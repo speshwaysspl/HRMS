@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
 import { createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification } from "./notificationController.js";
+import { uploadToS3 } from "../middleware/uploadDocument.js";
 
 // Assign Task (Team Lead)
 export const assignTask = async (req, res) => {

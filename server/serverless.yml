@@ -13,6 +13,7 @@ provider:
     AWS_REGION: ${env:AWS_REGION}
     AWS_WEBSOCKET_URL: ${env:AWS_WEBSOCKET_URL}
     WS_TABLE_NAME: ${env:WS_TABLE_NAME}
+    AWS_S3_BUCKET_NAME: ${env:AWS_S3_BUCKET_NAME}
     IS_LAMBDA: true
   iam:
     role:
@@ -22,6 +23,9 @@ provider:
             - dynamodb:PutItem
             - dynamodb:DeleteItem
             - dynamodb:Query
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
           Resource: "*"
         - Effect: Allow
           Action:
