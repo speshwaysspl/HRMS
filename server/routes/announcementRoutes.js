@@ -23,7 +23,6 @@ router.post("/", verifyUser, uploadAnnouncementS3.single("image"), addAnnounceme
 router.post("/test-notification", verifyUser, async (req, res) => {
   try {
     console.log('🧪 Testing announcement notification...');
-    const io = req.app.get('io');
     
     const testAnnouncement = {
       _id: 'test-id',
@@ -31,7 +30,7 @@ router.post("/test-notification", verifyUser, async (req, res) => {
       content: 'This is a test announcement for debugging notifications'
     };
     
-    await createAnnouncementNotification(testAnnouncement, req.user._id, io);
+    await createAnnouncementNotification(testAnnouncement, req.user._id, null);
     res.json({ success: true, message: 'Test notification sent' });
   } catch (error) {
     console.error('Test notification error:', error);

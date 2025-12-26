@@ -60,7 +60,7 @@ const createFeedback = async (req, res) => {
           recipientId: admin._id,
           senderId: req.user.id,
           relatedId: savedFeedback._id
-        }, req.io);
+        });
       }
     } catch (notificationError) {
       console.error('Error sending feedback submission notification:', notificationError);
@@ -338,7 +338,7 @@ const updateFeedbackStatus = async (req, res) => {
           recipientId: employeeUserId,
           senderId: req.user.id,
           relatedId: updatedFeedback._id
-        }, req.io);
+        });
       }
     } catch (notificationError) {
       console.error('Error sending feedback response notification:', notificationError);

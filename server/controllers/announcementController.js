@@ -58,17 +58,11 @@ const addAnnouncement = async (req, res) => {
 
     await newAnnouncement.save();
 
-    // Create notifications in DB and emit real-time pop notifications to intended recipients (all or specific)
-    const io = req.app.get('io');
-    const ioForNotification = io; // Always emit pop notifications to intended recipients
-    console.log('🔌 IO object available:', !!io);
+    // Create notifications in DB and broadcast via AWS WebSockets
     try {
-      console.log('📢 Calling createAnnouncementNotification...');
       const targetRecipients = newAnnouncement.scope === 'specific' ? newAnnouncement.recipients : null;
-      await createAnnouncementNotification(newAnnouncement, req.user._id, ioForNotification, targetRecipients);
-      console.log('✅ Announcement notification process completed');
+      await createAnnouncementNotification(newAnnouncement, req.user._id, null, targetRecipients);
     } catch (notificationError) {
-      console.error('❌ Error sending announcement notifications:', notificationError);
     }
 
     // Send email notifications to all employees

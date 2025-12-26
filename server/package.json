@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "dev": "nodemon --env-file=.env index.js",
-    "build": "echo \"Backend build complete\""
+    "build": "echo \"Backend build complete\"",
+    "sls:print": "serverless print",
+    "sls:package": "serverless package",
+    "sls:deploy": "serverless deploy",
+    "sls:remove": "serverless remove"
   },
   "keywords": [],
   "author": "",
@@ -34,7 +38,6 @@
     "path": "^0.12.7",
     "pdfkit": "^0.17.1",
     "serverless-http": "^4.0.0",
-    "socket.io": "^4.8.1",
     "uuid": "^13.0.0"
   },
   "description": ""

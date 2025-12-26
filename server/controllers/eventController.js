@@ -59,9 +59,7 @@ const addEvent = async (req, res) => {
     });
     await newEvent.save();
     try {
-      const io = req.app.get("io");
-      // Send notifications to all active employees for any event type
-      await createEventNotification(newEvent, req.user._id, io);
+      await createEventNotification(newEvent, req.user._id, null);
     } catch (err) {
     }
     return res.status(200).json({ success: true, event: newEvent });

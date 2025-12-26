@@ -18,8 +18,6 @@ import birthdayRouter from "./routes/birthdayRoutes.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import { initializeHolidayReminderScheduler } from "./services/holidayScheduler.js";
 import connectToDatabase from "./db/db.js";
-import { createServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
 import serverless from "serverless-http";
 import notificationRouter from "./routes/notification.js";
 import feedbackRouter from "./routes/feedback.js";
@@ -40,34 +38,8 @@ connectToDatabase().then(() => {
 
 const app = express();
 const isLambda = process.env.IS_LAMBDA === 'true' || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-
-let io = null;
-let httpServer = null;
 const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5173", "http://localhost:5174","https://speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
-if (!isLambda) {
-  httpServer = createServer(app);
-  io = new SocketIOServer(httpServer, {
-    cors: {
-      origin: allowedOrigins,
-      credentials: true
-    }
-  });
-  app.set('io', io);
-  app.use((req, res, next) => { req.io = io; next(); });
-  io.on('connection', (socket) => {
-    console.log('🔗 Socket client connected');
-    socket.on('join', (userId) => {
-      if (userId) {
-        const roomName = `user_${userId}`;
-        console.log(`🏠 Socket joining room: ${roomName}`);
-        socket.join(roomName);
-      }
-    });
-    socket.on('disconnect', () => {
-      console.log('❌ Socket client disconnected');
-    });
-  });
-}
+// No Socket.IO setup; notifications are sent via AWS WebSockets
 
 app.use(cors({ 
   origin: allowedOrigins, 
@@ -106,10 +78,10 @@ app.use("/api/document", documentRouter);
 
 const PORT = process.env.PORT || 5000;
 if (!isLambda) {
-  httpServer.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     initializeBirthdayScheduler();
-    initializeHolidayReminderScheduler(io);
+    initializeHolidayReminderScheduler(null);
   });
 }
 

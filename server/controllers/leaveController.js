@@ -16,13 +16,9 @@ const addLeave = async (req, res) => {
         await newLeave.save()
 
         // Send notification to admins
-        const io = req.app.get('io');
-        if (io) {
-            try {
-                await createLeaveRequestNotification(newLeave, io);
-            } catch (notificationError) {
-                console.error('Error sending leave request notification:', notificationError);
-            }
+        try {
+            await createLeaveRequestNotification(newLeave, null);
+        } catch (notificationError) {
         }
 
         return res.status(200).json({success: true})
@@ -109,12 +105,10 @@ const updateLeave = async (req, res) => {
         }
 
         // Send notification to employee about status change
-        const io = req.app.get('io');
-        if (io && (status === 'Approved' || status === 'Rejected')) {
+        if (status === 'Approved' || status === 'Rejected') {
             try {
-                await createLeaveStatusNotification(leave, status, req.user._id, io);
+                await createLeaveStatusNotification(leave, status, req.user._id, null);
             } catch (notificationError) {
-                console.error('Error sending leave status notification:', notificationError);
             }
         }
 
