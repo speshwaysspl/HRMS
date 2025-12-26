@@ -20,7 +20,7 @@ const getS3Client = () => {
   }
 
   console.log("S3 Configuration:", {
-    region: process.env.AWS_S3_REGION || process.env.AWS_REGION,
+    region: config.region,
     bucket: process.env.AWS_S3_BUCKET_NAME,
     hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
     hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
