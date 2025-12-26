@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { API_BASE } from '../utils/apiConfig';
+import { WS_BASE } from '../utils/apiConfig';
 
 // Add notification sound
 const notificationSound = new Audio('/notification-sound.mp3');
@@ -21,12 +20,10 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const backoffRef = useRef(1000);
-  const WS_BASE = import.meta?.env?.VITE_WS_URL; 
 
   useEffect(() => {
     if (user && user._id) {
@@ -92,36 +89,10 @@ export const NotificationProvider = ({ children }) => {
         ws.onerror = () => scheduleReconnect();
         ws.onclose = () => scheduleReconnect();
       };
-      const connectSocketIO = () => {
-        socketRef.current = io(API_BASE, { withCredentials: true, transports: ['websocket', 'polling'] });
-        const socket = socketRef.current;
-        socket.on('connect', () => {
-          setIsConnected(true);
-          socket.emit('join', user._id);
-          stopPolling();
-        });
-        socket.on('disconnect', () => {
-          setIsConnected(false);
-          startPolling();
-        });
-        socket.on('newNotification', (notification) => {
-          handleIncoming(notification);
-        });
-        socket.on('connect_error', () => {
-          setIsConnected(false);
-          startPolling();
-        });
-      };
-      if (WS_BASE) {
-        connectNativeWS();
-      } else {
-        connectSocketIO();
-      }
+
+      connectNativeWS();
+
       return () => {
-        if (socketRef.current) {
-          try { socketRef.current.disconnect(); } catch (_) {}
-          socketRef.current = null;
-        }
         if (wsRef.current) {
           try { wsRef.current.close(); } catch (_) {}
           wsRef.current = null;

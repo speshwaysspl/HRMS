@@ -24,7 +24,6 @@
     "react-dom": "^18.3.1",
     "react-window": "^1.8.11",
     "react-toastify": "^11.0.5",
-    "socket.io-client": "^4.7.5",
     "styled-components": "^6.1.13",
     "xlsx": "^0.18.5"
   },
