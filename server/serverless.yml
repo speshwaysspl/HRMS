@@ -1,0 +1,58 @@
+service: hrms-backend
+useDotenv: true
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'ap-south-1'}
+  environment:
+    MONGODB_URL: ${env:MONGODB_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    CLIENT_URL: ${env:CLIENT_URL}
+    AWS_REGION: ${env:AWS_REGION}
+    AWS_WEBSOCKET_URL: ${env:AWS_WEBSOCKET_URL}
+    WS_TABLE_NAME: ${env:WS_TABLE_NAME}
+    IS_LAMBDA: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource: "arn:aws:execute-api:*:*:*/@connections/*"
+
+functions:
+  api:
+    handler: index.handler
+    events:
+      - httpApi:
+          method: ANY
+          path: /
+      - httpApi:
+          method: ANY
+          path: /{proxy+}
+
+  wsConnect:
+    handler: lambda/websocketHandlers.connectHandler
+    events:
+      - websocket:
+          route: $connect
+
+  wsDisconnect:
+    handler: lambda/websocketHandlers.disconnectHandler
+    events:
+      - websocket:
+          route: $disconnect
+
+  wsDefault:
+    handler: lambda/websocketHandlers.defaultHandler
+    events:
+      - websocket:
+          route: $default

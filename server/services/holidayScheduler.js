@@ -8,6 +8,10 @@ import { toISTDateString } from '../utils/dateTimeUtils.js';
 
 export const initializeHolidayReminderScheduler = (io) => {
   console.log('📅 Initializing holiday reminder scheduler...');
+  if (process.env.IS_LAMBDA === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    console.log('⏸️ Skipping holiday scheduler in Lambda runtime');
+    return null;
+  }
 
   // Run daily at 9:00 AM IST
   const task = cron.schedule('0 9 * * *', async () => {
@@ -81,4 +85,3 @@ export const initializeHolidayReminderScheduler = (io) => {
   console.log('✅ Holiday reminder scheduler initialized - will run daily at 9:00 AM IST');
   return task;
 };
-

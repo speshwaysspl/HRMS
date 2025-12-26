@@ -7,6 +7,10 @@ import { processBirthdayWishes } from './birthdayService.js';
  */
 export const initializeBirthdayScheduler = () => {
   console.log('🎂 Initializing birthday wishes scheduler...');
+  if (process.env.IS_LAMBDA === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    console.log('⏸️ Skipping birthday scheduler in Lambda runtime');
+    return null;
+  }
   
   // Schedule to run daily at 12:00 AM IST (6:30 PM UTC)
   // Cron format: '0 0 * * *' = At 12:00 AM every day
