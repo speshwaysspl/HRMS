@@ -628,7 +628,7 @@ export const downloadPayslipPDF = async (req, res) => {
       const b64 = buffer.toString('base64');
       return res.status(200).json({ success: true, data: b64 });
     }
-    generateSalaryPDF(res, salary);
+    await generateSalaryPDF(res, salary);
   } catch (error) {
     console.error("Download Payslip PDF error:", error);
     return res.status(500).json({ success: false, error: "PDF generation error" });

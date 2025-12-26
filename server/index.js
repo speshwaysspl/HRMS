@@ -85,5 +85,7 @@ if (!isLambda) {
   });
 }
 
-export const handler = serverless(app);
+export const handler = serverless(app, {
+  binary: ['application/pdf', 'image/*']
+});
 

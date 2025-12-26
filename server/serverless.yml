@@ -5,12 +5,12 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ${env:AWS_REGION, 'ap-south-1'}
+  # region: ${env:AWS_REGION, 'ap-south-1'}
   environment:
     MONGODB_URL: ${env:MONGODB_URL}
     JWT_SECRET: ${env:JWT_SECRET}
     CLIENT_URL: ${env:CLIENT_URL}
-    AWS_REGION: ${env:AWS_REGION}
+    # AWS_REGION: ${env:AWS_REGION}
     AWS_WEBSOCKET_URL: ${env:AWS_WEBSOCKET_URL}
     WS_TABLE_NAME: ${env:WS_TABLE_NAME}
     AWS_S3_BUCKET_NAME: ${env:AWS_S3_BUCKET_NAME}

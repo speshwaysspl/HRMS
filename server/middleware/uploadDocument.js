@@ -5,13 +5,19 @@ import path from "path";
 
 // Function to get S3 client
 const getS3Client = () => {
-  return new S3Client({
+  const config = {
     region: process.env.AWS_REGION,
-    credentials: {
+  };
+
+  // Only add credentials if they are explicitly provided (for local dev)
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    config.credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+    };
+  }
+
+  return new S3Client(config);
 };
 
 const storage = multer.memoryStorage();
