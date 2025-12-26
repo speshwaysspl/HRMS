@@ -6,12 +6,15 @@ import path from "path";
 
 // Function to get S3 client (lazy initialization)
 const getS3Client = () => {
-  const config = {
-    region: process.env.AWS_S3_REGION || process.env.AWS_REGION,
-  };
+  const config = {};
+  
+  const region = process.env.AWS_S3_REGION || process.env.AWS_REGION;
+  if (region) {
+    config.region = region;
+  }
 
   // Only add credentials if they are explicitly provided (for local dev)
-  // Otherwise, let the SDK use the default provider chain (IAM roles for Lambda)
+  // Otherwise, let the SDK use the default provider chain (IAM roles for Lambda, or ~/.aws/credentials)
   if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
     config.credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -20,11 +23,11 @@ const getS3Client = () => {
   }
 
   console.log("S3 Configuration:", {
-    region: config.region,
+    region: config.region || "Resolved from AWS Config",
     bucket: process.env.AWS_S3_BUCKET_NAME,
     hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
     hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-    usingIAM: !process.env.AWS_ACCESS_KEY_ID
+    usingDefaultProvider: !process.env.AWS_ACCESS_KEY_ID
   });
 
   return new S3Client(config);
@@ -74,8 +77,14 @@ export const uploadToS3 = async (file) => {
     
     console.log("S3 upload successful:", result);
     
+    // Resolve region from client config if env var is missing
+    let region = process.env.AWS_S3_REGION || process.env.AWS_REGION;
+    if (!region) {
+      region = await s3Client.config.region();
+    }
+    
     // Return the S3 URL
-    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION || process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${region}.amazonaws.com/${fileName}`;
     return { success: true, url: s3Url, key: fileName };
   } catch (error) {
     console.error("S3 upload error details:", {

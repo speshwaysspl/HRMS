@@ -2,8 +2,11 @@ import { ApiGatewayManagementApiClient, PostToConnectionCommand } from "@aws-sdk
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
-const region = process.env.AWS_REGION || "us-east-1";
-const dbClient = new DynamoDBClient({ region });
+const dbConfig = {};
+if (process.env.AWS_REGION) {
+  dbConfig.region = process.env.AWS_REGION;
+}
+const dbClient = new DynamoDBClient(dbConfig);
 const docClient = DynamoDBDocumentClient.from(dbClient);
 
 let apiClient = null;
@@ -14,10 +17,15 @@ const getApiClient = () => {
 
   // Endpoint must be the domain name of the API Gateway WebSocket API
   // e.g. https://xyz.execute-api.us-east-1.amazonaws.com/production
-  apiClient = new ApiGatewayManagementApiClient({
-    region,
+  const apiConfig = {
     endpoint: process.env.AWS_WEBSOCKET_URL.replace('wss://', 'https://')
-  });
+  };
+  
+  if (process.env.AWS_REGION) {
+    apiConfig.region = process.env.AWS_REGION;
+  }
+
+  apiClient = new ApiGatewayManagementApiClient(apiConfig);
   return apiClient;
 };
 
