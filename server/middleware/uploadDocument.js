@@ -6,10 +6,11 @@ import path from "path";
 // Function to get S3 client
 const getS3Client = () => {
   const config = {
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_S3_REGION || process.env.AWS_REGION,
   };
 
   // Only add credentials if they are explicitly provided (for local dev)
+  // Otherwise, let the SDK use the default provider chain (IAM roles for Lambda)
   if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
     config.credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -62,7 +63,7 @@ export const uploadToS3 = async (file, folder = 'documents') => {
     const command = new PutObjectCommand(uploadParams);
     await s3Client.send(command);
     
-    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION || process.env.AWS_REGION}.amazonaws.com/${fileName}`;
     return { success: true, url: s3Url, key: fileName };
   } catch (error) {
     console.error("S3 upload error:", error);

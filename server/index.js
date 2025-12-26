@@ -38,7 +38,7 @@ connectToDatabase().then(() => {
 
 const app = express();
 const isLambda = process.env.IS_LAMBDA === 'true' || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5173", "http://localhost:5174","https://speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5173", "http://localhost:5174","https://speshwayhrms.com","https://www.speshwayhrms.com", "http://niharika-s3-bucket-22.s3-website-us-east-1.amazonaws.com"].filter(Boolean);
 // No Socket.IO setup; notifications are sent via AWS WebSockets
 
 app.use(cors({ 

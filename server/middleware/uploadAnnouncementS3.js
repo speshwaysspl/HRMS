@@ -7,7 +7,7 @@ import path from "path";
 // Function to get S3 client (lazy initialization)
 const getS3Client = () => {
   const config = {
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_S3_REGION || process.env.AWS_REGION,
   };
 
   // Only add credentials if they are explicitly provided (for local dev)
@@ -20,7 +20,7 @@ const getS3Client = () => {
   }
 
   console.log("S3 Configuration:", {
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_S3_REGION || process.env.AWS_REGION,
     bucket: process.env.AWS_S3_BUCKET_NAME,
     hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
     hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
@@ -75,7 +75,7 @@ export const uploadToS3 = async (file) => {
     console.log("S3 upload successful:", result);
     
     // Return the S3 URL
-    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION || process.env.AWS_REGION}.amazonaws.com/${fileName}`;
     return { success: true, url: s3Url, key: fileName };
   } catch (error) {
     console.error("S3 upload error details:", {
