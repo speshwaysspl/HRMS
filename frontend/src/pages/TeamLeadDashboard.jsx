@@ -1,10 +1,20 @@
 import { Outlet } from 'react-router-dom'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useMemo } from 'react'
+import useMeta from '../utils/useMeta'
 
 const TeamLeadSidebar = lazy(() => import('../components/dashboard/TeamLeadSidebar'))
 const Navbar = lazy(() => import('../components/dashboard/Navbar'))
 
 const TeamLeadDashboard = () => {
+  const canonical = useMemo(() => `${window.location.origin}/team-lead-dashboard`, [])
+  useMeta({
+    title: 'Team Lead Dashboard — Speshway HRMS',
+    description: 'Manage team, assign tasks, and track progress.',
+    keywords: 'team lead, HRMS, project management',
+    url: canonical,
+    image: '/images/Logo.jpg',
+    robots: 'noindex,nofollow'
+  })
   return (
     <div className='flex min-h-screen bg-gray-50'>
       <Suspense fallback={<div className='md:w-64 w-0' />}>

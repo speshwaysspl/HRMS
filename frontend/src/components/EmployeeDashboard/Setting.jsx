@@ -231,7 +231,7 @@ const Setting = () => {
             </p>
             <p className="flex items-center space-x-2 sm:space-x-3 text-sm sm:text-base">
               <FaEnvelope className="text-indigo-400 text-base sm:text-lg flex-shrink-0" />
-              <span>hr@speshway.com</span>
+              <span>support@speshwayhrms.com</span>
             </p>
             <p className="flex items-center space-x-2 sm:space-x-3 text-sm sm:text-base">
               <FaLinkedin className="text-blue-500 text-base sm:text-lg flex-shrink-0" />

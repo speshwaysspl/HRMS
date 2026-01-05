@@ -293,7 +293,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
               Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha
             </div>
             <div className="italic text-black">
-              Hyderabad Telangana 500081 | Email: info@speshway.com
+              Hyderabad Telangana 500081 | Email: support@speshwayhrms.com
             </div>
           </div>
         </div>

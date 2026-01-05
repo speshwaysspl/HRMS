@@ -1,47 +1,45 @@
 import nodemailer from "nodemailer";
+import AWS from "aws-sdk";
 
 const sendEmail = async (to, subject, html, attachments = []) => {
 
   try {
-    if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn('Missing SMTP configuration. Skipping email send.');
-      return null;
-    }
-
     if (!to || !to.includes('@')) {
       console.warn('Invalid recipient email address. Skipping email send.');
       return null;
     }
 
+    const fromEmail =
+      process.env.MAIL_FROM_EMAIL ||
+      process.env.AWS_SES_FROM ||
+      '';
+    const fromName = process.env.MAIL_FROM_NAME || 'SPESHWAY SOLUTIONS PVT LTD';
+    const replyTo = process.env.MAIL_REPLY_TO || undefined;
+
     console.log(`📧 Attempting to send email to: ${to}`);
-    console.log(`📧 SMTP Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
-    console.log(`📧 SMTP User: ${process.env.SMTP_USER}`);
-    
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT),
-      secure: process.env.SMTP_PORT === '465', // true for 465, false for 587
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      // Enhanced options for Gmail compatibility
-      tls: {
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
-      },
-      requireTLS: true,
-      connectionTimeout: 60000,
-      greetingTimeout: 30000,
-      socketTimeout: 60000
+    console.log(`📧 Provider: ses (AWS SDK)`);
+
+    let transporter;
+
+    if (!process.env.AWS_REGION) {
+      console.warn('Missing AWS_REGION for SES. Skipping email send.');
+      return null;
+    }
+    // Configure AWS SDK (credentials resolved from environment/instance profile)
+    AWS.config.update({
+      region: process.env.AWS_REGION
     });
 
-    // Verify transporter configuration
-    await transporter.verify();
-    console.log('📧 SMTP connection verified successfully');
+    const ses = new AWS.SES({ apiVersion: '2010-12-01' });
+
+    transporter = nodemailer.createTransport({
+      SES: { ses, aws: AWS }
+    });
+    console.log(`📧 SES configured for region: ${process.env.AWS_REGION}`);
 
     const mailOptions = {
-      from: `"SPESHWAY SOLUTIONS PVT LTD" <${process.env.SMTP_USER}>`,
+      from: fromEmail ? `"${fromName}" <${fromEmail}>` : undefined,
+      replyTo,
       to,
       subject,
       html,

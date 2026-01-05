@@ -3,6 +3,10 @@ import { Suspense, lazy, useEffect } from "react";
 
 // Pages
 import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
@@ -45,6 +49,7 @@ const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnou
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
 const AdminFeedback = lazy(() => import("./components/feedback/AdminFeedback"));
 const AdminCalendar = lazy(() => import("./components/calendar/AdminCalendar"));
+const AdminDailyQuote = lazy(() => import("./components/dailyQuote/AdminDailyQuote"));
 
 // Employee Components (lazy-loaded)
 const Summary = lazy(() => import("./components/EmployeeDashboard/Summary"));
@@ -80,8 +85,13 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<div className="p-6 text-center text-gray-600">Loading...</div>}>
       <Routes>
-        {/* Redirect root to Login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Home Page */}
+        <Route path="/" element={<Home />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/terms-and-conditions" element={<Terms />} />
+        <Route path="/privacy-policy" element={<Privacy />} />
+        <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
+        <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
  
         {/* Auth Routes */}
         <Route path="login" element={<Login />} />
@@ -142,6 +152,7 @@ function App() {
           {/* Feedback */}
           <Route path="feedback" element={<AdminFeedback />} />
           <Route path="calendar" element={<AdminCalendar />} />
+          <Route path="daily-quote" element={<AdminDailyQuote />} />
           
           {/* Teams */}
           <Route path="teams" element={<TeamList />} />

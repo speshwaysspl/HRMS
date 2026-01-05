@@ -26,6 +26,7 @@ import eventRouter from "./routes/eventRoutes.js";
 import teamRouter from "./routes/team.js";
 import taskRouter from "./routes/task.js";
 import documentRouter from "./routes/documentRoutes.js";
+import dailyQuoteRouter from "./routes/dailyQuoteRoutes.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
 
 dotenv.config({ quiet: true });
@@ -104,6 +105,7 @@ app.use("/api/events", eventRouter);
 app.use("/api/team", teamRouter);
 app.use("/api/task", taskRouter);
 app.use("/api/document", documentRouter);
+app.use("/api/daily-quote", dailyQuoteRouter);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

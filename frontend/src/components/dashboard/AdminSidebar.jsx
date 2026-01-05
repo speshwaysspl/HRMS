@@ -39,6 +39,7 @@ const AdminSidebar = () => {
     { to: "/admin-dashboard/attendance-report", label: "Admin Attendance Report", icon: <AiOutlineFileText /> },
     { to: "/admin-dashboard/announcements", label: "Announcements Management", icon: <FaBullhorn /> },
     { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaComments /> },
+    { to: "/admin-dashboard/daily-quote", label: "Daily Quote", icon: <FaBullhorn /> },
     { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 
