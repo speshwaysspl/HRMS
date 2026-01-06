@@ -127,7 +127,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
               {/* Company Info - Center aligned */}
               <div className="flex-1 text-center">
                 <h1 className="text-lg font-bold" style={{ fontFamily: 'Times, serif' }}>SPESHWAY SOLUTIONS PRIVATE LIMITED</h1>
-                <p className="text-sm">Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha, Hyderabad Telangana 500081</p>
+                <p className="text-sm">Plot No 1/C, Sy No 83/1, Raidurgam Knowledge City Rd, panmaktha Hyderabad, Serilingampalle (M), Rai Durg, Telangana 500032</p>
                 <h2 className="text-sm font-bold mt-1">Payslip for the month of {payslip.month} {payslip.year}</h2>
               </div>
               

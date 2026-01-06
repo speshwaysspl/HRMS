@@ -6,9 +6,9 @@ import useMeta from "../utils/useMeta";
 
 const Home = () => {
   useMeta({
-    title: "Speshway HRMS — Modern Human Resource Management System",
-    description: "Streamline your HR processes with Speshway HRMS. Manage employees, attendance, payroll, and more efficiently.",
-    keywords: "HRMS, HR software, employee management, payroll, attendance, Speshway",
+    title: "Speshway HRMS — Best HR Management Software | Payroll, Attendance & Leaves",
+    description: "Speshway HRMS is the best HR software for managing employee attendance, payroll, leaves, and announcements. Streamline your HR operations today.",
+    keywords: "Speshway HRMS, HR software, payroll management, attendance tracking, leave management, employee self service, HRMS India, best HRMS",
     url: window.location.origin,
     image: "/images/Logo.jpg",
   });

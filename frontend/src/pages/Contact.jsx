@@ -4,9 +4,9 @@ import useMeta from "../utils/useMeta";
 
 const Contact = () => {
   useMeta({
-    title: "Contact Us — Speshway HRMS",
-    description: "Get in touch with Speshway HRMS team. We are here to help you with your HR management needs.",
-    keywords: "contact, support, HRMS, Speshway",
+    title: "Contact Speshway Solutions — HRMS Support & Sales",
+    description: "Contact Speshway Solutions for HRMS inquiries, support, and sales. Reach us via email, phone, or visit our office in Hyderabad.",
+    keywords: "contact Speshway, HRMS support, Speshway Solutions address, HR software inquiry, Hyderabad",
     url: `${window.location.origin}/contact`,
     image: "/images/Logo.jpg",
   });
@@ -66,8 +66,7 @@ const Contact = () => {
             </div>
             <h3 className="text-base font-semibold text-gray-800">India Office</h3>
             <p className="text-gray-600 mt-1">
-              T-Hub, Plot No 1/C, Sy No 83/1, Raidurgam, Knowledge City Rd, panmaktha,
-              Hyderabad, Serilingampalle, Telangana
+              Plot No 1/C, Sy No 83/1, Raidurgam Knowledge City Rd, panmaktha Hyderabad, Serilingampalle (M), Rai Durg, Telangana 500032
             </p>
           </div>
         </div>

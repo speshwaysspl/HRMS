@@ -271,8 +271,8 @@ const View = () => {
             {/* Footer */}
              <div className="mt-8 text-center">
                <div className="font-bold mb-1" style={{fontFamily: 'Times, serif', fontSize: '9px', color: '#0066cc'}}>SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
-               <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha</div>
-               <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Hyderabad Telangana 500081 | Email: support@speshwayhrms.com</div>
+               <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Plot No 1/C, Sy No 83/1, Raidurgam Knowledge City Rd, panmaktha, Serilingampalle (M), Rai Durg</div>
+               <div className="italic" style={{fontFamily: 'Times, serif', fontSize: '9px', fontStyle: 'italic', color: 'black'}}>Hyderabad, Telangana 500032 | Email: support@speshwayhrms.com</div>
              </div>
           </div>
         </div>

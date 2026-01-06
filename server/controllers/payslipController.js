@@ -938,7 +938,7 @@ export const sendPayslipEmail = async (req, res) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <h2 style="color: #2563eb; margin: 0;">SPESHWAY SOLUTIONS PRIVATE LIMITED</h2>
-          <p style="color: #666; margin: 5px 0;">Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha, Hyderabad Telangana 500081</p>
+          <p style="color: #666; margin: 5px 0;">Plot No 1/C, Sy No 83/1, Raidurgam Knowledge City Rd, panmaktha Hyderabad, Serilingampalle (M), Rai Durg, Telangana 500032</p>
           <h3 style="color: #1f2937; margin: 20px 0;">Payslip for ${payslip.month} ${payslip.year}</h3>
         </div>
         

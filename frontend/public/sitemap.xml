@@ -4,36 +4,36 @@
     <loc>https://speshwayhrms.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-01-05</lastmod>
+    <lastmod>2026-01-06</lastmod>
   </url>
   <url>
     <loc>https://speshwayhrms.com/login</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-01-05</lastmod>
+    <priority>0.6</priority>
+    <lastmod>2026-01-06</lastmod>
   </url>
   <url>
     <loc>https://speshwayhrms.com/contact</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <lastmod>2026-01-05</lastmod>
+    <priority>0.8</priority>
+    <lastmod>2026-01-06</lastmod>
   </url>
   <url>
     <loc>https://speshwayhrms.com/terms-and-conditions</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2026-01-05</lastmod>
+    <lastmod>2026-01-06</lastmod>
   </url>
   <url>
     <loc>https://speshwayhrms.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2026-01-05</lastmod>
+    <lastmod>2026-01-06</lastmod>
   </url>
   <url>
     <loc>https://speshwayhrms.com/forgot-password</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
-    <lastmod>2026-01-05</lastmod>
+    <lastmod>2026-01-06</lastmod>
   </url>
 </urlset>
