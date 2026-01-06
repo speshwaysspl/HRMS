@@ -6,7 +6,7 @@ const Terms = () => {
     title: "Terms & Conditions — Speshway HRMS Usage Policy",
     description: "Read the Terms and Conditions for using Speshway HRMS. Understand our usage policies, user responsibilities, and service agreements.",
     keywords: "Speshway terms and conditions, HRMS usage policy, service agreement, legal terms",
-    url: "https://speshwayhrms.com/terms-and-conditions",
+    url: `${window.location.origin}/terms-and-conditions`,
     image: "/images/Logo.jpg",
   });
   return (

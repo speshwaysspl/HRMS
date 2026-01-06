@@ -9,7 +9,7 @@ const Home = () => {
     title: "Speshway HRMS — Best HR Management Software | Payroll, Attendance & Leaves",
     description: "Speshway HRMS is the best HR software for managing employee attendance, payroll, leaves, and announcements. Streamline your HR operations today.",
     keywords: "Speshway HRMS, HR software, payroll management, attendance tracking, leave management, employee self service, HRMS India, best HRMS",
-    url: "https://speshwayhrms.com/",
+    url: window.location.origin,
     image: "/images/Logo.jpg",
   });
   const [quote, setQuote] = useState(null);

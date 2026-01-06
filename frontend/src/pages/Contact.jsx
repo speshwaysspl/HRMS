@@ -7,7 +7,7 @@ const Contact = () => {
     title: "Contact Speshway Solutions — HRMS Support & Sales",
     description: "Contact Speshway Solutions for HRMS inquiries, support, and sales. Reach us via email, phone, or visit our office in Hyderabad.",
     keywords: "contact Speshway, HRMS support, Speshway Solutions address, HR software inquiry, Hyderabad",
-    url: "https://speshwayhrms.com/contact",
+    url: `${window.location.origin}/contact`,
     image: "/images/Logo.jpg",
   });
   return (

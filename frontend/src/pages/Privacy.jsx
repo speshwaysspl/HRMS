@@ -6,7 +6,7 @@ const Privacy = () => {
     title: "Privacy Policy — Speshway HRMS Data Protection",
     description: "Learn how Speshway HRMS collects, uses, and protects your personal information. We are committed to data privacy and security.",
     keywords: "Speshway privacy policy, data protection, HRMS security, personal information",
-    url: "https://speshwayhrms.com/privacy-policy",
+    url: `${window.location.origin}/privacy-policy`,
     image: "/images/Logo.jpg",
   });
   return (
