@@ -22,7 +22,7 @@ const Login = () => {
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
   useMeta({
-    title: "Login — Speshway HRMS Portal",
+    title: "Home Page",
     description: "Secure login for Speshway HRMS. Access your employee dashboard, view payslips, apply for leaves, and manage attendance.",
     keywords: "Speshway login, HRMS portal, employee login, Speshway HRMS sign in",
     url: canonical,
