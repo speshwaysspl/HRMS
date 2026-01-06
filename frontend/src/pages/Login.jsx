@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import axios from "axios";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
@@ -22,7 +22,7 @@ const Login = () => {
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
   useMeta({
-    title: "Home Page",
+    title: "Login",
     description: "Secure login for Speshway HRMS. Access your employee dashboard, view payslips, apply for leaves, and manage attendance.",
     keywords: "Speshway login, HRMS portal, employee login, Speshway HRMS sign in",
     url: canonical,
