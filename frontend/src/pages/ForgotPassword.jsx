@@ -13,8 +13,8 @@ const ForgotPasswordPage = () => {
   const canonical = useMemo(() => `${window.location.origin}/forgot-password`, []);
   useMeta({
     title: "Forgot Password — Speshway HRMS",
-    description: "Reset your Speshway HRMS password securely via email.",
-    keywords: "reset password, HRMS",
+    description: "Reset your Speshway HRMS password securely via email. Speshway Solutions password recovery.",
+    keywords: "reset password, HRMS, Speshway password reset, recover account",
     url: canonical,
     image: "/images/Logo.jpg",
   });

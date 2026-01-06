@@ -3,9 +3,9 @@ import useMeta from "../utils/useMeta";
 
 const Terms = () => {
   useMeta({
-    title: "Terms & Conditions — Speshway HRMS Usage Policy",
-    description: "Read the Terms and Conditions for using Speshway HRMS. Understand our usage policies, user responsibilities, and service agreements.",
-    keywords: "Speshway terms and conditions, HRMS usage policy, service agreement, legal terms",
+    title: "Terms & Conditions — Speshway HRMS Usage Policy | Speshway",
+    description: "Read the Terms and Conditions for using Speshway HRMS by Speshway Solutions. Understand our usage policies, user responsibilities, and service agreements.",
+    keywords: "Speshway terms and conditions, Speshway Solutions terms, HRMS usage policy, service agreement, legal terms, Speshway HRMS",
     url: `${window.location.origin}/terms-and-conditions`,
     image: "/images/Logo.jpg",
   });
