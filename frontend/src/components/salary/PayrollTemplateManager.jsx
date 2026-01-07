@@ -3,12 +3,26 @@ import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import DataTable from 'react-data-table-component';
 import { API_BASE } from "../../utils/apiConfig";
 import { BANKS } from "../../utils/constants";
 import useMeta from "../../utils/useMeta";
+import { motion, AnimatePresence } from "framer-motion";
+import { Edit, Trash2, CheckCircle, Plus, X } from "lucide-react";
 
 const PayrollTemplateManager = () => {
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/template-manager`, []);
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useMeta({
     title: "Payroll Templates — Speshway HRMS",
     description: "Create and manage payroll templates for employees.",
@@ -68,7 +82,7 @@ const PayrollTemplateManager = () => {
 
   const loadTemplates = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/payroll-template/all`, {
+      const response = await axios.get(`${API_BASE}/api/payroll-template/all?limit=1000`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }
@@ -370,23 +384,122 @@ const PayrollTemplateManager = () => {
 
 
 
+  const columns = [
+    {
+      name: "Template Name",
+      selector: (row) => row.templateName,
+      sortable: true,
+      cell: (row) => (
+        <div className="text-sm font-medium text-gray-900">
+          {row.templateName}
+          {row.isDefault && (
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Default
+            </span>
+          )}
+        </div>
+      )
+    },
+    {
+      name: "Employee",
+      selector: (row) => row.employeeName || (typeof row.employeeId === 'string' ? row.employeeId : row.employeeId?.employeeId || row.employeeId?._id || 'N/A'),
+      sortable: true,
+      cell: (row) => (
+        <div>
+           <div className="text-sm text-gray-900">
+             {row.employeeName || (typeof row.employeeId === 'string' ? row.employeeId : row.employeeId?.employeeId || row.employeeId?._id || 'N/A')}
+           </div>
+           <div className="text-xs text-gray-500">{row.designation}</div>
+        </div>
+      )
+    },
+    {
+      name: "Basic Salary",
+      selector: (row) => row.basicSalary,
+      sortable: true,
+      omit: isMobile,
+      cell: (row) => `₹${parseFloat(row.basicSalary || 0).toLocaleString()}`
+    },
+    {
+      name: "Net Salary",
+      selector: (row) => row.netSalary,
+      sortable: true,
+      cell: (row) => `₹${parseFloat(row.netSalary || 0).toLocaleString()}`
+    },
+    {
+      name: "Status",
+      selector: (row) => row.isActive,
+      sortable: true,
+      omit: isMobile,
+      cell: (row) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          row.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {row.isActive ? 'Active' : 'Inactive'}
+        </span>
+      )
+    },
+    {
+      name: "Actions",
+      width: isMobile ? "120px" : "auto",
+      cell: (row) => (
+        <div className="flex space-x-2">
+           <button
+             onClick={() => handleEdit(row)}
+             className="text-indigo-600 hover:text-indigo-900 p-1"
+             title="Edit"
+           >
+             <Edit size={18} />
+           </button>
+           {!row.isDefault && (
+             <button
+               onClick={() => handleSetDefault(row._id)}
+               className="text-blue-600 hover:text-blue-900 p-1"
+               title="Set Default"
+             >
+               <CheckCircle size={18} />
+             </button>
+           )}
+           <button
+             onClick={() => handleDelete(row._id)}
+             className="text-red-600 hover:text-red-900 p-1"
+             title="Delete"
+           >
+             <Trash2 size={18} />
+           </button>
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto mt-10 bg-white p-8 rounded-md shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Payroll Template Manager</h2>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-7xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md"
+    >
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold mb-4 md:mb-0" style={{ fontFamily: 'Times New Roman, serif' }}>Payroll Template Manager</h2>
         <button
           onClick={() => {
             resetForm();
             setShowForm(!showForm);
           }}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 w-full md:w-auto justify-center"
         >
-          {showForm ? "Cancel" : "Create New Template"}
+          {showForm ? <><X size={18} className="mr-2"/> Cancel</> : <><Plus size={18} className="mr-2"/> Create New Template</>}
         </button>
       </div>
 
-      {showForm && (
-        <div className="bg-gray-50 p-6 rounded-md mb-8">
+      <AnimatePresence>
+        {showForm && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-gray-50 p-4 md:p-6 rounded-md mb-8 overflow-hidden"
+          >
           <h3 className="text-lg font-semibold mb-4">
             {editingTemplate ? "Edit Template" : "Create New Template"}
           </h3>
@@ -730,8 +843,9 @@ const PayrollTemplateManager = () => {
               </button>
             </div>
           </form>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Templates List */}
       <div className="bg-white">
@@ -742,92 +856,21 @@ const PayrollTemplateManager = () => {
             <p>No templates found. Create your first template above.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Template Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Basic Salary
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Net Salary
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {templates.map((temp) => (
-                  <tr key={temp._id} className={temp.isDefault ? "bg-blue-50" : ""}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {temp.templateName}
-                        {temp.isDefault && (
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Default
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {temp.employeeName || (typeof temp.employeeId === 'string' ? temp.employeeId : temp.employeeId?.employeeId || temp.employeeId?._id || 'N/A')}
-                      </div>
-                      <div className="text-sm text-gray-500">{temp.designation}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{parseFloat(temp.basicSalary || 0).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{parseFloat(temp.netSalary || 0).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        temp.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {temp.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleEdit(temp)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Edit
-                      </button>
-                      {!temp.isDefault && (
-                        <button
-                          onClick={() => handleSetDefault(temp._id)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Set Default
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(temp._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={templates}
+            pagination
+            responsive
+            paginationComponentOptions={{
+              rowsPerPageText: 'Rows per page:',
+              rangeSeparatorText: 'of',
+              selectAllRowsItem: true,
+              selectAllRowsItemText: 'All',
+            }}
+          />
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
