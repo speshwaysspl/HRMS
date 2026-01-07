@@ -17,6 +17,7 @@ const ForgotPasswordPage = () => {
     keywords: "reset password, HRMS, Speshway password reset, recover account",
     url: canonical,
     image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
   });
 
   const handleSubmit = async (e) => {

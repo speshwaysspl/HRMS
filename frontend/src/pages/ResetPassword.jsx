@@ -20,6 +20,7 @@ export default function ResetPassword() {
     keywords: "reset password, HRMS",
     url: canonical,
     image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
   });
  
   const handleSubmit = async (e) => {

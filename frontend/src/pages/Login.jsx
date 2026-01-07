@@ -27,6 +27,7 @@ const Login = () => {
     keywords: "Speshway login, Speshway HRMS login, Speshway Solutions, HRMS portal, employee login, Speshway HRMS sign in",
     url: canonical,
     image: "/images/Logo.jpg",
+    robots: "noindex,nofollow",
   });
 
   const validateEmail = (e) =>

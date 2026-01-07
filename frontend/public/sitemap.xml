@@ -7,12 +7,6 @@
     <lastmod>2026-01-06</lastmod>
   </url>
   <url>
-    <loc>https://speshwayhrms.com/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <lastmod>2026-01-06</lastmod>
-  </url>
-  <url>
     <loc>https://speshwayhrms.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -28,12 +22,6 @@
     <loc>https://speshwayhrms.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2026-01-06</lastmod>
-  </url>
-  <url>
-    <loc>https://speshwayhrms.com/forgot-password</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
     <lastmod>2026-01-06</lastmod>
   </url>
 </urlset>
