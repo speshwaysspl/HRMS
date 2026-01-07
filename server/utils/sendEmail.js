@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer";
-import AWS from "aws-sdk";
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const sendEmail = async (to, subject, html, attachments = []) => {
 
@@ -17,7 +20,7 @@ const sendEmail = async (to, subject, html, attachments = []) => {
     const replyTo = process.env.MAIL_REPLY_TO || undefined;
 
     console.log(`📧 Attempting to send email to: ${to}`);
-    console.log(`📧 Provider: ses (AWS SDK)`);
+    console.log(`📧 Provider: ses (AWS SDK v3 / SESv2)`);
 
     let transporter;
 
@@ -25,16 +28,24 @@ const sendEmail = async (to, subject, html, attachments = []) => {
       console.warn('Missing AWS_REGION for SES. Skipping email send.');
       return null;
     }
-    // Configure AWS SDK (credentials resolved from environment/instance profile)
-    AWS.config.update({
-      region: process.env.AWS_REGION
+
+    // Configure AWS SES Client (v3 - SESv2)
+    const sesClient = new SESv2Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
     });
 
-    const ses = new AWS.SES({ apiVersion: '2010-12-01' });
-
+    // Create Nodemailer transporter with SESv2
     transporter = nodemailer.createTransport({
-      SES: { ses, aws: AWS }
+      SES: {
+        sesClient,
+        SendEmailCommand
+      }
     });
+    
     console.log(`📧 SES configured for region: ${process.env.AWS_REGION}`);
 
     const mailOptions = {
@@ -59,8 +70,8 @@ const sendEmail = async (to, subject, html, attachments = []) => {
     console.error("❌ Error sending email:", {
       message: error.message,
       code: error.code,
-      command: error.command,
-      response: error.response
+      name: error.name,
+      stack: error.stack
     });
     console.warn(`Email sending failed: ${error.message}`);
     return null;
