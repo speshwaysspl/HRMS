@@ -41,7 +41,11 @@ const View = () => {
           return;
         }
         
-        const response = await axios.get(`${API_BASE}/api/salary/${id}/${user.role}`, {
+        const roleParam = Array.isArray(user.role) 
+          ? (user.role.includes("admin") ? "admin" : "employee") 
+          : user.role;
+
+        const response = await axios.get(`${API_BASE}/api/salary/${id}/${roleParam}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         

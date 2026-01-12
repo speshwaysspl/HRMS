@@ -85,16 +85,30 @@ const addAnnouncement = async (req, res) => {
       if (employeesList.length > 0) {
         const emailSubject = getAnnouncementEmailSubject(title);
 
+        // Prepare email attachments if image exists
+        let emailAttachments = [];
+        if (req.file && req.file.buffer) {
+          emailAttachments = [{
+            filename: req.file.originalname || 'announcement-image.jpg',
+            content: req.file.buffer,
+            cid: 'announcement-image' // Content-ID for embedding in email
+          }];
+        }
+
         const emailPromises = employeesList.map(employee => {
           if (employee.userId && employee.userId.email) {
+            // Use CID reference if image exists, otherwise pass null
+            const emailImageUrl = req.file ? 'cid:announcement-image' : null;
+            
             const emailHtml = getAnnouncementEmailTemplate({
               title,
               description,
-              imageUrl,
+              imageUrl: emailImageUrl,
               recipientName: employee.userId.name,
               createdAt: new Date()
             });
-            return sendEmail(employee.userId.email, emailSubject, emailHtml).catch(error => {
+            
+            return sendEmail(employee.userId.email, emailSubject, emailHtml, emailAttachments).catch(error => {
               console.error(`Failed to send email to ${employee.userId.email}:`, error);
               return null;
             });

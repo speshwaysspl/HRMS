@@ -159,21 +159,30 @@ const updateEmployee = async (req, res) => {
  
     // Update user
     const updatedUserData = { name, email };
-    await User.findByIdAndUpdate(user._id, updatedUserData);
- 
+    if (role) {
+        updatedUserData.role = role;
+        console.log("Updating role to:", role);
+    }
+    if (req.body.password) {
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      updatedUserData.password = hashedPassword;
+      console.log("Updating password");
+    }
+    console.log("Updated User Data:", updatedUserData);
+    const updatedUserResult = await User.findByIdAndUpdate(user._id, updatedUserData, { new: true });
+
     // Update employee
     await Employee.findByIdAndUpdate(id, {
-      employeeId,
-      dob,
-      gender,
       mobilenumber,
       designation,
+      salary,
       department,
-      role,
-      joiningDate,
+      gender,
+      dob,
+      joiningDate
     });
- 
-    return res.status(200).json({ success: true, message: "Employee updated" });
+
+    return res.status(200).json({ success: true, message: "Employee updated", updatedUser: updatedUserResult });
   } catch (error) {
     console.error(error);
     return res

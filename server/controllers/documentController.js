@@ -37,12 +37,12 @@ export const getDocuments = async (req, res) => {
     const { role, _id } = req.user;
     let query = {};
 
-    if (role === "admin") {
+    if (role.includes("admin")) {
       // Admin can see all, or filter by employeeId if provided in query
       if (req.query.employeeId) {
         query.employeeId = req.query.employeeId;
       }
-    } else if (role === "team_lead") {
+    } else if (role.includes("team_lead")) {
         // Team Lead can see documents of their team members
         // First find teams led by this user
         const teams = await Team.find({ leadId: _id });

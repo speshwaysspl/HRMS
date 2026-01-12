@@ -107,7 +107,7 @@ export const getAttendanceReport = async (req, res) => {
  */
 export const getAllAttendance = async (req, res) => {
   try {
-    if (req.user.role !== "admin") return res.status(403).json({ message: "Access denied" });
+    if (!req.user.role.includes("admin")) return res.status(403).json({ message: "Access denied" });
  
     const { date } = req.query;
     if (!date) return res.status(400).json({ message: "Date is required" });
@@ -413,7 +413,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
  */
 export const getMonthlyAttendance = async (req, res) => {
   try {
-    if (req.user.role !== "admin") return res.status(403).json({ message: "Access denied" });
+    if (!req.user.role.includes("admin")) return res.status(403).json({ message: "Access denied" });
  
     const { month, employeeId, employeeName } = req.query;
     if (!month || (!employeeId && !employeeName))
@@ -578,7 +578,7 @@ export const getMonthlyAttendance = async (req, res) => {
  */
 export const exportAttendanceExcel = async (req, res) => {
   try {
-    if (req.user.role !== "admin") return res.status(403).json({ message: "Access denied" });
+    if (!req.user.role.includes("admin")) return res.status(403).json({ message: "Access denied" });
  
     const { date, status } = req.query;
     if (!date) return res.status(400).json({ message: "Date is required" });
@@ -736,7 +736,7 @@ export const exportAttendanceExcel = async (req, res) => {
  */
 export const exportMonthlyAttendanceExcel = async (req, res) => {
   try {
-    if (req.user.role !== "admin") return res.status(403).json({ message: "Access denied" });
+    if (!req.user.role.includes("admin")) return res.status(403).json({ message: "Access denied" });
  
     const { month, employeeId, employeeName, status } = req.query;
     if (!month || (!employeeId && !employeeName))

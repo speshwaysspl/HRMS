@@ -25,8 +25,12 @@ const List = () => {
 
   const fetchLeaves = async () => {
     try {
+      const roleParam = Array.isArray(user.role) 
+        ? (user.role.includes("admin") ? "admin" : "employee") 
+        : user.role;
+        
       const response = await axios.get(
-        `${API_BASE}/api/leave/${id}/${user.role}`,
+        `${API_BASE}/api/leave/${id}/${roleParam}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -74,7 +78,7 @@ const List = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-4">
-        {user.role === "employee" && (
+        {(Array.isArray(user.role) ? user.role.includes("employee") : user.role === "employee") && (
           <Link
             to="/employee-dashboard/add-leave"
             className="px-4 sm:px-5 py-2 bg-gradient-to-r from-teal-500 to-teal-700 rounded-lg text-white font-medium shadow-md hover:scale-105 transform transition text-center text-sm sm:text-base"

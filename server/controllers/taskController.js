@@ -12,7 +12,7 @@ export const assignTask = async (req, res) => {
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ success: false, error: "Team not found" });
 
-    if (req.user.role !== "admin" && team.leadId.toString() !== req.user._id.toString()) {
+    if (!req.user.role.includes("admin") && team.leadId.toString() !== req.user._id.toString()) {
         return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
@@ -78,7 +78,7 @@ export const updateTaskStatus = async (req, res) => {
     // We need to find the Employee record for the current User
     const employee = await Employee.findOne({ userId: req.user._id });
     
-    if (req.user.role !== "admin" && req.user.role !== "team_lead" && (!employee || task.assignedTo.toString() !== employee._id.toString())) {
+    if (!req.user.role.includes("admin") && !req.user.role.includes("team_lead") && (!employee || task.assignedTo.toString() !== employee._id.toString())) {
          return res.status(403).json({ success: false, error: "Not authorized to update this task" });
     }
 
@@ -91,7 +91,7 @@ export const updateTaskStatus = async (req, res) => {
     await task.save();
 
     // Send Notifications
-    if (req.user.role === 'admin' || req.user.role === 'team_lead') {
+    if (req.user.role.includes('admin') || req.user.role.includes('team_lead')) {
         // Admin/TL updated task -> Notify Employee
         await createTaskUpdateNotification(task, req.user._id, req.io);
     } else {

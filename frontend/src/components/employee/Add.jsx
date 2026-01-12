@@ -9,7 +9,7 @@ import { DESIGNATIONS } from "../../utils/constants";
 
 const Add = () => {
   const [departments, setDepartments] = useState([]);
-  const [formData, setFormData] = useState({ role: 'employee' });
+  const [formData, setFormData] = useState({ role: ['employee'] });
   const [designationSearch, setDesignationSearch] = useState('');
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
@@ -51,6 +51,17 @@ const Add = () => {
         setFilteredDesignations([]);
         setShowDesignationSuggestions(false);
       }
+    } else if (name === "role") {
+      const { checked, value } = e.target;
+      setFormData((prevData) => {
+        let newRoles = [...prevData.role];
+        if (checked) {
+          if (!newRoles.includes(value)) newRoles.push(value);
+        } else {
+          newRoles = newRoles.filter(r => r !== value);
+        }
+        return { ...prevData, role: newRoles };
+      });
     } else {
       setFormData((prevData) => ({ ...prevData, [name]: value }));
     }
@@ -328,19 +339,36 @@ const Add = () => {
 
           {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Role
             </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            >
-              <option value="employee">Employee</option>
-              <option value="team_lead">Team Lead</option>
-            </select>
+            <div className="flex gap-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="role"
+                  value="employee"
+                  checked={formData.role.includes('employee')}
+                  onChange={handleChange}
+                  className="form-checkbox h-5 w-5 text-teal-600"
+                />
+                <span className="ml-2 text-gray-700">Employee</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="role"
+                  value="team_lead"
+                  checked={formData.role.includes('team_lead')}
+                  onChange={handleChange}
+                  className="form-checkbox h-5 w-5 text-teal-600"
+                />
+                <span className="ml-2 text-gray-700">Team Lead</span>
+              </label>
+            </div>
+            {formData.role.length === 0 && (
+               <p className="text-red-500 text-xs mt-1">Please select at least one role</p>
+            )}
           </div>
         </div>
 

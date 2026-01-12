@@ -258,7 +258,7 @@ const getFeedbackById = async (req, res) => {
     }
 
     // Check if user has permission to view this feedback
-    if (req.user.role === 'employee') {
+    if (!req.user.role.includes('admin') && !req.user.role.includes('team_lead')) {
       const employee = await Employee.findOne({ userId: req.user.id });
       if (!employee || !feedback.employeeId.equals(employee._id)) {
         return res.status(403).json({

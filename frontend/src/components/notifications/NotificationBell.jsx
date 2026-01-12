@@ -48,8 +48,10 @@ const NotificationBell = () => {
     const navigateToNotificationTarget = () => {
       if (!user || !user.role) return;
 
-      const isAdmin = user.role === 'admin';
-      const isEmployee = user.role === 'employee';
+      const userRoles = Array.isArray(user.role) ? user.role : [user.role];
+      const isAdmin = userRoles.includes('admin');
+      const isEmployee = userRoles.includes('employee');
+      const isTeamLead = userRoles.includes('team_lead');
 
       switch (notification.type) {
         case 'leave_request':

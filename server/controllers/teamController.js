@@ -9,7 +9,7 @@ export const createTeam = async (req, res) => {
     const { name, description, startDate, leadId } = req.body;
     
     // Only Admin can create team
-    if (req.user.role !== "admin") {
+    if (!req.user.role.includes("admin")) {
        return res.status(403).json({ success: false, error: "Only admin can create team" });
     }
 
@@ -53,7 +53,7 @@ export const addMembers = async (req, res) => {
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ success: false, error: "Team not found" });
 
-    if (req.user.role !== "admin") {
+    if (!req.user.role.includes("admin")) {
       return res.status(403).json({ success: false, error: "Only admin can add members to team" });
     }
 
@@ -81,12 +81,12 @@ export const addMembers = async (req, res) => {
 export const getTeams = async (req, res) => {
   try {
     let teams;
-    if (req.user.role === "admin") {
+    if (req.user.role.includes("admin")) {
       teams = await Team.find()
         .populate("leadId", "name email")
         // Removed deep population of members as it's not needed for the list view and slows down response
         .select("name leadId members"); 
-    } else if (req.user.role === "team_lead") {
+    } else if (req.user.role.includes("team_lead")) {
       teams = await Team.find({ leadId: req.user._id })
         .populate("leadId", "name email")
         .select("name leadId members");

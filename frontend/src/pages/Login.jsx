@@ -19,6 +19,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState({ email: false, password: false });
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
   useMeta({
@@ -59,13 +61,27 @@ const Login = () => {
         if (remember) localStorage.setItem("rememberEmail", email);
         else localStorage.removeItem("rememberEmail");
 
-        // redirect based on role
-        if (response.data.user.role === "admin") {
+        const roles = Array.isArray(response.data.user.role) 
+                      ? response.data.user.role 
+                      : [response.data.user.role];
+
+        // If admin, go to admin dashboard directly
+        if (roles.includes("admin")) {
           navigate("/admin-dashboard");
-        } else if (response.data.user.role === "team_lead") {
-          navigate("/team-lead-dashboard");
+          return;
+        }
+
+        // If multiple roles, show selection
+        if (roles.length > 1) {
+          setAvailableRoles(roles);
+          setShowRoleSelection(true);
         } else {
-          navigate("/employee-dashboard/attendance");
+          // Single role navigation
+          if (roles[0] === "team_lead") {
+            navigate("/team-lead-dashboard");
+          } else {
+            navigate("/employee-dashboard");
+          }
         }
       } else {
         setError(response.data?.error || "Login failed");
@@ -95,11 +111,60 @@ const Login = () => {
         padding: "32px",
       }}
     >
+      {showRoleSelection && (
+        <div
+          style={{
+            width: "360px",
+            maxWidth: "92%",
+            borderRadius: "14px",
+            padding: "28px",
+            background: "rgba(255,255,255,0.06)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 10px 30px rgba(2,6,23,0.45)",
+            color: "#E8FDF5",
+            animation: "fadeIn 700ms ease-out both",
+            textAlign: "center",
+          }}
+        >
+          <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "20px", color: "#fff" }}>
+            Select Dashboard
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {availableRoles.map((role) => (
+              <button
+                key={role}
+                onClick={() => {
+                  if (role === "team_lead") navigate("/team-lead-dashboard");
+                  else navigate("/employee-dashboard");
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "linear-gradient(90deg,#1e90ff,#0066cc)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                }}
+              >
+                {role.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* floating card */}
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
+          display: showRoleSelection ? "none" : "block",
           width: "360px",
           maxWidth: "92%",
           borderRadius: "14px",

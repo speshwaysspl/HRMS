@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import { DESIGNATIONS } from "../../utils/constants";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Edit = () => {
   const [employee, setEmployee] = useState({
@@ -22,6 +23,7 @@ const Edit = () => {
   const [designationSearch, setDesignationSearch] = useState("");
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -97,6 +99,17 @@ const Edit = () => {
         setFilteredDesignations(allDesignations.slice(0, 10));
         setShowDesignationSuggestions(true);
       }
+    } else if (name === "role") {
+      const { checked, value } = e.target;
+      setEmployee((prevData) => {
+        let newRoles = Array.isArray(prevData.role) ? [...prevData.role] : [prevData.role];
+        if (checked) {
+          if (!newRoles.includes(value)) newRoles.push(value);
+        } else {
+          newRoles = newRoles.filter(r => r !== value);
+        }
+        return { ...prevData, role: newRoles };
+      });
     } else {
       setEmployee((prevData) => ({ ...prevData, [name]: value }));
     }
@@ -362,6 +375,62 @@ const Edit = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role
+                </label>
+                <div className="flex gap-4">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      name="role"
+                      value="employee"
+                      checked={Array.isArray(employee.role) ? employee.role.includes('employee') : employee.role === 'employee'}
+                      onChange={handleChange}
+                      className="form-checkbox h-5 w-5 text-teal-600"
+                    />
+                    <span className="ml-2 text-gray-700">Employee</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      name="role"
+                      value="team_lead"
+                      checked={Array.isArray(employee.role) ? employee.role.includes('team_lead') : employee.role === 'team_lead'}
+                      onChange={handleChange}
+                      className="form-checkbox h-5 w-5 text-teal-600"
+                    />
+                    <span className="ml-2 text-gray-700">Team Lead</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password (Optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    onChange={handleChange}
+                    placeholder="Enter new password to reset"
+                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    style={{ top: '4px' }}
+                  >
+                    {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>
               </div>
 
 
