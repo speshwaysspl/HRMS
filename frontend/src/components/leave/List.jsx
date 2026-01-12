@@ -24,6 +24,7 @@ const List = () => {
   });
 
   const fetchLeaves = async () => {
+    if (!id) return;
     try {
       const roleParam = Array.isArray(user.role) 
         ? (user.role.includes("admin") ? "admin" : "employee") 

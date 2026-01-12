@@ -11,6 +11,8 @@ const TaskList = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [updateData, setUpdateData] = useState({ status: "", comments: "" });
 
+  const userRoles = user?.role ? (Array.isArray(user.role) ? user.role : [user.role]) : [];
+
   const getSortTimestamp = (task) => {
     const candidates = [task?.createdAt, task?.startDate, task?.deadline];
     for (const val of candidates) {
@@ -250,7 +252,7 @@ const TaskList = () => {
               <div className="border-t pt-6">
                 <h4 className="font-bold text-lg mb-4 text-gray-800">Update Task</h4>
                 <form onSubmit={handleUpdate} className="space-y-4">
-                  {user.role !== "employee" && (
+                  {!userRoles.includes("employee") && (
                     <div>
                       <label className="block text-sm font-bold mb-2 text-gray-700">Status</label>
                       <select

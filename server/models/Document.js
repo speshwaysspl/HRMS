@@ -5,6 +5,7 @@ const documentSchema = new Schema({
   employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
   uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   fileUrl: { type: String, required: true },
+  fileKey: { type: String }, // S3 Key for deletion
   fileType: { type: String },
   originalName: { type: String },
   status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },

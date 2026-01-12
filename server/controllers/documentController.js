@@ -1,6 +1,7 @@
 import Document from "../models/Document.js";
 import Employee from "../models/Employee.js";
 import Team from "../models/Team.js";
+import { uploadDocToS3, deleteDocFromS3 } from "../middleware/uploadDocumentS3.js";
 
 // Upload Document
 export const uploadDocument = async (req, res) => {
@@ -14,10 +15,19 @@ export const uploadDocument = async (req, res) => {
       return res.status(404).json({ success: false, error: "Employee record not found" });
     }
 
+    let s3Result;
+    try {
+      s3Result = await uploadDocToS3(req.file);
+    } catch (err) {
+      console.error("S3 upload error:", err);
+      return res.status(500).json({ success: false, error: "Failed to upload to storage" });
+    }
+
     const newDocument = new Document({
       employeeId: employee._id,
       uploadedBy: req.user._id,
-      fileUrl: `/uploads/documents/${req.file.filename}`,
+      fileUrl: s3Result.url,
+      fileKey: s3Result.key,
       fileType: req.file.mimetype,
       originalName: req.file.originalname,
     });
@@ -146,6 +156,14 @@ export const deleteDocument = async (req, res) => {
              if (document.status !== "Pending") {
                  return res.status(400).json({ success: false, error: "Cannot delete processed document" });
              }
+        }
+
+        if (document.fileKey) {
+            try {
+                await deleteDocFromS3(document.fileKey);
+            } catch (error) {
+                console.error("S3 delete error:", error);
+            }
         }
 
         await Document.findByIdAndDelete(id);

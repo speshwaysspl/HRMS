@@ -8,8 +8,9 @@ export const createTeam = async (req, res) => {
   try {
     const { name, description, startDate, leadId } = req.body;
     
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
     // Only Admin can create team
-    if (!req.user.role.includes("admin")) {
+    if (!userRoles.includes("admin")) {
        return res.status(403).json({ success: false, error: "Only admin can create team" });
     }
 
@@ -53,8 +54,14 @@ export const addMembers = async (req, res) => {
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ success: false, error: "Team not found" });
 
-    if (!req.user.role.includes("admin")) {
-      return res.status(403).json({ success: false, error: "Only admin can add members to team" });
+    // Allow Admin OR Team Lead of this team
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isAdmin = userRoles.includes("admin");
+    const isTeamLead = userRoles.includes("team_lead");
+    const isLeadOfTeam = team.leadId.toString() === req.user._id.toString();
+
+    if (!isAdmin && (!isTeamLead || !isLeadOfTeam)) {
+      return res.status(403).json({ success: false, error: "Not authorized to add members to this team" });
     }
 
     // Add employees (prevent duplicates)
@@ -81,12 +88,14 @@ export const addMembers = async (req, res) => {
 export const getTeams = async (req, res) => {
   try {
     let teams;
-    if (req.user.role.includes("admin")) {
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+
+    if (userRoles.includes("admin")) {
       teams = await Team.find()
         .populate("leadId", "name email")
         // Removed deep population of members as it's not needed for the list view and slows down response
         .select("name leadId members"); 
-    } else if (req.user.role.includes("team_lead")) {
+    } else if (userRoles.includes("team_lead")) {
       teams = await Team.find({ leadId: req.user._id })
         .populate("leadId", "name email")
         .select("name leadId members");
@@ -163,7 +172,9 @@ export const deleteTeam = async (req, res) => {
     try {
         const { id } = req.params;
 
-        if (req.user.role !== "admin") {
+        const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+        
+        if (!userRoles.includes("admin")) {
             return res.status(403).json({ success: false, error: "Only admin can delete team" });
         }
 

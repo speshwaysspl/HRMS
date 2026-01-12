@@ -118,6 +118,14 @@ const DocumentList = () => {
       setStatusComment(doc.comments || "");
   };
 
+  const getFileUrl = (url) => {
+      if (!url) return "#";
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+          return url;
+      }
+      return `${API_BASE}${url}`;
+  };
+
   const getFileIcon = (type) => {
       if (type && type.includes("pdf")) return <FaFilePdf className="text-red-500 text-2xl" />;
       if (type && type.includes("image")) return <FaFileImage className="text-blue-500 text-2xl" />;
@@ -193,7 +201,7 @@ const DocumentList = () => {
                               <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(doc.status)}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.comments || "-"}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <a href={`${API_BASE}${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 mr-4" title="View">
+                                  <a href={getFileUrl(doc.fileUrl)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 mr-4" title="View">
                                       <FaEye className="inline" />
                                   </a>
                                   

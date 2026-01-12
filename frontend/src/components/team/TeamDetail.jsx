@@ -67,7 +67,7 @@ const TeamDetail = () => {
 
   useEffect(() => {
     fetchTeamDetail();
-    if (user?.role === "admin") {
+    if (user?.role?.includes("admin")) {
       fetchEmployees();
     }
   }, [id]);
@@ -418,7 +418,7 @@ const TeamDetail = () => {
             >
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <div className="flex gap-2 flex-wrap">
-                        {(user?.role === 'admin' || user?.role === 'team_lead') && (
+                        {(user?.role?.includes('admin') || user?.role?.includes('team_lead')) && (
                             <>
                                 <motion.button 
                                     whileHover={{ scale: 1.05 }}
@@ -708,8 +708,8 @@ const TeamDetail = () => {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
             >
-            {/* Add Members Section (Only for Admin) - Inline Multi-select */}
-            {user?.role === 'admin' && (
+            {/* Add Members Section (Admin Only) - Inline Multi-select */}
+            {user?.role?.includes('admin') && (
                 <div className="bg-white p-4 rounded-xl shadow-md mb-6">
                     <h3 className="text-xl font-bold mb-4 text-gray-800">Add Team Members</h3>
                     <div className="flex flex-col gap-4">
@@ -726,7 +726,10 @@ const TeamDetail = () => {
                             .filter(emp => {
                                 const isAlreadyMember = memberStats.some(stat => stat.member._id === emp._id);
                                 if (isAlreadyMember) return false;
-                                if (emp.userId.role !== 'employee') return false;
+                                
+                                // Handle role array and allow team_lead to be added as member too
+                                const empRoles = Array.isArray(emp.userId.role) ? emp.userId.role : [emp.userId.role];
+                                if (!empRoles.some(r => ['employee', 'team_lead'].includes(r))) return false;
 
                                 const searchLower = searchTerm.toLowerCase();
                                 const nameMatch = emp.userId?.name?.toLowerCase().includes(searchLower);
@@ -783,7 +786,11 @@ const TeamDetail = () => {
                             {searchTerm && employees.filter(emp => {
                                 const isAlreadyMember = memberStats.some(stat => stat.member._id === emp._id);
                                 if (isAlreadyMember) return false;
-                                if (emp.userId.role !== 'employee') return false;
+                                
+                                // Handle role array and allow team_lead to be added as member too
+                                const empRoles = Array.isArray(emp.userId.role) ? emp.userId.role : [emp.userId.role];
+                                if (!empRoles.some(r => ['employee', 'team_lead'].includes(r))) return false;
+
                                 const searchLower = searchTerm.toLowerCase();
                                 return emp.userId.name.toLowerCase().includes(searchLower) || emp.employeeId.toLowerCase().includes(searchLower);
                             }).length === 0 && (

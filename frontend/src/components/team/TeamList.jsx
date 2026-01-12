@@ -68,7 +68,7 @@ const TeamList = () => {
         >
           Teams
         </h2>
-        {user?.role === "admin" && (
+        {user?.role?.includes("admin") && (
           <Link
             to="/admin-dashboard/create-team"
             className="bg-gradient-to-r from-teal-600 to-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
@@ -90,7 +90,7 @@ const TeamList = () => {
               <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Team Name</th>
               <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Lead</th>
               <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Members</th>
-              {user?.role === "admin" && (
+              {user?.role?.includes("admin") && (
                 <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Action</th>
               )}
             </tr>
@@ -107,7 +107,7 @@ const TeamList = () => {
                   className="hover:bg-blue-50 transition-colors cursor-pointer"
                   onClick={() => {
                     navigate(
-                      user?.role === "admin"
+                      user?.role?.includes("admin")
                         ? `/admin-dashboard/team/${team._id}`
                         : `/team-lead-dashboard/team/${team._id}`
                     );
@@ -116,7 +116,7 @@ const TeamList = () => {
                   <td className="px-5 py-4 font-medium text-gray-800">{team.name}</td>
                   <td className="px-5 py-4 text-gray-600">{team.leadId?.name || "N/A"}</td>
                   <td className="px-5 py-4 text-gray-600">{team.members?.length || 0}</td>
-                  {user?.role === "admin" && (
+                  {user?.role?.includes("admin") && (
                     <td className="px-5 py-4">
                       <button
                         onClick={(e) => {
@@ -150,7 +150,7 @@ const TeamList = () => {
             className="bg-white rounded-xl shadow border p-4 cursor-pointer"
             onClick={() => {
               navigate(
-                user?.role === "admin"
+                user?.role?.includes("admin")
                   ? `/admin-dashboard/team/${team._id}`
                   : `/team-lead-dashboard/team/${team._id}`
               );
@@ -163,7 +163,7 @@ const TeamList = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right text-sm text-gray-600">Lead: <span className="font-semibold">{team.leadId?.name || "N/A"}</span></div>
-                {user?.role === "admin" && (
+                {user?.role?.includes("admin") && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

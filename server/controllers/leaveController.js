@@ -36,11 +36,17 @@ const addLeave = async (req, res) => {
 const getLeave = async (req, res) => {
     try {
         const {id, role} = req.params;
+        if (!id || id === "undefined") {
+             return res.status(400).json({success: false, error: "Invalid ID provided"});
+        }
         let leaves
         if(role === "admin") {
             leaves = await Leave.find({employeeId: id}).sort({ appliedAt: -1 })
         } else {
             const employee = await Employee.findOne({userId: id})
+            if (!employee) {
+                 return res.status(404).json({success: false, error: "Employee not found"});
+            }
             leaves = await Leave.find({employeeId: employee._id}).sort({ appliedAt: -1 })
         }
         
@@ -101,6 +107,9 @@ const getLeaveDetail = async (req, res) => {
 const updateLeave = async (req, res) => {
     try {
         const {id} = req.params;
+        if (!id || id === "undefined") {
+            return res.status(400).json({success: false, error: "Invalid ID provided"});
+        }
         const { status } = req.body;
         
         const leave = await Leave.findByIdAndUpdate({_id: id}, {status: status}, {new: true})
