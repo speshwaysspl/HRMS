@@ -11,6 +11,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Service account credentials
+service-account.json
+
 # Build outputs
 build/
 dist/
