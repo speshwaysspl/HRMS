@@ -64,6 +64,15 @@ const Detail = () => {
       }
   }
 
+  const employee = leave?.employeeId || {};
+  const user = employee?.userId || {};
+  const department = employee?.department || {};
+
+  const formattedStartDate =
+    leave?.startDate ? formatISTDate(new Date(leave.startDate)) : "N/A";
+  const formattedEndDate =
+    leave?.endDate ? formatISTDate(new Date(leave.endDate)) : "N/A";
+
   return (
     <>
       {leave ? (
@@ -75,11 +84,11 @@ const Detail = () => {
             <div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">Name:</p>
-                <p className="font-medium">{leave.employeeId.userId.name}</p>
+                <p className="font-medium">{user.name || "N/A"}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">Employee ID:</p>
-                <p className="font-medium">{leave.employeeId.employeeId}</p>
+                <p className="font-medium">{employee.employeeId || "N/A"}</p>
               </div>
 
               <div className="flex space-x-3 mb-2">
@@ -95,15 +104,15 @@ const Detail = () => {
 
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">Department:</p>
-                <p className="font-medium">{leave.employeeId.department.dep_name}</p>
+                <p className="font-medium">{department.dep_name || "N/A"}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">Start Date:</p>
-                <p className="font-medium">{formatISTDate(new Date(leave.startDate))}</p>
+                <p className="font-medium">{formattedStartDate}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">End Date:</p>
-                <p className="font-medium">{formatISTDate(new Date(leave.endDate))}</p>
+                <p className="font-medium">{formattedEndDate}</p>
               </div>
               <div className="flex space-x-3 mb-2">
                 <p className="text-lg font-bold">

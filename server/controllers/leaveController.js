@@ -134,6 +134,25 @@ const updateLeave = async (req, res) => {
     }
 }
 
+const deleteLeave = async (req, res) => {
+    try {
+        const { id } = req.params
+        if (!id || id === "undefined") {
+            return res.status(400).json({ success: false, error: "Invalid ID provided" })
+        }
+
+        const deletedLeave = await Leave.findByIdAndDelete(id)
+        if (!deletedLeave) {
+            return res.status(404).json({ success: false, error: "leave not found" })
+        }
+
+        return res.status(200).json({ success: true })
+    } catch (error) {
+        console.log(error.message)
+        return res.status(500).json({ success: false, error: "leave delete server error" })
+    }
+}
+
 // Get employee leaves by date (for attendance status)
 const getEmployeeLeavesByDate = async (req, res) => {
     try {
@@ -163,4 +182,4 @@ const getEmployeeLeavesByDate = async (req, res) => {
     }
 }
 
-export {addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, getEmployeeLeavesByDate}
+export {addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, deleteLeave, getEmployeeLeavesByDate}

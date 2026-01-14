@@ -32,7 +32,6 @@ const columns = [
   {
     name: "Action",
     cell: (row) => <div className="w-full"><AnnouncementButtons Id={row._id} /></div>,
-    center: true,
     width: "220px",
   },
 ];

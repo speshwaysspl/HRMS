@@ -1,7 +1,7 @@
 import { getTodaysBirthdays, getBirthdayMessage, getBirthdayEmailTemplate } from '../utils/birthdayChecker.js';
 import Announcement from '../models/Announcement.js';
 import User from '../models/User.js';
-import sendEmail from '../utils/sendEmail.js';
+import { enqueueEmail } from '../utils/emailQueue.js';
 
 /**
  * Process birthday wishes for all employees with birthdays today
@@ -143,7 +143,7 @@ export const sendBirthdayEmail = async (employee) => {
     const subject = `🎉 Happy Birthday ${employeeName}! - SPESHWAY SOLUTIONS`;
     const htmlContent = getBirthdayEmailTemplate(employee);
     
-    await sendEmail(employeeEmail, subject, htmlContent);
+    enqueueEmail(employeeEmail, subject, htmlContent);
     
     return {
       success: true,

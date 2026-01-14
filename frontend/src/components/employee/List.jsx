@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { columns, EmployeeButtons } from '../../utils/EmployeeHelper'
 import DataTable from 'react-data-table-component'
@@ -12,7 +12,7 @@ import useMeta from '../../utils/useMeta'
 
 
 const List = () => {
-    useMeta({
+  useMeta({
       title: 'Employees — Speshway HRMS',
       description: 'Browse and manage employee records.',
       keywords: 'employees, HRMS',
@@ -23,6 +23,8 @@ const List = () => {
     const [employees, setEmployees] = useState([])
     const [empLoading, setEmpLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [importing, setImporting] = useState(false)
+    const fileInputRef = useRef(null)
 
     const handleDelete = useCallback(async (id) => {
       if(!window.confirm("Are you sure you want to delete this employee?")) return;
@@ -125,6 +127,44 @@ const List = () => {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
         XLSX.writeFile(workbook, "employees.xlsx");
+      };
+
+      const handleImportChange = async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        setImporting(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const response = await axios.post(
+            `${API_BASE}/api/employee/import-excel`,
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'multipart/form-data',
+              },
+            }
+          );
+          const data = response.data;
+          if (data.success) {
+            alert(`Imported ${data.createdCount} employees. Skipped: ${data.skippedCount}`);
+            window.location.reload();
+          } else {
+            alert(data.error || "Failed to import employees");
+          }
+        } catch (error) {
+          if (error.response && error.response.data && error.response.data.error) {
+            alert(error.response.data.error);
+          } else {
+            alert("Server error in importing employees");
+          }
+        } finally {
+          setImporting(false);
+          if (e.target) {
+            e.target.value = '';
+          }
+        }
       };
 
       const filteredEmployee = useMemo(() => {
@@ -235,6 +275,22 @@ const List = () => {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleImportChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={importing}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-sky-700 rounded-lg text-white font-medium hover:from-sky-700 hover:to-sky-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <FaFileExcel className="text-sm" />
+                {importing ? 'Importing...' : 'Import'}
+              </button>
               <button
                 onClick={handleExport}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"

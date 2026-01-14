@@ -17,11 +17,23 @@ const Table = () => {
     url: `${window.location.origin}/admin-dashboard/leaves`,
     robots: "noindex,nofollow"
   });
-  const [leaves, setLeaves] = useState(null);
-  const [filteredLeaves, setFilteredLeaves] = useState(null);
+  const [leaves, setLeaves] = useState([]);
+  const [filteredLeaves, setFilteredLeaves] = useState([]);
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
 
+  const handleDeleteSuccess = (deletedId) => {
+    setLeaves((prev) => {
+      const updated = prev.filter((leave) => leave._id !== deletedId);
+      setFilteredLeaves((current) =>
+        current.filter((leave) => leave._id !== deletedId)
+      );
+      return updated;
+    });
+  };
+
   const fetchLeaves = async () => {
+    setLoading(true);
     try {
       const responnse = await axios.get(`${API_BASE}/api/leave`, {
         headers: {
@@ -30,18 +42,26 @@ const Table = () => {
       });
       if (responnse.data.success) {
         let sno = 1;
-        const data = await responnse.data.leaves.map((leave) => ({
-          _id: leave._id,
-          sno: sno++,
-          employeeId: leave.employeeId.employeeId,
-          name: leave.employeeId.userId.name,
-          leaveType: leave.leaveType,
-          department: leave.employeeId.department.dep_name,
-          days:
-            Math.ceil((new Date(leave.endDate) - new Date(leave.startDate)) / (1000 * 60 * 60 * 24)) + 1,
-          status: leave.status,
-          action: <LeaveButtons Id={leave._id} />,
-        }));
+        const data = (responnse.data.leaves || []).map((leave) => {
+          const start = leave.startDate ? new Date(leave.startDate) : null;
+          const end = leave.endDate ? new Date(leave.endDate) : null;
+          const days =
+            start && end
+              ? Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+              : 0;
+
+          return {
+            _id: leave._id,
+            sno: sno++,
+            employeeId: leave.employeeId?.employeeId || "",
+            name: leave.employeeId?.userId?.name || "",
+            leaveType: leave.leaveType || "",
+            department: leave.employeeId?.department?.dep_name || "",
+            days,
+            status: leave.status || "",
+            action: <LeaveButtons Id={leave._id} onDelete={handleDeleteSuccess} />,
+          };
+        });
         setLeaves(data);
         setFilteredLeaves(data);
       }
@@ -49,6 +69,8 @@ const Table = () => {
       if (error.response && !error.response.data.success) {
         alert(error.response.data.error);
       }
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -88,7 +110,9 @@ const Table = () => {
 
   return (
     <>
-      {filteredLeaves ? (
+      {loading ? (
+        <div>Loading ...</div>
+      ) : (
         <div className="p-4 md:p-6">
           <div className="text-center mb-4 md:mb-6">
             <h3 className="text-xl md:text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Manage Leaves</h3>
@@ -157,8 +181,6 @@ const Table = () => {
             <DataTable columns={columns} data={filteredLeaves} pagination responsive />
           </div>
         </div>
-      ) : (
-        <div>Loading ...</div>
       )}
     </>
   );

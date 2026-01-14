@@ -42,7 +42,8 @@ import {
   Reply as ReplyIcon,
   Close as CloseIcon,
   FilterList as FilterIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
  
 import { motion, AnimatePresence } from 'framer-motion';
@@ -215,6 +216,30 @@ const AdminFeedback = () => {
   const formatDate = (date) => formatDMYWithTime(date);
 
 
+
+  const handleDeleteFeedback = async (id) => {
+    const confirmed = window.confirm('Are you sure you want to delete this feedback?');
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.delete(`${API_BASE}/api/feedback/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (response.data.success) {
+        showSnackbar('Feedback deleted successfully', 'success');
+        setAllFeedbacks(prev => prev.filter(f => f._id !== id));
+      }
+    } catch (error) {
+      showSnackbar(
+        error.response?.data?.error || 'Failed to delete feedback',
+        'error'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const TabPanel = ({ children, value, index }) => (
     <div hidden={value !== index}>
@@ -393,6 +418,15 @@ const AdminFeedback = () => {
                             color="primary"
                           >
                             <ReplyIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteFeedback(feedback._id)}
+                          >
+                            <DeleteIcon />
                           </IconButton>
                         </Tooltip>
                       </Box>

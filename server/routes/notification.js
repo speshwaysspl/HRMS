@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications } from '../controllers/notificationController.js';
+import { getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, sendCustomNotification, saveFcmToken } from '../controllers/notificationController.js';
 import verifyUser from '../middleware/authMiddlware.js';
 
 const router = express.Router();
@@ -15,5 +15,11 @@ router.put('/read-all/:userId', verifyUser, markAllAsRead);
 
 // Clear all notifications for a user
 router.delete('/clear-all/:userId', verifyUser, clearAllNotifications);
+
+// Send custom notification
+router.post('/send-notification', verifyUser, sendCustomNotification);
+
+// Save FCM token
+router.post('/fcm-token', verifyUser, saveFcmToken);
 
 export default router;

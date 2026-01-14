@@ -17,6 +17,9 @@ import payslipRouter from "./routes/payslip.js";
 import birthdayRouter from "./routes/birthdayRoutes.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import { initializeHolidayReminderScheduler } from "./services/holidayScheduler.js";
+import cron from "node-cron";
+import Leave from "./models/Leave.js";
+import Feedback from "./models/Feedback.js";
 import connectToDatabase from "./db/db.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
@@ -42,10 +45,22 @@ const app = express();
 
 // Initialize HTTP server and Socket.IO
 const httpServer = createServer(app);
-const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000", "http://localhost:5173", "http://localhost:5174","https://speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
+
+// CORS: allow localhost (any port) and configured domains
+const allowedDomains = ["https://speshwayhrms.com", "https://api.speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
+const corsOrigin = (origin, callback) => {
+  // Allow non-browser requests (mobile app, curl)
+  if (!origin) return callback(null, true);
+  const isLocalhost = /^http:\/\/localhost(?::\d+)?$/.test(origin);
+  if (isLocalhost || allowedDomains.includes(origin) || origin === process.env.CLIENT_URL) {
+    return callback(null, true);
+  }
+  return callback(new Error("Not allowed by CORS"));
+};
+
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: true, // allow all origins in dev; app CORS below still restricts HTTP
     credentials: true
   }
 });
@@ -71,9 +86,9 @@ io.on('connection', (socket) => {
   });
 });
 
-app.use(cors({ 
-  origin: allowedOrigins, 
-  credentials: true 
+app.use(cors({
+  origin: corsOrigin,
+  credentials: true
 }));
 app.use(express.json());
 
@@ -110,9 +125,24 @@ app.use("/api/daily-quote", dailyQuoteRouter);
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  // Initialize birthday wishes scheduler
   initializeBirthdayScheduler();
-  // Initialize holiday reminder scheduler with Socket.IO
   initializeHolidayReminderScheduler(io);
+  cron.schedule("59 23 * * *", async () => {
+    try {
+      const now = new Date();
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      if (tomorrow.getDate() === 1) {
+        const nextMonthStart = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
+        const leaveResult = await Leave.deleteMany({ endDate: { $lt: nextMonthStart } });
+        console.log(`Leave cleanup job deleted ${leaveResult.deletedCount} records`);
+      }
+
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const feedbackResult = await Feedback.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+      console.log(`Feedback cleanup job deleted ${feedbackResult.deletedCount} records (older than 30 days)`);
+    } catch (error) {
+      console.error("Error running monthly cleanup job:", error);
+    }
+  }, { timezone: "Asia/Kolkata" });
 });
 

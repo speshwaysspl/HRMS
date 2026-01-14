@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
+import { sendMulticastNotification } from '../services/fcmService.js';
 
 // Create and broadcast a single notification
 const createNotification = async (notificationData, io) => {
@@ -12,6 +13,26 @@ const createNotification = async (notificationData, io) => {
 
     const roomName = `user_${notificationData.recipientId}`;
     if (io) io.to(roomName).emit('newNotification', notification);
+
+    // Send FCM Notification
+    try {
+      const recipientUser = await User.findById(notificationData.recipientId);
+      if (recipientUser && recipientUser.fcmTokens && recipientUser.fcmTokens.length > 0) {
+         await sendMulticastNotification(
+           recipientUser.fcmTokens,
+           notificationData.title,
+           notificationData.message,
+           {
+             type: notificationData.type,
+             relatedId: notificationData.relatedId ? notificationData.relatedId.toString() : '',
+             notificationId: notification._id.toString()
+           }
+         );
+      }
+    } catch (fcmError) {
+      console.error('Error sending FCM notification:', fcmError);
+    }
+
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -283,4 +304,49 @@ const clearAllNotifications = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications };
+const sendCustomNotification = async (req, res) => {
+  try {
+    const { userId, title, message, data } = req.body;
+    
+    if (!userId) {
+       return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found or has no FCM tokens' });
+    }
+
+    const response = await sendMulticastNotification(user.fcmTokens, title, message, data || {});
+    
+    return res.status(200).json({ success: true, response });
+
+  } catch (error) {
+     console.error('Error sending custom notification:', error);
+     return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const saveFcmToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const userId = (req.user && (req.user._id || req.user.id)) ? (req.user._id || req.user.id) : null;
+
+    if (!token || !userId) {
+      return res.status(400).json({ success: false, error: 'Token and User ID are required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user.fcmTokens.includes(token)) {
+      user.fcmTokens.push(token);
+      await user.save();
+    }
+
+    return res.status(200).json({ success: true, message: 'Token saved' });
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, sendCustomNotification, saveFcmToken };

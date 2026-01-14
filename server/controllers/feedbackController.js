@@ -423,24 +423,26 @@ const deleteFeedback = async (req, res) => {
   try {
     const { id } = req.params;
 
+   const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isAdmin = userRoles.includes("admin");
+
     let feedback;
-    
-    if (req.user.role === 'admin') {
+
+    if (isAdmin) {
       feedback = await Feedback.findById(id);
     } else {
-      // Employee can only delete their own pending feedback
-      const employee = await Employee.findOne({ userId: req.user.id });
+      const employee = await Employee.findOne({ userId: req.user._id });
       if (!employee) {
-        return res.status(404).json({ 
-          success: false, 
-          error: "Employee profile not found" 
+        return res.status(404).json({
+          success: false,
+          error: "Employee profile not found"
         });
       }
 
-      feedback = await Feedback.findOne({ 
-        _id: id, 
+      feedback = await Feedback.findOne({
+        _id: id,
         employeeId: employee._id,
-        status: 'Pending'
+        status: "Pending"
       });
     }
 

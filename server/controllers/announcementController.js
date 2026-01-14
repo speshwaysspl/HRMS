@@ -2,10 +2,10 @@
 import Announcement from "../models/Announcement.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
-import sendEmail from "../utils/sendEmail.js";
 import { uploadToS3, deleteFromS3 } from "../middleware/uploadAnnouncementS3.js";
 import { getAnnouncementEmailTemplate, getAnnouncementEmailSubject } from "../utils/emailTemplates.js";
 import { createAnnouncementNotification } from "./notificationController.js";
+import { enqueueEmail } from "../utils/emailQueue.js";
 
 const buildImageUrl = (imageUrl) => {
   return imageUrl || null;
@@ -108,10 +108,8 @@ const addAnnouncement = async (req, res) => {
               createdAt: new Date()
             });
             
-            return sendEmail(employee.userId.email, emailSubject, emailHtml, emailAttachments).catch(error => {
-              console.error(`Failed to send email to ${employee.userId.email}:`, error);
-              return null;
-            });
+            enqueueEmail(employee.userId.email, emailSubject, emailHtml, emailAttachments);
+            return Promise.resolve(null);
           }
           return Promise.resolve(null);
         });
@@ -141,7 +139,9 @@ const addAnnouncement = async (req, res) => {
 // 📌 Read All
 const getAnnouncements = async (req, res) => {
   try {
-    const filter = (req.user?.role === 'admin')
+    const roles = Array.isArray(req.user?.role) ? req.user.role : [req.user?.role];
+    const isAdmin = roles.includes('admin');
+    const filter = isAdmin
       ? {}
       : { $or: [
           { scope: 'all' },
@@ -174,7 +174,9 @@ const getAnnouncement = async (req, res) => {
     }
 
     // Restrict visibility for non-admin users to only relevant announcements
-    if (req.user?.role !== 'admin') {
+    const roles = Array.isArray(req.user?.role) ? req.user.role : [req.user?.role];
+    const isAdmin = roles.includes('admin');
+    if (!isAdmin) {
       const isRecipient = announcement.scope === 'all' || (
         announcement.scope === 'specific' && Array.isArray(announcement.recipients) &&
         announcement.recipients.some((r) => r.toString() === req.user._id.toString())

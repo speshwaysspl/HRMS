@@ -5,7 +5,7 @@ import User from "../models/User.js";
 import PayrollTemplate from "../models/PayrollTemplate.js";
 import Department from "../models/Department.js";
 import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
-import sendEmail from "../utils/sendEmail.js";
+import { enqueueEmail } from "../utils/emailQueue.js";
 
 const num = (v) => {
   const n = parseFloat(v);
@@ -1069,7 +1069,7 @@ export const sendPayslipEmail = async (req, res) => {
     });
     
     // Send email with PDF attachment
-    await sendEmail(employeeDetails.email, subject, htmlContent, attachments);
+    enqueueEmail(employeeDetails.email, subject, htmlContent, attachments);
     
     return res.status(200).json({ 
       success: true, 

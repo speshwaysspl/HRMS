@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
     updatedAt: {type: Date, default: Date.now},
    
   resetPasswordToken: String,
-  resetPasswordExpire: Date
+  resetPasswordExpire: Date,
+  fcmTokens: { type: [String], default: [] }
 })
  
  
