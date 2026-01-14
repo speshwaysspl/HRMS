@@ -37,23 +37,32 @@ const initFCM = () => {
 initFCM();
 
 const sendNotification = async (registrationToken, title, body, data = {}) => {
-  if (!isInitialized || !registrationToken) return;
+  if (!isInitialized) {
+      console.warn('sendNotification: FCM not initialized');
+      return;
+  }
+  if (!registrationToken) {
+      console.warn('sendNotification: No registration token provided');
+      return;
+  }
+
+  // Convert all data values to strings
+  const stringData = Object.keys(data).reduce((acc, key) => {
+    acc[key] = String(data[key]);
+    return acc;
+  }, {});
 
   const message = {
-    notification: {
-      title,
-      body,
+    // Data-only message
+    data: {
+      ...stringData,
+      title: String(title),
+      body: String(body),
+      channel_id: 'general_channel_v4'
     },
     android: {
       priority: 'high',
-      notification: {
-        channelId: data.channel_id || 'general_channel_v3',
-        priority: 'high',
-        visibility: 'public',
-        defaultSound: true,
-      },
     },
-    data: data,
     token: registrationToken,
   };
 
@@ -69,29 +78,52 @@ const sendNotification = async (registrationToken, title, body, data = {}) => {
 };
 
 const sendMulticastNotification = async (registrationTokens, title, body, data = {}) => {
-  if (!isInitialized || !registrationTokens || registrationTokens.length === 0) return;
+  if (!isInitialized) {
+    console.warn('sendMulticastNotification: FCM not initialized');
+    return;
+  }
+  if (!registrationTokens || registrationTokens.length === 0) {
+    console.warn('sendMulticastNotification: No registration tokens provided');
+    return;
+  }
+
+  console.log(`sendMulticastNotification: Sending to ${registrationTokens.length} tokens. Title: ${title}`);
+
+  // Convert all data values to strings
+  const stringData = Object.keys(data).reduce((acc, key) => {
+    acc[key] = String(data[key]);
+    return acc;
+  }, {});
 
   const message = {
-    notification: {
-      title,
-      body,
+    // Data-only message for reliable background handling
+    data: {
+      ...stringData,
+      title: String(title),
+      body: String(body),
+      channel_id: 'general_channel_v4'
     },
     android: {
       priority: 'high',
-      notification: {
-        channelId: data.channel_id || 'general_channel_v3',
-        priority: 'high',
-        visibility: 'public',
-        defaultSound: true,
-      },
     },
-    data: data,
     tokens: registrationTokens,
   };
 
   try {
     const response = await admin.messaging().sendEachForMulticast(message);
     console.log(response.successCount + ' messages were sent successfully');
+    
+    if (response.failureCount > 0) {
+      const failedTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          failedTokens.push(registrationTokens[idx]);
+          console.error(`Error sending to token ${registrationTokens[idx]}:`, resp.error);
+        }
+      });
+      console.log('Failed tokens:', failedTokens);
+    }
+    
     return response;
   } catch (error) {
     console.error('Error sending multicast message:', error);

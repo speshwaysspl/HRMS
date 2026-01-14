@@ -333,13 +333,22 @@ const saveFcmToken = async (req, res) => {
     const userId = (req.user && (req.user._id || req.user.id)) ? (req.user._id || req.user.id) : null;
 
     if (!token || !userId) {
+      console.error('saveFcmToken: Token and User ID are required', { token, userId });
       return res.status(400).json({ success: false, error: 'Token and User ID are required' });
     }
 
     const user = await User.findById(userId);
+    if (!user) {
+        console.error('saveFcmToken: User not found', userId);
+        return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
     if (!user.fcmTokens.includes(token)) {
       user.fcmTokens.push(token);
       await user.save();
+      console.log(`saveFcmToken: New token saved for user ${user.email} (${userId})`);
+    } else {
+        console.log(`saveFcmToken: Token already exists for user ${user.email} (${userId})`);
     }
 
     return res.status(200).json({ success: true, message: 'Token saved' });
