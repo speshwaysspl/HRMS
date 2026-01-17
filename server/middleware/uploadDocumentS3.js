@@ -6,13 +6,7 @@ import path from "path";
 
 // Function to get S3 client (lazy initialization)
 const getS3Client = () => {
-  return new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+  return new S3Client({});
 };
 
 // Configure multer for memory storage
@@ -61,7 +55,7 @@ export const uploadDocToS3 = async (file) => {
     await s3Client.send(command);
     
     // Return the S3 URL
-    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
     return { success: true, url: s3Url, key: fileName };
   } catch (error) {
     console.error("S3 upload error:", error);

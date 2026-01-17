@@ -24,19 +24,8 @@ const sendEmail = async (to, subject, html, attachments = []) => {
 
     let transporter;
 
-    if (!process.env.AWS_REGION) {
-      console.warn('Missing AWS_REGION for SES. Skipping email send.');
-      return null;
-    }
-
     // Configure AWS SES Client (v3 - SESv2)
-    const sesClient = new SESv2Client({
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      },
-    });
+    const sesClient = new SESv2Client({});
 
     // Create Nodemailer transporter with SESv2
     transporter = nodemailer.createTransport({
@@ -45,8 +34,6 @@ const sendEmail = async (to, subject, html, attachments = []) => {
         SendEmailCommand
       }
     });
-    
-    console.log(`📧 SES configured for region: ${process.env.AWS_REGION}`);
 
     const mailOptions = {
       from: fromEmail ? `"${fromName}" <${fromEmail}>` : undefined,
@@ -67,12 +54,7 @@ const sendEmail = async (to, subject, html, attachments = []) => {
     
     return result;
   } catch (error) {
-    console.error("❌ Error sending email:", {
-      message: error.message,
-      code: error.code,
-      name: error.name,
-      stack: error.stack
-    });
+    console.error("❌ Error sending email:", error);
     console.warn(`Email sending failed: ${error.message}`);
     return null;
   }

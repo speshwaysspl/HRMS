@@ -22,7 +22,7 @@ import Leave from "./models/Leave.js";
 import Feedback from "./models/Feedback.js";
 import connectToDatabase from "./db/db.js";
 import { createServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
+import { WebSocketServer } from "ws";
 import notificationRouter from "./routes/notification.js";
 import feedbackRouter from "./routes/feedback.js";
 import eventRouter from "./routes/eventRoutes.js";
@@ -31,6 +31,8 @@ import taskRouter from "./routes/task.js";
 import documentRouter from "./routes/documentRoutes.js";
 import dailyQuoteRouter from "./routes/dailyQuoteRoutes.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
+import { addConnection, removeConnection } from "./utils/websocketStore.js";
+import { v4 as uuidv4 } from "uuid";
 
 dotenv.config({ quiet: true });
 connectToDatabase().then(() => {
@@ -43,13 +45,11 @@ connectToDatabase().then(() => {
 
 const app = express();
 
-// Initialize HTTP server and Socket.IO
 const httpServer = createServer(app);
 
 // CORS: allow localhost (any port) and configured domains
-const allowedDomains = ["https://speshwayhrms.com", "https://api.speshwayhrms.com","https://www.speshwayhrms.com"].filter(Boolean);
+const allowedDomains = ["https://speshwayhrms.com", "https://api.speshwayhrms.com", "https://www.speshwayhrms.com"].filter(Boolean);
 const corsOrigin = (origin, callback) => {
-  // Allow non-browser requests (mobile app, curl)
   if (!origin) return callback(null, true);
   const isLocalhost = /^http:\/\/localhost(?::\d+)?$/.test(origin);
   if (isLocalhost || allowedDomains.includes(origin) || origin === process.env.CLIENT_URL) {
@@ -58,32 +58,90 @@ const corsOrigin = (origin, callback) => {
   return callback(new Error("Not allowed by CORS"));
 };
 
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: true, // allow all origins in dev; app CORS below still restricts HTTP
-    credentials: true
-  }
-});
+const isServerless = process.env.SERVERLESS === "true";
 
-// Store io instance in app for controllers/routes to use
-app.set('io', io);
-// Also attach io to each request for places using req.io
-app.use((req, res, next) => { req.io = io; next(); });
+let io;
 
-// Handle client connections and room joining
-io.on('connection', (socket) => {
-  console.log('🔗 Socket client connected');
-  socket.on('join', (userId) => {
-    if (userId) {
-      const roomName = `user_${userId}`;
-      console.log(`🏠 Socket joining room: ${roomName}`);
-      socket.join(roomName);
-    }
+if (!isServerless) {
+  const userSockets = new Map();
+
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: "/ws"
   });
 
-  socket.on('disconnect', () => {
-    console.log('❌ Socket client disconnected');
+  wss.on("connection", (socket) => {
+    socket.on("message", (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data && data.type === "join" && data.userId) {
+          const userId = String(data.userId);
+          socket.userId = userId;
+          if (!socket.connectionId) {
+            socket.connectionId = uuidv4();
+          }
+          let sockets = userSockets.get(userId);
+          if (!sockets) {
+            sockets = new Set();
+            userSockets.set(userId, sockets);
+          }
+          sockets.add(socket);
+          addConnection(userId, socket.connectionId);
+        }
+      } catch (error) {
+        console.error("WebSocket message parse error:", error);
+      }
+    });
+
+    socket.on("close", () => {
+      const userId = socket.userId;
+      const connectionId = socket.connectionId;
+      if (userId && userSockets.has(userId)) {
+        const sockets = userSockets.get(userId);
+        sockets.delete(socket);
+        if (sockets.size === 0) {
+          userSockets.delete(userId);
+        }
+      }
+      if (userId && connectionId) {
+        removeConnection(userId, connectionId);
+      }
+    });
   });
+
+  io = {
+    to: (roomName) => ({
+      emit: (eventName, payload) => {
+        try {
+          if (typeof roomName !== "string") return;
+          if (!roomName.startsWith("user_")) return;
+          const userId = roomName.slice("user_".length);
+          const sockets = userSockets.get(userId);
+          if (!sockets) return;
+          const message = JSON.stringify({ event: eventName, payload });
+          sockets.forEach((socket) => {
+            if (socket.readyState === socket.OPEN) {
+              socket.send(message);
+            }
+          });
+        } catch (error) {
+          console.error("WebSocket emit error:", error);
+        }
+      }
+    })
+  };
+} else {
+  io = {
+    to: () => ({
+      emit: () => {}
+    })
+  };
+}
+
+app.set("io", io);
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
 
 app.use(cors({
@@ -123,26 +181,36 @@ app.use("/api/document", documentRouter);
 app.use("/api/daily-quote", dailyQuoteRouter);
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  initializeBirthdayScheduler();
-  initializeHolidayReminderScheduler(io);
-  cron.schedule("59 23 * * *", async () => {
-    try {
-      const now = new Date();
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      if (tomorrow.getDate() === 1) {
-        const nextMonthStart = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
-        const leaveResult = await Leave.deleteMany({ endDate: { $lt: nextMonthStart } });
-        console.log(`Leave cleanup job deleted ${leaveResult.deletedCount} records`);
-      }
 
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const feedbackResult = await Feedback.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
-      console.log(`Feedback cleanup job deleted ${feedbackResult.deletedCount} records (older than 30 days)`);
-    } catch (error) {
-      console.error("Error running monthly cleanup job:", error);
-    }
-  }, { timezone: "Asia/Kolkata" });
-});
+const startServer = () => {
+  httpServer.listen(PORT, () => {
+    initializeBirthdayScheduler();
+    initializeHolidayReminderScheduler(io);
+    cron.schedule(
+      "59 23 * * *",
+      async () => {
+        try {
+          const now = new Date();
+          const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          if (tomorrow.getDate() === 1) {
+            const nextMonthStart = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
+            const leaveResult = await Leave.deleteMany({ endDate: { $lt: nextMonthStart } });
+          }
+
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          const feedbackResult = await Feedback.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+        } catch (error) {
+          console.error("Error running monthly cleanup job:", error);
+        }
+      },
+      { timezone: "Asia/Kolkata" }
+    );
+  });
+};
+
+if (!isServerless) {
+  startServer();
+}
+
+export { app, httpServer, startServer };
 

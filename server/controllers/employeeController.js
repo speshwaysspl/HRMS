@@ -1,7 +1,7 @@
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import Department from "../models/Department.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import ExcelJS from "exceljs";
 import { enqueueEmail } from "../utils/emailQueue.js";
 

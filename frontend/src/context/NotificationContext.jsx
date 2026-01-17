@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
-import { API_BASE } from '../utils/apiConfig';
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import { API_BASE } from "../utils/apiConfig";
 
 // Add notification sound
 const notificationSound = new Audio('/notification-sound.mp3');
@@ -23,47 +22,45 @@ export const NotificationProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
-  // Initialize socket connection
   useEffect(() => {
     if (user && user._id) {
-      // Create socket connection
-      socketRef.current = io(API_BASE, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
+      const wsBase = API_BASE.replace(/^http/, "ws");
+      const wsUrl = `${wsBase}/ws`;
+      const socket = new WebSocket(wsUrl);
+      socketRef.current = socket;
 
-      const socket = socketRef.current;
-
-      socket.on('connect', () => {
+      socket.onopen = () => {
         setIsConnected(true);
-        // Join user's personal notification room
-        socket.emit('join', user._id);
-      });
+        socket.send(JSON.stringify({ type: "join", userId: user._id }));
+      };
 
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
-
-      // Listen for new notifications
-      socket.on('newNotification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show popup notification
-        showPopupNotification(notification);
-        
-        // Request notification permission on first notification if not already set
-        if (("Notification" in window) && Notification.permission === "default") {
-          Notification.requestPermission();
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message && message.event === "newNotification" && message.payload) {
+            const notification = message.payload;
+            setNotifications((prev) => [notification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+            showPopupNotification(notification);
+            if ("Notification" in window && Notification.permission === "default") {
+              Notification.requestPermission();
+            }
+          }
+        } catch (error) {
+          console.error("WebSocket message parse error:", error);
         }
-      });
+      };
 
-      socket.on('connect_error', (error) => {
+      socket.onerror = () => {
         setIsConnected(false);
-      });
+      };
+
+      socket.onclose = () => {
+        setIsConnected(false);
+      };
 
       return () => {
-        socket.disconnect();
+        socket.close();
       };
     }
   }, [user]);

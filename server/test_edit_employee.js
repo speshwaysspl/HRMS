@@ -1,16 +1,16 @@
-import axios from 'axios';
-import mongoose from 'mongoose';
-import User from './models/User.js';
-import Employee from './models/Employee.js';
-import connectToDatabase from './db/db.js';
-import bcrypt from 'bcrypt';
-import dotenv from 'dotenv';
+import axios from "axios";
+import mongoose from "mongoose";
+import User from "./models/User.js";
+import Employee from "./models/Employee.js";
+import connectToDatabase from "./db/db.js";
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
 
-import Department from './models/Department.js';
+import Department from "./models/Department.js";
 
 dotenv.config();
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = "http://localhost:5000/api";
 
 const runTest = async () => {
   try {

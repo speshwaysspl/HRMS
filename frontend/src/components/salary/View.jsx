@@ -289,7 +289,10 @@ const View = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          Accept: "application/pdf"
+        },
         responseType: "blob",
       });
       const blob = new Blob([response.data], { type: "application/pdf" });

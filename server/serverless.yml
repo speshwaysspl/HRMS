@@ -1,0 +1,39 @@
+service: speshway-hrms-backend
+
+plugins:
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: prod
+  timeout: 30
+  memorySize: 512
+  apiGateway:
+    binaryMediaTypes:
+      - application/pdf
+      - image/*
+      - application/octet-stream
+  environment:
+    NODE_ENV: production
+    SERVERLESS: "true"
+    PORT: 5000
+    MONGODB_URL: ${env:MONGODB_URL}
+    MONGODB_DB: ${env:MONGODB_DB}
+    JWT_SECRET: ${env:JWT_SECRET}
+    CLIENT_URL: ${env:CLIENT_URL}
+    AWS_S3_BUCKET_NAME: ${env:AWS_S3_BUCKET_NAME}
+    MAIL_FROM_EMAIL: ${env:MAIL_FROM_EMAIL}
+    MAIL_FROM_NAME: ${env:MAIL_FROM_NAME}
+    MAIL_REPLY_TO: ${env:MAIL_REPLY_TO}
+    AWS_SES_FROM: ${env:AWS_SES_FROM}
+    WS_TABLE_NAME: ${env:WS_TABLE_NAME}
+
+functions:
+  api:
+    handler: serverless.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: any

@@ -20,7 +20,6 @@ export default defineConfig({
           motion: ['framer-motion'],
           pdf: ['jspdf', 'jspdf-autotable'],
           excel: ['xlsx'],
-          socket: ['socket.io-client'],
           maps: ['@googlemaps/react-wrapper'],
         }
       }
