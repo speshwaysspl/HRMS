@@ -70,6 +70,8 @@ const PayrollTemplateManager = () => {
     totalDeductions: 0,
     netSalary: 0
   });
+  const [showSalaryDetails, setShowSalaryDetails] = useState(false);
+  const [fullSalaryInput, setFullSalaryInput] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -209,6 +211,26 @@ const PayrollTemplateManager = () => {
     }
   }, [template.basicSalary, template.da, template.hra, template.conveyance, template.medicalallowances, 
       template.specialallowances, template.pf, template.proftax, template.deductions]);
+
+  const handleFullSalaryChange = (e) => {
+    const value = e.target.value;
+    setFullSalaryInput(value);
+    
+    const fullSalary = parseFloat(value);
+    if (!isNaN(fullSalary) && fullSalary > 2850) {
+      const remaining = fullSalary - 2850;
+      
+      setTemplate(prev => ({
+        ...prev,
+        basicSalary: Math.round(remaining * 0.40).toString(),
+        da: Math.round(remaining * 0.22).toString(),
+        hra: Math.round(remaining * 0.20).toString(),
+        conveyance: "1600",
+        medicalallowances: "1250",
+        specialallowances: Math.round(remaining * 0.18).toString()
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -651,6 +673,75 @@ const PayrollTemplateManager = () => {
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                 />
               </div>
+            </div>
+
+            {/* Auto Calculate & Salary Details */}
+            <div className="mb-6">
+              <div className="flex flex-col md:flex-row items-end md:items-center justify-between mb-4 gap-4">
+                <div className="w-full md:w-1/2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Salary (Auto Calculate)</label>
+                  <input
+                    type="number"
+                    onWheel={(e) => e.target.blur()}
+                    value={fullSalaryInput}
+                    onChange={handleFullSalaryChange}
+                    className="p-2 block w-full border border-gray-300 rounded-md bg-blue-50 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter Full Salary to auto-fill breakdown"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSalaryDetails(!showSalaryDetails)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center shadow-sm w-full md:w-auto justify-center"
+                >
+                  {showSalaryDetails ? "Hide Salary Details" : "Salary Details"}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {showSalaryDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden mb-4 border rounded-md shadow-sm"
+                  >
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {["Full Salary", "Basic", "DA", "HRA", "Conveyance", "Medical Allowances", "Special Allowances"].map((header) => (
+                              <th key={header} className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {[
+                            { full: 40000, basic: 14860, da: 8173, hra: 7430, conv: 1600, med: 1250, special: 6687 },
+                            { full: 30000, basic: 10860, da: 5973, hra: 5430, conv: 1600, med: 1250, special: 4887 },
+                            { full: 18000, basic: 6060, da: 3333, hra: 3030, conv: 1600, med: 1250, special: 2727 },
+                            { full: 25000, basic: 8860, da: 4873, hra: 4430, conv: 1600, med: 1250, special: 3987 },
+                            { full: 15000, basic: 4860, da: 2673, hra: 2430, conv: 1600, med: 1250, special: 2187 },
+                            { full: 20000, basic: 6860, da: 3773, hra: 3430, conv: 1600, med: 1250, special: 3087 },
+                          ].map((row, idx) => (
+                            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">{row.full}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.basic}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.da}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.hra}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.conv}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.med}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.special}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Earnings */}
