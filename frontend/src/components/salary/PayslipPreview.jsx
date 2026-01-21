@@ -126,8 +126,8 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
               
               {/* Company Info - Center aligned */}
               <div className="flex-1 text-center">
-                <h1 className="text-lg font-bold" style={{ fontFamily: 'Times, serif' }}>SPESHWAY SOLUTIONS PRIVATE LIMITED</h1>
-                <p className="text-sm">Plot No 1/C, Sy No 83/1, Raidurgam Knowledge City Rd, panmaktha Hyderabad, Serilingampalle (M), Rai Durg, Telangana 500032</p>
+                <h1 className="text-xl font-bold text-blue-600">SPESHWAY SOLUTIONS PRIVATE LIMITED</h1>
+                <p className="text-sm">Hitech City, Hyderabad</p>
                 <h2 className="text-sm font-bold mt-1">Payslip for the month of {payslip.month} {payslip.year}</h2>
               </div>
               
@@ -290,10 +290,10 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
           <div className="text-center text-xs text-blue-600 border-t border-gray-300 pt-4">
             <div className="font-bold">SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
             <div className="italic text-black mt-1">
-              Plot No 1/C, Syno 83/1, Raidurgam, Knowledge City Rd, Panmaktha
+              Hitech City, Hyderabad
             </div>
             <div className="italic text-black">
-              Hyderabad Telangana 500081 | Email: support@speshwayhrms.com
+              Email: support@speshwayhrms.com
             </div>
           </div>
         </div>

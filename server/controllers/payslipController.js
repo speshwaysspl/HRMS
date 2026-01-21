@@ -992,8 +992,8 @@ export const sendPayslipEmail = async (req, res) => {
         ${customMessage ? `<div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><p style="margin: 0; color: #374151;">${customMessage}</p></div>` : ''}
         
         <div style="text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
-          <p>This is a system-generated payslip. For any queries, please contact HR department.</p>
-          <p>© ${new Date().getFullYear()} SPESHWAY SOLUTIONS PRIVATE LIMITED. All rights reserved.</p>
+          <p>This is a system-generated payslip. For any queries, please contact HR Department.</p>
+          <p>© ${new Date().getFullYear()} SPESHWAY SOLUTIONS PRIVATE LIMITED. All Rights Reserved.</p>
         </div>
       </div>
     `;
