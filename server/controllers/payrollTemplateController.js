@@ -145,10 +145,18 @@ export const getAllTemplates = async (req, res) => {
     let query = { isActive: true };
     
     if (search) {
+       // Find employees with matching employeeId
+      const matchingEmployees = await Employee.find({
+        employeeId: { $regex: search, $options: 'i' }
+      }).select('_id employeeId');
+      
+      const matchingEmployeeIds = matchingEmployees.map(emp => emp._id);
+
       query.$or = [
         { templateName: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } },
-        { department: { $regex: search, $options: 'i' } }
+        { department: { $regex: search, $options: 'i' } },
+        { employeeId: { $in: matchingEmployeeIds } }
       ];
     }
     

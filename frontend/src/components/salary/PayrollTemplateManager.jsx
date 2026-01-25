@@ -59,6 +59,8 @@ const PayrollTemplateManager = () => {
   });
 
   const [templates, setTemplates] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [bankSuggestions, setBankSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -78,13 +80,20 @@ const PayrollTemplateManager = () => {
     (async () => {
       const deps = await fetchDepartments();
       setDepartments(deps || []);
-      loadTemplates();
     })();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadTemplates();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const loadTemplates = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/payroll-template/all?limit=1000`, {
+      setSearchLoading(true);
+      const response = await axios.get(`${API_BASE}/api/payroll-template/all?limit=1000&search=${searchTerm}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }
@@ -95,6 +104,8 @@ const PayrollTemplateManager = () => {
       }
     } catch (error) {
       // Silently handle error - templates will remain empty
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -940,9 +951,25 @@ const PayrollTemplateManager = () => {
 
       {/* Templates List */}
       <div className="bg-white">
-        <h3 className="text-lg font-semibold mb-4">Existing Templates</h3>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold mb-2 md:mb-0">Existing Templates</h3>
+          <div className="relative w-full md:w-64">
+            <input 
+              type="text" 
+              placeholder="Search by Name or Employee ID..." 
+              className="p-2 border border-gray-300 rounded-md w-full pr-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchLoading && (
+              <div className="absolute right-2 top-2.5">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              </div>
+            )}
+          </div>
+        </div>
         
-        {templates.length === 0 ? (
+        {templates.length === 0 && !searchLoading ? (
           <div className="text-center py-8 text-gray-500">
             <p>No templates found. Create your first template above.</p>
           </div>
