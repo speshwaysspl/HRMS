@@ -23,23 +23,32 @@ const addEmployee = async (req, res) => {
  
     // Check if user exists
     const existingUser = await User.findOne({ email });
+    let savedUser;
+
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, error: "User already exists" });
+      const existingEmployee = await Employee.findOne({ userId: existingUser._id });
+      if (existingEmployee) {
+        return res
+          .status(400)
+          .json({ success: false, error: "User already exists" });
+      }
+      // Reuse existing user (Zombie user cleanup)
+      const hashedPassword = await bcrypt.hash(password, 10);
+      existingUser.name = name;
+      existingUser.password = hashedPassword;
+      existingUser.role = role;
+      savedUser = await existingUser.save();
+    } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      });
+      savedUser = await newUser.save();
     }
- 
-    const hashedPassword = await bcrypt.hash(password, 10);
- 
-    // Save user
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-    const savedUser = await newUser.save();
- 
+
     // Save employee
     const newEmployee = new Employee({
       userId: savedUser._id,
@@ -51,8 +60,16 @@ const addEmployee = async (req, res) => {
       designation,
       department,
     });
- 
-    await newEmployee.save();
+
+    try {
+      await newEmployee.save();
+    } catch (err) {
+      // If we created a new user, delete it to prevent zombie users
+      if (!existingUser) {
+        await User.findByIdAndDelete(savedUser._id);
+      }
+      throw err;
+    }
  
     const emailHtml = `
       <h2>Welcome to the SPESHWAY SOLUTION PVT LTD 🎉</h2>
