@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/apiConfig';
 
@@ -25,45 +24,57 @@ export const NotificationProvider = ({ children }) => {
 
   // Initialize socket connection
   useEffect(() => {
+    let isMounted = true;
     if (user && user._id) {
       // Create socket connection
-      socketRef.current = io(API_BASE, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
+      import('socket.io-client').then(({ io }) => {
+        if (!isMounted) return;
 
-      const socket = socketRef.current;
+        socketRef.current = io(API_BASE, {
+          withCredentials: true,
+          transports: ['websocket', 'polling']
+        });
 
-      socket.on('connect', () => {
-        setIsConnected(true);
-        // Join user's personal notification room
-        socket.emit('join', user._id);
-      });
+        const socket = socketRef.current;
 
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
+        socket.on('connect', () => {
+          if (!isMounted) return;
+          setIsConnected(true);
+          // Join user's personal notification room
+          socket.emit('join', user._id);
+        });
 
-      // Listen for new notifications
-      socket.on('newNotification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show popup notification
-        showPopupNotification(notification);
-        
-        // Request notification permission on first notification if not already set
-        if (("Notification" in window) && Notification.permission === "default") {
-          Notification.requestPermission();
-        }
-      });
+        socket.on('disconnect', () => {
+          if (!isMounted) return;
+          setIsConnected(false);
+        });
 
-      socket.on('connect_error', (error) => {
-        setIsConnected(false);
+        // Listen for new notifications
+        socket.on('newNotification', (notification) => {
+          if (!isMounted) return;
+          setNotifications(prev => [notification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Show popup notification
+          showPopupNotification(notification);
+          
+          // Request notification permission on first notification if not already set
+          if (("Notification" in window) && Notification.permission === "default") {
+            Notification.requestPermission();
+          }
+        });
+
+        socket.on('connect_error', (error) => {
+          if (!isMounted) return;
+          setIsConnected(false);
+        });
       });
 
       return () => {
-        socket.disconnect();
+        isMounted = false;
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
       };
     }
   }, [user]);

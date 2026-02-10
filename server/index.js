@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import compression from "compression";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.js";
 import departmentRouter from "./routes/department.js";
@@ -90,11 +91,18 @@ app.use(cors({
   origin: corsOrigin,
   credentials: true
 }));
+app.use(compression());
 app.use(express.json());
 
 
-app.use("/uploads", express.static(path.resolve("public", "uploads")));
-app.use("/assets", express.static(path.resolve("assets")));
+app.use("/uploads", express.static(path.resolve("public", "uploads"), {
+  maxAge: '1d',
+  etag: false
+}));
+app.use("/assets", express.static(path.resolve("assets"), {
+  maxAge: '1d',
+  etag: false
+}));
 
 // Health check endpoint for Render
 app.get("/health", (req, res) => {

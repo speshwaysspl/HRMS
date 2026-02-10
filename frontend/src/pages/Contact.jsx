@@ -24,7 +24,7 @@ const Contact = () => {
       <header className="bg-transparent absolute top-0 left-0 right-0 z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center">
-            <img src="/images/Logo.jpg" alt="Logo" className="h-12 w-auto mr-3 rounded" />
+            <img src="/images/Logo.jpg" alt="Logo" width="48" height="48" className="h-12 w-auto mr-3 rounded" />
             <span className="text-xl font-bold text-white hidden md:block">SPESHWAY HRMS</span>
           </div>
           <nav className="flex space-x-6 text-white font-medium text-sm md:text-base">

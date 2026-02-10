@@ -49,7 +49,7 @@ const Home = () => {
             onClick={() => setMenuOpen((prev) => !prev)}
           >
              {/* Logo */}
-             <img src="/images/Logo.jpg" alt="Logo" className="h-12 w-auto mr-3 rounded" />
+             <img src="/images/Logo.jpg" alt="Logo" width="48" height="48" className="h-12 w-auto mr-3 rounded" />
              <span className="text-xl font-bold text-white hidden md:block">SPESHWAY HRMS</span>
           </div>
           <nav className="hidden md:flex text-white font-medium text-sm md:text-base md:space-x-6">
@@ -60,19 +60,45 @@ const Home = () => {
           </nav>
           {menuOpen && (
             <div
-              className="fixed inset-0 z-20 bg-white md:hidden flex flex-col items-center justify-center gap-6 text-gray-900 text-lg font-semibold"
+              className="fixed inset-0 z-50 md:hidden flex flex-col items-center justify-center gap-6 text-white text-lg font-semibold"
+              style={{
+                background: "rgba(15, 23, 42, 0.95)",
+                backdropFilter: "blur(16px)",
+                animation: "mobileMenuSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
+              }}
               onClick={() => setMenuOpen(false)}
             >
-              <Link to="/login" className="px-6 py-3 rounded-md w-4/5 text-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition">
+              <style>
+                {`
+                  @keyframes mobileMenuSlideIn {
+                    0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0); }
+                  }
+                `}
+              </style>
+
+              <Link 
+                to="/login" 
+                className="px-8 py-4 rounded-xl w-4/5 text-center bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-lg shadow-blue-900/50 transition-all duration-300 transform hover:scale-105 border border-blue-500/30"
+              >
                 Login
               </Link>
-              <Link to="/contact" className="px-6 py-3 rounded-md w-4/5 text-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition">
+              <Link 
+                to="/contact" 
+                className="px-8 py-4 rounded-xl w-4/5 text-center bg-white/10 hover:bg-white/20 active:bg-white/5 border border-white/10 backdrop-blur-md transition-all duration-300 transform hover:scale-105"
+              >
                 Contact
               </Link>
-              <Link to="/terms-and-conditions" className="px-6 py-3 rounded-md w-4/5 text-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition">
+              <Link 
+                to="/terms-and-conditions" 
+                className="px-8 py-4 rounded-xl w-4/5 text-center bg-white/10 hover:bg-white/20 active:bg-white/5 border border-white/10 backdrop-blur-md transition-all duration-300 transform hover:scale-105"
+              >
                 T&C
               </Link>
-              <Link to="/privacy-policy" className="px-6 py-3 rounded-md w-4/5 text-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition">
+              <Link 
+                to="/privacy-policy" 
+                className="px-8 py-4 rounded-xl w-4/5 text-center bg-white/10 hover:bg-white/20 active:bg-white/5 border border-white/10 backdrop-blur-md transition-all duration-300 transform hover:scale-105"
+              >
                 Privacy Policy
               </Link>
             </div>

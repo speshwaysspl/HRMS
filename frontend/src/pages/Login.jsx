@@ -19,7 +19,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState({ email: false, password: false });
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
+ const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
