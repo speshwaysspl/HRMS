@@ -19,7 +19,20 @@ const PayslipGenerator = () => {
     image: "/images/Logo.jpg",
     robots: "noindex,nofollow"
   });
-  const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  // Get current date in IST
+  const getCurrentISTDate = () => {
+    const now = new Date();
+    // Offset for IST (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    return new Date(now.getTime() + istOffset);
+  };
+
+  const istNow = getCurrentISTDate();
+  
+  // Calculate previous month and its year
+  // Using UTC methods to ensure consistency after offset addition
+  const prevMonthDate = new Date(istNow.getUTCFullYear(), istNow.getUTCMonth() - 1, 1);
+
   const [payslip, setPayslip] = useState({
     employeeId: "",
     employeeObjectId: "",
@@ -35,9 +48,9 @@ const PayslipGenerator = () => {
     bankaccountnumber: "",
     pan: "",
     uan: "",
-    month: istNow.getMonth() + 1,
-    monthName: MONTHS[istNow.getMonth()],
-    year: istNow.getFullYear(),
+    month: prevMonthDate.getMonth() + 1,
+    monthName: MONTHS[prevMonthDate.getMonth()],
+    year: prevMonthDate.getFullYear(),
     basicSalary: "",
     da: "",
     hra: "",
