@@ -11,7 +11,7 @@ const payrollTemplateSchema = new Schema(
     designation: { type: String, trim: true },
     department: { type: String, trim: true },
     joiningDate: { type: Date },
-    location: { type: String, trim: true, default: "" },
+    location: { type: String, trim: true, default: "Hyderabad" },
     
     // Bank Details
     bankname: { type: String, trim: true, default: "" },

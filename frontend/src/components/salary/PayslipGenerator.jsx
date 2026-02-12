@@ -27,7 +27,7 @@ const PayslipGenerator = () => {
     joiningDate: "",
     designation: "",
     department: "",
-    location: "",
+    location: "Hyderabad",
     workingdays: "",
     lopDays: "",
     lopamount: "",
@@ -55,6 +55,8 @@ const PayslipGenerator = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [bankSuggestions, setBankSuggestions] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [employeeSuggestions, setEmployeeSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [calculatingWorkingDays, setCalculatingWorkingDays] = useState(false);
   const [calculations, setCalculations] = useState({
@@ -73,70 +75,119 @@ const PayslipGenerator = () => {
     (async () => {
       const deps = await fetchDepartments();
       setDepartments(deps || []);
+      
+      // Fetch all employees for auto-fetch by name
+      try {
+        const response = await axios.get(`${API_BASE}/api/employee`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        if (response.data.success) {
+          // Normalize employee names and IDs for searching
+          const employeeList = response.data.employees.map(emp => ({
+            _id: emp._id,
+            employeeId: emp.employeeId,
+            name: emp.userId?.name || "N/A"
+          }));
+          setEmployees(employeeList);
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
     })();
   }, []);
+
+  // Fetch employee details by ID
+  const fetchEmployeeById = async (empId) => {
+    if (!empId) return;
+    
+    try {
+      const response = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (response.data.success) {
+        const employee = response.data.employee;
+        
+        // Format the joining date if found in IST
+        const formattedJoiningDate = employee.joiningDate ? toISTDateString(new Date(employee.joiningDate)) : "";
+        
+        setPayslip(prev => ({
+          ...prev,
+          employeeId: employee.employeeId,
+          employeeObjectId: employee._id,
+          name: employee.name,
+          email: employee.email,
+          designation: employee.designation,
+          department: employee.department,
+          joiningDate: formattedJoiningDate,
+          payDate: formattedJoiningDate
+        }));
+        
+        // Load employee templates
+        if (employee.template) {
+          setSelectedTemplate(employee.template);
+          await loadTemplateData(employee.template, employee.employeeId);
+        }
+        
+        // Get all templates for this employee
+        const templatesResponse = await axios.get(`${API_BASE}/api/payroll-template/employee/${empId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        
+        if (templatesResponse.data.success) {
+          setTemplates(templatesResponse.data.templates);
+        }
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        // Employee not found
+      }
+    }
+  };
 
   // Auto-fetch employee details when employee ID is entered
   const handleEmployeeIdChange = async (e) => {
     const empId = e.target.value;
     setPayslip(prev => ({ ...prev, employeeId: empId }));
     
-    if (empId.length >= 1) { // Start fetching after 1 character
-      try {
-        const response = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
-        
-        if (response.data.success) {
-          const employee = response.data.employee;
-          
-          // Format the joining date if found in IST
-          const formattedJoiningDate = employee.joiningDate ? toISTDateString(new Date(employee.joiningDate)) : "";
-          
-          // Note: Joining date may be missing for some employees
-          
-          setPayslip(prev => ({
-            ...prev,
-            employeeObjectId: employee._id,
-            name: employee.name,
-            email: employee.email,
-            designation: employee.designation,
-            department: employee.department,
-            joiningDate: formattedJoiningDate,
-            payDate: formattedJoiningDate
-          }));
-          
-          // Load employee templates
-          if (employee.template) {
-            setSelectedTemplate(employee.template);
-            await loadTemplateData(employee.template);
-          }
-          
-          // Get all templates for this employee
-          const templatesResponse = await axios.get(`${API_BASE}/api/payroll-template/employee/${empId}`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
-          });
-          
-          if (templatesResponse.data.success) {
-            setTemplates(templatesResponse.data.templates);
-          }
-        }
-      } catch (error) {
-        if (error.response && error.response.status === 404) {
-          // alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
-        }
-      }
+    if (empId.length >= 1) {
+      await fetchEmployeeById(empId);
     }
   };
 
+  // Handle name change for search suggestions
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    setPayslip(prev => ({ ...prev, name: value }));
+    
+    if (value.length >= 2) {
+      const filtered = employees.filter(emp => 
+        emp.name.toLowerCase().includes(value.toLowerCase()) ||
+        emp.employeeId.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10);
+      setEmployeeSuggestions(filtered);
+    } else {
+      setEmployeeSuggestions([]);
+    }
+  };
+
+  // Select employee from suggestions
+  const selectEmployee = async (emp) => {
+    setEmployeeSuggestions([]);
+    await fetchEmployeeById(emp.employeeId);
+  };
+
   // Load template data into form
-  const loadTemplateData = async (template) => {
+  const loadTemplateData = async (template, empId) => {
+    const targetEmpId = empId || payslip.employeeId;
     // Calculate working days for current month/year
-    const workingDays = await calculateWorkingDays(payslip.month, payslip.year, payslip.employeeId);
+    const workingDays = await calculateWorkingDays(payslip.month, payslip.year, targetEmpId);
     
     setPayslip(prev => ({
       ...prev,
@@ -462,16 +513,30 @@ const PayslipGenerator = () => {
               />
           </div>
           
-          <div>
+          <div className="relative">
             <label className="block text-xs md:text-sm font-medium text-gray-700">Employee Name</label>
             <input
               type="text"
               name="name"
               value={payslip.name}
-              onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md bg-gray-50 text-sm md:text-base"
-              readOnly
+              onChange={handleNameChange}
+              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              placeholder="Enter Employee Name"
             />
+            {employeeSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+                {employeeSuggestions.map((emp, index) => (
+                  <div
+                    key={index}
+                    onClick={() => selectEmployee(emp)}
+                    className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                  >
+                    <div className="font-semibold text-sm md:text-base">{emp.name}</div>
+                    <div className="text-xs text-gray-500">{emp.employeeId}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div>

@@ -10,7 +10,7 @@ const salarySchema = new Schema(
     joiningDate: { type: Date, required: true },
     designation: { type: String, trim: true },
     department: { type: String, trim: true },
-    location: { type: String, trim: true },
+    location: { type: String, trim: true, default: "Hyderabad" },
 
     
 
