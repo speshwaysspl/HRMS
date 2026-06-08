@@ -39,22 +39,39 @@ const Terms = () => {
       <main className="flex-grow container mx-auto px-4 pt-24 pb-12">
         <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Terms & Conditions</h1>
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-6 text-gray-800">
-          <div className="space-y-4">
-            <p>
-              Speshway HRMS is a human resource management system used by organizations
-              to manage employees and internal operations.
-            </p>
-            <p>
-              Users receive system-generated emails related to their account and HR activities.
-              These emails are transactional and triggered by user or system actions.
-            </p>
-            <p>
-              By using this service, you agree to receive such transactional communications.
-            </p>
-            <p>
-              For questions, contact <a href="mailto:support@speshwayhrms.com" className="text-blue-600 hover:underline">support@speshwayhrms.com</a>
-            </p>
-          </div>
+          <div className="space-y-6 text-gray-800">
+  <section>
+    <h2 className="text-xl font-semibold mb-2 text-gray-900">Overview</h2>
+    <p>
+      Speshway HRMS is a human‑resource management system used by organisations to manage employees,
+      payroll, attendance and internal operations.
+    </p>
+  </section>
+  <section>
+    <h2 className="text-xl font-semibold mb-2 text-gray-900">Communications</h2>
+    <p>
+      Users receive system‑generated transactional emails (account creation, password reset,
+      login alerts, HR notifications). These communications are essential for the service and
+      are not marketing messages.
+    </p>
+  </section>
+  <section>
+    <h2 className="text-xl font-semibold mb-2 text-gray-900">Data Protection</h2>
+    <p>
+      Personal data (name, email, login activity) is stored securely and is never sold or shared
+      with third parties. We employ industry‑standard encryption and access controls.
+    </p>
+  </section>
+  <section>
+    <h2 className="text-xl font-semibold mb-2 text-gray-900">Contact</h2>
+    <p>
+      For any questions, please contact{' '}
+      <a href="mailto:support@speshwayhrms.com" className="text-blue-600 hover:underline">
+        support@speshwayhrms.com
+      </a>.
+    </p>
+  </section>
+</div>
         </div>
       </main>
 

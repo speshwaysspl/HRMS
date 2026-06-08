@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import useMeta from "../utils/useMeta";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const { login } = useAuth();
@@ -463,6 +464,12 @@ const Login = () => {
           {/* small note */}
          
         </form>
+        <p className="text-center text-sm text-white mt-4">
+          By signing in you agree to our
+          <Link to="/terms-and-conditions" className="hover:text-blue-400 ml-1 mr-1">Terms & Conditions</Link>
+          and
+          <Link to="/privacy-policy" className="hover:text-blue-400 ml-1">Privacy Policy</Link>.
+        </p>
       </div>
 
       {/* local style for keyframes */}

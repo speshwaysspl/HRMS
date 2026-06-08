@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../utils/apiConfig";
 import useMeta from "../utils/useMeta";
+import { io } from "socket.io-client";
 
 const Home = () => {
   useMeta({
@@ -13,6 +14,7 @@ const Home = () => {
     image: "/images/Logo.jpg",
   });
   const [quote, setQuote] = useState(null);
+  const [imageError, setImageError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -20,8 +22,9 @@ const Home = () => {
     const fetchQuote = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/daily-quote`);
-        if (response.data.success && response.data.quote) {
-          setQuote(response.data.quote);
+        if (response.data.success) {
+          setQuote(response.data.quote || null);
+          setImageError(false);
         }
       } catch (error) {
         console.error("Error fetching daily quote:", error);
@@ -29,6 +32,30 @@ const Home = () => {
     };
 
     fetchQuote();
+
+    // Connect to backend Socket.IO server to get real-time quote updates
+    const socket = io(API_BASE, {
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => {
+      console.log("🔗 Connected to Socket.IO for daily quote real-time sync");
+    });
+
+    socket.on("daily-quote-updated", () => {
+      console.log("📣 Daily quote change detected via socket, auto-updating...");
+      fetchQuote();
+    });
+
+    // Fallback: poll every 30 seconds to automatically update scheduled quote banners
+    const intervalId = setInterval(() => {
+      fetchQuote();
+    }, 30000);
+
+    return () => {
+      socket.disconnect();
+      clearInterval(intervalId);
+    };
   }, []);
 
   return (
@@ -62,7 +89,9 @@ const Home = () => {
             <div
               className="fixed inset-0 z-50 md:hidden flex flex-col items-center justify-center gap-6 text-white text-lg font-semibold"
               style={{
-                background: "rgba(15, 23, 42, 0.95)",
+                backgroundImage: "linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.6)), url('/images/download.jpeg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
                 backdropFilter: "blur(16px)",
                 animation: "mobileMenuSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
               }}
@@ -113,11 +142,12 @@ const Home = () => {
         <div className="w-full md:w-1/2 flex justify-center items-center p-4">
           <div className="bg-transparent max-w-md w-full">
             <div className="w-full flex items-center justify-center border-4 border-white rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm min-h-[300px]">
-              {quote ? (
+              {quote && !imageError ? (
                 <img 
                   src={`${API_BASE}${quote.imageUrl}`} 
                   alt="Daily HR Quote" 
                   className="w-full h-auto block"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="text-white/80 flex flex-col items-center">
@@ -131,14 +161,17 @@ const Home = () => {
 
         {/* Right Side: Welcome & Login */}
         <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left space-y-6 p-4">
-          <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 whitespace-nowrap">
-              Welcome to <span className="text-blue-400">HRMS</span>
-            </h1>
-           
-          </div>
-
-
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 shadow-xl flex flex-col items-center md:items-start space-y-6 max-w-md mx-auto text-center md:text-left">
+  <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 whitespace-nowrap">
+    Welcome to <span className="text-blue-400">HRMS</span>
+  </h1>
+  <p className="text-white/80 max-w-full text-lg">
+    Your all‑in‑one HR solution – manage attendance, payroll, leaves, and more.
+  </p>
+      <Link to="/login" className="px-8 py-4 rounded-xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold shadow-lg transition-all duration-300 transform hover:scale-105">
+    Log In
+  </Link>
+</div>
         </div>
       </main>
 
