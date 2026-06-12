@@ -32,15 +32,20 @@ import taskRouter from "./routes/task.js";
 import documentRouter from "./routes/documentRoutes.js";
 import dailyQuoteRouter from "./routes/dailyQuoteRoutes.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
+import { connectRedis } from "./utils/redis.js";
+import { metricsMiddleware, metricsEndpoint } from "./middleware/metrics.js";
+import { globalCacheMiddleware } from "./middleware/cache.js";
 
 dotenv.config({ quiet: true });
 connectToDatabase().then(() => {
   seedHolidaysInternal();
+  connectRedis();
 }).catch((err) => {
   console.error("❌ Failed to connect to MongoDB. Please check your connection string and ensure your IP is whitelisted in MongoDB Atlas.");
   console.error(err);
   process.exit(1);
 });
+
 
 const app = express();
 
@@ -87,6 +92,9 @@ io.on('connection', (socket) => {
   });
 });
 
+app.use(metricsMiddleware);
+app.get("/metrics", metricsEndpoint);
+
 app.use(cors({
   origin: corsOrigin,
   credentials: true
@@ -110,7 +118,9 @@ app.get("/health", (req, res) => {
 });
 
 // Mount routes
+app.use("/api", globalCacheMiddleware);
 app.use("/api/auth", authRouter);
+
 app.use("/api/department", departmentRouter);
 app.use("/api/employee", employeeRouter);
 app.use("/api/salary", salaryRouter);
