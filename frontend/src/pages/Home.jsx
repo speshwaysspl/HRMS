@@ -161,14 +161,14 @@ const Home = () => {
 
         {/* Right Side: Welcome & Login */}
         <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left space-y-6 p-4">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 shadow-xl flex flex-col items-center md:items-start space-y-6 max-w-md mx-auto text-center md:text-left">
+          <div className="bg-white/10 md:bg-transparent backdrop-blur-md md:backdrop-blur-none rounded-xl p-8 md:p-0 shadow-xl md:shadow-none flex flex-col items-center md:items-start space-y-6 md:space-y-0 max-w-md mx-auto text-center md:text-left">
   <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 whitespace-nowrap">
     Welcome to <span className="text-blue-400">HRMS</span>
   </h1>
-  <p className="text-white/80 max-w-full text-lg">
+  <p className="text-white/80 max-w-full text-lg md:hidden">
     Your all‑in‑one HR solution – manage attendance, payroll, leaves, and more.
   </p>
-      <Link to="/login" className="px-8 py-4 rounded-xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold shadow-lg transition-all duration-300 transform hover:scale-105">
+      <Link to="/login" className="px-8 py-4 rounded-xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 md:hidden">
     Log In
   </Link>
 </div>

@@ -1,16 +1,48 @@
 import Employee from '../models/Employee.js';
 
 /**
+ * Helper to get the month (1-12) and date (1-31) in Asia/Kolkata timezone (IST)
+ * @param {Date} date
+ * @returns {Object} { month, date }
+ */
+const getISTMonthAndDate = (date) => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    month: 'numeric',
+    day: 'numeric'
+  });
+  const parts = formatter.formatToParts(date);
+  const partMap = Object.fromEntries(parts.map(p => [p.type, p.value]));
+  return {
+    month: parseInt(partMap.month, 10),
+    date: parseInt(partMap.day, 10)
+  };
+};
+
+/**
+ * Helper to get the year in Asia/Kolkata timezone (IST)
+ * @param {Date} date
+ * @returns {number} Year
+ */
+const getISTYear = (date) => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric'
+  });
+  return parseInt(formatter.format(date), 10);
+};
+
+/**
  * Get employees who have birthdays today
  * @returns {Promise<Array>} Array of employees with birthdays today
  */
 export const getTodaysBirthdays = async () => {
   try {
     const today = new Date();
-    const todayMonth = today.getMonth() + 1; // getMonth() returns 0-11, so add 1
-    const todayDate = today.getDate();
+    const { month: todayMonth, date: todayDate } = getISTMonthAndDate(today);
+    const todayYear = getISTYear(today);
     
-    console.log(`🔍 Checking birthdays for: ${todayDate}/${todayMonth}/${today.getFullYear()}`);
+    console.log(`🔍 Checking birthdays for: ${todayDate}/${todayMonth}/${todayYear}`);
 
     // Get all employees
     const employees = await Employee.find({
@@ -24,8 +56,7 @@ export const getTodaysBirthdays = async () => {
       if (!employee.dob) return false;
       
       const dob = new Date(employee.dob);
-      const dobMonth = dob.getMonth() + 1;
-      const dobDate = dob.getDate();
+      const { month: dobMonth, date: dobDate } = getISTMonthAndDate(dob);
       
       const isMatch = dobMonth === todayMonth && dobDate === todayDate;
       
@@ -50,11 +81,11 @@ export const getTodaysBirthdays = async () => {
  * @returns {boolean} True if the date is today
  */
 export const isToday = (date) => {
-  const today = new Date();
-  const checkDate = new Date(date);
+  if (!date) return false;
+  const { month: todayMonth, date: todayDate } = getISTMonthAndDate(new Date());
+  const { month: checkMonth, date: checkDate } = getISTMonthAndDate(new Date(date));
   
-  return today.getMonth() === checkDate.getMonth() && 
-         today.getDate() === checkDate.getDate();
+  return todayMonth === checkMonth && todayDate === checkDate;
 };
 
 /**

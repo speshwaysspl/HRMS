@@ -1,6 +1,9 @@
 import User from './models/User.js'
 import bcrypt from 'bcrypt'
 import connectToDatabase from './db/db.js'
+import dotenv from 'dotenv'
+
+dotenv.config({ quiet: true });
 
 const userRegister = async () => {
     try {
@@ -12,7 +15,7 @@ const userRegister = async () => {
             return;
         }
 
-        const hashPassword = await bcrypt.hash("speshway@2017", 10)
+        const hashPassword = await bcrypt.hash("2026Speshway@", 10)
         const newUser = new User({
             name: "Admin",
             email: "speshwaysspl@gmail.com",
@@ -24,8 +27,6 @@ const userRegister = async () => {
     } catch(error) {
         console.log("Error creating admin user:", error)
     } finally {
-        // Close connection to allow script to exit cleanly
-        // mongoose.connection.close() // Optional but good practice
         process.exit(0)
     }
 }

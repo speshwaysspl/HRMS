@@ -152,7 +152,6 @@ const AdminSidebar = () => {
               <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
                 {link.label}
               </span>
-              <FaChevronRight className="ml-auto text-xs opacity-70" />
               {/* Animated Glow on Hover */}
               <motion.div
                 className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100"
@@ -181,11 +180,11 @@ const AdminSidebar = () => {
                 Salary Management
               </span>
               <motion.span
-                animate={{ rotate: salaryDropdownOpen ? 90 : 0 }}
+                animate={{ rotate: salaryDropdownOpen ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
                 className="ml-auto text-xs opacity-70"
               >
-                {salaryDropdownOpen ? <FaChevronDown /> : <FaChevronRight />}
+                <FaChevronDown />
               </motion.span>
             </motion.button>
 
@@ -238,7 +237,6 @@ const AdminSidebar = () => {
             <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
               Logout
             </span>
-            <FaChevronRight className="ml-auto text-xs opacity-70" />
           </motion.button>
         </div>
       </motion.div>

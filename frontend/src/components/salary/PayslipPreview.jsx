@@ -5,28 +5,10 @@ import axios from "axios";
 import { formatDMY } from "../../utils/dateUtils";
 
 const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) => {
-  const [logoUrl, setLogoUrl] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(`${API_BASE}/assets/logo.png`);
   const [downloadLoading, setDownloadLoading] = useState(false);
   
   if (!payslip) return null;
-  
-  // Fetch logo on component mount
-  useEffect(() => {
-    const fetchLogo = async () => {
-      try {
-        // Try to fetch the logo from the server assets
-        const logoPath = `${API_BASE}/assets/logo.png`;
-        const response = await fetch(logoPath);
-        if (response.ok) {
-          setLogoUrl(logoPath);
-        }
-      } catch (error) {
-        // Logo fetch failed, continue without logo
-      }
-    };
-    
-    fetchLogo();
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (e) => {

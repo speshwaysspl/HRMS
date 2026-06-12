@@ -142,7 +142,6 @@ const Sidebar = () => {
               <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
                 {link.label}
               </span>
-              <FaChevronRight className="ml-auto text-xs opacity-70" />
               {/* Animated Glow on Hover */}
               <motion.div
                 className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100"
@@ -169,7 +168,6 @@ const Sidebar = () => {
             <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
               Logout
             </span>
-            <FaChevronRight className="ml-auto text-xs opacity-70" />
           </motion.button>
         </div>
 
