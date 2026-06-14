@@ -44,9 +44,9 @@ export const uploadDocumentS3 = multer({
 });
 
 // Function to upload file to S3
-export const uploadDocToS3 = async (file) => {
+export const uploadDocToS3 = async (file, folder = "documents") => {
   const fileExtension = path.extname(file.originalname);
-  const fileName = `documents/${uuidv4()}${fileExtension}`;
+  const fileName = `${folder}/${uuidv4()}${fileExtension}`;
   
   const uploadParams = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
@@ -68,6 +68,7 @@ export const uploadDocToS3 = async (file) => {
     throw new Error(`Failed to upload document to S3: ${error.message}`);
   }
 };
+
 
 // Function to delete file from S3
 export const deleteDocFromS3 = async (fileKey) => {

@@ -144,10 +144,11 @@ const Home = () => {
             <div className="w-full flex items-center justify-center border-4 border-white rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm min-h-[300px]">
               {quote && !imageError ? (
                 <img 
-                  src={`${API_BASE}${quote.imageUrl}`} 
+                  src={quote.imageUrl.startsWith("http") ? quote.imageUrl : `${API_BASE}${quote.imageUrl}`} 
                   alt="Daily HR Quote" 
                   className="w-full h-auto block"
                   onError={() => setImageError(true)}
+
                 />
               ) : (
                 <div className="text-white/80 flex flex-col items-center">

@@ -13,7 +13,7 @@ export const saveFile = async (file, folder = "documents") => {
   // If we have S3 configured, try to upload there
   if (process.env.AWS_REGION && process.env.AWS_S3_BUCKET_NAME && process.env.AWS_ACCESS_KEY_ID) {
     try {
-      const s3Result = await uploadDocToS3(file);
+      const s3Result = await uploadDocToS3(file, folder);
       if (s3Result && s3Result.url) {
         return {
           url: s3Result.url,
@@ -71,3 +71,28 @@ export const deleteFile = async (fileKey) => {
     }
   }
 };
+
+/**
+ * Helper to extract the fileKey (local/ or S3 path) from a stored URL.
+ * @param {string} url Stored file URL
+ * @returns {string|null} fileKey
+ */
+export const getFileKeyFromUrl = (url) => {
+  if (!url) return null;
+  if (url.includes("amazonaws.com")) {
+    try {
+      const parsed = new URL(url);
+      return decodeURIComponent(parsed.pathname.substring(1));
+    } catch (e) {
+      const parts = url.split("amazonaws.com/");
+      if (parts.length > 1) {
+        return decodeURIComponent(parts[1]);
+      }
+    }
+  }
+  if (url.startsWith("/uploads/")) {
+    return `local/${url.replace("/uploads/", "")}`;
+  }
+  return null;
+};
+

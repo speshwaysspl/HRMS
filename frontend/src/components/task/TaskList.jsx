@@ -227,11 +227,12 @@ const TaskList = () => {
                       <p>
                         <span className="font-medium text-gray-700">Work Proof:</span>{" "}
                         <a
-                          href={`${API_BASE}/${selectedTask.workProof}`}
+                          href={selectedTask.workProof.startsWith("http") ? selectedTask.workProof : `${API_BASE}/${selectedTask.workProof}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline font-medium"
                         >
+
                           View Attached File
                         </a>
                       </p>

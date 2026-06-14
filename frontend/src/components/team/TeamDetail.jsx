@@ -1060,13 +1060,14 @@ const TeamDetail = () => {
                             <p className="mt-2 text-sm">
                                 <span className="font-bold text-gray-700">Work Proof: </span>
                                 <a 
-                                    href={`${API_BASE}/${editingTask.workProof}`} 
+                                    href={editingTask.workProof.startsWith("http") ? editingTask.workProof : `${API_BASE}/${editingTask.workProof}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                     className="text-blue-600 hover:underline font-medium"
                                 >
                                     View Attached File
                                 </a>
+
                             </p>
                         )}
                     </div>

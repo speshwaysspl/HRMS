@@ -76,3 +76,8 @@ MERN-Stack-Employee-MS-main/
 # Temporary files
 *.tmp
 *.temp
+
+# Uploads
+server/public/uploads/*
+!server/public/uploads/default-profile.png
+

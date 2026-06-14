@@ -492,7 +492,7 @@ const AdminDailyQuote = () => {
                   <div className="space-y-6">
                     <div className="relative group overflow-hidden rounded-xl border border-gray-200 bg-gray-50 shadow-md transition-all duration-300 hover:shadow-xl">
                       <img 
-                        src={`${API_BASE}${currentQuote.imageUrl}`} 
+                        src={currentQuote.imageUrl.startsWith("http") ? currentQuote.imageUrl : `${API_BASE}${currentQuote.imageUrl}`} 
                         alt="Current Daily Quote" 
                         className="w-full h-auto max-h-[260px] object-contain mx-auto block transition-transform duration-500 group-hover:scale-[1.02]"
                       />
@@ -949,7 +949,7 @@ const AdminDailyQuote = () => {
                   {/* Image Frame */}
                   <div className="relative aspect-video bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100">
                     <img 
-                      src={`${API_BASE}${item.imageUrl}`} 
+                      src={item.imageUrl.startsWith("http") ? item.imageUrl : `${API_BASE}${item.imageUrl}`} 
                       alt="Gallery quote" 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />

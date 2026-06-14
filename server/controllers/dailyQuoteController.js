@@ -1,6 +1,7 @@
 import DailyQuote from "../models/DailyQuote.js";
 import fs from "fs";
 import path from "path";
+import { saveFile, deleteFile, getFileKeyFromUrl } from "../utils/fileSaver.js";
 
 // Helper function to emit socket updates in real-time
 const broadcastQuoteUpdate = (req) => {
@@ -30,7 +31,8 @@ export const addDailyQuote = async (req, res) => {
       return res.status(400).json({ success: false, error: "No image file provided" });
     }
 
-    const imageUrl = `/uploads/daily-quotes/${req.file.filename}`;
+    const uploadResult = await saveFile(req.file, "daily-quotes");
+    const imageUrl = uploadResult.url;
     const { scheduledDate } = req.body;
 
     const newQuote = new DailyQuote({
@@ -64,17 +66,9 @@ export const deleteDailyQuote = async (req, res) => {
       return res.status(404).json({ success: false, error: "Quote not found" });
     }
 
-    // Resolve file path to delete the physical image
-    // imageUrl starts with "/uploads/daily-quotes/..."
-    const relativePath = quote.imageUrl.substring(1); // removes leading slash
-    const filepath = path.resolve("public", relativePath);
-
-    if (fs.existsSync(filepath)) {
-      try {
-        fs.unlinkSync(filepath);
-      } catch (err) {
-        console.error("Failed to delete physical file:", err);
-      }
+    const fileKey = getFileKeyFromUrl(quote.imageUrl);
+    if (fileKey) {
+      await deleteFile(fileKey);
     }
 
     await DailyQuote.findByIdAndDelete(id);
@@ -109,16 +103,10 @@ export const deleteAllDailyQuotes = async (req, res) => {
   try {
     const quotes = await DailyQuote.find();
     
-    // Unlink all physical image files
     for (const quote of quotes) {
-      const relativePath = quote.imageUrl.substring(1);
-      const filepath = path.resolve("public", relativePath);
-      if (fs.existsSync(filepath)) {
-        try {
-          fs.unlinkSync(filepath);
-        } catch (err) {
-          console.error("Failed to delete physical file:", err);
-        }
+      const fileKey = getFileKeyFromUrl(quote.imageUrl);
+      if (fileKey) {
+        await deleteFile(fileKey);
       }
     }
 
@@ -165,27 +153,19 @@ export const updateDailyQuoteImage = async (req, res) => {
 
     const quote = await DailyQuote.findById(id);
     if (!quote) {
-      // Clean up newly uploaded file if document is not found
-      const newPath = path.resolve("public", "uploads", "daily-quotes", req.file.filename);
-      if (fs.existsSync(newPath)) {
-        fs.unlinkSync(newPath);
-      }
       return res.status(404).json({ success: false, error: "Quote not found" });
     }
 
-    // Delete the old file from disk
-    const oldRelativePath = quote.imageUrl.substring(1);
-    const oldFilepath = path.resolve("public", oldRelativePath);
-    if (fs.existsSync(oldFilepath)) {
-      try {
-        fs.unlinkSync(oldFilepath);
-      } catch (err) {
-        console.error("Failed to delete old physical file:", err);
-      }
+    const uploadResult = await saveFile(req.file, "daily-quotes");
+
+    // Delete the old file
+    const oldFileKey = getFileKeyFromUrl(quote.imageUrl);
+    if (oldFileKey) {
+      await deleteFile(oldFileKey);
     }
 
     // Update with new image url
-    quote.imageUrl = `/uploads/daily-quotes/${req.file.filename}`;
+    quote.imageUrl = uploadResult.url;
     quote.updatedAt = new Date();
     await quote.save();
     broadcastQuoteUpdate(req);

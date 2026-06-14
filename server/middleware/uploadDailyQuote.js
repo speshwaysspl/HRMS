@@ -1,24 +1,6 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-const uploadDir = path.resolve("public", "uploads", "daily-quotes");
-
-// Ensure upload directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, unique);
-  },
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype && file.mimetype.startsWith("image/")) {
@@ -35,3 +17,4 @@ export const uploadDailyQuote = multer({
 });
 
 export default uploadDailyQuote;
+

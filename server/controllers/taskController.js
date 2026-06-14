@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
 import { createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification } from "./notificationController.js";
+import { saveFile } from "../utils/fileSaver.js";
 
 // Assign Task (Team Lead)
 export const assignTask = async (req, res) => {
@@ -69,7 +70,12 @@ export const updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, comments, description } = req.body;
-    const workProof = req.file ? `uploads/${req.file.filename}` : undefined;
+    
+    let workProof = undefined;
+    if (req.file) {
+      const uploadResult = await saveFile(req.file, "tasks");
+      workProof = uploadResult.url;
+    }
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
