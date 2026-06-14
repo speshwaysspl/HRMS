@@ -4,6 +4,8 @@ import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import PayrollTemplate from "../models/PayrollTemplate.js";
 import Department from "../models/Department.js";
+import Candidate from "../models/Candidate.js";
+import Offer from "../models/Offer.js";
 import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 
@@ -25,24 +27,79 @@ export const getEmployeeDetails = async (req, res) => {
       return res.status(404).json({ success: false, error: "Employee not found" });
     }
     
-    // Get default payroll template if exists
-    const template = await PayrollTemplate.findOne({ 
+    // Get default payroll template if exists, or any template
+    let template = await PayrollTemplate.findOne({ 
       employeeId: employee._id, 
       isDefault: true, 
       isActive: true 
     });
+    if (!template) {
+      template = await PayrollTemplate.findOne({ 
+        employeeId: employee._id, 
+        isActive: true 
+      });
+    }
+
+    // Get last salary record (payslip) for bank account, pan, uan
+    const lastSalary = await Salary.findOne({ employeeId: employee._id }).sort({ createdAt: -1 });
+
+    // Look up Candidate and Offer details from onboarding process
+    let candidate = null;
+    let offer = null;
+    if (employee.userId) {
+      candidate = await Candidate.findOne({ userId: employee.userId._id || employee.userId });
+      if (candidate) {
+        offer = await Offer.findOne({ candidateId: candidate._id });
+      }
+    }
+
+    const bankname = template?.bankname || lastSalary?.bankname || candidate?.bankDetails?.bankName || "";
+    const bankaccountnumber = template?.bankaccountnumber || lastSalary?.bankaccountnumber || candidate?.bankDetails?.accountNumber || "";
+    const pan = template?.pan || lastSalary?.pan || "";
+    const uan = template?.uan || lastSalary?.uan || "";
+    const location = template?.location || lastSalary?.location || offer?.workLocation || "Hyderabad";
     
+    // Calculate fullSalary (prioritizing Template -> Salary -> Offer divided by 12)
+    let fullSalary = "";
+    if (template) {
+      fullSalary = (
+        (template.basicSalary || 0) +
+        (template.da || 0) +
+        (template.hra || 0) +
+        (template.conveyance || 0) +
+        (template.medicalallowances || 0) +
+        (template.specialallowances || 0)
+      );
+    } else if (lastSalary) {
+      fullSalary = (
+        (lastSalary.basicSalary || 0) +
+        (lastSalary.da || 0) +
+        (lastSalary.hra || 0) +
+        (lastSalary.conveyance || 0) +
+        (lastSalary.medicalallowances || 0) +
+        (lastSalary.specialallowances || 0)
+      );
+    } else if (offer && offer.salaryPackage) {
+      fullSalary = parseFloat((offer.salaryPackage / 12).toFixed(2));
+    }
+
     const employeeDetails = {
       _id: employee._id,
       employeeId: employee.employeeId,
-      name: employee.userId.name,
-      email: employee.userId.email,
+      name: employee.userId?.name || "",
+      email: employee.userId?.email || "",
       designation: employee.designation,
-      department: employee.department.dep_name,
+      department: employee.department?.dep_name || "",
       dob: employee.dob,
       joiningDate: employee.joiningDate, // Add joining date to the response
       gender: employee.gender,
       mobilenumber: employee.mobilenumber,
+      location,
+      bankname,
+      bankaccountnumber,
+      pan,
+      uan,
+      fullSalary,
       template: template || null
     };
     
@@ -113,7 +170,7 @@ export const generatePayslip = async (req, res) => {
     
     // Auto-calculate PF if enabled
     if (payload.autoCalculatePF) {
-      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 12)) / 100;
+      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 24)) / 100;
     }
     
     // Auto-calculate LOP if enabled (based on total earnings)

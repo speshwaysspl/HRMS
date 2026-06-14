@@ -28,7 +28,7 @@ const Profile = () => {
           `${API_BASE}/api/employee/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );

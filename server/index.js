@@ -31,15 +31,18 @@ import teamRouter from "./routes/team.js";
 import taskRouter from "./routes/task.js";
 import documentRouter from "./routes/documentRoutes.js";
 import dailyQuoteRouter from "./routes/dailyQuoteRoutes.js";
+import recruitmentRouter from "./routes/recruitment.js";
+import candidateRouter from "./routes/candidateRoutes.js";
+import onboardingRouter from "./routes/onboardingRoutes.js";
+import offerRouter from "./routes/offerRoutes.js";
+import appointmentRouter from "./routes/appointmentRoutes.js";
+import hrDashboardRouter from "./routes/hrDashboardRoutes.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
-import { connectRedis } from "./utils/redis.js";
 import { metricsMiddleware, metricsEndpoint } from "./middleware/metrics.js";
-import { globalCacheMiddleware } from "./middleware/cache.js";
 
 dotenv.config({ quiet: true });
 connectToDatabase().then(() => {
   seedHolidaysInternal();
-  connectRedis();
 }).catch((err) => {
   console.error("❌ Failed to connect to MongoDB. Please check your connection string and ensure your IP is whitelisted in MongoDB Atlas.");
   console.error(err);
@@ -118,7 +121,6 @@ app.get("/health", (req, res) => {
 });
 
 // Mount routes
-app.use("/api", globalCacheMiddleware);
 app.use("/api/auth", authRouter);
 
 app.use("/api/department", departmentRouter);
@@ -139,6 +141,12 @@ app.use("/api/team", teamRouter);
 app.use("/api/task", taskRouter);
 app.use("/api/document", documentRouter);
 app.use("/api/daily-quote", dailyQuoteRouter);
+app.use("/api/recruitment", recruitmentRouter);
+app.use("/api/candidates", candidateRouter);
+app.use("/api/onboarding", onboardingRouter);
+app.use("/api/offers", offerRouter);
+app.use("/api/appointments", appointmentRouter);
+app.use("/api/hr-dashboard", hrDashboardRouter);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

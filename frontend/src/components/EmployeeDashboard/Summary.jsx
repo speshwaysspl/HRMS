@@ -66,7 +66,7 @@ const Summary = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true)
-        const token = localStorage.getItem('token')
+        const token = sessionStorage.getItem('token')
         
         // Single API call to get all dashboard data
         const dashboardResponse = await axios.get(`${API_BASE}/api/dashboard/employee-stats`, {

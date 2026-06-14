@@ -108,7 +108,7 @@ const AdminFeedback = () => {
       });
 
       const response = await axios.get(`${API_BASE}/api/feedback?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
       });
 
       if (response.data.success) {
@@ -165,7 +165,7 @@ const AdminFeedback = () => {
           adminResponse: adminResponse.trim()
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
         }
       );
 
@@ -224,7 +224,7 @@ const AdminFeedback = () => {
     setLoading(true);
     try {
       const response = await axios.delete(`${API_BASE}/api/feedback/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
       });
 
       if (response.data.success) {

@@ -89,7 +89,7 @@ const Add = () => {
           `${API_BASE}/api/leave/add`,leave,
           {
             headers: {
-              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+              "Authorization": `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );

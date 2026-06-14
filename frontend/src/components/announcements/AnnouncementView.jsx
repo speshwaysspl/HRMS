@@ -51,7 +51,7 @@ const AnnouncementView = () => {
     const fetchAnnouncement = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/announcement/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
         if (response.data.success) {
           setAnnouncement(response.data.announcement);

@@ -66,6 +66,18 @@ const EmployeeCalendar = lazy(() => import("./components/calendar/EmployeeCalend
 const DocumentUpload = lazy(() => import("./components/employee/DocumentUpload"));
 const DocumentList = lazy(() => import("./components/employee/DocumentList"));
 
+// HR & Candidate Components (lazy-loaded)
+const HRDashboard = lazy(() => import("./pages/HRDashboard"));
+const HRSummary = lazy(() => import("./components/dashboard/HRSummary"));
+const CandidateList = lazy(() => import("./components/candidate/CandidateList"));
+const CandidateDetail = lazy(() => import("./components/candidate/CandidateDetail"));
+const DocumentVerificationList = lazy(() => import("./components/onboarding/DocumentVerificationList"));
+const ProfileCompletionTracker = lazy(() => import("./components/recruitment/ProfileCompletionTracker"));
+const ReadyForOffer = lazy(() => import("./components/recruitment/ReadyForOffer"));
+const InterviewScheduler = lazy(() => import("./components/candidate/InterviewScheduler"));
+const CandidateDashboard = lazy(() => import("./pages/CandidateDashboard"));
+
+
 function App() {
   // Preload most-visited routes after idle to reduce navigation latency
   useEffect(() => {
@@ -216,7 +228,40 @@ function App() {
           <Route path="documents" element={<DocumentList />} />
           <Route path="tasks" element={<TaskList />} />
         </Route>
- 
+
+        {/* HR Dashboard */}
+        <Route
+          path="hr-dashboard"
+          element={
+            <PrivateRoutes>
+              <RoleBaseRoutes requiredRole={["hr"]}>
+                <HRDashboard />
+              </RoleBaseRoutes>
+            </PrivateRoutes>
+          }
+        >
+          <Route index element={<HRSummary />} />
+          <Route path="candidates" element={<CandidateList />} />
+          <Route path="candidates/:id" element={<CandidateDetail />} />
+          <Route path="profiles" element={<DocumentVerificationList />} />
+          <Route path="tracker" element={<ProfileCompletionTracker />} />
+          <Route path="offer" element={<ReadyForOffer />} />
+          <Route path="interviews" element={<InterviewScheduler />} />
+          <Route path="settings" element={<Setting />} />
+        </Route>
+
+        {/* Candidate Dashboard */}
+        <Route
+          path="candidate-dashboard"
+          element={
+            <PrivateRoutes>
+              <RoleBaseRoutes requiredRole={["candidate"]}>
+                <CandidateDashboard />
+              </RoleBaseRoutes>
+            </PrivateRoutes>
+          }
+        />
+
         {/* Fallback */}
         <Route
           path="*"

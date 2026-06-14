@@ -28,7 +28,7 @@ const Calendar = ({ isAdmin = false }) => {
       setLoading(true);
       const response = await axios.get(`${API_BASE}/api/events`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       if (response.data.success) {
@@ -47,7 +47,7 @@ const Calendar = ({ isAdmin = false }) => {
       setLoading(true);
       const response = await axios.post(`${API_BASE}/api/events/seed`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       if (response.data.success) {
@@ -130,7 +130,7 @@ const Calendar = ({ isAdmin = false }) => {
           formData,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -145,7 +145,7 @@ const Calendar = ({ isAdmin = false }) => {
           formData,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -168,7 +168,7 @@ const Calendar = ({ isAdmin = false }) => {
         `${API_BASE}/api/events/${editingEvent._id}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           },
         }
       );

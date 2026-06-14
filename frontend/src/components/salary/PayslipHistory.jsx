@@ -8,7 +8,7 @@ import useMeta from "../../utils/useMeta";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

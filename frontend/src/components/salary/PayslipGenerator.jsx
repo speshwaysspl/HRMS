@@ -93,7 +93,7 @@ const PayslipGenerator = () => {
       try {
         const response = await axios.get(`${API_BASE}/api/employee`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`
           }
         });
         if (response.data.success) {
@@ -118,7 +118,7 @@ const PayslipGenerator = () => {
     try {
       const response = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       
@@ -128,17 +128,40 @@ const PayslipGenerator = () => {
         // Format the joining date if found in IST
         const formattedJoiningDate = employee.joiningDate ? toISTDateString(new Date(employee.joiningDate)) : "";
         
-        setPayslip(prev => ({
-          ...prev,
-          employeeId: employee.employeeId,
-          employeeObjectId: employee._id,
-          name: employee.name,
-          email: employee.email,
-          designation: employee.designation,
-          department: employee.department,
-          joiningDate: formattedJoiningDate,
-          payDate: formattedJoiningDate
-        }));
+        setPayslip(prev => {
+          const updated = {
+            ...prev,
+            employeeId: employee.employeeId,
+            employeeObjectId: employee._id,
+            name: employee.name,
+            email: employee.email,
+            designation: employee.designation,
+            department: employee.department,
+            joiningDate: formattedJoiningDate,
+            payDate: formattedJoiningDate,
+            location: employee.location || prev.location || "Hyderabad",
+            bankname: employee.bankname || prev.bankname || "",
+            bankaccountnumber: employee.bankaccountnumber || prev.bankaccountnumber || "",
+            pan: employee.pan || prev.pan || "",
+            uan: employee.uan || prev.uan || ""
+          };
+
+          // If no template but we have fullSalary from offer, calculate breakdown
+          if (!employee.template && employee.fullSalary) {
+            const fullSalary = parseFloat(employee.fullSalary);
+            if (!isNaN(fullSalary) && fullSalary > 2850) {
+              const remaining = fullSalary - 2850;
+              updated.basicSalary = (remaining * 0.40).toFixed(2);
+              updated.da = (remaining * 0.22).toFixed(2);
+              updated.hra = (remaining * 0.20).toFixed(2);
+              updated.conveyance = "1600";
+              updated.medicalallowances = "1250";
+              updated.specialallowances = (remaining * 0.18).toFixed(2);
+            }
+          }
+
+          return updated;
+        });
         
         // Load employee templates
         if (employee.template) {
@@ -149,7 +172,7 @@ const PayslipGenerator = () => {
         // Get all templates for this employee
         const templatesResponse = await axios.get(`${API_BASE}/api/payroll-template/employee/${empId}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`
           }
         });
         
@@ -167,7 +190,33 @@ const PayslipGenerator = () => {
   // Auto-fetch employee details when employee ID is entered
   const handleEmployeeIdChange = async (e) => {
     const empId = e.target.value;
-    setPayslip(prev => ({ ...prev, employeeId: empId }));
+    setPayslip(prev => ({ 
+      ...prev, 
+      employeeId: empId,
+      ...(empId.length < 1 && {
+        employeeObjectId: "",
+        name: "",
+        email: "",
+        designation: "",
+        department: "",
+        joiningDate: "",
+        payDate: "",
+        location: "Hyderabad",
+        bankname: "",
+        bankaccountnumber: "",
+        pan: "",
+        uan: "",
+        basicSalary: "",
+        da: "",
+        hra: "",
+        conveyance: "",
+        medicalallowances: "",
+        specialallowances: "",
+        deductions: "",
+        pf: "",
+        proftax: ""
+      })
+    }));
     
     if (empId.length >= 1) {
       await fetchEmployeeById(empId);
@@ -267,7 +316,7 @@ const PayslipGenerator = () => {
         year: payslip.year
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
 
@@ -286,14 +335,13 @@ const PayslipGenerator = () => {
       alert("Error calculating LOP. Please try again.");
     }
   };
-
   // Calculate totals in real-time
   useEffect(() => {
     const basicSalary = parseFloat(payslip.basicSalary) || 0;
     let hra = parseFloat(payslip.hra) || 0;
-    let pf = parseFloat(payslip.pf) || 0;
     
-    // PF is manually entered, no auto-calculation
+    // Auto-calculate PF as 24% of basic salary
+    const calculatedPFValue = basicSalary ? Math.round(basicSalary * 0.24) : 0;
     
     const totalEarnings = basicSalary + 
                          (parseFloat(payslip.da) || 0) + 
@@ -317,7 +365,7 @@ const PayslipGenerator = () => {
       professionalTax = totalEarnings <= 20000 ? 150 : 200;
     }
     
-    const totalDeductions = pf + 
+    const totalDeductions = calculatedPFValue + 
                            professionalTax + 
                            (parseFloat(payslip.deductions) || 0) + 
                            lopAmount;
@@ -328,20 +376,30 @@ const PayslipGenerator = () => {
       totalEarnings: totalEarnings.toFixed(2),
       totalDeductions: totalDeductions.toFixed(2),
       netSalary: netSalary.toFixed(2),
-
-      calculatedPF: pf.toFixed(2),
+      calculatedPF: calculatedPFValue.toFixed(2),
       calculatedProfTax: professionalTax.toFixed(2),
       lopAmount: lopAmount.toFixed(2)
     });
     
     // Update form with calculated values
-    if (payslip.autoCalculateLOP) {
-      setPayslip(prev => ({ ...prev, lopamount: lopAmount.toFixed(2) }));
-    }
-    // Always update professional tax automatically
-    if (basicSalary > 0) {
-      setPayslip(prev => ({ ...prev, proftax: professionalTax.toFixed(2) }));
-    }
+    setPayslip(prev => {
+      const currentPf = parseFloat(prev.pf) || 0;
+      const currentPT = parseFloat(prev.proftax) || 0;
+      const currentLop = parseFloat(prev.lopamount) || 0;
+      
+      const nextLop = prev.autoCalculateLOP ? lopAmount : currentLop;
+      const nextLopStr = prev.autoCalculateLOP ? lopAmount.toFixed(2) : prev.lopamount;
+      
+      if (currentPf !== calculatedPFValue || currentPT !== professionalTax || currentLop !== nextLop) {
+        return {
+          ...prev,
+          pf: calculatedPFValue.toString(),
+          proftax: professionalTax.toFixed(2),
+          ...(prev.autoCalculateLOP && { lopamount: nextLopStr })
+        };
+      }
+      return prev;
+    });
   }, [payslip.basicSalary, payslip.da, payslip.hra, payslip.conveyance, payslip.medicalallowances, 
       payslip.specialallowances, payslip.pf, payslip.proftax, payslip.deductions,
       payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateLOP]);
@@ -411,7 +469,7 @@ const PayslipGenerator = () => {
       setLoading(true);
       const response = await axios.post(`${API_BASE}/api/payslip/generate`, payslip, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       
@@ -436,7 +494,7 @@ const PayslipGenerator = () => {
       setLoading(true);
       const response = await axios.post(`${API_BASE}/api/payslip/preview`, payslip, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
 
@@ -466,7 +524,7 @@ const PayslipGenerator = () => {
 
       const response = await axios.post(`${API_BASE}/api/payslip/send-email`, payload, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
 
@@ -490,7 +548,7 @@ const PayslipGenerator = () => {
       setLoading(true);
       const response = await axios.post(`${API_BASE}/api/payslip/generate`, previewData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
 

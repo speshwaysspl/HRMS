@@ -26,7 +26,7 @@ const Detail = () => {
           `${API_BASE}/api/leave/detail/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -50,7 +50,7 @@ const Detail = () => {
           `${API_BASE}/api/leave/${id}`, {status},
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );

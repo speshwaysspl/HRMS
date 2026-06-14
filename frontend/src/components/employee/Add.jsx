@@ -87,16 +87,7 @@ const Add = () => {
       }
     }
 
-    // Validate Joining Date
-    if (formData.joiningDate) {
-      const joiningDate = new Date(formData.joiningDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (joiningDate > today) {
-        alert("Joining Date cannot be in the future");
-        return;
-      }
-    }
+    // Validate Joining Date (future allowed)
 
     try {
       const response = await axios.post(
@@ -104,7 +95,7 @@ const Add = () => {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
         }
@@ -195,7 +186,6 @@ const Add = () => {
               name="joiningDate"
               onChange={handleChange}
               placeholder="Joining Date"
-              max={new Date().toISOString().split('T')[0]}
               className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
               required
             />
@@ -364,6 +354,17 @@ const Add = () => {
                   className="form-checkbox h-5 w-5 text-teal-600"
                 />
                 <span className="ml-2 text-gray-700">Team Lead</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="role"
+                  value="hr"
+                  checked={formData.role.includes('hr')}
+                  onChange={handleChange}
+                  className="form-checkbox h-5 w-5 text-teal-600"
+                />
+                <span className="ml-2 text-gray-700">HR</span>
               </label>
             </div>
             {formData.role.length === 0 && (

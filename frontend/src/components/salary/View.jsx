@@ -46,7 +46,7 @@ const View = () => {
           : user.role;
 
         const response = await axios.get(`${API_BASE}/api/salary/${id}/${roleParam}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
         
         if (response.data.success) {
@@ -84,7 +84,8 @@ const View = () => {
     const totalDeductions = 
       Number(salary.proftax || 0) +
       Number(salary.pf || 0) +
-      Number(salary.lopamount || 0);
+      Number(salary.lopamount || 0) +
+      Number(salary.deductions || 0);
 
     const netPay = totalEarnings - totalDeductions;
     
@@ -287,7 +288,7 @@ const View = () => {
   // Fix the downloadPDF function (around line 299)
   const downloadPDF = async (salaryId, empCode, payDate) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",

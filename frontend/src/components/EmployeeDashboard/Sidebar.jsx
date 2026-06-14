@@ -20,9 +20,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const { user, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   // Track window resize for responsive behavior
@@ -75,27 +74,29 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
-      {!isDesktop && (
+      {/* Hamburger Button - hidden when sidebar is open */}
+      {!isOpen && (
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-[60] p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg md:hidden hover:from-teal-600 hover:to-cyan-600 transition-all duration-200"
-          aria-label={isOpen ? "Close menu" : "Open menu"}
+          className="fixed top-4 left-4 z-[60] p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg hover:from-teal-600 hover:to-cyan-600 transition-all duration-200"
+          aria-label="Open menu"
         >
-          {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
+          <FaBars size={20} />
         </motion.button>
       )}
 
       <motion.div
-        initial={{ x: isDesktop ? 0 : -300 }}
-        animate={{ x: isDesktop ? 0 : isOpen ? 0 : -300 }}
+        initial={{ x: -300 }}
+        animate={{ x: isOpen ? 0 : -300 }}
         transition={{ type: "spring", stiffness: 80, damping: 15 }}
-        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col ${isDesktop ? 'translate-x-0' : ''}`}
+        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col`}
       >
       {/* Top Logo */}
      {/* Top Logo with Name Side by Side */}
-<div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5">
+<div 
+  onClick={() => setIsOpen(!isOpen)}
+  className="cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5 hover:from-blue-700 hover:via-indigo-800 hover:to-teal-700 transition-all duration-300">
   {/* Logo Image */}
   <img 
     src="/images/Logo.jpg"
@@ -116,7 +117,7 @@ const Sidebar = () => {
 
 
         {/* Links */}
-        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+        <div className={`px-4 mt-6 space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
           {navLinks.map((link, idx) => (
             <NavLink
               key={idx}
@@ -130,7 +131,7 @@ const Sidebar = () => {
                      : "hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white"
                  }`
               }
-              onClick={() => !isDesktop && setIsOpen(false)} // auto-close on mobile
+              onClick={() => setIsOpen(false)} // auto-close always
             >
               <motion.span
                 whileHover={{ scale: 1.3, rotate: 12 }}

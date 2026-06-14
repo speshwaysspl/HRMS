@@ -91,7 +91,7 @@ const TeamDetail = () => {
     if (!window.confirm("Are you sure you want to delete this task?")) return;
     try {
       const response = await axios.delete(`${API_BASE}/api/task/${taskId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         alert("Task deleted successfully");
@@ -107,7 +107,7 @@ const TeamDetail = () => {
   const fetchTeamDetail = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/team/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setTeam(response.data.team);
@@ -124,7 +124,7 @@ const TeamDetail = () => {
   const fetchEmployees = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/employee`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setEmployees(response.data.employees);
@@ -160,7 +160,7 @@ const TeamDetail = () => {
       const response = await axios.post(
         `${API_BASE}/api/team/members`,
         { teamId: id, employeeIds: tempSelectedIds, role: "Developer" }, // Default role
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
       );
       if (response.data.success) {
         // Success: UI is already updated. No need to fetchTeamDetail().
@@ -218,7 +218,7 @@ const TeamDetail = () => {
       const response = await axios.post(
         `${API_BASE}/api/task/assign`,
         { ...taskData, teamId: id },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
       );
       if (response.data.success) {
         alert("Task assigned successfully");
@@ -247,7 +247,7 @@ const TeamDetail = () => {
         formData,
         { 
           headers: { 
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             "Content-Type": "multipart/form-data"
           } 
         }
@@ -286,7 +286,7 @@ const TeamDetail = () => {
     setDocsLoading(true);
     try {
       const response = await axios.get(`${API_BASE}/api/document`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         const allDocs = response.data.documents || [];

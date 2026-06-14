@@ -29,7 +29,7 @@ const View = () => {
           `${API_BASE}/api/employee/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -253,6 +253,111 @@ const View = () => {
                       }`}>
                         {employee.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* New Row for Bank and Salary Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-8 border-t border-gray-100">
+              {/* Bank & Identity Details */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-purple-500">
+                  Bank & Identity Information
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
+                      <FaBuilding className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Bank Name</p>
+                      <p className="text-gray-900 font-semibold">{employee.bankname || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                      <FaIdCard className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Account Number</p>
+                      <p className="text-gray-900 font-semibold">{employee.bankaccountnumber || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                      <FaIdCard className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">PAN Card</p>
+                      <p className="text-gray-900 font-semibold" style={{ textTransform: 'uppercase' }}>{employee.pan || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <FaIdCard className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">UAN Number</p>
+                      <p className="text-gray-900 font-semibold">{employee.uan || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Salary & Location Details */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-orange-500">
+                  Salary & Location Information
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                      <FaCalendarAlt className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Work Location</p>
+                      <p className="text-gray-900 font-semibold">{employee.location || 'Hyderabad'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">₹</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Monthly Gross Salary (CTC)</p>
+                      <p className="text-gray-900 font-semibold">
+                        {employee.fullSalary ? `₹${parseFloat(employee.fullSalary).toLocaleString()}` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">₹</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">PF Amount</p>
+                      <p className="text-gray-900 font-semibold">
+                        {employee.pf !== undefined && employee.pf !== null ? `₹${parseFloat(employee.pf).toLocaleString()}` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                      <FaBriefcase className="text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Annual Package (CTC)</p>
+                      <p className="text-gray-900 font-semibold">
+                        {employee.fullSalary ? `₹${Math.round(parseFloat(employee.fullSalary) * 12).toLocaleString()}` : 'N/A'}
+                      </p>
                     </div>
                   </div>
                 </div>

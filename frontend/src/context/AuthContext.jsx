@@ -23,15 +23,14 @@ const authContext = ({ children }) => {
           );
           if (response.data.success) {
             setUser(response.data.user);
+            sessionStorage.setItem("token", token);
           }
         } else {
           setUser(null);
           setLoading(false)
         }
       } catch (error) {
-        if (error.response && !error.response.data.error) {
-          setUser(null);
-        }
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -46,6 +45,7 @@ const authContext = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
   };
   return (
     <userContext.Provider value={{ user, login, logout, loading }}>

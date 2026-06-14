@@ -35,7 +35,7 @@ export const metricsMiddleware = (req, res, next) => {
     const durationInMs = durationInSeconds * 1000;
 
     // Standardize route to prevent cardinality explosion (e.g. /api/employee/:id)
-    const route = req.baseUrl + (req.route ? req.route.path : req.path);
+    const route = (req.baseUrl || "") + (req.route ? req.route.path : req.path);
 
     // Record metrics
     httpRequestsTotal.labels(req.method, route, res.statusCode).inc();

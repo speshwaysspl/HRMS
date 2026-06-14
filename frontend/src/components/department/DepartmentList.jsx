@@ -29,7 +29,7 @@ const DepartmentList = () => {
     try {
       const responnse = await axios.get(`${API_BASE}/api/department`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       if (responnse.data.success) {

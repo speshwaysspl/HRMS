@@ -446,7 +446,7 @@ const Attendance = () => {
   // Fetch today's record on mount
   useEffect(() => {
     const fetchToday = async () => {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) return;
       try {
         const res = await axios.get(`${API_BASE}/api/attendance/today`, {
@@ -501,7 +501,7 @@ const Attendance = () => {
  
   const saveBreaksToBackend = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) return;
 
       const today = toISTDateString(new Date());
@@ -539,7 +539,7 @@ const Attendance = () => {
     setLoading(true);
  
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) {
         alert("Please login.");
         navigate("/login");

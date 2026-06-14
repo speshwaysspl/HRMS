@@ -1,6 +1,7 @@
 // backend/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Candidate from "../models/Candidate.js";
 
 const verifyUser = async (req, res, next) => {
   try {
@@ -27,6 +28,15 @@ const verifyUser = async (req, res, next) => {
     const user = await User.findById(userId).select("-password");
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    // Check if user is a candidate and if their account is active
+    if (user.role.includes('candidate')) {
+      const candidate = await Candidate.findOne({ userId: user._id });
+      // If candidate.isActive is undefined (no field in DB), treat as true
+      if (candidate && candidate.isActive === false) {
+        return res.status(403).json({ success: false, error: "Account is inactive. Please contact HR." });
+      }
     }
 
     req.user = user;

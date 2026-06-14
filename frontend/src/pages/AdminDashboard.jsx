@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import useMeta from '../utils/useMeta'
-import { useMemo, Suspense, lazy } from 'react'
+import { useMemo, Suspense, lazy, useState } from 'react'
 
 const AdminSidebar = lazy(() => import('../components/dashboard/AdminSidebar'))
 const Navbar = lazy(() => import('../components/dashboard/Navbar'))
@@ -15,16 +15,17 @@ const AdminDashboard = () => {
     image: '/images/Logo.jpg',
     robots: 'noindex,nofollow'
   })
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   return (
     <div className='flex min-h-screen bg-gray-50'>
       <Suspense fallback={<div className='md:w-64 w-0' />}>
-        <AdminSidebar />
+        <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       </Suspense>
-      <div className='flex-1 md:ml-64 ml-0 transition-all duration-300'>
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64 ml-0' : 'ml-0'}`}>
         <Suspense fallback={<div className='h-16' />}>
           <Navbar />
         </Suspense>
-        <div className='p-2 sm:p-4 md:p-6 pt-16 sm:pt-18 md:pt-20 lg:pt-6'>
+        <div className='p-2 sm:p-4 md:p-6 pt-16 sm:pt-14 md:pt-16 lg:pt-16'>
           <Outlet />
         </div>
       </div>

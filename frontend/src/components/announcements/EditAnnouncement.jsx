@@ -28,7 +28,7 @@ const EditAnnouncement = () => {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const res = await axios.get(`${API_BASE}/api/announcement/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -48,7 +48,7 @@ const EditAnnouncement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);

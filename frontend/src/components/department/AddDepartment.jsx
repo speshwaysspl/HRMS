@@ -35,7 +35,7 @@ const AddDepartment = () => {
       }
       const existing = await axios.get(`${API_BASE}/api/department`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       if (existing.data?.success) {
@@ -52,7 +52,7 @@ const AddDepartment = () => {
         department,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           },
         }
       );

@@ -28,7 +28,7 @@ export const createTemplate = async (req, res) => {
     let pf = num(payload.pf);
     
     if (payload.autoCalculatePF) {
-      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 12)) / 100;
+      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 24)) / 100;
     }
     
     const newTemplate = new PayrollTemplate({
@@ -62,7 +62,7 @@ export const createTemplate = async (req, res) => {
       
       // Calculation settings
       autoCalculatePF: Boolean(payload.autoCalculatePF),
-      pfPercentage: num(payload.pfPercentage) || 12,
+      pfPercentage: num(payload.pfPercentage) || 24,
       
       isActive: payload.isActive !== false,
       isDefault: Boolean(payload.isDefault),
@@ -248,7 +248,7 @@ export const updateTemplate = async (req, res) => {
     let pf = num(payload.pf);
     
     if (payload.autoCalculatePF) {
-      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 12)) / 100;
+      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 24)) / 100;
     }
     
     // Update template fields

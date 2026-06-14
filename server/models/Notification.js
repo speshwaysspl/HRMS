@@ -17,6 +17,12 @@ const notificationSchema = new mongoose.Schema({
       'holiday',
       'meeting',
       'event',
+      'candidate_created',
+      'profile_completed',
+      'documents_uploaded',
+      'document_approved',
+      'document_rejected',
+      'verification_completed',
       'other'
     ]
   },

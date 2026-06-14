@@ -36,7 +36,7 @@ export const AttendanceHelper = ({status, employeeId, statusChange}) => {
     const markEmployee = async (status, employeeId) => {
         const response = await axios.put(`${API_BASE}/api/attendance/update/${employeeId}`, {status}, {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                Authorization: `Bearer ${sessionStorage.getItem("token")}`,
               },
         })
         if(response.data.success) {

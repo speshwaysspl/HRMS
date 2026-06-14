@@ -18,6 +18,14 @@ const Edit = () => {
     mobilenumber: "",
     designation: "",
     department: "",
+    bankname: "",
+    bankaccountnumber: "",
+    pan: "",
+    uan: "",
+    location: "Hyderabad",
+    salary: "",
+    annualSalary: "",
+    pf: "",
   });
   const [departments, setDepartments] = useState(null);
   const [designationSearch, setDesignationSearch] = useState("");
@@ -44,7 +52,7 @@ const Edit = () => {
           `${API_BASE}/api/employee/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -62,6 +70,14 @@ const Edit = () => {
             designation: employee.designation,
             department: employee.department?._id || employee.department || "",
             role: employee.userId.role,
+            bankname: employee.bankname || "",
+            bankaccountnumber: employee.bankaccountnumber || "",
+            pan: employee.pan || "",
+            uan: employee.uan || "",
+            location: employee.location || "Hyderabad",
+            salary: employee.fullSalary || "",
+            annualSalary: employee.fullSalary ? String(parseFloat(employee.fullSalary) * 12) : "",
+            pf: employee.pf !== undefined ? String(employee.pf) : "",
           }));
           // Initialize designation search with existing value
           setDesignationSearch(employee.designation || "");
@@ -79,7 +95,35 @@ const Edit = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    if (name === "mobilenumber") {
+    if (name === "salary") {
+      const annual = value ? String(Math.round(parseFloat(value) * 12)) : "";
+      let calculatedPf = "";
+      if (value) {
+        const fullSalary = parseFloat(value);
+        if (fullSalary > 2850) {
+          const remaining = fullSalary - 2850;
+          const basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+          calculatedPf = String(Math.round(basicSalary * 0.24));
+        } else {
+          calculatedPf = String(Math.round(fullSalary * 0.24));
+        }
+      }
+      setEmployee((prevData) => ({ ...prevData, salary: value, annualSalary: annual, pf: calculatedPf }));
+    } else if (name === "annualSalary") {
+      const monthly = value ? String(parseFloat((parseFloat(value) / 12).toFixed(2))) : "";
+      let calculatedPf = "";
+      if (monthly) {
+        const fullSalary = parseFloat(monthly);
+        if (fullSalary > 2850) {
+          const remaining = fullSalary - 2850;
+          const basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+          calculatedPf = String(Math.round(basicSalary * 0.24));
+        } else {
+          calculatedPf = String(Math.round(fullSalary * 0.24));
+        }
+      }
+      setEmployee((prevData) => ({ ...prevData, annualSalary: value, salary: monthly, pf: calculatedPf }));
+    } else if (name === "mobilenumber") {
       // Only allow digits and limit to 10 characters
       const numericValue = value.replace(/\D/g, '');
       if (numericValue.length <= 10) {
@@ -142,16 +186,7 @@ const Edit = () => {
       }
     }
 
-    // Validate Joining Date
-    if (employee.joiningDate) {
-      const joiningDate = new Date(employee.joiningDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (joiningDate > today) {
-        alert("Joining Date cannot be in the future");
-        return;
-      }
-    }
+    // Validate Joining Date (future allowed)
 
     // Filter out null and empty values
     const cleanedEmployee = Object.keys(employee).reduce((acc, key) => {
@@ -167,7 +202,7 @@ const Edit = () => {
         cleanedEmployee,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
         }
@@ -264,7 +299,6 @@ const Edit = () => {
                   value={employee.joiningDate}
                   onChange={handleChange}
                   placeholder="Joining Date"
-                  max={new Date().toISOString().split('T')[0]}
                   className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
                   required
                 />
@@ -405,6 +439,17 @@ const Edit = () => {
                     />
                     <span className="ml-2 text-gray-700">Team Lead</span>
                   </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      name="role"
+                      value="hr"
+                      checked={Array.isArray(employee.role) ? employee.role.includes('hr') : employee.role === 'hr'}
+                      onChange={handleChange}
+                      className="form-checkbox h-5 w-5 text-teal-600"
+                    />
+                    <span className="ml-2 text-gray-700">HR</span>
+                  </label>
                 </div>
               </div>
 
@@ -433,9 +478,130 @@ const Edit = () => {
                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>
               </div>
 
+              {/* Bank Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  name="bankname"
+                  value={employee.bankname || ""}
+                  onChange={handleChange}
+                  placeholder="Enter Bank Name"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                />
+              </div>
 
+              {/* Account Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  name="bankaccountnumber"
+                  value={employee.bankaccountnumber || ""}
+                  onChange={handleChange}
+                  placeholder="Enter Account Number"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                />
+              </div>
 
+              {/* PAN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  PAN
+                </label>
+                <input
+                  type="text"
+                  name="pan"
+                  value={employee.pan || ""}
+                  onChange={handleChange}
+                  placeholder="ABCDE1234F"
+                  maxLength="10"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </div>
 
+              {/* UAN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  UAN
+                </label>
+                <input
+                  type="text"
+                  name="uan"
+                  value={employee.uan || ""}
+                  onChange={handleChange}
+                  placeholder="Enter UAN Number"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                />
+              </div>
+
+              {/* Work Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Work Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={employee.location || "Hyderabad"}
+                  onChange={handleChange}
+                  placeholder="Enter Work Location"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                />
+              </div>
+
+              {/* Monthly Gross Salary (CTC) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Monthly Gross Salary (CTC)
+                </label>
+                <input
+                  type="number"
+                  name="salary"
+                  value={employee.salary || ""}
+                  onChange={handleChange}
+                  placeholder="Enter Monthly Salary"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  onWheel={(e) => e.target.blur()}
+                />
+              </div>
+
+              {/* Annual Package (CTC) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Annual Package (CTC)
+                </label>
+                <input
+                  type="number"
+                  name="annualSalary"
+                  value={employee.annualSalary || ""}
+                  onChange={handleChange}
+                  placeholder="Enter Annual Package"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  onWheel={(e) => e.target.blur()}
+                />
+              </div>
+
+              {/* PF Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  PF Amount
+                </label>
+                <input
+                  type="number"
+                  name="pf"
+                  value={employee.pf || ""}
+                  onChange={handleChange}
+                  placeholder="Enter PF Amount"
+                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  onWheel={(e) => e.target.blur()}
+                />
+              </div>
             </div>
 
             <button

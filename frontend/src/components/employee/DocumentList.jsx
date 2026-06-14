@@ -25,7 +25,7 @@ const DocumentList = () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE}/api/document`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setDocuments(response.data.documents);
@@ -56,7 +56,7 @@ const DocumentList = () => {
         const response = await axios.post(`${API_BASE}/api/document/upload`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
         });
 
@@ -86,7 +86,7 @@ const DocumentList = () => {
       try {
           const response = await axios.put(`${API_BASE}/api/document/${id}/status`, 
             { status, comments: statusComment },
-            { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
           );
           if (response.data.success) {
               setDocuments(documents.map(doc => doc._id === id ? response.data.document : doc));
@@ -103,7 +103,7 @@ const DocumentList = () => {
       
       try {
           const response = await axios.delete(`${API_BASE}/api/document/${id}`, {
-              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+              headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
           });
           if (response.data.success) {
               setDocuments(documents.filter(doc => doc._id !== id));

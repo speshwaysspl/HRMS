@@ -27,7 +27,7 @@ const EmployeeAnnouncements = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const res = await axios.get(`${API_BASE}/api/announcement`, {
           headers: { Authorization: `Bearer ${token}` },
         });

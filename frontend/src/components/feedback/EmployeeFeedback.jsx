@@ -93,7 +93,7 @@ const EmployeeFeedback = () => {
       });
 
       const response = await axios.get(`${API_BASE}/api/feedback/my-feedback?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
       });
 
       if (response.data.success) {
@@ -122,7 +122,7 @@ const EmployeeFeedback = () => {
       const method = editingFeedback ? 'put' : 'post';
       
       const response = await axios[method](url, formData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
       });
 
       if (response.data.success) {

@@ -33,7 +33,7 @@ const AdminAttendanceReport = () => {
     setFilteredData([]);
  
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) throw new Error("Authentication token not found");
  
       const { data } = await axios.get(url, {
@@ -76,7 +76,7 @@ const AdminAttendanceReport = () => {
    
     setIsAutoFetching(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const queryParam = searchBy === 'id' ? `employeeId=${value}` : `employeeName=${encodeURIComponent(value)}`;
       const response = await axios.get(`${API_BASE}/api/employee/search?${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -158,7 +158,7 @@ const AdminAttendanceReport = () => {
   // 🔹 Common Excel download
   const downloadExcel = async (url, filename, errorMessage) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",

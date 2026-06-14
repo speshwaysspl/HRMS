@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
 const documentSchema = new Schema({
-  employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+  employeeId: { type: Schema.Types.ObjectId, ref: "Employee" },
+  candidateId: { type: Schema.Types.ObjectId, ref: "Candidate" },
   uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   fileUrl: { type: String, required: true },
   fileKey: { type: String }, // S3 Key for deletion

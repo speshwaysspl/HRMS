@@ -59,6 +59,7 @@ const Login = () => {
       if (response.data?.success) {
         login(response.data.user);
         localStorage.setItem("token", response.data.token || "");
+        sessionStorage.setItem("token", response.data.token || "");
         if (remember) localStorage.setItem("rememberEmail", email);
         else localStorage.removeItem("rememberEmail");
 
@@ -69,6 +70,18 @@ const Login = () => {
         // If admin, go to admin dashboard directly
         if (roles.includes("admin")) {
           navigate("/admin-dashboard");
+          return;
+        }
+
+        // If hr, go to hr dashboard directly
+        if (roles.includes("hr")) {
+          navigate("/hr-dashboard");
+          return;
+        }
+
+        // If candidate, go to candidate dashboard directly
+        if (roles.includes("candidate")) {
+          navigate("/candidate-dashboard");
           return;
         }
 
@@ -137,7 +150,10 @@ const Login = () => {
               <button
                 key={role}
                 onClick={() => {
-                  if (role === "team_lead") navigate("/team-lead-dashboard");
+                  if (role === "admin") navigate("/admin-dashboard");
+                  else if (role === "hr") navigate("/hr-dashboard");
+                  else if (role === "candidate") navigate("/candidate-dashboard");
+                  else if (role === "team_lead") navigate("/team-lead-dashboard");
                   else navigate("/employee-dashboard");
                 }}
                 style={{

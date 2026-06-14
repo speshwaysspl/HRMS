@@ -68,7 +68,7 @@ const AnnouncementAdd = () => {
       }
       if (image) formData.append("image", image);
 
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) {
         alert("You must be logged in to add announcements");
         setLoading(false);
@@ -106,7 +106,7 @@ const AnnouncementAdd = () => {
   React.useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await axios.get(`${API_BASE}/api/employee`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.data && res.data.employees) {
           setEmployees(res.data.employees);
@@ -124,7 +124,7 @@ const AnnouncementAdd = () => {
   React.useEffect(() => {
     const fetchDepsAndBuildOptions = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const depRes = await axios.get(`${API_BASE}/api/department`, { headers: { Authorization: `Bearer ${token}` } });
         const deps = Array.isArray(depRes.data) ? depRes.data : depRes.data?.departments || [];
         setDepartments(deps);

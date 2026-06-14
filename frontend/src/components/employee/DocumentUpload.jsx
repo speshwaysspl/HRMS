@@ -17,7 +17,7 @@ const DocumentUpload = () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE}/api/document`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setDocuments(response.data.documents);
@@ -44,7 +44,7 @@ const DocumentUpload = () => {
     try {
       const response = await axios.post(`${API_BASE}/api/document/upload`, formData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           "Content-Type": "multipart/form-data",
         },
       });
@@ -66,7 +66,7 @@ const DocumentUpload = () => {
     if (!window.confirm("Are you sure you want to delete this document?")) return;
     try {
       const response = await axios.delete(`${API_BASE}/api/document/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setDocuments(documents.filter((doc) => doc._id !== id));

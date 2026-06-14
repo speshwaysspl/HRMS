@@ -34,7 +34,7 @@ const List = () => {
         `${API_BASE}/api/leave/${id}/${roleParam}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           },
         }
       );

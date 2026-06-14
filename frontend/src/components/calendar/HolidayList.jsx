@@ -22,7 +22,7 @@ const HolidayList = ({ isAdmin = false }) => {
       setLoading(true);
       const response = await axios.get(`${API_BASE}/api/events`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       if (response.data.success) {
@@ -55,7 +55,7 @@ const HolidayList = ({ isAdmin = false }) => {
         },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           },
         }
       );
@@ -75,7 +75,7 @@ const HolidayList = ({ isAdmin = false }) => {
     try {
       await axios.delete(`${API_BASE}/api/events/${id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
       fetchHolidays();

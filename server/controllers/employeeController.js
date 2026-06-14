@@ -1,6 +1,10 @@
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import Department from "../models/Department.js";
+import PayrollTemplate from "../models/PayrollTemplate.js";
+import Salary from "../models/Salary.js";
+import Candidate from "../models/Candidate.js";
+import Offer from "../models/Offer.js";
 import bcrypt from "bcrypt";
 import ExcelJS from "exceljs";
 import { enqueueEmail } from "../utils/emailQueue.js";
@@ -72,31 +76,36 @@ const addEmployee = async (req, res) => {
     }
  
     const emailHtml = `
-      <h2>Welcome to the SPESHWAY SOLUTION PVT LTD 🎉</h2>
+      <h2>Welcome to Speshway Solutions 🎉</h2>
       <p>Dear <b>${name}</b>,</p>
-      <p>We are delighted to welcome you to Speshway Solution Pvt Ltd. We are excited to have you onboard as <b>${designation}</b> and look forward to working together towards achieving great success.
-      </p>
-      <p>Your login credentials are:</p>
-      <p>Email: <b>${email}</b></p>
-      <p>Password: <b>${password}</b></p>
-      <p>Use the same credentials to log in to both the HRMS portal (attendance, payslip, leaves, and more) and your official company email (Webmail).</p>
+      <p>On behalf of the entire team, we are delighted to welcome you to Speshway Solutions. We are excited to have you join us as <b>${designation}</b> and look forward to your contributions towards our collective success.</p>
       
-      <p>You can login to the system using the following link:</p>
-      <p><a href="https://www.speshwayhrms.com/" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Login to SPESHWAY HRMS</a></p>
-      <p>Or copy and paste this URL in your browser: <b>https://www.speshwayhrms.com/</b></p>
+      <div class="credentials-card">
+        <h4>Your HRMS & Email Portal Credentials</h4>
+        <p style="margin-bottom: 8px;"><strong>Username (Email):</strong> <code>${email}</code></p>
+        <p style="margin-bottom: 12px;"><strong>Temporary Password:</strong> <code>${password}</code></p>
+        <p style="font-size: 13px; color: #64748b;">Use these credentials to log in to both your HRMS portal and your official company webmail account.</p>
+      </div>
 
-      <p>Access your official company webmail:</p>
-      <p><a href="https://webmail.speshway.com/" style="background-color: #16a34a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Open Webmail</a></p>
-      <p>Or copy and paste this URL in your browser: <b>https://webmail.speshway.com/</b></p>
+      <div style="margin: 25px 0;">
+        <h4 style="color: #0f172a; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Portal Quick Links</h4>
+        <p style="margin-bottom: 15px;">
+          <a href="https://www.speshwayhrms.com/" class="btn-action">Login to HRMS Portal</a>
+          <span style="display: block; font-size: 12px; color: #64748b; margin-top: 4px;">Or navigate to: https://www.speshwayhrms.com/</span>
+        </p>
+        <p>
+          <a href="https://webmail.speshway.com/" class="btn-action" style="background-color: #0f766e !important; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.2) !important;">Open Company Webmail</a>
+          <span style="display: block; font-size: 12px; color: #64748b; margin-top: 4px;">Or navigate to: https://webmail.speshway.com/</span>
+        </p>
+      </div>
 
-      <p>
-We believe your skills and talent will be a great addition to our team. Together, we look forward to achieving new milestones and building a bright future.
-</p>
-      <br/>
-      <p>Once again, welcome aboard! </p>
-      <br/>
-      <p>Best regards,<br/>HR Team </p>
-      <p><strong>SPESHWAY SOLUTIONS PVT LTD<strong/></p>
+      <p>We believe your unique skills, experience, and talent will be a great addition to our growing team. We are committed to supporting your professional journey and building a bright future together.</p>
+      
+      <p>Once again, welcome aboard!</p>
+      
+      <p>Best regards,<br/>
+      <strong>HR Operations Team</strong><br/>
+      Speshway Solutions Pvt. Ltd.</p>
     `;
 
     enqueueEmail(email, "Welcome to Speshway Solutions 🎉", emailHtml);
@@ -146,8 +155,86 @@ const getEmployee = async (req, res) => {
         .status(404)
         .json({ success: false, error: "Employee not found" });
     }
+
+    // Get default payroll template or any template
+    let template = await PayrollTemplate.findOne({ 
+      employeeId: employee._id, 
+      isDefault: true, 
+      isActive: true 
+    });
+    if (!template) {
+      template = await PayrollTemplate.findOne({ 
+        employeeId: employee._id, 
+        isActive: true 
+      });
+    }
+
+    // Get last salary record (payslip) for bank account, pan, uan
+    const lastSalary = await Salary.findOne({ employeeId: employee._id }).sort({ createdAt: -1 });
+
+    // Look up Candidate and Offer details from onboarding process
+    let candidate = null;
+    let offer = null;
+    if (employee.userId) {
+      candidate = await Candidate.findOne({ userId: employee.userId._id || employee.userId });
+      if (candidate) {
+        offer = await Offer.findOne({ candidateId: candidate._id });
+      }
+    }
+
+    const bankname = template?.bankname || lastSalary?.bankname || candidate?.bankDetails?.bankName || "";
+    const bankaccountnumber = template?.bankaccountnumber || lastSalary?.bankaccountnumber || candidate?.bankDetails?.accountNumber || "";
+    const pan = template?.pan || lastSalary?.pan || "";
+    const uan = template?.uan || lastSalary?.uan || "";
+    const location = template?.location || lastSalary?.location || offer?.workLocation || "Hyderabad";
+    
+    // Calculate fullSalary (prioritizing Template -> Salary -> Offer divided by 12)
+    let fullSalary = "";
+    if (template) {
+      fullSalary = (
+        (template.basicSalary || 0) +
+        (template.da || 0) +
+        (template.hra || 0) +
+        (template.conveyance || 0) +
+        (template.medicalallowances || 0) +
+        (template.specialallowances || 0)
+      );
+    } else if (lastSalary) {
+      fullSalary = (
+        (lastSalary.basicSalary || 0) +
+        (lastSalary.da || 0) +
+        (lastSalary.hra || 0) +
+        (lastSalary.conveyance || 0) +
+        (lastSalary.medicalallowances || 0) +
+        (lastSalary.specialallowances || 0)
+      );
+    } else if (offer && offer.salaryPackage) {
+      fullSalary = parseFloat((offer.salaryPackage / 12).toFixed(2));
+    }
+
+    let pf = template?.pf || lastSalary?.pf || 0;
+    if ((pf === 0 || pf === null || pf === undefined) && fullSalary > 0) {
+      let basicSalary = 0;
+      const fSal = parseFloat(fullSalary);
+      if (fSal > 2850) {
+        const remaining = fSal - 2850;
+        basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+      } else {
+        basicSalary = fSal;
+      }
+      pf = Math.round(basicSalary * 0.24);
+    }
+
+    const employeeObj = employee.toObject();
+    employeeObj.bankname = bankname;
+    employeeObj.bankaccountnumber = bankaccountnumber;
+    employeeObj.pan = pan;
+    employeeObj.uan = uan;
+    employeeObj.location = location;
+    employeeObj.fullSalary = fullSalary;
+    employeeObj.pf = pf;
  
-    return res.status(200).json({ success: true, employee });
+    return res.status(200).json({ success: true, employee: employeeObj });
   } catch (error) {
     console.error(error);
     return res
@@ -172,6 +259,12 @@ const updateEmployee = async (req, res) => {
       role,
       salary,
       joiningDate,
+      bankname,
+      bankaccountnumber,
+      pan,
+      uan,
+      location,
+      pf,
     } = req.body;
 
     const employee = await Employee.findById(id);
@@ -229,6 +322,124 @@ const updateEmployee = async (req, res) => {
     }
 
     await Employee.findByIdAndUpdate(id, employeeUpdateData);
+
+    // Update or create default PayrollTemplate with bank details, location, PAN, UAN, and salary
+    try {
+      let template = await PayrollTemplate.findOne({ employeeId: id, isDefault: true });
+      if (!template) {
+        template = await PayrollTemplate.findOne({ employeeId: id });
+      }
+
+      // If salary/CTC changed, recalculate breakdown, otherwise keep existing values
+      let salaryFields = {};
+      if (salary !== undefined && salary !== null && salary !== "") {
+        const fullSalary = parseFloat(salary);
+        if (!isNaN(fullSalary)) {
+          let basicSalary = 0;
+          let da = 0;
+          let hra = 0;
+          let conveyance = 0;
+          let medicalallowances = 0;
+          let specialallowances = 0;
+          
+          if (fullSalary > 2850) {
+            const remaining = fullSalary - 2850;
+            basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+            da = parseFloat((remaining * 0.22).toFixed(2));
+            hra = parseFloat((remaining * 0.20).toFixed(2));
+            conveyance = 1600;
+            medicalallowances = 1250;
+            specialallowances = parseFloat((remaining * 0.18).toFixed(2));
+          } else {
+            basicSalary = parseFloat(fullSalary.toFixed(2));
+          }
+
+          salaryFields = {
+            basicSalary,
+            da,
+            hra,
+            conveyance,
+            medicalallowances,
+            specialallowances,
+            proftax: fullSalary <= 20000 ? 150 : 200,
+            pf: Math.round(basicSalary * 0.24),
+            autoCalculatePF: true,
+            pfPercentage: 24
+          };
+        }
+      }
+
+      if (template) {
+        // Update existing template
+        await PayrollTemplate.findByIdAndUpdate(template._id, {
+          name: name || template.name,
+          designation: designation || template.designation,
+          bankname: bankname !== undefined ? bankname : template.bankname,
+          bankaccountnumber: bankaccountnumber !== undefined ? bankaccountnumber : template.bankaccountnumber,
+          pan: pan !== undefined ? pan : template.pan,
+          uan: uan !== undefined ? uan : template.uan,
+          location: location !== undefined ? location : template.location,
+          joiningDate: joiningDate ? new Date(joiningDate) : template.joiningDate,
+          ...salaryFields,
+          pf: pf !== undefined ? (parseFloat(pf) || 0) : (salaryFields.pf !== undefined ? salaryFields.pf : template.pf),
+          updatedAt: new Date()
+        });
+      } else {
+        // Create a new default template if none existed yet
+        const depModel = await Department.findById(department);
+        const depName = depModel ? depModel.dep_name : "";
+        
+        const fullSalary = parseFloat(salary) || 0;
+        let basicSalary = 0;
+        let da = 0;
+        let hra = 0;
+        let conveyance = 0;
+        let medicalallowances = 0;
+        let specialallowances = 0;
+        
+        if (fullSalary > 2850) {
+          const remaining = fullSalary - 2850;
+          basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+          da = parseFloat((remaining * 0.22).toFixed(2));
+          hra = parseFloat((remaining * 0.20).toFixed(2));
+          conveyance = 1600;
+          medicalallowances = 1250;
+          specialallowances = parseFloat((remaining * 0.18).toFixed(2));
+        } else {
+          basicSalary = parseFloat(fullSalary.toFixed(2));
+        }
+
+        const newTemplate = new PayrollTemplate({
+          employeeId: id,
+          templateName: `${name} - Default Template`,
+          name: name,
+          designation: designation || "",
+          department: depName,
+          joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
+          location: location || "Hyderabad",
+          bankname: bankname || "",
+          bankaccountnumber: bankaccountnumber || "",
+          pan: pan || "",
+          uan: uan || "",
+          basicSalary,
+          da,
+          hra,
+          conveyance,
+          medicalallowances,
+          specialallowances,
+          proftax: fullSalary <= 20000 ? 150 : 200,
+          pf: pf !== undefined ? (parseFloat(pf) || 0) : Math.round(basicSalary * 0.24),
+          autoCalculatePF: true,
+          pfPercentage: 24,
+          deductions: 0,
+          isActive: true,
+          isDefault: true
+        });
+        await newTemplate.save();
+      }
+    } catch (templateError) {
+      console.error("Error updating/creating payroll template in updateEmployee:", templateError);
+    }
 
     return res.status(200).json({
       success: true,
@@ -505,31 +716,36 @@ const importEmployeesFromExcel = async (req, res) => {
         await newEmployee.save();
 
         const emailHtml = `
-      <h2>Welcome to the SPESHWAY SOLUTION PVT LTD 🎉</h2>
+      <h2>Welcome to Speshway Solutions 🎉</h2>
       <p>Dear <b>${name}</b>,</p>
-      <p>We are delighted to welcome you to Speshway Solution Pvt Ltd. We are excited to have you onboard as <b>${designation}</b> and look forward to working together towards achieving great success.
-      </p>
-      <p>Your login credentials are:</p>
-      <p>Email: <b>${email}</b></p>
-      <p>Password: <b>${rawPassword}</b></p>
-      <p>Use the same credentials to log in to both the HRMS portal (attendance, payslip, leaves, and more) and your official company email (Webmail).</p>
+      <p>On behalf of the entire team, we are delighted to welcome you to Speshway Solutions. We are excited to have you join us as <b>${designation}</b> and look forward to your contributions towards our collective success.</p>
       
-      <p>You can login to the system using the following link:</p>
-      <p><a href="https://www.speshwayhrms.com/" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Login to SPESHWAY HRMS</a></p>
-      <p>Or copy and paste this URL in your browser: <b>https://www.speshwayhrms.com/</b></p>
+      <div class="credentials-card">
+        <h4>Your HRMS & Email Portal Credentials</h4>
+        <p style="margin-bottom: 8px;"><strong>Username (Email):</strong> <code>${email}</code></p>
+        <p style="margin-bottom: 12px;"><strong>Temporary Password:</strong> <code>${rawPassword}</code></p>
+        <p style="font-size: 13px; color: #64748b;">Use these credentials to log in to both your HRMS portal and your official company webmail account.</p>
+      </div>
 
-      <p>Access your official company webmail:</p>
-      <p><a href="https://webmail.speshway.com/" style="background-color: #16a34a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Open Webmail</a></p>
-      <p>Or copy and paste this URL in your browser: <b>https://webmail.speshway.com/</b></p>
+      <div style="margin: 25px 0;">
+        <h4 style="color: #0f172a; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Portal Quick Links</h4>
+        <p style="margin-bottom: 15px;">
+          <a href="https://www.speshwayhrms.com/" class="btn-action">Login to HRMS Portal</a>
+          <span style="display: block; font-size: 12px; color: #64748b; margin-top: 4px;">Or navigate to: https://www.speshwayhrms.com/</span>
+        </p>
+        <p>
+          <a href="https://webmail.speshway.com/" class="btn-action" style="background-color: #0f766e !important; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.2) !important;">Open Company Webmail</a>
+          <span style="display: block; font-size: 12px; color: #64748b; margin-top: 4px;">Or navigate to: https://webmail.speshway.com/</span>
+        </p>
+      </div>
 
-      <p>
-We believe your skills and talent will be a great addition to our team. Together, we look forward to achieving new milestones and building a bright future.
-</p>
-      <br/>
-      <p>Once again, welcome aboard! </p>
-      <br/>
-      <p>Best regards,<br/>HR Team </p>
-      <p><strong>SPESHWAY SOLUTIONS PVT LTD<strong/></p>
+      <p>We believe your unique skills, experience, and talent will be a great addition to our growing team. We are committed to supporting your professional journey and building a bright future together.</p>
+      
+      <p>Once again, welcome aboard!</p>
+      
+      <p>Best regards,<br/>
+      <strong>HR Operations Team</strong><br/>
+      Speshway Solutions Pvt. Ltd.</p>
     `;
 
         enqueueEmail(email, "Welcome to Speshway Solutions 🎉", emailHtml);

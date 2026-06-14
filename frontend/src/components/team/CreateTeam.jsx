@@ -20,7 +20,7 @@ const CreateTeam = () => {
   const fetchTeamLeads = async () => {
     try {
         const response = await axios.get(`${API_BASE}/api/team/leads`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
         if (response.data.success) {
             setTeamLeads(response.data.leads);
@@ -41,7 +41,7 @@ const CreateTeam = () => {
         `${API_BASE}/api/team/add`,
         formData,
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         }
       );
       if (response.data.success) {

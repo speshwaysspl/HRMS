@@ -54,7 +54,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
 
     try {
       setDownloadLoading(true);
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const response = await axios.post(`${API_BASE}/api/payslip/download-preview`, {
         payslipData: payslip
       }, {

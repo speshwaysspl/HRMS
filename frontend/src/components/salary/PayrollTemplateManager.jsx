@@ -95,7 +95,7 @@ const PayrollTemplateManager = () => {
       setSearchLoading(true);
       const response = await axios.get(`${API_BASE}/api/payroll-template/all?limit=1000&search=${searchTerm}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       
@@ -121,7 +121,12 @@ const PayrollTemplateManager = () => {
         employeeName: "",
         designation: "",
         department: "",
-        templateName: ""
+        templateName: "",
+        location: "Hyderabad",
+        bankname: "",
+        bankaccountnumber: "",
+        pan: "",
+        uan: ""
       })
     }));
     
@@ -130,7 +135,7 @@ const PayrollTemplateManager = () => {
         // Use dedicated employee search endpoint for better performance
         const response = await axios.get(`${API_BASE}/api/employee/search?employeeId=${empId}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`
           }
         });
         
@@ -140,20 +145,63 @@ const PayrollTemplateManager = () => {
           // Fetch full employee details using the employee ID endpoint
           const detailsResponse = await axios.get(`${API_BASE}/api/payslip/employee/${empId}`, {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`
             }
           });
           
           if (detailsResponse.data.success) {
             const employeeDetails = detailsResponse.data.employee;
-            setTemplate(prev => ({
-              ...prev,
-              employeeObjectId: employeeDetails._id,
-              employeeName: employeeDetails.name,
-              designation: employeeDetails.designation,
-              department: employeeDetails.department,
-              templateName: `${employeeDetails.name} - Default Template`
-            }));
+            setTemplate(prev => {
+              const updated = {
+                ...prev,
+                employeeObjectId: employeeDetails._id,
+                employeeName: employeeDetails.name,
+                designation: employeeDetails.designation || prev.designation,
+                department: employeeDetails.department || prev.department,
+                location: employeeDetails.location || prev.location || "Hyderabad",
+                bankname: employeeDetails.bankname || prev.bankname || "",
+                bankaccountnumber: employeeDetails.bankaccountnumber || prev.bankaccountnumber || "",
+                pan: employeeDetails.pan || prev.pan || "",
+                uan: employeeDetails.uan || prev.uan || "",
+                templateName: prev.templateName || `${employeeDetails.name} - Default Template`
+              };
+
+              // Load template salary structure if template exists
+              const t = employeeDetails.template;
+              if (t) {
+                updated.basicSalary = t.basicSalary?.toString() || prev.basicSalary;
+                updated.da = t.da?.toString() || prev.da;
+                updated.hra = t.hra?.toString() || prev.hra;
+                updated.conveyance = t.conveyance?.toString() || prev.conveyance;
+                updated.medicalallowances = t.medicalallowances?.toString() || prev.medicalallowances;
+                updated.specialallowances = t.specialallowances?.toString() || prev.specialallowances;
+                updated.pf = t.pf?.toString() || prev.pf;
+                updated.proftax = t.proftax?.toString() || prev.proftax;
+                updated.deductions = t.deductions?.toString() || prev.deductions;
+              } else if (employeeDetails.fullSalary) {
+                // Auto calculate breakdown if CTC package exists
+                const fullSalary = parseFloat(employeeDetails.fullSalary);
+                if (!isNaN(fullSalary) && fullSalary > 2850) {
+                  const remaining = fullSalary - 2850;
+                  updated.basicSalary = (remaining * 0.40).toFixed(2);
+                  updated.da = (remaining * 0.22).toFixed(2);
+                  updated.hra = (remaining * 0.20).toFixed(2);
+                  updated.conveyance = "1600";
+                  updated.medicalallowances = "1250";
+                  updated.specialallowances = (remaining * 0.18).toFixed(2);
+                }
+              }
+              return updated;
+            });
+
+            // Set the fullSalaryInput state for the auto-calculator UI
+            if (employeeDetails.template) {
+              const t = employeeDetails.template;
+              const total = (t.basicSalary || 0) + (t.da || 0) + (t.hra || 0) + (t.conveyance || 0) + (t.medicalallowances || 0) + (t.specialallowances || 0);
+              setFullSalaryInput(total.toString());
+            } else if (employeeDetails.fullSalary) {
+              setFullSalaryInput(employeeDetails.fullSalary.toString());
+            }
           }
         }
       } catch (error) {
@@ -165,11 +213,13 @@ const PayrollTemplateManager = () => {
             employeeName: "",
             designation: "",
             department: "",
-            templateName: ""
+            templateName: "",
+            location: "Hyderabad",
+            bankname: "",
+            bankaccountnumber: "",
+            pan: "",
+            uan: ""
           }));
-          
-          // Show user-friendly error message
-          // alert("Employee not found. Please check the Employee ID. You can view valid Employee IDs in the Employee Management section.");
         } else {
           console.error("Error fetching employee details:", error);
         }
@@ -181,11 +231,9 @@ const PayrollTemplateManager = () => {
   useEffect(() => {
     const basicSalary = parseFloat(template.basicSalary) || 0;
     let hra = parseFloat(template.hra) || 0;
-    let pf = parseFloat(template.pf) || 0;
     
-
-    
-    // PF is manually entered, no auto-calculation
+    // Auto-calculate PF as 24% of basic salary
+    const calculatedPFValue = basicSalary ? Math.round(basicSalary * 0.24) : 0;
     
     const totalEarnings = basicSalary + 
                          (parseFloat(template.da) || 0) + 
@@ -200,7 +248,7 @@ const PayrollTemplateManager = () => {
       professionalTax = totalEarnings <= 20000 ? 150 : 200;
     }
     
-    const totalDeductions = pf + 
+    const totalDeductions = calculatedPFValue + 
                            professionalTax + 
                            (parseFloat(template.deductions) || 0);
     
@@ -211,14 +259,25 @@ const PayrollTemplateManager = () => {
       totalDeductions: totalDeductions.toFixed(2),
       netSalary: netSalary.toFixed(2),
       calculatedHRA: hra.toFixed(2),
-      calculatedPF: pf.toFixed(2),
+      calculatedPF: calculatedPFValue.toFixed(2),
       calculatedProfTax: professionalTax.toFixed(2)
     });
     
-
-    // Always update professional tax automatically
+    // Always update professional tax and PF automatically
     if (basicSalary > 0) {
-      setTemplate(prev => ({ ...prev, proftax: professionalTax.toFixed(2) }));
+      setTemplate(prev => {
+        const currentPf = parseFloat(prev.pf) || 0;
+        const currentPT = parseFloat(prev.proftax) || 0;
+        
+        if (currentPf !== calculatedPFValue || currentPT !== professionalTax) {
+          return {
+            ...prev,
+            pf: calculatedPFValue.toString(),
+            proftax: professionalTax.toFixed(2)
+          };
+        }
+        return prev;
+      });
     }
   }, [template.basicSalary, template.da, template.hra, template.conveyance, template.medicalallowances, 
       template.specialallowances, template.pf, template.proftax, template.deductions]);
@@ -233,12 +292,12 @@ const PayrollTemplateManager = () => {
       
       setTemplate(prev => ({
         ...prev,
-        basicSalary: Math.round(remaining * 0.40).toString(),
-        da: Math.round(remaining * 0.22).toString(),
-        hra: Math.round(remaining * 0.20).toString(),
+        basicSalary: (remaining * 0.40).toFixed(2),
+        da: (remaining * 0.22).toFixed(2),
+        hra: (remaining * 0.20).toFixed(2),
         conveyance: "1600",
         medicalallowances: "1250",
-        specialallowances: Math.round(remaining * 0.18).toString()
+        specialallowances: (remaining * 0.18).toFixed(2)
       }));
     }
   };
@@ -350,7 +409,7 @@ const PayrollTemplateManager = () => {
       
       const response = await axios[method](url, template, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       
@@ -385,7 +444,7 @@ const PayrollTemplateManager = () => {
     try {
       const response = await axios.delete(`${API_BASE}/api/payroll-template/${templateId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       
@@ -402,7 +461,7 @@ const PayrollTemplateManager = () => {
     try {
       const response = await axios.patch(`${API_BASE}/api/payroll-template/${templateId}/set-default`, {}, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`
         }
       });
       

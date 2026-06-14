@@ -19,7 +19,7 @@ const TeamList = () => {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/team`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         setTeams(response.data.teams);
@@ -35,7 +35,7 @@ const TeamList = () => {
     if (window.confirm("Are you sure you want to delete this team?")) {
       try {
         const response = await axios.delete(`${API_BASE}/api/team/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
         if (response.data.success) {
           fetchTeams();

@@ -46,7 +46,7 @@ const AttendanceReport = () => {
       if (viewMode !== "daily") return; // Only fetch daily data when in daily mode
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (!token) return;
  
         // First check if there's an approved leave for this date
@@ -193,7 +193,7 @@ const AttendanceReport = () => {
     
     setMonthlyLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) return;
 
       const { data } = await axios.get(

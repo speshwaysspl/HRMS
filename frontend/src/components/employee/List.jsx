@@ -33,7 +33,7 @@ const List = () => {
           `${API_BASE}/api/employee/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -57,23 +57,23 @@ const List = () => {
                 `${API_BASE}/api/employee?t=${Date.now()}`,
                 {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
                     },
                 }
             );
             if (responnse.data.success) {
               let sno = 1;
-              const data = await responnse.data.employees.map((emp) => {
+              const data = responnse.data.employees.map((emp) => {
                  return {
                    _id: emp._id,
                    sno: sno++,
                    employeeId: emp.employeeId,
-                   dep_name: emp.department.dep_name,
-                   name: emp.userId.name,
-                   email: emp.userId.email,
-                   designation: emp.designation,
-                   dob: formatDMY(emp.dob),
-                   gender: emp.gender,
+                   dep_name: emp.department?.dep_name || 'N/A',
+                   name: emp.userId?.name || 'N/A',
+                   email: emp.userId?.email || 'N/A',
+                   designation: emp.designation || 'N/A',
+                   dob: emp.dob ? formatDMY(emp.dob) : 'N/A',
+                   gender: emp.gender || 'N/A',
                    joiningDate: emp.joiningDate ? formatDMY(emp.joiningDate) : 'N/A',
                    mobilenumber: emp.mobilenumber || 'N/A',
                    status: emp.status || 'active',
@@ -84,9 +84,17 @@ const List = () => {
               setEmployees(data);
             }
           } catch (error) {
-    
-            if(error.response && !error.response.data.success) {
-              alert(error.response.data.error)
+            console.error("Fetch employees error:", error);
+            if(error.response) {
+              if (error.response.data && !error.response.data.success) {
+                alert(error.response.data.error);
+              } else {
+                alert(`Server Error: ${error.response.status} ${error.response.statusText}`);
+              }
+            } else if (error.request) {
+              alert("No response from server. Please check your network connection.");
+            } else {
+              alert(`Error: ${error.message}`);
             }
           } finally {
             setEmpLoading(false)
@@ -141,7 +149,7 @@ const List = () => {
             formData,
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                Authorization: `Bearer ${sessionStorage.getItem("token")}`,
                 'Content-Type': 'multipart/form-data',
               },
             }

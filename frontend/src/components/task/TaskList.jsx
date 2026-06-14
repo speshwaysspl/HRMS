@@ -38,7 +38,7 @@ const TaskList = () => {
   const fetchTasks = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/task`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (response.data.success) {
         const incoming = Array.isArray(response.data.tasks) ? response.data.tasks : [];
@@ -66,7 +66,7 @@ const TaskList = () => {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             "Content-Type": "multipart/form-data",
           },
         }
