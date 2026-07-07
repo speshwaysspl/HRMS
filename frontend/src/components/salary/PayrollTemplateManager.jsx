@@ -55,7 +55,8 @@ const PayrollTemplateManager = () => {
 
     
     isDefault: false,
-    isActive: true
+    isActive: true,
+    autoCalculatePF: true
   });
 
   const [templates, setTemplates] = useState([]);
@@ -178,6 +179,7 @@ const PayrollTemplateManager = () => {
                 updated.pf = t.pf?.toString() || prev.pf;
                 updated.proftax = t.proftax?.toString() || prev.proftax;
                 updated.deductions = t.deductions?.toString() || prev.deductions;
+                updated.autoCalculatePF = t.autoCalculatePF !== undefined ? t.autoCalculatePF : false;
               } else if (employeeDetails.fullSalary) {
                 // Auto calculate breakdown if CTC package exists
                 const fullSalary = parseFloat(employeeDetails.fullSalary);
@@ -234,6 +236,7 @@ const PayrollTemplateManager = () => {
     
     // Auto-calculate PF as 24% of basic salary
     const calculatedPFValue = basicSalary ? Math.round(basicSalary * 0.24) : 0;
+    const pfToUse = template.autoCalculatePF ? calculatedPFValue : (parseFloat(template.pf) || 0);
     
     const totalEarnings = basicSalary + 
                          (parseFloat(template.da) || 0) + 
@@ -248,7 +251,7 @@ const PayrollTemplateManager = () => {
       professionalTax = totalEarnings <= 20000 ? 150 : 200;
     }
     
-    const totalDeductions = calculatedPFValue + 
+    const totalDeductions = pfToUse + 
                            professionalTax + 
                            (parseFloat(template.deductions) || 0);
     
@@ -259,7 +262,7 @@ const PayrollTemplateManager = () => {
       totalDeductions: totalDeductions.toFixed(2),
       netSalary: netSalary.toFixed(2),
       calculatedHRA: hra.toFixed(2),
-      calculatedPF: calculatedPFValue.toFixed(2),
+      calculatedPF: pfToUse.toFixed(2),
       calculatedProfTax: professionalTax.toFixed(2)
     });
     
@@ -269,18 +272,23 @@ const PayrollTemplateManager = () => {
         const currentPf = parseFloat(prev.pf) || 0;
         const currentPT = parseFloat(prev.proftax) || 0;
         
-        if (currentPf !== calculatedPFValue || currentPT !== professionalTax) {
-          return {
-            ...prev,
-            pf: calculatedPFValue.toString(),
-            proftax: professionalTax.toFixed(2)
-          };
+        let needsUpdate = false;
+        const updated = { ...prev };
+
+        if (prev.autoCalculatePF && currentPf !== calculatedPFValue) {
+          updated.pf = calculatedPFValue.toString();
+          needsUpdate = true;
         }
-        return prev;
+        if (currentPT !== professionalTax) {
+          updated.proftax = professionalTax.toFixed(2);
+          needsUpdate = true;
+        }
+
+        return needsUpdate ? updated : prev;
       });
     }
   }, [template.basicSalary, template.da, template.hra, template.conveyance, template.medicalallowances, 
-      template.specialallowances, template.pf, template.proftax, template.deductions]);
+      template.specialallowances, template.pf, template.proftax, template.deductions, template.autoCalculatePF]);
 
   const handleFullSalaryChange = (e) => {
     const value = e.target.value;
@@ -297,7 +305,8 @@ const PayrollTemplateManager = () => {
         hra: (remaining * 0.20).toFixed(2),
         conveyance: "1600",
         medicalallowances: "1250",
-        specialallowances: (remaining * 0.18).toFixed(2)
+        specialallowances: (remaining * 0.18).toFixed(2),
+        autoCalculatePF: true
       }));
     }
   };
@@ -322,10 +331,21 @@ const PayrollTemplateManager = () => {
         }
       }
     } else {
-      setTemplate(prev => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value
-      }));
+      setTemplate(prev => {
+        const nextState = {
+          ...prev,
+          [name]: type === "checkbox" ? checked : value
+        };
+        // Disable auto calculate PF if user manually modifies pf field
+        if (name === "pf") {
+          nextState.autoCalculatePF = false;
+        }
+        // Enable auto calculate PF if user manually modifies basicSalary
+        if (name === "basicSalary") {
+          nextState.autoCalculatePF = true;
+        }
+        return nextState;
+      });
     }
   };
   
@@ -376,10 +396,9 @@ const PayrollTemplateManager = () => {
       deductions: "",
       pf: "",
       proftax: "",
-
-
       isDefault: false,
-      isActive: true
+      isActive: true,
+      autoCalculatePF: true
     });
     setEditingTemplate(null);
     setBankSuggestions([]);

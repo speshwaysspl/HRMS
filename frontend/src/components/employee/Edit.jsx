@@ -76,8 +76,8 @@ const Edit = () => {
             uan: employee.uan || "",
             location: employee.location || "Hyderabad",
             salary: employee.fullSalary || "",
-            annualSalary: employee.fullSalary ? String(parseFloat(employee.fullSalary) * 12) : "",
-            pf: employee.pf !== undefined ? String(employee.pf) : "",
+            annualSalary: employee.fullSalary ? String(Math.round(parseFloat(employee.fullSalary) * 12)) : "",
+            pf: employee.pf !== undefined && employee.pf !== 0 ? String(employee.pf) : "",
           }));
           // Initialize designation search with existing value
           setDesignationSearch(employee.designation || "");
@@ -188,9 +188,13 @@ const Edit = () => {
 
     // Validate Joining Date (future allowed)
 
-    // Filter out null and empty values
+    // Filter out null values, but allow empty strings for clearing optional fields, and default empty pf to "0"
     const cleanedEmployee = Object.keys(employee).reduce((acc, key) => {
-      if (employee[key] !== null && employee[key] !== "") {
+      if (key === "pf") {
+        acc[key] = employee[key] === "" ? "0" : employee[key];
+      } else if (key === "password" && employee[key] === "") {
+        // Do not update password if left blank
+      } else if (employee[key] !== null) {
         acc[key] = employee[key];
       }
       return acc;

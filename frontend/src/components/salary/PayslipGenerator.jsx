@@ -61,7 +61,8 @@ const PayslipGenerator = () => {
     pf: "",
     proftax: "",
     payDate: "", // Will be set to joining date when employee is selected
-    autoCalculateLOP: false
+    autoCalculateLOP: false,
+    autoCalculatePF: true
   });
 
   const [departments, setDepartments] = useState([]);
@@ -143,7 +144,9 @@ const PayslipGenerator = () => {
             bankname: employee.bankname || prev.bankname || "",
             bankaccountnumber: employee.bankaccountnumber || prev.bankaccountnumber || "",
             pan: employee.pan || prev.pan || "",
-            uan: employee.uan || prev.uan || ""
+            uan: employee.uan || prev.uan || "",
+            autoCalculatePF: employee.template ? (employee.template.autoCalculatePF !== undefined ? employee.template.autoCalculatePF : false) : true,
+            pf: employee.template ? (employee.template.pf !== undefined && employee.template.pf !== null ? employee.template.pf.toString() : "") : ""
           };
 
           // If no template but we have fullSalary from offer, calculate breakdown
@@ -265,9 +268,10 @@ const PayslipGenerator = () => {
       medicalallowances: template.medicalallowances || "",
       specialallowances: template.specialallowances || "",
       deductions: template.deductions || "",
-      pf: template.pf || "",
+      pf: template.pf !== undefined && template.pf !== null ? template.pf.toString() : "",
       proftax: template.proftax || "",
-      workingdays: workingDays || 30
+      workingdays: workingDays || 30,
+      autoCalculatePF: template.autoCalculatePF !== undefined ? template.autoCalculatePF : false
     }));
   };
 
@@ -365,7 +369,9 @@ const PayslipGenerator = () => {
       professionalTax = totalEarnings <= 20000 ? 150 : 200;
     }
     
-    const totalDeductions = calculatedPFValue + 
+    const pfToUse = payslip.autoCalculatePF ? calculatedPFValue : (parseFloat(payslip.pf) || 0);
+
+    const totalDeductions = pfToUse + 
                            professionalTax + 
                            (parseFloat(payslip.deductions) || 0) + 
                            lopAmount;
@@ -376,7 +382,7 @@ const PayslipGenerator = () => {
       totalEarnings: totalEarnings.toFixed(2),
       totalDeductions: totalDeductions.toFixed(2),
       netSalary: netSalary.toFixed(2),
-      calculatedPF: calculatedPFValue.toFixed(2),
+      calculatedPF: pfToUse.toFixed(2),
       calculatedProfTax: professionalTax.toFixed(2),
       lopAmount: lopAmount.toFixed(2)
     });
@@ -390,19 +396,27 @@ const PayslipGenerator = () => {
       const nextLop = prev.autoCalculateLOP ? lopAmount : currentLop;
       const nextLopStr = prev.autoCalculateLOP ? lopAmount.toFixed(2) : prev.lopamount;
       
-      if (currentPf !== calculatedPFValue || currentPT !== professionalTax || currentLop !== nextLop) {
-        return {
-          ...prev,
-          pf: calculatedPFValue.toString(),
-          proftax: professionalTax.toFixed(2),
-          ...(prev.autoCalculateLOP && { lopamount: nextLopStr })
-        };
+      let needsUpdate = false;
+      const updated = { ...prev };
+
+      if (prev.autoCalculatePF && currentPf !== calculatedPFValue) {
+        updated.pf = calculatedPFValue.toString();
+        needsUpdate = true;
       }
-      return prev;
+      if (currentPT !== professionalTax) {
+        updated.proftax = professionalTax.toFixed(2);
+        needsUpdate = true;
+      }
+      if (currentLop !== nextLop) {
+        updated.lopamount = nextLopStr;
+        needsUpdate = true;
+      }
+
+      return needsUpdate ? updated : prev;
     });
   }, [payslip.basicSalary, payslip.da, payslip.hra, payslip.conveyance, payslip.medicalallowances, 
       payslip.specialallowances, payslip.pf, payslip.proftax, payslip.deductions,
-      payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateLOP]);
+      payslip.workingdays, payslip.lopDays, payslip.lopamount, payslip.autoCalculateLOP, payslip.autoCalculatePF]);
 
   // Auto-update working days when month or year changes
   useEffect(() => {
@@ -431,10 +445,21 @@ const PayslipGenerator = () => {
         monthName: MONTHS[parseInt(value) - 1]
       }));
     } else {
-      setPayslip(prev => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value
-      }));
+      setPayslip(prev => {
+        const nextState = {
+          ...prev,
+          [name]: type === "checkbox" ? checked : value
+        };
+        // Disable auto calculate PF if user manually modifies pf field
+        if (name === "pf") {
+          nextState.autoCalculatePF = false;
+        }
+        // Enable auto calculate PF if user manually modifies basicSalary
+        if (name === "basicSalary") {
+          nextState.autoCalculatePF = true;
+        }
+        return nextState;
+      });
     }
   };
 

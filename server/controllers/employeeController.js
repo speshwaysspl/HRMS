@@ -212,8 +212,17 @@ const getEmployee = async (req, res) => {
       fullSalary = parseFloat((offer.salaryPackage / 12).toFixed(2));
     }
 
-    let pf = template?.pf || lastSalary?.pf || 0;
-    if ((pf === 0 || pf === null || pf === undefined) && fullSalary > 0) {
+    let pf = 0;
+    let hasTemplateOrSalary = false;
+    if (template) {
+      pf = template.pf !== undefined && template.pf !== null ? template.pf : 0;
+      hasTemplateOrSalary = true;
+    } else if (lastSalary) {
+      pf = lastSalary.pf !== undefined && lastSalary.pf !== null ? lastSalary.pf : 0;
+      hasTemplateOrSalary = true;
+    }
+
+    if (!hasTemplateOrSalary && fullSalary > 0) {
       let basicSalary = 0;
       const fSal = parseFloat(fullSalary);
       if (fSal > 2850) {
@@ -382,6 +391,7 @@ const updateEmployee = async (req, res) => {
           joiningDate: joiningDate ? new Date(joiningDate) : template.joiningDate,
           ...salaryFields,
           pf: pf !== undefined ? (parseFloat(pf) || 0) : (salaryFields.pf !== undefined ? salaryFields.pf : template.pf),
+          autoCalculatePF: pf !== undefined ? (parseFloat(pf) === 0 ? false : (salaryFields.autoCalculatePF !== undefined ? salaryFields.autoCalculatePF : template.autoCalculatePF)) : (salaryFields.autoCalculatePF !== undefined ? salaryFields.autoCalculatePF : template.autoCalculatePF),
           updatedAt: new Date()
         });
       } else {
@@ -429,7 +439,7 @@ const updateEmployee = async (req, res) => {
           specialallowances,
           proftax: fullSalary <= 20000 ? 150 : 200,
           pf: pf !== undefined ? (parseFloat(pf) || 0) : Math.round(basicSalary * 0.24),
-          autoCalculatePF: true,
+          autoCalculatePF: pf !== undefined ? (parseFloat(pf) === 0 ? false : true) : true,
           pfPercentage: 24,
           deductions: 0,
           isActive: true,
