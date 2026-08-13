@@ -31,12 +31,39 @@ const getSummary = async (req, res) => {
             pending: leaveStatus.find(item => item._id === "Pending")?.count || 0,
         }
 
+        const departmentBreakdownRaw = await Employee.aggregate([
+            { $group: { _id: "$department", count: { $sum: 1 } } },
+            { $lookup: { from: "departments", localField: "_id", foreignField: "_id", as: "dept" } },
+            { $unwind: { path: "$dept", preserveNullAndEmptyArrays: true } },
+        ]);
+        const departmentBreakdown = departmentBreakdownRaw.map(d => ({
+            department: d.dept?.dep_name || "Unassigned",
+            count: d.count,
+        }));
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+        const startStr = thirtyDaysAgo.toISOString().split('T')[0];
+        const attendanceTrendRaw = await Attendance.aggregate([
+            { $match: { date: { $gte: startStr } } },
+            {
+                $group: {
+                    _id: "$date",
+                    present: { $sum: { $cond: [{ $ifNull: ["$inTime", false] }, 1, 0] } },
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+        const attendanceTrend = attendanceTrendRaw.map(d => ({ date: d._id, present: d.present }));
+
         return res.status(200).json({
             success: true,
             totalEmployees,
             totalDepartments,
             totalSalary: totalSalaries[0]?.totalSalary || 0,
-            leaveSummary
+            leaveSummary,
+            departmentBreakdown,
+            attendanceTrend
         })
     }catch(error) {
         console.log(error.message)

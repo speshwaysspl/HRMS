@@ -55,8 +55,8 @@ export const getEmployeeDetails = async (req, res) => {
 
     const bankname = template?.bankname || lastSalary?.bankname || candidate?.bankDetails?.bankName || "";
     const bankaccountnumber = template?.bankaccountnumber || lastSalary?.bankaccountnumber || candidate?.bankDetails?.accountNumber || "";
-    const pan = template?.pan || lastSalary?.pan || "";
-    const uan = template?.uan || lastSalary?.uan || "";
+    const pan = template?.pan || employee.pan || lastSalary?.pan || "";
+    const uan = template?.uan || employee.uan || lastSalary?.uan || "";
     const location = template?.location || lastSalary?.location || offer?.workLocation || "Hyderabad";
     
     // Calculate fullSalary (prioritizing Template -> Salary -> Offer divided by 12)
@@ -81,6 +81,8 @@ export const getEmployeeDetails = async (req, res) => {
       );
     } else if (offer && offer.salaryPackage) {
       fullSalary = parseFloat((offer.salaryPackage / 12).toFixed(2));
+    } else if (employee.salaryPackage) {
+      fullSalary = parseFloat((employee.salaryPackage / 12).toFixed(2));
     }
 
     const employeeDetails = {
@@ -205,9 +207,18 @@ export const generatePayslip = async (req, res) => {
     });
     
     await newSalary.save();
-    
-    return res.status(200).json({ 
-      success: true, 
+
+    // Persist PAN/UAN on the employee's master record so future payslips
+    // for this employee prefill them without depending on payslip history.
+    const employeeUpdate = {};
+    if (payload.pan) employeeUpdate.pan = payload.pan;
+    if (payload.uan) employeeUpdate.uan = payload.uan;
+    if (Object.keys(employeeUpdate).length > 0) {
+      await Employee.findByIdAndUpdate(payload.employeeObjectId || payload.employeeId, employeeUpdate);
+    }
+
+    return res.status(200).json({
+      success: true,
       salary: newSalary,
       calculations: {
         totalEarnings: Number(totalEarnings.toFixed(2)),

@@ -1,5 +1,7 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import ActionIconButton from "../components/common/ActionIconButton";
 import { API_BASE } from "./apiConfig";
 
 export const columns = [
@@ -44,19 +46,9 @@ export const DepartmentButtons = ({ Id, onDepartmentDelete }) => {
     }
   };
   return (
-    <div className="flex space-x-3">
-      <button
-        className="px-3 py-1 bg-teal-600  text-white"
-        onClick={() => navigate(`/admin-dashboard/department/${Id}`)}
-      >
-        Edit
-      </button>
-      <button
-        className="px-3 py-1 bg-red-600 text-white"
-        onClick={() => handleDelete(Id)}
-      >
-        Delete
-      </button>
+    <div className="flex items-center gap-1">
+      <ActionIconButton icon={FiEdit2} label="Edit" color="brand" onClick={() => navigate(`/admin-dashboard/department/${Id}`)} />
+      <ActionIconButton icon={FiTrash2} label="Delete" color="danger" onClick={() => handleDelete(Id)} />
     </div>
   );
 };

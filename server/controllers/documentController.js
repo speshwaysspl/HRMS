@@ -23,6 +23,19 @@ export const uploadDocument = async (req, res) => {
       return res.status(500).json({ success: false, error: "Failed to upload to storage" });
     }
 
+    const { documentType, expiryDate } = req.body;
+
+    // Versioning: if a document of the same type already exists for this employee, link it
+    let version = 1;
+    let previousVersionId = null;
+    if (documentType) {
+      const latest = await Document.findOne({ employeeId: employee._id, documentType }).sort({ version: -1 });
+      if (latest) {
+        version = latest.version + 1;
+        previousVersionId = latest._id;
+      }
+    }
+
     const newDocument = new Document({
       employeeId: employee._id,
       uploadedBy: req.user._id,
@@ -30,6 +43,10 @@ export const uploadDocument = async (req, res) => {
       fileKey: s3Result.key,
       fileType: req.file.mimetype,
       originalName: req.file.originalname,
+      documentType: documentType || "Other",
+      expiryDate: expiryDate || null,
+      version,
+      previousVersionId,
     });
 
     await newDocument.save();

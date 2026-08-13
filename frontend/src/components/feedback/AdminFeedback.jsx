@@ -248,11 +248,16 @@ const AdminFeedback = () => {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       {/* Header */}
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 3, fontFamily: 'Times New Roman, serif' }}>
-        Feedback Management
-      </Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1c2333' }}>
+          Feedback Management
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#5b6376', mt: 0.5 }}>
+          Review and respond to employee-submitted feedback
+        </Typography>
+      </Box>
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -264,7 +269,7 @@ const AdminFeedback = () => {
       {/* All Feedback Tab */}
       <TabPanel value={activeTab} index={0}>
         {/* Search and Filters */}
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 3, boxShadow: 'none', border: '1px solid #eef0f6', borderRadius: 3 }}>
           <CardContent>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} sm={3} md={3}>
@@ -334,11 +339,11 @@ const AdminFeedback = () => {
         {loading && <LinearProgress sx={{ mb: 2 }} />}
 
         {/* Feedback Table */}
-        <Card>
+        <Card sx={{ boxShadow: 'none', border: '1px solid #eef0f6', borderRadius: 3 }}>
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: '#f6f7fb', color: '#1c2333', fontWeight: 600 } }}>
                   <TableCell>Employee</TableCell>
                   <TableCell>Title</TableCell>
                   <TableCell>Category</TableCell>
@@ -460,8 +465,8 @@ const AdminFeedback = () => {
       >
         {viewingFeedback && (
           <>
-            <DialogTitle sx={{ 
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            <DialogTitle sx={{
+              bgcolor: '#1e3a5f',
               color: 'white',
               display: 'flex',
               justifyContent: 'space-between',
@@ -563,8 +568,8 @@ const AdminFeedback = () => {
       >
         {respondingFeedback && (
           <>
-            <DialogTitle sx={{ 
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            <DialogTitle sx={{
+              bgcolor: '#1e3a5f',
               color: 'white',
               display: 'flex',
               justifyContent: 'space-between',
@@ -607,11 +612,12 @@ const AdminFeedback = () => {
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
               <Button onClick={() => setRespondingFeedback(null)}>Cancel</Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={handleUpdateStatus}
                 disabled={loading || !adminResponse.trim()}
                 startIcon={<ReplyIcon />}
+                sx={{ bgcolor: '#16a34a', boxShadow: 'none', textTransform: 'none', '&:hover': { bgcolor: '#15803d' } }}
               >
                 Send Response
               </Button>

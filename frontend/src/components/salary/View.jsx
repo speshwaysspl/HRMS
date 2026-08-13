@@ -6,6 +6,9 @@ import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
+import EmptyState from "../common/EmptyState";
+import ActionIconButton from "../common/ActionIconButton";
+import { FiDownload } from "react-icons/fi";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -141,7 +144,7 @@ const View = () => {
             <div className="flex justify-end mb-2">
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                className="text-ink-muted hover:text-ink text-2xl font-bold transition-colors"
               >
                 ×
               </button>
@@ -310,25 +313,25 @@ const View = () => {
 
   return (
     <div className="overflow-x-auto p-5">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Salary Management</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-2xl font-semibold text-ink">Salary Management</h2>
         {user?.role === 'admin' && !id && (
-          <div className="space-x-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate("/admin-dashboard/salary/payslip-generator")}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+              className="bg-accent-600 text-white px-4 py-2 rounded-lg hover:bg-accent-700 transition-colors"
             >
               Generate Payslip
             </button>
             <button
               onClick={() => navigate("/admin-dashboard/salary/template-manager")}
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
+              className="border border-surface-subtle bg-white text-ink px-4 py-2 rounded-lg hover:bg-surface-muted transition-colors"
             >
               Manage Templates
             </button>
             <button
               onClick={() => navigate("/admin-dashboard/salary/payslip-history")}
-              className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition"
+              className="border border-surface-subtle bg-white text-ink px-4 py-2 rounded-lg hover:bg-surface-muted transition-colors"
             >
               Payslip History
             </button>
@@ -336,43 +339,44 @@ const View = () => {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Salary Records</h3>
-        
+      <div className="bg-surface p-6 rounded-xl shadow-card">
+        <h3 className="text-lg font-semibold text-ink mb-4">Salary Records</h3>
+
 
 
       {!id ? (
-        <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">Welcome to Salary Management Dashboard</p>
+        <div className="text-center py-10">
+          <p className="text-ink mb-4">Welcome to Salary Management Dashboard</p>
           {user?.role === 'admin' ? (
             <>
-              <p className="text-sm text-gray-500">Use the buttons above to generate payslips, manage templates, or view payslip history.</p>
-              <p className="text-sm text-gray-500 mt-2">To view individual employee salary records, go to Employee Management and click the "Salary" button for a specific employee.</p>
+              <p className="text-sm text-ink-muted">Use the buttons above to generate payslips, manage templates, or view payslip history.</p>
+              <p className="text-sm text-ink-muted mt-2">To view individual employee salary records, go to Employee Management and click the "Salary" button for a specific employee.</p>
             </>
           ) : (
-            <p className="text-sm text-gray-500">Your salary information will be displayed here when available.</p>
+            <p className="text-sm text-ink-muted">Your salary information will be displayed here when available.</p>
           )}
         </div>
       ) : salaries.length === 0 ? (
-        <p className="text-center text-gray-500">No Records Found</p>
+        <EmptyState title="No records found" message="No salary records are available yet." />
       ) : (
-        <table className="w-full text-sm text-gray-700 border border-gray-200 rounded">
-          <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm text-ink border border-surface-subtle rounded-lg overflow-hidden">
+          <thead className="bg-surface-muted">
             <tr>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">SNO</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Emp ID</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Salary</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Deduction</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Total</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Joining Date</th>
-              <th className="px-6 py-3 border-b text-center whitespace-nowrap">Actions</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">SNO</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Emp ID</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Salary</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Deduction</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Total</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Joining Date</th>
+              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
             {salaries.map((salary, index) => (
-              <tr key={salary._id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                <td className="px-6 py-3 border-b text-center">{index + 1}</td>
-                <td className="px-6 py-3 border-b text-center">
+              <tr key={salary._id} className={`${index % 2 === 0 ? "bg-surface" : "bg-surface-muted"} hover:bg-surface-muted transition-colors`}>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center">{index + 1}</td>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center">
                   {(() => {
                     if (salary.employeeId) {
                       if (typeof salary.employeeId === 'object' && salary.employeeId.employeeId) {
@@ -382,29 +386,29 @@ const View = () => {
                       }
                     }
                     return 'N/A';
-                  })()} 
+                  })()}
                 </td>
-                <td className="px-6 py-3 border-b text-center">{Number(salary.basicSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b text-center">{Number(salary.deductions).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b text-center">{Number(salary.netSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b text-center whitespace-nowrap">{salary.joiningDate ? formatDMY(salary.joiningDate) : (salary.payDate ? formatDMY(salary.payDate) : '-')}</td>
-                <td className="px-6 py-3 border-b text-center">
-                  <div className="flex space-x-2 justify-center">
-                    <button
+                <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.basicSalary).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.deductions).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center font-medium text-accent-700">{Number(salary.netSalary).toFixed(2)}</td>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap">{salary.joiningDate ? formatDMY(salary.joiningDate) : (salary.payDate ? formatDMY(salary.payDate) : '-')}</td>
+                <td className="px-6 py-3 border-b border-surface-subtle text-center">
+                  <div className="flex justify-center">
+                    <ActionIconButton
+                      icon={FiDownload}
+                      label={`Download payslip PDF for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
+                      color="accent"
                       onClick={() =>
                         downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
                       }
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                      aria-label={`Download payslip PDF for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
-                    >
-                      Download PDF
-                    </button>
+                    />
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}      </div>
       
       {/* Detailed Salary View Modal */}

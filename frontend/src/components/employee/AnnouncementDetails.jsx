@@ -1,11 +1,13 @@
 // frontend/src/pages/EmployeeAnnouncementDetails.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from "@mui/material";
+import { Box, Typography, Card, CardContent, CardMedia } from "@mui/material";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
+import ErrorState from "../common/ErrorState";
 
 const EmployeeAnnouncementDetails = () => {
   const { id } = useParams();
@@ -45,13 +47,13 @@ const EmployeeAnnouncementDetails = () => {
     fetchAnnouncement();
   }, [id]);
 
-  if (loading) return <Box textAlign="center" mt={4}><CircularProgress /></Box>;
-  if (error) return <Typography color="error" align="center" mt={2}>{error}</Typography>;
+  if (loading) return <LoadingState message="Loading announcement..." />;
+  if (error) return <ErrorState title="Failed to load announcement" message={error} />;
   if (!announcement) return null;
 
   return (
-    <Box maxWidth={800} mx="auto" mt={5} p={3}>
-      <Card>
+    <Box maxWidth={800} mx="auto" mt={5} p={{ xs: 2, sm: 3 }}>
+      <Card sx={{ borderRadius: 3, boxShadow: "0 1px 2px rgba(28,35,51,0.06), 0 4px 12px rgba(28,35,51,0.06)", border: "1px solid #eef0f6" }}>
         {announcement.imageUrl && (
           <CardMedia
             component="img"
@@ -61,11 +63,11 @@ const EmployeeAnnouncementDetails = () => {
           />
         )}
         <CardContent>
-          <Typography variant="h4" gutterBottom>{announcement.title}</Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: "#1c2333" }}>{announcement.title}</Typography>
+          <Typography variant="body2" sx={{ color: "#5b6376" }}>
             {announcement.createdBy?.name} • {formatISTDate(new Date(announcement.createdAt))}
           </Typography>
-          <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}>
+          <Typography sx={{ mt: 2, whiteSpace: "pre-wrap", color: "#1c2333" }}>
             {announcement.description}
           </Typography>
         </CardContent>

@@ -28,6 +28,7 @@ import {
 import ProfileCompletionForm from "../components/candidate/ProfileCompletionForm";
 import OnboardingDocsUpload from "../components/candidate/OnboardingDocsUpload";
 import OfferLetterPortal from "../components/offer/OfferLetterPortal";
+import LoadingState from "../components/common/LoadingState";
 
 const getMissingFields = (candidate) => {
   if (!candidate) return [];
@@ -159,11 +160,8 @@ const CandidateDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-          <p className="text-lg font-medium text-slate-300">Loading your onboarding portal...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center bg-surface-muted text-ink">
+        <LoadingState message="Loading your onboarding portal…" />
       </div>
     );
   }
@@ -211,18 +209,18 @@ const CandidateDashboard = () => {
   const activeStage = currentStageIndex === -1 ? 5 : currentStageIndex;
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white font-sans">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      
+    <div className="flex min-h-screen bg-surface-muted text-ink">
+      <ToastContainer position="top-right" autoClose={3000} />
+
       {/* Portal Sidebar */}
-      <div className="w-64 border-r border-white/10 bg-slate-900/60 p-6 flex flex-col justify-between hidden md:flex">
+      <div className="w-64 border-r border-white/10 bg-brand-800 text-white p-6 flex flex-col justify-between hidden md:flex">
         <div>
           <div className="flex items-center gap-3 mb-8">
-            <img src="/images/Logo.jpg" className="w-10 h-10 rounded-full border border-white/20" alt="Logo" />
-            <h1 className="font-bold text-lg text-blue-400">Onboarding</h1>
+            <img src="/images/Logo.jpg" className="w-9 h-9 rounded-md object-cover" alt="Logo" />
+            <h1 className="font-semibold text-base tracking-wide">Onboarding</h1>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             {[
               { id: "dashboard", label: "Dashboard Overview", icon: <FaUser /> },
               { id: "profile", label: "Complete Profile", icon: <FaUser /> },
@@ -232,10 +230,10 @@ const CandidateDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors duration-150 text-sm font-medium ${
                   activeTab === tab.id
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ? "bg-accent-500 text-white shadow-sm"
+                    : "text-brand-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {tab.icon}
@@ -247,7 +245,7 @@ const CandidateDashboard = () => {
 
         <button
           onClick={logout}
-          className="flex items-center gap-3 text-slate-400 hover:text-red-400 font-medium px-4 py-2 rounded-lg transition"
+          className="flex items-center gap-3 text-brand-100/80 hover:text-white font-medium px-3.5 py-2.5 rounded-lg hover:bg-white/10 transition-colors duration-150"
         >
           <FaSignOutAlt />
           Sign Out
@@ -259,14 +257,14 @@ const CandidateDashboard = () => {
         {/* Header / Topbar */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <span className="text-xs font-semibold text-blue-500 uppercase tracking-widest">Candidate Portal</span>
-            <h2 className="text-3xl font-extrabold text-white mt-1">
+            <span className="text-xs font-semibold text-brand-600 uppercase tracking-widest">Candidate Portal</span>
+            <h2 className="text-2xl md:text-3xl font-semibold text-ink mt-1">
               Welcome, {candidate?.fullName || "Candidate"}!
             </h2>
           </div>
           <button
             onClick={logout}
-            className="md:hidden flex items-center justify-center p-2 rounded-lg border border-white/10 text-slate-400 hover:text-red-400"
+            className="md:hidden flex items-center justify-center p-2 rounded-lg border border-surface-subtle text-ink-muted hover:text-rose-600"
           >
             <FaSignOutAlt size={20} />
           </button>
@@ -282,23 +280,22 @@ const CandidateDashboard = () => {
               className="space-y-8"
             >
               {/* Profile Completion banner card */}
-              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-blue-900/40 via-indigo-950/30 to-purple-950/40 p-6 md:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 rounded-full bg-blue-500/10 blur-3xl"></div>
+              <div className="rounded-2xl border border-surface-subtle bg-white p-6 md:p-8 shadow-card">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="space-y-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400 border border-blue-500/20">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 border border-brand-100">
                       Onboarding Status: {candidate?.status}
                     </span>
-                    <h3 className="text-xl md:text-2xl font-bold">Complete your onboarding profile</h3>
-                    <p className="text-slate-400 text-sm max-w-xl">
+                    <h3 className="text-xl md:text-2xl font-semibold text-ink">Complete your onboarding profile</h3>
+                    <p className="text-ink-muted text-sm max-w-xl">
                       Fill out your personal, bank, and professional details to prepare your employment records.
                     </p>
                     {candidate?.profileCompletionPercentage < 100 && (
-                      <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs max-w-xl">
-                        <div className="font-bold mb-1 flex items-center gap-1.5 text-amber-400">
-                          <FaExclamationTriangle className="animate-pulse" /> Missing Profile Fields ({getMissingFields(candidate).length}):
+                      <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs max-w-xl">
+                        <div className="font-semibold mb-1 flex items-center gap-1.5 text-amber-700">
+                          <FaExclamationTriangle /> Missing Profile Fields ({getMissingFields(candidate).length}):
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 font-medium text-slate-300">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 font-medium text-amber-700">
                           {getMissingFields(candidate).map((field, i) => (
                             <span key={i} className="flex items-center gap-1">
                               • {field}
@@ -308,17 +305,17 @@ const CandidateDashboard = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col items-center justify-center">
                     <div className="relative flex items-center justify-center mb-2">
                       {/* Radial Progress */}
                       <svg className="w-20 h-20 transform -rotate-90">
-                        <circle cx="40" cy="40" r="34" className="stroke-slate-800" strokeWidth="6" fill="transparent" />
+                        <circle cx="40" cy="40" r="34" className="stroke-surface-subtle" strokeWidth="6" fill="transparent" />
                         <circle
                           cx="40"
                           cy="40"
                           r="34"
-                          className="stroke-blue-500 transition-all duration-1000"
+                          className="stroke-accent-500 transition-all duration-1000"
                           strokeWidth="6"
                           fill="transparent"
                           strokeDasharray={2 * Math.PI * 34}
@@ -326,11 +323,11 @@ const CandidateDashboard = () => {
                           strokeLinecap="round"
                         />
                       </svg>
-                      <span className="absolute text-lg font-bold">{candidate?.profileCompletionPercentage || 0}%</span>
+                      <span className="absolute text-lg font-semibold text-ink">{candidate?.profileCompletionPercentage || 0}%</span>
                     </div>
                     <button
                       onClick={() => setActiveTab("profile")}
-                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-blue-500/20 transition"
+                      className="inline-flex items-center gap-2 rounded-lg bg-accent-600 hover:bg-accent-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150"
                     >
                       Complete Profile <FaArrowRight size={12} />
                     </button>
@@ -341,67 +338,67 @@ const CandidateDashboard = () => {
               {/* Grid cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Profile Widget */}
-                <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-6 backdrop-blur-md hover:border-blue-500/30 transition-all duration-300">
+                <div className="rounded-xl border border-surface-subtle bg-white p-6 shadow-card hover:shadow-panel transition-shadow duration-200">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Profile Status</span>
-                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400"><FaUser /></div>
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wider">Profile Status</span>
+                    <div className="p-2 rounded-lg bg-brand-50 text-brand-600"><FaUser /></div>
                   </div>
-                  <div className="text-2xl font-extrabold">{candidate?.profileCompletionPercentage}%</div>
-                  <p className="text-slate-400 text-xs mt-1">Profile data completion progress</p>
+                  <div className="text-2xl font-semibold text-ink">{candidate?.profileCompletionPercentage}%</div>
+                  <p className="text-ink-muted text-xs mt-1">Profile data completion progress</p>
                 </div>
 
                 {/* Documents approved Widget */}
-                <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-6 backdrop-blur-md hover:border-teal-500/30 transition-all duration-300">
+                <div className="rounded-xl border border-surface-subtle bg-white p-6 shadow-card hover:shadow-panel transition-shadow duration-200">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Approved Docs</span>
-                    <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400"><FaCheckCircle /></div>
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wider">Approved Docs</span>
+                    <div className="p-2 rounded-lg bg-accent-50 text-accent-600"><FaCheckCircle /></div>
                   </div>
-                  <div className="text-2xl font-extrabold">{approvedDocsCount} <span className="text-sm text-slate-500 font-normal">/ 12</span></div>
-                  <p className="text-slate-400 text-xs mt-1">{underVerificationCount} doc(s) currently under HR review</p>
+                  <div className="text-2xl font-semibold text-ink">{approvedDocsCount} <span className="text-sm text-ink-faint font-normal">/ 12</span></div>
+                  <p className="text-ink-muted text-xs mt-1">{underVerificationCount} doc(s) currently under HR review</p>
                 </div>
 
                 {/* Pending Documents Widget */}
-                <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-6 backdrop-blur-md hover:border-yellow-500/30 transition-all duration-300">
+                <div className="rounded-xl border border-surface-subtle bg-white p-6 shadow-card hover:shadow-panel transition-shadow duration-200">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pending Docs</span>
-                    <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-400"><FaCloudUploadAlt /></div>
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wider">Pending Docs</span>
+                    <div className="p-2 rounded-lg bg-amber-50 text-amber-600"><FaCloudUploadAlt /></div>
                   </div>
-                  <div className="text-2xl font-extrabold">{pendingDocsCount}</div>
-                  <p className="text-slate-400 text-xs mt-1">Documents remaining to upload</p>
+                  <div className="text-2xl font-semibold text-ink">{pendingDocsCount}</div>
+                  <p className="text-ink-muted text-xs mt-1">Documents remaining to upload</p>
                 </div>
 
                 {/* Offer Status Widget */}
-                <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-6 backdrop-blur-md hover:border-purple-500/30 transition-all duration-300">
+                <div className="rounded-xl border border-surface-subtle bg-white p-6 shadow-card hover:shadow-panel transition-shadow duration-200">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Offer Status</span>
-                    <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400"><FaEnvelopeOpenText /></div>
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wider">Offer Status</span>
+                    <div className="p-2 rounded-lg bg-brand-50 text-brand-600"><FaEnvelopeOpenText /></div>
                   </div>
-                  <div className={`text-xl font-bold uppercase ${
-                    offer?.status === "Accepted" ? "text-green-400" :
-                    offer?.status === "Sent" ? "text-blue-400" :
-                    offer?.status === "Rejected" ? "text-red-400" : "text-yellow-400"
+                  <div className={`text-xl font-semibold uppercase ${
+                    offer?.status === "Accepted" ? "text-accent-600" :
+                    offer?.status === "Sent" ? "text-brand-600" :
+                    offer?.status === "Rejected" ? "text-rose-600" : "text-amber-600"
                   }`}>
                     {offer?.status || "Unavailable"}
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">Employment offer letter status</p>
+                  <p className="text-ink-muted text-xs mt-1">Employment offer letter status</p>
                 </div>
               </div>
 
               {/* Progress Stage Timeline */}
-              <div className="rounded-2xl border border-white/5 bg-slate-900/30 p-6">
-                <h4 className="text-lg font-bold mb-6">Onboarding Progress Tracker</h4>
+              <div className="rounded-xl border border-surface-subtle bg-white p-6 shadow-card">
+                <h4 className="text-lg font-semibold text-ink mb-6">Onboarding Progress Tracker</h4>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative">
                   {progressStages.map((stage, idx) => (
                     <div key={idx} className="flex-1 flex items-center gap-4 md:flex-col md:text-center relative">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition ${
-                        stage.done ? "bg-blue-600 border-blue-500 text-white" :
-                        idx === activeStage ? "bg-slate-900 border-blue-400 text-blue-400 animate-pulse" : "border-slate-800 text-slate-600"
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors duration-150 ${
+                        stage.done ? "bg-accent-500 border-accent-500 text-white" :
+                        idx === activeStage ? "bg-white border-brand-400 text-brand-600" : "border-surface-subtle text-ink-faint"
                       }`}>
                         {stage.done ? <FaCheckCircle /> : idx + 1}
                       </div>
                       <div className="md:mt-2">
-                        <div className="text-sm font-semibold text-slate-200">{stage.label}</div>
-                        <div className="text-xs text-slate-500">{stage.done ? "Completed" : idx === activeStage ? "Action Needed" : "Pending"}</div>
+                        <div className="text-sm font-semibold text-ink">{stage.label}</div>
+                        <div className="text-xs text-ink-muted">{stage.done ? "Completed" : idx === activeStage ? "Action Needed" : "Pending"}</div>
                       </div>
                     </div>
                   ))}
@@ -410,19 +407,19 @@ const CandidateDashboard = () => {
 
               {/* Offer Info Box */}
               {offer && offer.status === "Sent" && (
-                <div className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="rounded-xl border border-brand-200 bg-brand-50 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4 text-left">
-                    <div className="p-3 rounded-full bg-blue-500/10 text-blue-400 hidden sm:block">
+                    <div className="p-3 rounded-full bg-brand-100 text-brand-600 hidden sm:block">
                       <FaEnvelopeOpenText size={24} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg">Your Offer Letter is Ready!</h4>
-                      <p className="text-sm text-slate-400">Please review and digitally accept your offer letter before {new Date(offer.expiryDate).toLocaleDateString()}.</p>
+                      <h4 className="font-semibold text-lg text-ink">Your Offer Letter is Ready!</h4>
+                      <p className="text-sm text-ink-muted">Please review and digitally accept your offer letter before {new Date(offer.expiryDate).toLocaleDateString()}.</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab("offer")}
-                    className="rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-2.5 font-semibold transition shrink-0"
+                    className="rounded-lg bg-accent-600 hover:bg-accent-700 text-white px-6 py-2.5 font-semibold transition-colors duration-150 shrink-0"
                   >
                     Review Offer
                   </button>

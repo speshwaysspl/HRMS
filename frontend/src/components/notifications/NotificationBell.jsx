@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatDMY } from '../../utils/dateUtils';
+import { getNotificationTarget } from '../../utils/notificationNavigation';
+import { getDashboardBasePath } from '../../utils/roleRoutes';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,117 +46,9 @@ const NotificationBell = () => {
       markAsRead(notification._id);
     }
 
-    // Navigate based on notification type and user role
-    const navigateToNotificationTarget = () => {
-      if (!user || !user.role) return;
-
-      const userRoles = Array.isArray(user.role) ? user.role : [user.role];
-      const isAdmin = userRoles.includes('admin');
-      const isEmployee = userRoles.includes('employee');
-      const isTeamLead = userRoles.includes('team_lead');
-
-      switch (notification.type) {
-        case 'leave_request':
-          if (isAdmin) {
-            // Admin should go to leave management page
-            navigate('/admin-dashboard/leaves');
-          } else if (isEmployee) {
-            // Employee should go to their leave history
-            navigate(`/employee-dashboard/leaves/${user._id}`);
-          }
-          break;
-
-        case 'holiday':
-        case 'meeting':
-        case 'event':
-          if (isAdmin) {
-            navigate('/admin-dashboard/calendar');
-          } else if (isEmployee) {
-            navigate('/employee-dashboard/calendar');
-          }
-          break;
-
-        case 'leave_approved':
-        case 'leave_rejected':
-          if (isEmployee) {
-            // Employee should go to their leave history to see the status
-            navigate(`/employee-dashboard/leaves/${user._id}`);
-          } else if (isAdmin) {
-            // Admin should go to leave management page
-            navigate('/admin-dashboard/leaves');
-          }
-          break;
-
-        case 'announcement':
-          if (isAdmin) {
-            // Admin should go to announcement management
-            if (notification.relatedId) {
-              navigate(`/admin-dashboard/announcements/${notification.relatedId}`);
-            } else {
-              navigate('/admin-dashboard/announcements');
-            }
-          } else if (isEmployee) {
-            // Employee should go to announcement details or list
-            if (notification.relatedId) {
-              navigate(`/employee-dashboard/announcements/${notification.relatedId}`);
-            } else {
-              navigate('/employee-dashboard/announcements');
-            }
-          }
-          break;
-          
-        case 'task_assigned':
-        case 'task_updated':
-          if (isEmployee) {
-            navigate('/employee-dashboard/tasks');
-          }
-          break;
-
-        case 'task_submitted':
-          if (isAdmin) {
-             // Admin task list - currently just /admin-dashboard/teams usually leads to tasks via team details, 
-             // but if there is a general task view it would be better.
-             // For now, let's assume they want to go to the Team Lead Dashboard style task view or just navigate them safely.
-             // Actually, Admin has no direct "All Tasks" route visible in App.jsx except via TeamDetail.
-             // But Team Lead has /team-lead-dashboard/tasks.
-             // Let's check App.jsx again for Admin routes.
-             // Admin has /admin-dashboard/team/:id.
-             // If we know the team ID, we could go there. But we only have relatedId (Task ID).
-             navigate('/admin-dashboard/teams'); // Safest bet for now
-          } else {
-             // Team Lead
-             navigate('/team-lead-dashboard/tasks');
-          }
-          break;
-
-        case 'feedback_submitted':
-          if (isAdmin) {
-            // Admin should go to feedback management page
-            navigate('/admin-dashboard/feedback');
-          }
-          break;
-          
-        case 'feedback_response':
-          if (isEmployee) {
-            // Employee should go to their feedback page
-            navigate('/employee-dashboard/feedback');
-          }
-          break;
-
-        default:
-          // For unknown notification types, navigate to dashboard
-          if (isAdmin) {
-            navigate('/admin-dashboard');
-          } else if (isEmployee) {
-            navigate('/employee-dashboard');
-          }
-          break;
-      }
-    };
-
-    // Close the dropdown and navigate
     setIsOpen(false);
-    navigateToNotificationTarget();
+    const target = getNotificationTarget(notification, user);
+    if (target) navigate(target);
   };
 
   const getNotificationIcon = (type) => {
@@ -223,11 +117,11 @@ const NotificationBell = () => {
       {/* Notification Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors duration-200"
+        className="relative p-2 text-ink-muted hover:text-ink hover:bg-surface-muted rounded-full transition-colors duration-150"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+          <span className="absolute -top-1 -right-1 bg-accent-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -235,15 +129,15 @@ const NotificationBell = () => {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-[20rem] sm:w-80 bg-white rounded-xl shadow-panel border border-surface-subtle z-50 max-h-96 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
-            <div className="flex items-center space-x-2">
+          <div className="px-4 py-3 border-b border-surface-subtle flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="text-base font-semibold text-ink">Notifications</h3>
+            <div className="flex items-center gap-3 flex-wrap">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1"
                   title="Mark all as read"
                 >
                   <CheckCheck size={14} />
@@ -253,7 +147,7 @@ const NotificationBell = () => {
               {notifications.length > 0 && (
                 <button
                   onClick={clearAllNotifications}
-                  className="text-sm text-red-600 hover:text-red-800 flex items-center space-x-1"
+                  className="text-xs font-medium text-ink-muted hover:text-ink flex items-center gap-1"
                   title="Clear all notifications"
                 >
                   <Trash2 size={14} />
@@ -262,7 +156,7 @@ const NotificationBell = () => {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-ink-faint hover:text-ink-muted"
               >
                 <X size={18} />
               </button>
@@ -272,17 +166,17 @@ const NotificationBell = () => {
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500">
-                <Bell size={32} className="mx-auto mb-2 text-gray-300" />
-                <p>No notifications yet</p>
+              <div className="px-4 py-8 text-center text-ink-muted">
+                <Bell size={32} className="mx-auto mb-2 text-ink-faint" />
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               notifications.slice(0, 10).map((notification) => (
                 <div
                   key={notification._id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
-                    !notification.isRead ? 'bg-blue-50' : ''
+                  className={`px-4 py-3 border-b border-surface-subtle cursor-pointer hover:bg-surface-muted transition-colors duration-150 ${
+                    !notification.isRead ? 'bg-brand-50/60' : ''
                   }`}
                 >
                   <div className="flex items-start space-x-3">
@@ -296,22 +190,22 @@ const NotificationBell = () => {
                     {/* Notification Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-800 truncate">
+                        <p className="text-sm font-medium text-ink truncate">
                           {notification.title}
                         </p>
                         {!notification.isRead && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2"></div>
+                          <div className="w-2 h-2 bg-accent-500 rounded-full flex-shrink-0 ml-2"></div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-sm text-ink-muted mt-1 line-clamp-2">
                         {notification.message}
                       </p>
                       <div className="flex items-center justify-between mt-2">
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-ink-faint">
                           {formatTimeAgo(notification.createdAt)}
                         </p>
                         {notification.senderId && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-ink-faint">
                             From: {notification.senderId.name}
                           </p>
                         )}
@@ -324,13 +218,17 @@ const NotificationBell = () => {
           </div>
 
           {/* Footer */}
-          {notifications.length > 10 && (
-            <div className="px-4 py-3 border-t border-gray-200 text-center">
-              <button className="text-sm text-blue-600 hover:text-blue-800">
-                View all notifications
-              </button>
-            </div>
-          )}
+          <div className="px-4 py-3 border-t border-surface-subtle text-center">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate(`${getDashboardBasePath(user?.role)}/notifications`);
+              }}
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              View all notifications
+            </button>
+          </div>
         </div>
       )}
     </div>

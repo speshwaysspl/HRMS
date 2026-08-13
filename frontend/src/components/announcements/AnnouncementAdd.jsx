@@ -156,18 +156,18 @@ const AnnouncementAdd = () => {
       justifyContent="center"
       alignItems="center"
       minHeight="90vh"
-      bgcolor="linear-gradient(to right, #2563eb, #06b6d4)"
+      bgcolor="#f6f7fb"
       px={{ xs: 2, sm: 3 }}
     >
       <Card
         sx={{
           width: { xs: '100%', sm: 500, md: 600 },
           maxWidth: '100%',
-          boxShadow: 6,
-          borderRadius: 4,
+          boxShadow: 'none',
+          border: '1px solid #eef0f6',
+          borderRadius: 3,
           overflow: "hidden",
-          background:
-            "linear-gradient(135deg, #ffffff, #f8fafc, #f1f5f9)",
+          background: "#ffffff",
         }}
       >
         <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
@@ -177,10 +177,8 @@ const AnnouncementAdd = () => {
             align="center"
             gutterBottom
             sx={{
-              fontWeight: "bold",
-              background: "linear-gradient(to right, #2563eb, #06b6d4)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              fontWeight: 600,
+              color: "#1e3a5f",
               mb: { xs: 2, sm: 3 },
               fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
             }}
@@ -229,7 +227,7 @@ const AnnouncementAdd = () => {
 
             <div style={{ marginTop: 12, marginBottom: 8 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>Send To</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 8 }}>
                 <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <input type="radio" name="scope" value="all" checked={scope==='all'} onChange={() => setScope('all')} />
                   <span>All Employees</span>
@@ -242,8 +240,8 @@ const AnnouncementAdd = () => {
 
               {scope === 'specific' && (
                 <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 10, alignItems: 'center' }}>
+                    <FormControl size="small" sx={{ minWidth: 180, maxWidth: '100%' }}>
                       <InputLabel id="dep-select-label">Department</InputLabel>
                       <Select
                         labelId="dep-select-label"
@@ -306,51 +304,41 @@ const AnnouncementAdd = () => {
               )}
             </div>
 
-            {/* Upload Button with animation */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="contained"
-                component="label"
-                fullWidth
-                sx={{
-                  mt: { xs: 1.5, sm: 2 },
-                  mb: { xs: 1.5, sm: 2 },
-                  bgcolor: "#2563eb",
-                  "&:hover": { bgcolor: "#1d4ed8" },
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                  py: { xs: 1, sm: 1.25 },
-                  px: { xs: 2, sm: 3 },
+            {/* Upload Button */}
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              sx={{
+                mt: { xs: 1.5, sm: 2 },
+                mb: { xs: 1.5, sm: 2 },
+                color: "#1c2333",
+                borderColor: "#eef0f6",
+                "&:hover": { borderColor: "#16a34a", bgcolor: "#f6f7fb" },
+                fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                py: { xs: 1, sm: 1.25 },
+                px: { xs: 2, sm: 3 },
+                textTransform: 'none',
+              }}
+              disabled={loading}
+            >
+              Upload Image (optional)
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setImage(e.target.files[0]);
+                  }
                 }}
                 disabled={loading}
-              >
-                Upload Image (optional)
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setImage(e.target.files[0]);
-                    }
-                  }}
-                  disabled={loading}
-                />
-              </Button>
-            </motion.div>
+              />
+            </Button>
 
             {/* Show selected image preview */}
             {image && (
-              <motion.div
-                mt={2}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                style={{ 
-                  marginTop: "16px", 
-                  textAlign: "center",
-                  marginBottom: "16px"
-                }}
-              >
+              <div style={{ marginTop: "16px", textAlign: "center", marginBottom: "16px" }}>
                 <img
                   src={URL.createObjectURL(image)}
                   alt={title ? `Preview: ${title}` : 'Announcement image preview'}
@@ -360,36 +348,34 @@ const AnnouncementAdd = () => {
                     height: "120px",
                     objectFit: "cover",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
                   }}
                 />
-              </motion.div>
+              </div>
             )}
 
-            {/* Submit Button with loading animation */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                disabled={loading}
-                sx={{
-                  height: { xs: 42, sm: 45 },
-                  fontWeight: "bold",
-                  letterSpacing: 1,
-                  bgcolor: "#0d9488",
-                  "&:hover": { bgcolor: "#0f766e" },
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  py: { xs: 1.25, sm: 1.5 },
-                }}
-                startIcon={
-                  loading ? <CircularProgress size={20} color="inherit" /> : null
-                }
-              >
-                {loading ? "Adding..." : "Add Announcement"}
-              </Button>
-            </motion.div>
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              sx={{
+                height: { xs: 42, sm: 45 },
+                fontWeight: 600,
+                letterSpacing: 0.3,
+                bgcolor: "#16a34a",
+                "&:hover": { bgcolor: "#15803d" },
+                boxShadow: 'none',
+                textTransform: 'none',
+                fontSize: { xs: '0.9rem', sm: '1rem' },
+                py: { xs: 1.25, sm: 1.5 },
+              }}
+              startIcon={
+                loading ? <CircularProgress size={20} color="inherit" /> : null
+              }
+            >
+              {loading ? "Adding..." : "Add Announcement"}
+            </Button>
           </form>
         </CardContent>
       </Card>

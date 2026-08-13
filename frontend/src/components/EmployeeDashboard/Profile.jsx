@@ -5,6 +5,8 @@ import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBu
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
 
 const Profile = () => {
   const { id } = useParams();
@@ -49,19 +51,10 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+      <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 md:p-12">
-            <div className="flex flex-col items-center justify-center space-y-6">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-600 rounded-full animate-spin animation-delay-150"></div>
-              </div>
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Loading Profile</h3>
-                <p className="text-gray-500">Please wait while we fetch your information...</p>
-              </div>
-            </div>
+          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
+            <LoadingState message="Loading your profile…" />
           </div>
         </div>
       </div>
@@ -70,14 +63,14 @@ const Profile = () => {
 
   if (!employee) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+      <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 md:p-12 text-center">
-            <div className="text-red-500 mb-4">
-              <FaTimesCircle className="mx-auto text-6xl" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Profile Not Found</h3>
-            <p className="text-gray-500 mb-6">Your profile information could not be found.</p>
+          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
+            <EmptyState
+              icon={FaTimesCircle}
+              title="Profile Not Found"
+              message="Your profile information could not be found."
+            />
           </div>
         </div>
       </div>
@@ -85,33 +78,33 @@ const Profile = () => {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+    <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+              <h1 className="text-2xl md:text-3xl font-semibold text-ink mb-2">
                 My Profile
               </h1>
-              <p className="text-gray-600 mt-2">Your personal information and details</p>
+              <p className="text-ink-muted mt-2">Your personal information and details</p>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card border border-surface-subtle overflow-hidden">
           {/* Header Card */}
-          <div className="bg-gradient-to-r from-teal-500 to-blue-500 p-6 md:p-8">
+          <div className="bg-brand-800 p-6 md:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
                 <FaUser className="text-3xl text-white" />
               </div>
               <div className="text-center sm:text-left">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">
                   {employee.userId.name}
                 </h2>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-white/90">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-white/80">
                   <span className="flex items-center gap-2">
                     <FaIdCard className="text-sm" />
                     ID: {employee.employeeId}
@@ -130,50 +123,50 @@ const Profile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Personal Information */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-teal-500">
+                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
                   Personal Information
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaEnvelope className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Email Address</p>
-                      <p className="text-gray-900 font-semibold break-all">{employee.userId.email}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Email Address</p>
+                      <p className="text-ink font-semibold break-all">{employee.userId.email}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaPhone className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Mobile Number</p>
-                      <p className="text-gray-900 font-semibold">{employee.mobilenumber || 'Not provided'}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Mobile Number</p>
+                      <p className="text-ink font-semibold">{employee.mobilenumber || 'Not provided'}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaCalendarAlt className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Date of Birth</p>
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-sm font-medium text-ink-muted mb-1">Date of Birth</p>
+                      <p className="text-ink font-semibold">
                         {employee.dob ? formatDMY(employee.dob) : 'Not provided'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-pink-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaUser className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Gender</p>
-                      <p className="text-gray-900 font-semibold">{employee.gender || 'Not specified'}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Gender</p>
+                      <p className="text-ink font-semibold">{employee.gender || 'Not specified'}</p>
                     </div>
                   </div>
                 </div>
@@ -181,53 +174,53 @@ const Profile = () => {
 
               {/* Employment Information */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
+                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
                   Employment Information
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaBuilding className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Department</p>
-                      <p className="text-gray-900 font-semibold">{employee.department.dep_name}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Department</p>
+                      <p className="text-ink font-semibold">{employee.department.dep_name}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaBriefcase className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Designation</p>
-                      <p className="text-gray-900 font-semibold">{employee.designation}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Designation</p>
+                      <p className="text-ink font-semibold">{employee.designation}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaCalendarAlt className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Joining Date</p>
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-sm font-medium text-ink-muted mb-1">Joining Date</p>
+                      <p className="text-ink font-semibold">
                         {employee.joiningDate ? formatDMY(employee.joiningDate) : 'Not provided'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
+                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
                       <FaCheckCircle className="text-white text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Employment Status</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Employment Status</p>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         employee.status === 'active' 
-                          ? 'bg-green-100 text-green-800 border border-green-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
+                          ? 'bg-accent-100 text-accent-700'
+                          : 'bg-red-100 text-red-700'
                       }`}>
                         {employee.status === 'active' ? 'Active' : 'Inactive'}
                       </span>

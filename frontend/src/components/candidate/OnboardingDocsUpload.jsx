@@ -127,10 +127,10 @@ const OnboardingDocsUpload = ({ documents = [], candidate }) => {
   const categories = ["Identity", "Education", "Employment", "Banking", "Other"];
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl max-w-4xl mx-auto shadow-2xl">
+    <div className="rounded-xl border border-surface-subtle bg-white p-6 max-w-4xl mx-auto shadow-card">
       <div className="mb-8">
-        <h3 className="text-xl font-bold">Upload Required Documents</h3>
-        <p className="text-sm text-slate-400 mt-1">Please provide clean scans or PDFs. Maximum file size: 10MB per document.</p>
+        <h3 className="text-xl font-semibold text-ink">Upload Required Documents</h3>
+        <p className="text-sm text-ink-muted mt-1">Please provide clean scans or PDFs. Maximum file size: 10MB per document.</p>
       </div>
 
       <div className="space-y-8">
@@ -138,10 +138,10 @@ const OnboardingDocsUpload = ({ documents = [], candidate }) => {
           const categoryDocs = documentTypes.filter((d) => d.category === category);
           return (
             <div key={category} className="space-y-4">
-              <h4 className="text-sm font-extrabold text-blue-400 uppercase tracking-widest border-b border-white/5 pb-2">
+              <h4 className="text-sm font-semibold text-brand-700 uppercase tracking-widest border-b border-surface-subtle pb-2">
                 {category} Documents
               </h4>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categoryDocs.map((docType) => {
                   // Find if document already exists
@@ -151,13 +151,13 @@ const OnboardingDocsUpload = ({ documents = [], candidate }) => {
                   return (
                     <div
                       key={docType.key}
-                      className="flex flex-col justify-between p-5 rounded-2xl border border-white/5 bg-slate-950/20 hover:border-white/10 transition"
+                      className="flex flex-col justify-between p-5 rounded-xl border border-surface-subtle bg-surface-muted/40 hover:border-surface-subtle transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-sm font-bold text-slate-200">{docType.label}</div>
+                          <div className="text-sm font-semibold text-ink">{docType.label}</div>
                           {uploaded && (
-                            <div className="text-xs text-slate-500 mt-1 truncate max-w-[200px]">
+                            <div className="text-xs text-ink-faint mt-1 truncate max-w-[200px]">
                               {uploaded.originalName}
                             </div>
                           )}
@@ -167,41 +167,41 @@ const OnboardingDocsUpload = ({ documents = [], candidate }) => {
                         {uploaded ? (
                           <div className="flex items-center gap-1.5 shrink-0">
                             {uploaded.status === "Approved" && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-semibold text-green-400 border border-green-500/20">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-accent-100 px-2.5 py-0.5 text-xs font-medium text-accent-700">
                                 <FaCheckCircle /> Approved
                               </span>
                             )}
                             {uploaded.status === "Rejected" && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-400 border border-red-500/20">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
                                 <FaTimesCircle /> Rejected
                               </span>
                             )}
                             {uploaded.status === "Pending" && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/10 px-2.5 py-1 text-xs font-semibold text-yellow-400 border border-yellow-500/20">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                                 <FaClock /> Pending HR Review
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-600 shrink-0">Not Uploaded</span>
+                          <span className="text-xs text-ink-faint shrink-0">Not Uploaded</span>
                         )}
                       </div>
 
                       {/* Comment section for rejections */}
                       {uploaded && uploaded.comments && (
-                        <div className="mt-3 rounded-lg bg-red-950/20 border border-red-500/10 p-3 text-xs text-red-300">
+                        <div className="mt-3 rounded-lg bg-red-50 border border-red-100 p-3 text-xs text-red-700">
                           <b>HR Rejection Comment:</b> {uploaded.comments}
                         </div>
                       )}
 
                       {/* Action buttons */}
-                      <div className="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-white/5">
+                      <div className="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-surface-subtle">
                         {uploaded && (
                           <a
                             href={uploaded.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition"
+                            className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 transition-colors"
                           >
                             <FaEye /> View Document
                           </a>
@@ -217,7 +217,7 @@ const OnboardingDocsUpload = ({ documents = [], candidate }) => {
                           />
                           <label
                             htmlFor={`file-input-${docType.key}`}
-                            className={`flex items-center gap-1.5 rounded-xl border border-white/10 hover:bg-white/5 px-4 py-2 text-xs font-semibold cursor-pointer transition ${
+                            className={`flex items-center gap-1.5 rounded-lg border border-surface-subtle bg-white hover:bg-surface-muted px-4 py-2 text-xs font-semibold text-ink cursor-pointer transition-colors ${
                               isUploading ? "opacity-50 pointer-events-none" : ""
                             }`}
                           >

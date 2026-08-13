@@ -1,9 +1,10 @@
 import { Outlet } from 'react-router-dom'
 import useMeta from '../utils/useMeta'
-import { useMemo, Suspense, lazy, useState } from 'react'
-
-const AdminSidebar = lazy(() => import('../components/dashboard/AdminSidebar'))
-const Navbar = lazy(() => import('../components/dashboard/Navbar'))
+import { useMemo, useState, Suspense } from 'react'
+import Breadcrumbs from '../components/common/Breadcrumbs'
+import AdminSidebar from '../components/dashboard/AdminSidebar'
+import Navbar from '../components/dashboard/Navbar'
+import LoadingState from '../components/common/LoadingState'
 
 const AdminDashboard = () => {
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard`, [])
@@ -15,22 +16,20 @@ const AdminDashboard = () => {
     image: '/images/Logo.jpg',
     robots: 'noindex,nofollow'
   })
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   return (
-    <div className='flex min-h-screen bg-gray-50'>
-      <Suspense fallback={<div className='md:w-64 w-0' />}>
-        <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      </Suspense>
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64 ml-0' : 'ml-0'}`}>
-        <Suspense fallback={<div className='h-16' />}>
-          <Navbar />
-        </Suspense>
-        <div className='p-2 sm:p-4 md:p-6 pt-16 sm:pt-14 md:pt-16 lg:pt-16'>
-          <Outlet />
+    <div className='flex min-h-screen bg-surface-muted'>
+      <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      <div className={`flex-1 min-w-0 transition-all duration-200 ${sidebarOpen ? 'md:ml-64' : 'md:ml-0'}`}>
+        <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
+        <div className='p-2 sm:p-4 md:p-6 max-w-[1800px] mx-auto w-full'>
+          <Breadcrumbs />
+          <Suspense fallback={<LoadingState message="Loading…" />}>
+            <Outlet />
+          </Suspense>
         </div>
       </div>
     </div>
-    
   )
 }
 

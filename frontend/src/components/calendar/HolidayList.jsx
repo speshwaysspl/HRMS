@@ -133,10 +133,10 @@ const HolidayList = ({ isAdmin = false }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-xl p-6 mt-6 border border-gray-100"
+      className="bg-white rounded-xl shadow-card p-6 mt-6 border border-surface-subtle"
     >
-      <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-        <span className="p-2 bg-blue-100 rounded-lg text-blue-600">
+      <h3 className="text-xl font-semibold text-brand-800 mb-6 flex items-center gap-2">
+        <span className="p-2 bg-accent-100 rounded-lg text-accent-700">
           <FaCalendarAlt />
         </span>
         Holiday List
@@ -149,10 +149,10 @@ const HolidayList = ({ isAdmin = false }) => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            onSubmit={handleAddHoliday} 
-            className="mb-8 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm"
+            onSubmit={handleAddHoliday}
+            className="mb-8 p-6 bg-surface-muted rounded-xl border border-surface-subtle"
           >
-            <h4 className="font-semibold text-gray-700 mb-4">Add New Holiday</h4>
+            <h4 className="font-semibold text-ink mb-4">Add New Holiday</h4>
             <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
@@ -161,7 +161,7 @@ const HolidayList = ({ isAdmin = false }) => {
                 onChange={(e) =>
                   setNewHoliday({ ...newHoliday, title: e.target.value })
                 }
-                className="flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="flex-1 border border-surface-subtle rounded-lg p-3 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 required
               />
               <input
@@ -170,14 +170,13 @@ const HolidayList = ({ isAdmin = false }) => {
                 onChange={(e) =>
                   setNewHoliday({ ...newHoliday, date: e.target.value })
                 }
-                className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="border border-surface-subtle rounded-lg p-3 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 required
               />
               <motion.button
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium shadow-md shadow-blue-200"
+                className="bg-accent-600 hover:bg-accent-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium text-sm"
               >
                 <FaPlus /> Add
               </motion.button>
@@ -203,8 +202,8 @@ const HolidayList = ({ isAdmin = false }) => {
 
       {/* Loading State */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="flex flex-col items-center justify-center py-12 text-ink-faint">
+            <div className="w-8 h-8 border-4 border-accent-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             Loading holidays...
         </div>
       ) : (
@@ -218,40 +217,40 @@ const HolidayList = ({ isAdmin = false }) => {
              <motion.div 
                initial={{ opacity: 0, scale: 0.9 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200"
+               className="flex flex-col items-center justify-center py-12 text-ink-faint bg-surface-muted rounded-xl border border-dashed border-surface-subtle"
              >
-               <FaRegCalendarTimes className="text-4xl mb-3 text-gray-300" />
+               <FaRegCalendarTimes className="text-4xl mb-3 text-ink-faint" />
                <p>{isAdmin ? "No holidays found." : "No holidays found for this month."}</p>
              </motion.div>
           ) : (
             Object.entries(displayHolidays).map(([month, items]) => (
-              <motion.div variants={item} key={month} className={`rounded-xl overflow-hidden ${month === currentMonthYear ? 'ring-2 ring-blue-100 shadow-lg shadow-blue-50' : 'border border-gray-100'}`}>
-                <div className={`px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 backdrop-blur-md ${month === currentMonthYear ? 'bg-blue-50/90 border-blue-100' : 'bg-gray-50/90 border-gray-100'}`}>
-                  <h4 className={`text-lg font-bold ${month === currentMonthYear ? 'text-blue-700' : 'text-gray-700'}`}>
+              <motion.div variants={item} key={month} className={`rounded-xl overflow-hidden ${month === currentMonthYear ? 'ring-2 ring-accent-100 shadow-card' : 'border border-surface-subtle'}`}>
+                <div className={`px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 backdrop-blur-md ${month === currentMonthYear ? 'bg-accent-50/90 border-accent-100' : 'bg-surface-muted/90 border-surface-subtle'}`}>
+                  <h4 className={`text-lg font-semibold ${month === currentMonthYear ? 'text-accent-700' : 'text-ink'}`}>
                     {month}
                   </h4>
                   {month === currentMonthYear && (
-                    <span className="text-xs font-semibold bg-blue-100 text-blue-600 px-3 py-1 rounded-full border border-blue-200">
+                    <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-accent-100 text-accent-700">
                       Current Month
                     </span>
                   )}
                 </div>
-                
-                <div className={`p-4 flex flex-col gap-4 ${month === currentMonthYear ? 'bg-white' : 'bg-white'}`}>
+
+                <div className="p-4 flex flex-col gap-4 bg-white">
                   {items.map((holiday) => (
                     <motion.div
                       key={holiday._id}
-                      whileHover={{ y: -4, shadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                      className="group relative flex flex-col justify-between p-4 bg-white border border-gray-100 rounded-xl hover:border-blue-200 transition-colors shadow-sm"
+                      whileHover={{ y: -2 }}
+                      className="group relative flex flex-col justify-between p-4 bg-white border border-surface-subtle rounded-xl hover:border-accent-200 transition-colors shadow-card"
                     >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-blue-600 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                      
+                      <div className="absolute top-0 left-0 w-1 h-full bg-accent-500 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
                       <div className="mb-2">
-                        <div className="font-bold text-gray-800 text-lg group-hover:text-blue-700 transition-colors">
+                        <div className="font-semibold text-ink text-lg group-hover:text-accent-700 transition-colors">
                           {holiday.title}
                         </div>
-                        <div className="text-sm text-gray-500 font-medium flex items-center gap-2 mt-1">
-                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full group-hover:bg-blue-400 transition-colors"></span>
+                        <div className="text-sm text-ink-muted font-medium flex items-center gap-2 mt-1">
+                          <span className="w-1.5 h-1.5 bg-ink-faint rounded-full group-hover:bg-accent-500 transition-colors"></span>
                           {new Date(holiday.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </div>
                       </div>
@@ -260,7 +259,7 @@ const HolidayList = ({ isAdmin = false }) => {
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                             onClick={() => handleDeleteHoliday(holiday._id)}
-                            className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            className="text-red-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
                             title="Delete Holiday"
                             >
                             <FaTrash />

@@ -71,6 +71,7 @@ const PayslipGenerator = () => {
   const [bankSuggestions, setBankSuggestions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [employeeSuggestions, setEmployeeSuggestions] = useState([]);
+  const [idSuggestions, setIdSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [calculatingWorkingDays, setCalculatingWorkingDays] = useState(false);
   const [calculations, setCalculations] = useState({
@@ -222,8 +223,26 @@ const PayslipGenerator = () => {
     }));
     
     if (empId.length >= 1) {
-      await fetchEmployeeById(empId);
+      const filtered = employees.filter(emp =>
+        emp.employeeId.toLowerCase().includes(empId.toLowerCase())
+      ).slice(0, 10);
+      setIdSuggestions(filtered);
+
+      // Auto-select immediately when the typed value is an exact ID match
+      const exactMatch = employees.find(emp => emp.employeeId.toLowerCase() === empId.toLowerCase());
+      if (exactMatch) {
+        setIdSuggestions([]);
+        await fetchEmployeeById(exactMatch.employeeId);
+      }
+    } else {
+      setIdSuggestions([]);
     }
+  };
+
+  // Select employee from the Employee ID suggestions dropdown
+  const selectEmployeeById = async (emp) => {
+    setIdSuggestions([]);
+    await fetchEmployeeById(emp.employeeId);
   };
 
   // Handle name change for search suggestions
@@ -590,45 +609,60 @@ const PayslipGenerator = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center md:text-left" style={{ fontFamily: 'Times New Roman, serif' }}>Generate Payslip</h2>
+    <div className="max-w-6xl mx-auto mt-4 md:mt-10 bg-surface p-4 md:p-8 rounded-xl shadow-card">
+      <h2 className="text-xl md:text-2xl font-semibold text-ink mb-4 md:mb-6 text-center md:text-left">Generate Payslip</h2>
       
       <form onSubmit={handleSubmit} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
         {/* Employee Selection */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Employee ID *</label>
+          <div className="relative">
+            <label className="block text-xs md:text-sm font-medium text-ink">Employee ID *</label>
             <input
                 type="text"
                 name="employeeId"
                 value={payslip.employeeId}
                 onChange={handleEmployeeIdChange}
-                className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter Employee ID"
+                autoComplete="off"
                 required
               />
+            {idSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full bg-surface border border-surface-subtle rounded-lg mt-1 max-h-60 overflow-y-auto shadow-panel">
+                {idSuggestions.map((emp, index) => (
+                  <div
+                    key={index}
+                    onClick={() => selectEmployeeById(emp)}
+                    className="p-3 hover:bg-surface-muted cursor-pointer border-b border-surface-subtle last:border-b-0"
+                  >
+                    <div className="font-semibold text-sm md:text-base text-ink">{emp.employeeId}</div>
+                    <div className="text-xs text-ink-muted">{emp.name}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="relative">
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Employee Name</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Employee Name</label>
             <input
               type="text"
               name="name"
               value={payslip.name}
               onChange={handleNameChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               placeholder="Enter Employee Name"
             />
             {employeeSuggestions.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+              <div className="absolute z-10 w-full bg-surface border border-surface-subtle rounded-lg mt-1 max-h-60 overflow-y-auto shadow-panel">
                 {employeeSuggestions.map((emp, index) => (
                   <div
                     key={index}
                     onClick={() => selectEmployee(emp)}
-                    className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                    className="p-3 hover:bg-surface-muted cursor-pointer border-b border-surface-subtle last:border-b-0"
                   >
-                    <div className="font-semibold text-sm md:text-base">{emp.name}</div>
-                    <div className="text-xs text-gray-500">{emp.employeeId}</div>
+                    <div className="font-semibold text-sm md:text-base text-ink">{emp.name}</div>
+                    <div className="text-xs text-ink-muted">{emp.employeeId}</div>
                   </div>
                 ))}
               </div>
@@ -636,11 +670,11 @@ const PayslipGenerator = () => {
           </div>
           
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Template</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Template</label>
             <select
               value={selectedTemplate?._id || ""}
               onChange={handleTemplateChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             >
               <option value="">Select Template</option>
               {templates.map(template => (
@@ -655,12 +689,12 @@ const PayslipGenerator = () => {
         {/* Period Selection */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Month *</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Month *</label>
             <select
               name="month"
               value={payslip.month}
               onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               required
             >
               {MONTHS.map((month, index) => (
@@ -670,13 +704,13 @@ const PayslipGenerator = () => {
           </div>
           
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Year *</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Year *</label>
             <input
               type="number"
               name="year"
               value={payslip.year}
               onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               min="2020"
               max="2030"
               required
@@ -684,29 +718,29 @@ const PayslipGenerator = () => {
           </div>
           
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Joining Date</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Joining Date</label>
             <input
               type="date"
               name="payDate"
               value={payslip.payDate}
               onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base bg-gray-50"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base bg-surface-muted text-ink-muted"
               readOnly
             />
           </div>
         </div>
 
         {/* Attendance */}
-        <div className="bg-blue-50 p-3 md:p-4 rounded-md mb-4 md:mb-6">
+        <div className="bg-brand-50 p-3 md:p-4 rounded-lg mb-4 md:mb-6 border border-brand-100">
           <div className="flex justify-between items-center mb-3 md:mb-4">
-            <h3 className="text-base md:text-lg font-semibold">📊 Attendance</h3>
+            <h3 className="text-base md:text-lg font-semibold text-ink">📊 Attendance</h3>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">
+              <label className="block text-xs md:text-sm font-medium text-ink">
                 Working Days 
-                <span className="text-xs text-blue-600 block sm:inline">(Total calendar days in month)</span>
+                <span className="text-xs text-brand-600 block sm:inline">(Total calendar days in month)</span>
                 {calculatingWorkingDays && (
                   <span className="text-xs text-orange-600 ml-2 block sm:inline">Calculating...</span>
                 )}
@@ -716,8 +750,8 @@ const PayslipGenerator = () => {
                 name="workingdays"
                 value={calculatingWorkingDays ? "" : payslip.workingdays}
                 onChange={handleChange}
-                className={`mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base appearance-none ${
-                  calculatingWorkingDays ? 'bg-orange-50 animate-pulse' : 'bg-blue-50'
+                className={`mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors appearance-none ${
+                  calculatingWorkingDays ? "bg-orange-50 animate-pulse" : "bg-brand-50"
                 }`}
                 min="1"
                 max="31"
@@ -727,16 +761,16 @@ const PayslipGenerator = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink">
                 LOP Days
-                <span className="text-xs text-gray-500">(Loss of Pay Days)</span>
+                <span className="text-xs text-ink-muted">(Loss of Pay Days)</span>
               </label>
               <input
                 type="number"
                 name="lopDays"
                 value={payslip.lopDays}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md appearance-none"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors appearance-none"
                 min="0"
                 max="31"
                 placeholder="Enter LOP days"
@@ -745,11 +779,11 @@ const PayslipGenerator = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink">
                 LOP Amount
-                <span className="text-xs text-gray-500">(₹)</span>
+                <span className="text-xs text-ink-muted">(₹)</span>
                 {payslip.autoCalculateLOP && (
-                  <span className="text-xs text-green-600 ml-2">Auto-calculated</span>
+                  <span className="text-xs text-accent-600 ml-2">Auto-calculated</span>
                 )}
               </label>
               <input
@@ -757,7 +791,7 @@ const PayslipGenerator = () => {
                 name="lopamount"
                 value={payslip.autoCalculateLOP ? calculations.lopAmount : payslip.lopamount}
                 onChange={handleChange}
-                className={`mt-1 p-2 block w-full border border-gray-300 rounded-md appearance-none ${
+                className={`mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors appearance-none ${
                   payslip.autoCalculateLOP ? 'bg-green-50' : ''
                 }`}
                 min="0"
@@ -785,7 +819,7 @@ const PayslipGenerator = () => {
                 }}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-ink">
                 Auto-calculate LOP amount based on total salary and LOP days
               </span>
             </label>
@@ -793,39 +827,39 @@ const PayslipGenerator = () => {
         </div>
 
         {/* Employee Details */}
-        <div className="bg-gray-50 p-3 md:p-4 rounded-md mb-4 md:mb-6">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">👤 Employee Details</h3>
+        <div className="bg-surface-muted p-3 md:p-4 rounded-lg mb-4 md:mb-6 border border-surface-subtle">
+          <h3 className="text-base md:text-lg font-semibold text-ink mb-3 md:mb-4">👤 Employee Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700">Designation</label>
+            <label className="block text-xs md:text-sm font-medium text-ink">Designation</label>
             <input
               type="text"
               name="designation"
               value={payslip.designation}
               onChange={handleChange}
-              className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+              className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">Department</label>
+            <label className="block text-sm font-medium text-ink">Department</label>
             <input
               type="text"
               name="department"
               value={payslip.department}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">Location</label>
+            <label className="block text-sm font-medium text-ink">Location</label>
             <input
               type="text"
               name="location"
               value={payslip.location}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
         </div>
@@ -834,22 +868,22 @@ const PayslipGenerator = () => {
         {/* Bank & Identity Details */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+            <label className="block text-sm font-medium text-ink">Bank Name</label>
             <input
               type="text"
               name="bankname"
               value={payslip.bankname}
               onChange={handleBankChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               placeholder="Type to search banks"
             />
             {bankSuggestions.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
+              <div className="absolute z-10 w-full bg-surface border border-surface-subtle rounded-lg mt-1 max-h-40 overflow-y-auto shadow-panel">
                 {bankSuggestions.map((bank, index) => (
                   <div
                     key={index}
                     onClick={() => selectBank(bank)}
-                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    className="p-2 hover:bg-surface-muted cursor-pointer text-sm text-ink"
                   >
                     {bank}
                   </div>
@@ -859,117 +893,117 @@ const PayslipGenerator = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">Account Number</label>
+            <label className="block text-sm font-medium text-ink">Account Number</label>
             <input
               type="text"
               name="bankaccountnumber"
               value={payslip.bankaccountnumber}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">PAN</label>
+            <label className="block text-sm font-medium text-ink">PAN</label>
             <input
               type="text"
               name="pan"
               value={payslip.pan}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               placeholder="ABCDE1234F"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">UAN</label>
+            <label className="block text-sm font-medium text-ink">UAN</label>
             <input
               type="text"
               name="uan"
               value={payslip.uan}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
         </div>
 
         {/* Earnings */}
-        <div className="bg-green-50 p-3 md:p-4 rounded-md mb-4 md:mb-6">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">💰 Earnings</h3>
+        <div className="bg-accent-50 p-3 md:p-4 rounded-lg mb-4 md:mb-6 border border-accent-100">
+          <h3 className="text-base md:text-lg font-semibold text-ink mb-3 md:mb-4">💰 Earnings</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">Basic Salary *</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">Basic Salary *</label>
               <input
                 type="text"
                 name="basicSalary"
                 value={payslip.basicSalary}
                 onChange={handleChange}
-                className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter basic salary"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">DA</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">DA</label>
               <input
                 type="text"
                 name="da"
                 value={payslip.da}
                 onChange={handleChange}
-                className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter DA amount"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">HRA</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">HRA</label>
               <input
                 type="text"
                 name="hra"
                 value={payslip.hra}
                 onChange={handleChange}
-                className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter HRA amount"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Conveyance</label>
+              <label className="block text-sm font-medium text-ink">Conveyance</label>
               <input
                 type="text"
                 name="conveyance"
                 value={payslip.conveyance}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter conveyance amount"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Medical Allowances</label>
+              <label className="block text-sm font-medium text-ink">Medical Allowances</label>
               <input
                 type="text"
                 name="medicalallowances"
                 value={payslip.medicalallowances}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter medical allowances"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Special Allowances</label>
+              <label className="block text-sm font-medium text-ink">Special Allowances</label>
               <input
                 type="text"
                 name="specialallowances"
                 value={payslip.specialallowances}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 placeholder="Enter special allowances"
                 required
               />
@@ -977,65 +1011,65 @@ const PayslipGenerator = () => {
             
             
             
-            <div className="bg-green-100 p-3 rounded-md sm:col-span-2 lg:col-span-1">
-              <label className="block text-xs md:text-sm font-medium text-gray-700">Total Earnings</label>
-              <div className="text-base md:text-lg font-bold text-green-700">₹{calculations.totalEarnings}</div>
+            <div className="bg-accent-100 p-3 rounded-lg sm:col-span-2 lg:col-span-1">
+              <label className="block text-xs md:text-sm font-medium text-ink">Total Earnings</label>
+              <div className="text-base md:text-lg font-bold text-accent-700">₹{calculations.totalEarnings}</div>
             </div>
           </div>
         </div>
 
         {/* Deductions */}
-        <div className="bg-red-50 p-3 md:p-4 rounded-md mb-4 md:mb-6">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">💸 Deductions</h3>
+        <div className="bg-red-50 p-3 md:p-4 rounded-lg mb-4 md:mb-6 border border-red-100">
+          <h3 className="text-base md:text-lg font-semibold text-ink mb-3 md:mb-4">💸 Deductions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">PF</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">PF</label>
                 <input
                   type="text"
                   name="pf"
                   value={payslip.pf}
                   onChange={handleChange}
-                  className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                  className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Enter PF amount"
                 />
             </div>
             
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">Professional Tax</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">Professional Tax</label>
                 <input
                   type="text"
                   name="proftax"
                   value={payslip.proftax}
                   onChange={handleChange}
-                  className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                  className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Enter professional tax"
                 />
             </div>
             
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700">Other Deductions</label>
+              <label className="block text-xs md:text-sm font-medium text-ink">Other Deductions</label>
                 <input
                   type="text"
                   name="deductions"
                   value={payslip.deductions}
                   onChange={handleChange}
-                  className="mt-1 p-2 md:p-3 block w-full border border-gray-300 rounded-md text-sm md:text-base"
+                  className="mt-1 p-2 md:p-3 block w-full border border-surface-subtle rounded-lg text-sm md:text-base focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Enter other deductions"
                 />
             </div>
             
-            <div className="bg-red-100 p-3 rounded-md sm:col-span-2 lg:col-span-1">
-              <label className="block text-xs md:text-sm font-medium text-gray-700">Total Deductions</label>
+            <div className="bg-red-100 p-3 rounded-lg sm:col-span-2 lg:col-span-1">
+              <label className="block text-xs md:text-sm font-medium text-ink">Total Deductions</label>
               <div className="text-base md:text-lg font-bold text-red-700">₹{calculations.totalDeductions}</div>
             </div>
           </div>
         </div>
 
         {/* Net Salary */}
-        <div className="bg-blue-100 p-4 md:p-6 rounded-md mb-4 md:mb-6">
+        <div className="bg-brand-100 p-4 md:p-6 rounded-lg mb-4 md:mb-6">
           <div className="text-center">
-            <label className="block text-base md:text-lg font-medium text-gray-700">💵 Net Salary</label>
-            <div className="text-2xl md:text-3xl font-bold text-blue-700">₹{calculations.netSalary}</div>
+            <label className="block text-base md:text-lg font-medium text-ink">💵 Net Salary</label>
+            <div className="text-2xl md:text-3xl font-bold text-brand-700">₹{calculations.netSalary}</div>
           </div>
         </div>
 
@@ -1044,7 +1078,7 @@ const PayslipGenerator = () => {
           <button
             type="button"
             onClick={() => navigate("/admin-dashboard/salary")}
-            className="w-full sm:w-auto bg-gray-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-md hover:bg-gray-600 transition-colors duration-200 text-sm md:text-base"
+            className="w-full sm:w-auto border border-surface-subtle bg-white text-ink px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-surface-muted transition-colors duration-200 text-sm md:text-base"
           >
             Cancel
           </button>
@@ -1052,14 +1086,14 @@ const PayslipGenerator = () => {
             type="button"
             onClick={handlePreview}
             disabled={loading}
-            className="w-full sm:w-auto bg-blue-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors duration-200 text-sm md:text-base"
+            className="w-full sm:w-auto border border-surface-subtle bg-white text-ink px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-surface-muted disabled:opacity-50 transition-colors duration-200 text-sm md:text-base"
           >
             {loading ? "Loading..." : "Preview Payslip"}
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto bg-green-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-md hover:bg-green-600 disabled:opacity-50 transition-colors duration-200 text-sm md:text-base"
+            className="w-full sm:w-auto bg-accent-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-accent-700 disabled:opacity-50 transition-colors duration-200 text-sm md:text-base"
           >
             {loading ? "Generating..." : "Generate Payslip"}
           </button>

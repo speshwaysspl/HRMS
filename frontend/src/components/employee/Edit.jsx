@@ -6,6 +6,7 @@ import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import { DESIGNATIONS } from "../../utils/constants";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import LoadingState from "../common/LoadingState";
 
 const Edit = () => {
   const [employee, setEmployee] = useState({
@@ -26,8 +27,11 @@ const Edit = () => {
     salary: "",
     annualSalary: "",
     pf: "",
+    reportsTo: "",
+    salaryPackage: "",
   });
   const [departments, setDepartments] = useState(null);
+  const [allEmployees, setAllEmployees] = useState([]);
   const [designationSearch, setDesignationSearch] = useState("");
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
@@ -43,6 +47,24 @@ const Edit = () => {
       setDepartments(departments);
     };
     getDepartments();
+  }, []);
+
+  useEffect(() => {
+    const getAllEmployees = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/api/employee`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          },
+        });
+        if (response.data.success) {
+          setAllEmployees(response.data.employees || []);
+        }
+      } catch (error) {
+        console.error("Failed to load employees for manager list", error);
+      }
+    };
+    getAllEmployees();
   }, []);
 
   useEffect(() => {
@@ -78,6 +100,8 @@ const Edit = () => {
             salary: employee.fullSalary || "",
             annualSalary: employee.fullSalary ? String(Math.round(parseFloat(employee.fullSalary) * 12)) : "",
             pf: employee.pf !== undefined && employee.pf !== 0 ? String(employee.pf) : "",
+            reportsTo: employee.reportsTo?._id || employee.reportsTo || "",
+            salaryPackage: employee.salaryPackage != null ? String(employee.salaryPackage) : "",
           }));
           // Initialize designation search with existing value
           setDesignationSearch(employee.designation || "");
@@ -224,13 +248,13 @@ const Edit = () => {
   return (
     <>
       {departments && employee ? (
-        <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
-          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Edit Employee</h2>
+        <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-center text-ink">Edit Employee</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Name
                 </label>
                 <input
@@ -239,14 +263,14 @@ const Edit = () => {
                   value={employee.name}
                   onChange={handleChange}
                   placeholder="Insert Name"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Email
                 </label>
                 <input
@@ -255,14 +279,14 @@ const Edit = () => {
                   value={employee.email}
                   onChange={handleChange}
                   placeholder="Insert Email"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 />
               </div>
 
               {/* Employee ID */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Employee ID
                 </label>
                 <input
@@ -271,14 +295,14 @@ const Edit = () => {
                   value={employee.employeeId}
                   onChange={handleChange}
                   placeholder="Employee ID"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 />
               </div>
 
               {/* Date of Birth */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Date of Birth
                 </label>
                 <input
@@ -288,13 +312,13 @@ const Edit = () => {
                   onChange={handleChange}
                   placeholder="DOB"
                   max={new Date().toISOString().split('T')[0]}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                 />
               </div>
 
               {/* Joining Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Joining Date
                 </label>
                 <input
@@ -303,21 +327,37 @@ const Edit = () => {
                   value={employee.joiningDate}
                   onChange={handleChange}
                   placeholder="Joining Date"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
+                />
+              </div>
+
+              {/* Annual CTC / Salary Package */}
+              <div>
+                <label className="block text-sm font-medium text-ink">
+                  Annual CTC / Salary Package (₹)
+                </label>
+                <input
+                  type="number"
+                  name="salaryPackage"
+                  min="0"
+                  value={employee.salaryPackage}
+                  onChange={handleChange}
+                  placeholder="e.g. 600000"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                 />
               </div>
 
               {/* Gender */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Gender
                 </label>
                 <select
                   name="gender"
                   value={employee.gender}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 >
                   <option value="">Select Gender</option>
@@ -329,7 +369,7 @@ const Edit = () => {
 
               {/* Mobile Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Mobile Number
                 </label>
                 <input
@@ -338,7 +378,7 @@ const Edit = () => {
                   value={employee.mobilenumber || ''}
                   onChange={handleChange}
                   placeholder="Mobile Number (10 digits)"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   pattern="[0-9]{10}"
                   maxLength="10"
                   title="Please enter exactly 10 digits"
@@ -348,7 +388,7 @@ const Edit = () => {
 
               {/* Designation */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Designation
                 </label>
                 <input
@@ -374,17 +414,17 @@ const Edit = () => {
                     setTimeout(() => setShowDesignationSuggestions(false), 200);
                   }}
                   placeholder="Search or type designation"
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 />
                 
                 {/* Designation Suggestions Dropdown */}
                 {showDesignationSuggestions && filteredDesignations.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-surface-subtle rounded-lg shadow-panel max-h-60 overflow-y-auto">
                     {filteredDesignations.map((designation, index) => (
                       <div
                         key={index}
-                        className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
+                        className="px-3 py-2 cursor-pointer hover:bg-surface-muted text-sm text-ink"
                         onMouseDown={() => handleDesignationSelect(designation)}
                       >
                         {designation}
@@ -396,14 +436,14 @@ const Edit = () => {
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Department
                 </label>
                 <select
                   name="department"
                   onChange={handleChange}
                   value={employee.department}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                   required
                 >
                   <option value="">Select Department</option>
@@ -415,9 +455,31 @@ const Edit = () => {
                 </select>
               </div>
 
+              {/* Reports To */}
+              <div>
+                <label className="block text-sm font-medium text-ink">
+                  Reports To
+                </label>
+                <select
+                  name="reportsTo"
+                  value={employee.reportsTo}
+                  onChange={handleChange}
+                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                >
+                  <option value="">No Manager</option>
+                  {allEmployees
+                    .filter((emp) => emp._id !== id)
+                    .map((emp) => (
+                      <option key={emp._id} value={emp._id}>
+                        {emp.userId?.name || emp.employeeId} ({emp.employeeId})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
               {/* Role */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ink mb-2">
                   Role
                 </label>
                 <div className="flex gap-4">
@@ -428,9 +490,9 @@ const Edit = () => {
                       value="employee"
                       checked={Array.isArray(employee.role) ? employee.role.includes('employee') : employee.role === 'employee'}
                       onChange={handleChange}
-                      className="form-checkbox h-5 w-5 text-teal-600"
+                      className="h-4 w-4 rounded border-surface-subtle text-accent-600 focus:ring-accent-500"
                     />
-                    <span className="ml-2 text-gray-700">Employee</span>
+                    <span className="ml-2 text-ink">Employee</span>
                   </label>
                   <label className="inline-flex items-center">
                     <input
@@ -439,9 +501,9 @@ const Edit = () => {
                       value="team_lead"
                       checked={Array.isArray(employee.role) ? employee.role.includes('team_lead') : employee.role === 'team_lead'}
                       onChange={handleChange}
-                      className="form-checkbox h-5 w-5 text-teal-600"
+                      className="h-4 w-4 rounded border-surface-subtle text-accent-600 focus:ring-accent-500"
                     />
-                    <span className="ml-2 text-gray-700">Team Lead</span>
+                    <span className="ml-2 text-ink">Team Lead</span>
                   </label>
                   <label className="inline-flex items-center">
                     <input
@@ -450,16 +512,16 @@ const Edit = () => {
                       value="hr"
                       checked={Array.isArray(employee.role) ? employee.role.includes('hr') : employee.role === 'hr'}
                       onChange={handleChange}
-                      className="form-checkbox h-5 w-5 text-teal-600"
+                      className="h-4 w-4 rounded border-surface-subtle text-accent-600 focus:ring-accent-500"
                     />
-                    <span className="ml-2 text-gray-700">HR</span>
+                    <span className="ml-2 text-ink">HR</span>
                   </label>
                 </div>
               </div>
 
               {/* Password */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-ink">
                   Password (Optional)
                 </label>
                 <div className="relative">
@@ -468,31 +530,33 @@ const Edit = () => {
                     name="password"
                     onChange={handleChange}
                     placeholder="Enter new password to reset"
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md pr-10"
+                    className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-ink-muted hover:text-ink focus:outline-none"
                     style={{ top: '4px' }}
                   >
                     {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>
+                <p className="text-xs text-ink-muted mt-1">Leave blank to keep current password</p>
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded"
+              className="w-full mt-6 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
             >
               Save Employee
             </button>
           </form>
         </div>
       ) : (
-        <div>Loading...</div>
+        <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
+          <LoadingState message="Loading employee details..." />
+        </div>
       )}
     </>
   );

@@ -83,9 +83,9 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* PDF-like Content */}
+    <div className="fixed inset-0 bg-brand-950/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-panel max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* PDF-like Content — intentionally kept as a formal printable document layout, not restyled */}
         <div className="p-6 bg-white" style={{ fontFamily: 'Times, serif' }}>
           {/* Header - matching PDF layout */}
           <div className="border-2 border-black p-4 mb-4">
@@ -281,24 +281,24 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex flex-wrap justify-end gap-3 p-4 border-t border-surface-subtle bg-surface-muted">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-ink bg-white border border-surface-subtle rounded-lg hover:bg-surface-muted transition-colors"
           >
             Close
           </button>
           <button
             onClick={handleDownloadPDF}
             disabled={downloadLoading}
-            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 border border-surface-subtle bg-white text-ink rounded-lg hover:bg-surface-muted disabled:opacity-50 transition-colors"
           >
             {downloadLoading ? 'Downloading...' : 'Download PDF'}
           </button>
           <button
             onClick={onSendEmail}
             disabled={loading}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Sending...' : 'Send Mail'}
           </button>

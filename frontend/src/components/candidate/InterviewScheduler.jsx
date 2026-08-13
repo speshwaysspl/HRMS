@@ -14,6 +14,8 @@ import {
   FaChevronRight,
   FaUser
 } from "react-icons/fa";
+import { SkeletonRow } from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
 
 const InterviewScheduler = () => {
   const dispatch = useDispatch();
@@ -155,14 +157,14 @@ const InterviewScheduler = () => {
   const getStatusBadge = (statusVal) => {
     switch (statusVal) {
       case "Interview Scheduled":
-        return "bg-yellow-500/15 text-yellow-500 border-yellow-500/20";
+        return "bg-amber-100 text-amber-700";
       case "Interview Completed":
-        return "bg-green-500/15 text-green-400 border-green-500/20";
+        return "bg-accent-100 text-accent-700";
       case "Screening":
-        return "bg-blue-500/15 text-blue-400 border-blue-500/20";
+        return "bg-brand-50 text-brand-700";
       case "Applied":
       default:
-        return "bg-slate-500/15 text-slate-400 border-slate-500/20";
+        return "bg-surface-muted text-ink-muted";
     }
   };
 
@@ -184,28 +186,28 @@ const InterviewScheduler = () => {
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">Interview Scheduler</h2>
-        <p className="text-sm text-slate-400 mt-1">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">Interview Scheduler</h2>
+        <p className="text-sm text-ink-muted mt-1">
           Manage interview timings, Zoom calls, and lifecycle stages for prospective candidates.
         </p>
       </div>
 
       {/* Search and Tabs Row */}
-      <div className="rounded-2xl border border-white/10 bg-slate-900/40 backdrop-blur-xl p-5 shadow-xl flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="rounded-xl border border-surface-subtle bg-white p-5 shadow-card flex flex-col md:flex-row gap-4 items-center justify-between">
         {/* Search */}
         <div className="relative w-full md:max-w-xs">
-          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" size={14} />
           <input
             type="text"
             placeholder="Search candidates..."
-            className="w-full rounded-xl border border-white/10 bg-slate-950 px-10 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition"
+            className="w-full rounded-lg border border-surface-subtle bg-white px-10 py-2.5 text-sm text-ink placeholder-ink-faint outline-none focus:border-brand-500 transition-colors"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         {/* Custom Tab Filters */}
-        <div className="flex bg-slate-950 p-1 rounded-xl border border-white/5 w-full md:w-auto">
+        <div className="flex bg-surface-muted p-1 rounded-lg border border-surface-subtle w-full md:w-auto">
           {[
             { id: "all", label: "All Interviews" },
             { id: "pending", label: "Pending Schedule" },
@@ -215,10 +217,10 @@ const InterviewScheduler = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 md:flex-none text-xs font-semibold py-2 px-4 rounded-lg transition ${
+              className={`flex-1 md:flex-none text-xs font-semibold py-2 px-4 rounded-lg transition-colors ${
                 activeTab === tab.id
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-accent-600 text-white"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               {tab.label}
@@ -228,11 +230,11 @@ const InterviewScheduler = () => {
       </div>
 
       {/* Main Table */}
-      <div className="rounded-2xl border border-white/10 bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-xl">
+      <div className="rounded-xl border border-surface-subtle bg-white overflow-hidden shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/5 bg-slate-950/40 text-slate-400 text-xs font-bold uppercase tracking-wider">
+              <tr className="border-b border-surface-subtle bg-surface-muted text-ink-muted text-xs font-semibold uppercase tracking-wider">
                 <th className="py-4 px-6">Candidate</th>
                 <th className="py-4 px-6">Position</th>
                 <th className="py-4 px-6">Status</th>
@@ -241,48 +243,51 @@ const InterviewScheduler = () => {
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-300 text-sm">
+            <tbody className="divide-y divide-surface-subtle text-ink text-sm">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
-                    <div className="h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                    Loading candidates...
-                  </td>
-                </tr>
+                <>
+                  <SkeletonRow columns={6} />
+                  <SkeletonRow columns={6} />
+                  <SkeletonRow columns={6} />
+                </>
               ) : filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                    No candidates found for the selected tab.
+                  <td colSpan={6} className="py-4">
+                    <EmptyState
+                      icon={FaCalendarAlt}
+                      title="No candidates found"
+                      message="No candidates match the selected tab or search."
+                    />
                   </td>
                 </tr>
               ) : (
                 filteredCandidates.map((c) => (
-                  <tr key={c._id} className="hover:bg-white/5 transition-colors">
+                  <tr key={c._id} className="hover:bg-surface-muted transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 border border-white/10">
+                        <div className="h-9 w-9 rounded-full bg-surface-muted flex items-center justify-center text-ink-muted border border-surface-subtle">
                           <FaUser size={14} />
                         </div>
                         <div>
-                          <div className="font-semibold text-white">{c.fullName}</div>
-                          <div className="text-xs text-slate-500 mt-0.5">{c.email}</div>
+                          <div className="font-semibold text-ink">{c.fullName}</div>
+                          <div className="text-xs text-ink-faint mt-0.5">{c.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 font-medium text-white">{c.position}</td>
+                    <td className="py-4 px-6 font-medium text-ink">{c.position}</td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border ${getStatusBadge(c.status)}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadge(c.status)}`}>
                         {c.status}
                       </span>
                     </td>
                     <td className="py-4 px-6">
                       {c.interviewDate ? (
-                        <div className="flex items-center gap-1.5 text-white font-medium">
-                          <FaClock className="text-blue-400 text-xs" />
+                        <div className="flex items-center gap-1.5 text-ink font-medium">
+                          <FaClock className="text-brand-600 text-xs" />
                           {formatDateTime(c.interviewDate)}
                         </div>
                       ) : (
-                        <span className="text-slate-500 italic">Not Scheduled</span>
+                        <span className="text-ink-faint italic">Not Scheduled</span>
                       )}
                     </td>
                     <td className="py-4 px-6">
@@ -291,18 +296,18 @@ const InterviewScheduler = () => {
                           href={c.zoomMeetingLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                          className="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-semibold"
                         >
                           <FaVideo /> Join Link
                         </a>
                       ) : (
-                        <span className="text-slate-500">-</span>
+                        <span className="text-ink-faint">-</span>
                       )}
                     </td>
                     <td className="py-4 px-6 text-right space-x-2">
                       <button
                         onClick={() => handleOpenScheduleModal(c)}
-                        className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition"
+                        className="inline-flex items-center gap-1 bg-accent-600 hover:bg-accent-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition-colors"
                       >
                         <FaCalendarAlt size={11} />
                         {c.interviewDate ? "Reschedule" : "Schedule"}
@@ -310,7 +315,7 @@ const InterviewScheduler = () => {
                       {c.status === "Interview Scheduled" && (
                         <button
                           onClick={() => handleMarkCompleted(c)}
-                          className="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition"
+                          className="inline-flex items-center gap-1 border border-surface-subtle bg-white text-ink hover:bg-surface-muted font-semibold text-xs px-3 py-2 rounded-lg transition-colors"
                         >
                           <FaCheck size={11} />
                           Complete
@@ -327,76 +332,76 @@ const InterviewScheduler = () => {
 
       {/* Schedule Modal */}
       {showModal && selectedCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
+          <div className="w-full max-w-md rounded-xl border border-surface-subtle bg-white p-6 shadow-panel relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => {
                 setShowModal(false);
                 setSelectedCandidate(null);
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+              className="absolute top-4 right-4 text-ink-muted hover:text-ink transition-colors"
             >
               <FaTimes size={18} />
             </button>
 
-            <h3 className="text-lg font-bold text-white mb-4">
+            <h3 className="text-lg font-semibold text-ink mb-4">
               {selectedCandidate.interviewDate ? "Reschedule Interview" : "Schedule Interview"}
             </h3>
 
-            <div className="mb-4 p-3 bg-slate-950 rounded-xl border border-white/5 text-sm space-y-1">
+            <div className="mb-4 p-3 bg-surface-muted rounded-lg border border-surface-subtle text-sm space-y-1">
               <div>
-                <span className="text-slate-500">Candidate:</span>{" "}
-                <span className="font-semibold text-white">{selectedCandidate.fullName}</span>
+                <span className="text-ink-muted">Candidate:</span>{" "}
+                <span className="font-semibold text-ink">{selectedCandidate.fullName}</span>
               </div>
               <div>
-                <span className="text-slate-500">Position:</span>{" "}
-                <span className="font-semibold text-white">{selectedCandidate.position}</span>
+                <span className="text-ink-muted">Position:</span>{" "}
+                <span className="font-semibold text-ink">{selectedCandidate.position}</span>
               </div>
             </div>
 
             <form onSubmit={handleSaveSchedule} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">
                   Interview Date & Time *
                 </label>
                 <input
                   type="datetime-local"
                   required
-                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+                  className="w-full rounded-lg border border-surface-subtle bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-brand-500"
                   value={interviewDate}
                   onChange={(e) => setInterviewDate(e.target.value)}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">
                   Zoom Call Link *
                 </label>
                 <input
                   type="url"
                   required
                   placeholder="https://zoom.us/j/..."
-                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500"
+                  className="w-full rounded-lg border border-surface-subtle bg-white px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none focus:border-brand-500"
                   value={zoomLink}
                   onChange={(e) => setZoomLink(e.target.value)}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 mt-6 border-t border-white/5 pt-4">
+              <div className="flex justify-end gap-2 mt-6 border-t border-surface-subtle pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowModal(false);
                     setSelectedCandidate(null);
                   }}
-                  className="rounded-xl border border-white/10 px-4 py-2.5 text-xs font-semibold text-slate-400 hover:bg-white/5 transition"
+                  className="rounded-lg border border-surface-subtle bg-white px-4 py-2.5 text-xs font-semibold text-ink hover:bg-surface-muted transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white transition disabled:opacity-50"
+                  className="rounded-lg bg-accent-600 hover:bg-accent-700 px-4 py-2.5 text-xs font-semibold text-white transition-colors disabled:opacity-50"
                 >
                   {submitting ? "Saving..." : "Save Schedule"}
                 </button>

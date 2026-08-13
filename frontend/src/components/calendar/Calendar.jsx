@@ -192,7 +192,7 @@ const Calendar = ({ isAdmin = false }) => {
 
     return allCells.map((day, index) => {
       if (day === null) {
-        return <div key={`blank-${index}`} className="h-24 sm:h-32 border border-gray-100 bg-gray-50/30"></div>;
+        return <div key={`blank-${index}`} className="h-24 sm:h-32 border border-surface-subtle bg-surface-muted/50"></div>;
       }
 
       const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -211,27 +211,26 @@ const Calendar = ({ isAdmin = false }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
-          whileHover={{ 
-            scale: 1.05, 
-            zIndex: 20, 
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-            backgroundColor: isWeekend && !isToday ? "#1e40af" : "#fff"
+          whileHover={{
+            scale: 1.03,
+            zIndex: 20,
+            boxShadow: "0 4px 10px -2px rgba(28,35,51,0.10)",
           }}
-          className={`h-24 sm:h-32 border border-gray-100 p-2 overflow-y-auto transition-colors relative group ${
+          className={`h-24 sm:h-32 border border-surface-subtle p-2 overflow-y-auto transition-colors relative group ${
             isAdmin ? "cursor-pointer" : ""
-          } ${isToday ? "bg-blue-100" : isWeekend ? "bg-blue-900" : "bg-white"}`}
+          } ${isToday ? "bg-accent-50" : isWeekend ? "bg-surface-muted" : "bg-white"}`}
           onClick={() => handleDateClick(day)}
         >
           {isToday && (
-            <motion.span 
+            <motion.span
               layoutId="today"
-              className="absolute top-2 right-2 w-8 h-8 bg-blue-100 rounded-full -z-10"
+              className="absolute top-2 right-2 w-8 h-8 bg-accent-100 rounded-full -z-10"
             />
           )}
-          <div className={`text-right font-bold text-sm mb-1 relative z-10 flex justify-end items-center gap-1 ${isToday ? "text-blue-600" : isWeekend ? "text-white" : "text-gray-700"}`}>
+          <div className={`text-right font-semibold text-sm mb-1 relative z-10 flex justify-end items-center gap-1 ${isToday ? "text-accent-700" : isWeekend ? "text-ink-muted" : "text-ink"}`}>
             {day}
           </div>
-          
+
           <div className="space-y-1 relative z-10">
             {dayEvents.map((event) => (
               <motion.div
@@ -242,10 +241,10 @@ const Calendar = ({ isAdmin = false }) => {
                 onClick={(e) => handleEventClick(e, event)}
                 className={`text-xs px-2 py-1 rounded-full truncate text-white shadow-sm cursor-pointer font-medium flex items-center gap-1 ${
                   event.type === "holiday"
-                    ? "bg-gradient-to-r from-amber-400 to-orange-500"
+                    ? "bg-amber-500"
                     : event.type === "meeting"
-                    ? "bg-gradient-to-r from-blue-400 to-indigo-500"
-                    : "bg-gradient-to-r from-emerald-400 to-teal-500"
+                    ? "bg-brand-600"
+                    : "bg-accent-600"
                 }`}
                 title={event.title}
               >
@@ -268,37 +267,36 @@ const Calendar = ({ isAdmin = false }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-white rounded-xl shadow-xl border border-gray-100"
+      className="p-6 bg-white rounded-xl shadow-card border border-surface-subtle"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-        <h2 className="text-3xl font-bold text-gray-800 tracking-tight flex items-center gap-3">
-          <span className="text-4xl text-gray-300 font-light">|</span>
-          {monthNames[currentDate.getMonth()]} 
-          <span className="text-blue-600 bg-blue-50 px-3 py-1 rounded-lg text-2xl border border-blue-100">{currentDate.getFullYear()}</span>
+        <h2 className="text-2xl font-semibold text-brand-800 tracking-tight flex items-center gap-3">
+          {monthNames[currentDate.getMonth()]}
+          <span className="text-accent-700 bg-accent-50 px-3 py-1 rounded-lg text-xl border border-accent-100">{currentDate.getFullYear()}</span>
         </h2>
-        <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100">
-          <motion.button 
-            whileHover={{ scale: 1.1, backgroundColor: "#fff" }} 
-            whileTap={{ scale: 0.9 }} 
-            onClick={handlePrevMonth} 
-            className="p-3 rounded-lg text-gray-600 hover:text-blue-600 hover:shadow-sm transition-all"
+        <div className="flex items-center gap-2 bg-surface-muted p-1 rounded-xl border border-surface-subtle">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handlePrevMonth}
+            className="p-3 rounded-lg text-ink-muted hover:text-accent-700 hover:bg-white hover:shadow-sm transition-colors"
           >
             <FaChevronLeft />
           </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }} 
-            onClick={() => setCurrentDate(new Date())} 
-            className="px-6 py-2 text-sm font-semibold text-blue-600 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-200 transition-colors"
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setCurrentDate(new Date())}
+            className="px-6 py-2 text-sm font-semibold text-accent-700 bg-white rounded-lg shadow-sm border border-surface-subtle hover:border-accent-200 transition-colors"
           >
             Today
           </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.1, backgroundColor: "#fff" }} 
-            whileTap={{ scale: 0.9 }} 
-            onClick={handleNextMonth} 
-            className="p-3 rounded-lg text-gray-600 hover:text-blue-600 hover:shadow-sm transition-all"
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleNextMonth}
+            className="p-3 rounded-lg text-ink-muted hover:text-accent-700 hover:bg-white hover:shadow-sm transition-colors"
           >
             <FaChevronRight />
           </motion.button>
@@ -306,7 +304,7 @@ const Calendar = ({ isAdmin = false }) => {
       </div>
 
       {/* Weekdays Header */}
-      <div className="grid grid-cols-7 gap-0 mb-4 text-center font-bold text-gray-400 uppercase text-xs tracking-wider bg-gray-50/50 rounded-lg py-3 border border-gray-100">
+      <div className="grid grid-cols-7 gap-0 mb-4 text-center font-semibold text-ink-muted uppercase text-xs tracking-wider bg-surface-muted rounded-lg py-3 border border-surface-subtle">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div key={day} className="py-1">
             {day}
@@ -315,7 +313,7 @@ const Calendar = ({ isAdmin = false }) => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="rounded-xl overflow-hidden border border-gray-200 shadow-inner bg-gray-50">
+      <div className="rounded-xl overflow-hidden border border-surface-subtle bg-surface-subtle">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentDate.toString()}
@@ -323,7 +321,7 @@ const Calendar = ({ isAdmin = false }) => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="grid grid-cols-7 gap-px bg-gray-200"
+            className="grid grid-cols-7 gap-px bg-surface-subtle"
           >
             {renderDays()}
           </motion.div>
@@ -343,59 +341,59 @@ const Calendar = ({ isAdmin = false }) => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative"
+              className="bg-white rounded-2xl shadow-panel w-full max-w-md max-h-[90vh] overflow-y-auto relative border border-surface-subtle"
             >
               {/* Modal Header Decoration */}
-              <div className={`h-2 w-full ${
-                 formData.type === "holiday" ? "bg-gradient-to-r from-amber-400 to-orange-500" :
-                 formData.type === "meeting" ? "bg-gradient-to-r from-blue-400 to-indigo-500" :
-                 "bg-gradient-to-r from-emerald-400 to-teal-500"
+              <div className={`h-1.5 w-full ${
+                 formData.type === "holiday" ? "bg-amber-500" :
+                 formData.type === "meeting" ? "bg-brand-600" :
+                 "bg-accent-600"
               }`} />
 
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    {editingEvent ? <FaEdit className="text-blue-500" /> : <FaPlus className="text-green-500" />}
+                  <h3 className="text-xl font-semibold text-ink flex items-center gap-2">
+                    {editingEvent ? <FaEdit className="text-brand-600" /> : <FaPlus className="text-accent-600" />}
                     {editingEvent ? "Edit Event" : "New Event"}
                   </h3>
-                  <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full">
+                  <button onClick={handleCloseModal} className="text-ink-faint hover:text-ink transition-colors p-2 hover:bg-surface-muted rounded-full">
                     <FaTimes size={20} />
                   </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-sm font-medium text-ink mb-1">Title</label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full border border-surface-subtle rounded-lg px-4 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                       placeholder="Event title"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <label className="block text-sm font-medium text-ink mb-1">Date</label>
                       <input
                         type="date"
                         name="date"
                         value={formData.date}
                         onChange={handleInputChange}
                         required
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-surface-subtle rounded-lg px-4 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <label className="block text-sm font-medium text-ink mb-1">Type</label>
                       <select
                         name="type"
                         value={formData.type}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-surface-subtle rounded-lg px-4 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                       >
                         <option value="event">Event</option>
                         <option value="holiday">Holiday</option>
@@ -406,43 +404,40 @@ const Calendar = ({ isAdmin = false }) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-ink mb-1">Description</label>
                     <textarea
                       name="description"
                       value={formData.description}
                       onChange={handleInputChange}
                       rows="3"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                      className="w-full border border-surface-subtle rounded-lg px-4 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors resize-none"
                       placeholder="Add details..."
                     ></textarea>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t mt-6">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-surface-subtle mt-6">
                     {editingEvent && (
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileTap={{ scale: 0.97 }}
                         type="button"
                         onClick={handleDelete}
-                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium flex items-center gap-2"
+                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm flex items-center gap-2"
                       >
                         <FaTrash size={14} /> Delete
                       </motion.button>
                     )}
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileTap={{ scale: 0.97 }}
                       type="button"
                       onClick={handleCloseModal}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                      className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                     >
                       Cancel
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileTap={{ scale: 0.97 }}
                       type="submit"
-                      className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg hover:shadow-blue-200 transition-all font-medium"
+                      className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors"
                     >
                       Save Changes
                     </motion.button>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -20,8 +20,29 @@ const Add = () => {
     const [leave, setLeave] = useState({
         userId: user._id,
     })
+    const [leaveTypes, setLeaveTypes] = useState([]);
+    const [balance, setBalance] = useState([]);
 
     const navigate = useNavigate()
+
+    useEffect(() => {
+        const fetchLeaveTypesAndBalance = async () => {
+            try {
+                const headers = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+                const [typesRes, balanceRes] = await Promise.all([
+                    axios.get(`${API_BASE}/api/leave-types?activeOnly=true`, { headers }),
+                    axios.get(`${API_BASE}/api/leave/balance`, { headers }),
+                ]);
+                if (typesRes.data.success) setLeaveTypes(typesRes.data.leaveTypes);
+                if (balanceRes.data.success) setBalance(balanceRes.data.balance);
+            } catch (error) {
+                // Non-blocking: form still works with manual leave type entry omitted on failure
+            }
+        };
+        fetchLeaveTypesAndBalance();
+    }, []);
+
+    const selectedBalance = balance.find((b) => b.leaveType === leave.leaveType);
 
     // Get today's date in YYYY-MM-DD format in IST
     const getTodayDate = () => {
@@ -104,31 +125,35 @@ const Add = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-6 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Request for Leave</h2>
+    <div className="max-w-4xl mx-auto mt-6 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
+      <h2 className="text-xl md:text-2xl font-semibold text-ink mb-4 md:mb-6">Request for Leave</h2>
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col space-y-4 md:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-muted">
               Leave Type
             </label>
             <select
               name="leaveType"
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
               required
             >
               <option value="">Select Leave Type</option>
-              <option value="Sick Leave">Sick Leave</option>
-              <option value="Casual Leave">Casual Leave</option>
-              <option value="Annual Leave">Annual Leave</option>
-              <option value="Work from Home">Work from Home</option>
+              {leaveTypes.map((lt) => (
+                <option key={lt._id} value={lt.name}>{lt.name}</option>
+              ))}
             </select>
+            {selectedBalance && (
+              <p className="text-xs text-ink-muted mt-1.5">
+                {selectedBalance.remaining} of {selectedBalance.annualQuota} days remaining this year
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* from date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink-muted">
                 From Date
               </label>
               <input
@@ -136,14 +161,14 @@ const Add = () => {
                 name="startDate"
                 min={getTodayDate()}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                 required
               />
             </div>
 
             {/* to date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-ink-muted">
                 To Date
               </label>
               <input
@@ -151,7 +176,7 @@ const Add = () => {
                 name="endDate"
                 min={leave.startDate ? toISTDateString(new Date(new Date(leave.startDate).getTime() + 24 * 60 * 60 * 1000)) : getTomorrowDate()}
                 onChange={handleChange}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                 required
               />
             </div>
@@ -159,14 +184,14 @@ const Add = () => {
 
           {/* description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-muted">
               Description
             </label>
             <textarea
               name="reason"
               placeholder="Reason"
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
               rows="4"
               required
             ></textarea>
@@ -174,7 +199,7 @@ const Add = () => {
         </div>
         <button
           type="submit"
-          className="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded"
+          className="w-full mt-6 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150"
         >
           Add Leave
         </button>

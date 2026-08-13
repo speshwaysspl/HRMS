@@ -16,13 +16,11 @@ const columns = [
     name: "Image",
     cell: (row) =>
       row.imageUrl ? (
-        <motion.img
+        <img
           src={row.imageUrl}
           alt={row.title}
           width={40}
           style={{ borderRadius: 6 }}
-          whileHover={{ scale: 1.3, rotate: 2 }}
-          transition={{ type: "spring", stiffness: 200 }}
         />
       ) : (
         "No Image"
@@ -80,38 +78,34 @@ const AnnouncementList = () => {
 
   return (
     <motion.div
-      className="p-3 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen"
+      className="p-3 sm:p-6 bg-surface-muted min-h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <motion.h3
-        className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6 md:mb-8 text-gray-800 px-2"
-        style={{ fontFamily: 'Times New Roman, serif' }}
+        className="text-xl sm:text-2xl md:text-3xl font-semibold text-center mb-4 sm:mb-6 md:mb-8 text-brand-800 px-2"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        📢 Announcements Management
+        Announcements Management
       </motion.h3>
 
       {/* Search + Add */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center my-4 sm:my-6 gap-3 sm:gap-4">
         <motion.input
           type="text"
-          placeholder="🔍 Search By Title"
-          className="px-3 sm:px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all w-full sm:w-1/3 text-sm sm:text-base"
+          placeholder="Search by title"
+          className="px-3 sm:px-4 py-2 border border-surface-subtle rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors w-full sm:w-1/3 text-sm sm:text-base text-ink"
           onChange={handleFilter}
-          whileFocus={{ scale: 1.03 }}
         />
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Link
-            to="/admin-dashboard/announcements/add"
-            className="px-4 sm:px-5 py-2 bg-gradient-to-r from-teal-600 to-blue-600 rounded-lg text-white shadow-md hover:shadow-lg font-medium text-sm sm:text-base whitespace-nowrap"
-          >
-            + Add New
-          </Link>
-        </motion.div>
+        <Link
+          to="/admin-dashboard/announcements/add"
+          className="px-4 sm:px-5 py-2 bg-accent-600 hover:bg-accent-700 rounded-lg text-white font-medium text-sm sm:text-base whitespace-nowrap text-center transition-colors"
+        >
+          + Add New
+        </Link>
       </div>
 
       {/* Mobile Card View */}
@@ -119,17 +113,17 @@ const AnnouncementList = () => {
         {formatted.map((announcement, index) => (
           <motion.div
             key={announcement._id}
-            className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200"
+            className="bg-white rounded-xl shadow-card p-4 mb-4 border border-surface-subtle"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-2">
-                <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+                <span className="bg-brand-100 text-brand-700 text-xs font-semibold px-2 py-1 rounded-full">
                   #{announcement.sno}
                 </span>
-                <span className="text-xs text-gray-500">{announcement.date}</span>
+                <span className="text-xs text-ink-muted">{announcement.date}</span>
               </div>
               <div className="flex gap-2">
                 <AnnouncementButtons Id={announcement._id} />
@@ -138,20 +132,19 @@ const AnnouncementList = () => {
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 {announcement.imageUrl ? (
-                  <motion.img
+                  <img
                     src={announcement.imageUrl}
                     alt={announcement.title}
                     className="w-12 h-12 rounded object-cover"
-                    whileHover={{ scale: 1.1 }}
                   />
                 ) : (
-                  <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                  <div className="w-12 h-12 bg-surface-muted rounded flex items-center justify-center text-xs text-ink-faint">
                     No Image
                   </div>
                 )}
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 text-sm mb-1">{announcement.title}</h4>
+                <h4 className="font-semibold text-ink text-sm mb-1">{announcement.title}</h4>
               </div>
             </div>
           </motion.div>
@@ -175,10 +168,10 @@ const AnnouncementList = () => {
           customStyles={{
             headCells: {
               style: {
-                backgroundColor: "#f8fafc",
-                fontWeight: "bold",
+                backgroundColor: "#f6f7fb",
+                fontWeight: "600",
                 fontSize: "12px",
-                color: "#374151",
+                color: "#1c2333",
                 padding: "8px",
                 '@media (min-width: 640px)': {
                   fontSize: "14px",

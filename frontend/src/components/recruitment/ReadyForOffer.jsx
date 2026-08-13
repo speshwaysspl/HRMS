@@ -6,6 +6,8 @@ import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toast } from "react-toastify";
 import { FaEye, FaPaperPlane, FaCheck } from "react-icons/fa";
+import { SkeletonRow } from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
 
 const ReadyForOffer = () => {
   const dispatch = useDispatch();
@@ -508,37 +510,37 @@ const ReadyForOffer = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-bold text-white">Ready For Offer Letters</h2>
-          <p className="text-slate-400 text-sm mt-1">List of candidates who have passed all checklist and document reviews.</p>
+          <h2 className="text-2xl font-semibold text-ink">Ready For Offer Letters</h2>
+          <p className="text-ink-muted text-sm mt-1">List of candidates who have passed all checklist and document reviews.</p>
         </div>
       </div>
 
-      <div className="bg-slate-900/50 border border-slate-700 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-surface-subtle rounded-xl overflow-hidden shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
+            <thead className="bg-surface-muted text-ink-muted text-xs font-semibold uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-4 text-left">Candidate Name</th>
-                <th className="px-6 py-4 text-left">Designation</th>
-                <th className="px-6 py-4 text-left">Package (LPA)</th>
-                <th className="px-6 py-4 text-left">Joining Date</th>
-                <th className="px-6 py-4 text-left">Reporting Time</th>
-                <th className="px-6 py-4 text-left">Actions</th>
+                <th className="px-6 py-3.5 text-left">Candidate Name</th>
+                <th className="px-6 py-3.5 text-left">Designation</th>
+                <th className="px-6 py-3.5 text-left">Package (LPA)</th>
+                <th className="px-6 py-3.5 text-left">Joining Date</th>
+                <th className="px-6 py-3.5 text-left">Reporting Time</th>
+                <th className="px-6 py-3.5 text-left">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50 text-slate-200">
+            <tbody className="divide-y divide-surface-subtle text-ink text-sm">
               {candidatesLoading || offersLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    Loading...
-                  </td>
-                </tr>
+                <>
+                  <SkeletonRow columns={6} />
+                  <SkeletonRow columns={6} />
+                  <SkeletonRow columns={6} />
+                </>
               ) : eligibleCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    No eligible candidates yet.
+                  <td colSpan={6} className="px-6 py-12">
+                    <EmptyState title="No eligible candidates yet" message="Candidates appear here once all checklist and document reviews are complete." />
                   </td>
                 </tr>
               ) : (
@@ -548,10 +550,10 @@ const ReadyForOffer = () => {
                   const docs = candidateDocs[candidate._id] || [];
                   const edit = getInlineEdit(candidate._id, offer, candidate);
                   return (
-                    <tr key={candidate._id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-white">{candidate.fullName}</div>
-                        <div className="text-xs text-slate-500">{candidate.candidateId}</div>
+                    <tr key={candidate._id} className="hover:bg-surface-muted transition-colors">
+                      <td className="px-6 py-4 max-w-[180px]">
+                        <div className="font-semibold text-ink truncate">{candidate.fullName}</div>
+                        <div className="text-xs text-ink-faint truncate">{candidate.candidateId}</div>
                       </td>
                       <>
                         <td className="px-6 py-4">
@@ -559,7 +561,7 @@ const ReadyForOffer = () => {
                             type="text"
                             value={edit.designation}
                             onChange={(e) => updateInlineEdit(candidate._id, "designation", e.target.value)}
-                            className="w-full px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            className="w-full px-3 py-1.5 bg-white border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             placeholder="Designation"
                           />
                         </td>
@@ -569,7 +571,7 @@ const ReadyForOffer = () => {
                             step="0.1"
                             value={edit.salaryPackage}
                             onChange={(e) => updateInlineEdit(candidate._id, "salaryPackage", e.target.value)}
-                            className="w-full px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            className="w-full px-3 py-1.5 bg-white border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             placeholder="0.0"
                           />
                         </td>
@@ -578,7 +580,7 @@ const ReadyForOffer = () => {
                             type="date"
                             value={edit.joiningDate}
                             onChange={(e) => updateInlineEdit(candidate._id, "joiningDate", e.target.value)}
-                            className="w-full px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            className="w-full px-3 py-1.5 bg-white border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                           />
                         </td>
                         <td className="px-6 py-4">
@@ -586,173 +588,104 @@ const ReadyForOffer = () => {
                             type="time"
                             value={edit.reportingTime}
                             onChange={(e) => updateInlineEdit(candidate._id, "reportingTime", e.target.value)}
-                            className="w-full px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            className="w-full px-3 py-1.5 bg-white border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                           />
                         </td>
                       </>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-2">
-                          {/* Offer Letter Actions Row */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handlePreviewOffer(candidate)}
-                              disabled={creatingOffer === candidate._id}
-                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                            >
-                              {creatingOffer === candidate._id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  Generating...
-                                </>
-                              ) : (
-                                  <>
-                                    <FaEye className="inline" size={12} />
-                                    Preview Offer
-                                  </>
+                      <td className="px-6 py-4 min-w-[260px]">
+                        {(() => {
+                          const packageEntered = !!edit.salaryPackage && parseFloat(edit.salaryPackage) > 0;
+                          const disabledTitle = !packageEntered ? "Enter the package (LPA) first" : undefined;
+                          return (
+                            <div className="space-y-2">
+                              {!packageEntered && (
+                                <p className="text-[11px] text-amber-700 font-medium">Enter package to enable actions</p>
                               )}
-                            </button>
-                            {!offer && (
-                              <button
-                                onClick={() => handleCreateAndSendOffer(candidate)}
-                                disabled={creatingOffer === candidate._id}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                              >
-                                {creatingOffer === candidate._id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Sending...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaPaperPlane className="inline mr-2" size={12} />
-                                    Send Offer
-                                  </>
-                                )}
-                              </button>
-                            )}
-                            {offer && offer.status === "Pending" && (
-                              <button
-                                onClick={() => handleSendOffer(offer._id)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                              >
-                                <FaPaperPlane className="inline mr-2" size={12} />
-                                Send Offer
-                              </button>
-                            )}
-                            {offer && offer.status === "Sent" && (
-                              <span className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
-                                Offer Sent
-                              </span>
-                            )}
-                            {offer && offer.status === "Accepted" && (
-                              <span className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
-                                Offer Accepted
-                              </span>
-                            )}
-                          </div>
 
-                          {/* Appointment Letter Actions Row */}
-                          <div className="flex items-center gap-2 border-t border-slate-700/50 pt-2">
-                            <button
-                              onClick={() => handlePreviewAppointment(candidate)}
-                              disabled={creatingAppointment === candidate._id}
-                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                            >
-                              {creatingAppointment === candidate._id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <FaEye className="inline" size={12} />
-                                  Preview Appointment
-                                </>
+                              <div className="flex flex-wrap gap-1.5">
+                                {offer?.status === "Sent" && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Offer Sent</span>
+                                )}
+                                {offer?.status === "Accepted" && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700">Offer Accepted</span>
+                                )}
+                                {appointment?.status === "Sent" && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Appt. Sent</span>
+                                )}
+                                {appointment?.status === "Accepted" && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700">Appt. Accepted</span>
+                                )}
+                                {candidate.status === "Employee Created" && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700">Employee Created</span>
+                                )}
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <button
+                                  onClick={() => handlePreviewOffer(candidate)}
+                                  disabled={!packageEntered || creatingOffer === candidate._id}
+                                  title={disabledTitle}
+                                  className="px-2.5 py-1.5 border border-surface-subtle bg-white hover:bg-surface-muted text-ink disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                  <FaEye size={11} /> {creatingOffer === candidate._id ? "Generating..." : "Preview Offer"}
+                                </button>
+
+                                {(!offer || offer.status === "Pending") ? (
+                                  <button
+                                    onClick={() => offer ? handleSendOffer(offer._id) : handleCreateAndSendOffer(candidate)}
+                                    disabled={!packageEntered || creatingOffer === candidate._id}
+                                    title={disabledTitle}
+                                    className="px-2.5 py-1.5 bg-accent-600 hover:bg-accent-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                                  >
+                                    <FaPaperPlane size={11} /> {creatingOffer === candidate._id ? "Sending..." : "Send Offer"}
+                                  </button>
+                                ) : <span />}
+
+                                <button
+                                  onClick={() => handlePreviewAppointment(candidate)}
+                                  disabled={!packageEntered || creatingAppointment === candidate._id}
+                                  title={disabledTitle}
+                                  className="px-2.5 py-1.5 border border-surface-subtle bg-white hover:bg-surface-muted text-ink disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                  <FaEye size={11} /> {creatingAppointment === candidate._id ? "Generating..." : "Preview Appt."}
+                                </button>
+
+                                {candidate.status !== "Employee Created" && (!appointment || appointment.status === "Pending") ? (
+                                  <button
+                                    onClick={() => handleSendAppointment(candidate)}
+                                    disabled={!packageEntered || creatingAppointment === candidate._id}
+                                    title={disabledTitle}
+                                    className="px-2.5 py-1.5 bg-accent-600 hover:bg-accent-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                                  >
+                                    <FaPaperPlane size={11} /> {creatingAppointment === candidate._id ? "Sending..." : "Send Appt."}
+                                  </button>
+                                ) : <span />}
+                              </div>
+
+                              {candidate.status !== "Employee Created" && (!offer || offer.status === "Pending") && (!appointment || appointment.status === "Pending") && (
+                                <button
+                                  onClick={() => handleSendBoth(candidate)}
+                                  disabled={!packageEntered || creatingOffer === candidate._id || creatingAppointment === candidate._id}
+                                  title={disabledTitle}
+                                  className="w-full px-3 py-1.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                  <FaPaperPlane size={11} /> Send Both (Offer & Appointment)
+                                </button>
                               )}
-                            </button>
-                            {candidate.status !== "Employee Created" && (!appointment || appointment.status === "Pending") && (
-                              <button
-                                onClick={() => handleSendAppointment(candidate)}
-                                disabled={creatingAppointment === candidate._id}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                              >
-                                {creatingAppointment === candidate._id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Sending...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaPaperPlane className="inline mr-2" size={12} />
-                                    Send Appointment
-                                  </>
-                                )}
-                              </button>
-                            )}
-                            {appointment && appointment.status === "Sent" && (
-                              <span className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
-                                Appointment Sent
-                              </span>
-                            )}
-                            {appointment && appointment.status === "Accepted" && (
-                              <span className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold">
-                                Appointment Accepted
-                              </span>
-                            )}
-                          </div>
 
-                          {/* Employee Status / Action Row */}
-                          {(candidate.status === "Employee Created" || (appointment && (appointment.status === "Sent" || appointment.status === "Accepted") && offer && offer.status === "Accepted")) && (
-                            <div className="flex items-center gap-2 border-t border-slate-700/50 pt-2">
-                              {candidate.status === "Employee Created" ? (
-                                <span className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm font-semibold w-full text-center">
-                                  Employee Created
-                                </span>
-                              ) : (
+                              {candidate.status !== "Employee Created" && appointment && (appointment.status === "Sent" || appointment.status === "Accepted") && offer && offer.status === "Accepted" && (
                                 <button
                                   onClick={() => handleCreatePermanentEmployee(candidate)}
-                                  disabled={creatingAppointment === candidate._id}
-                                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 w-full justify-center"
+                                  disabled={!packageEntered || creatingAppointment === candidate._id}
+                                  title={disabledTitle}
+                                  className="w-full px-3 py-1.5 bg-accent-600 hover:bg-accent-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
                                 >
-                                  {creatingAppointment === candidate._id ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                      Creating Employee...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FaCheck className="inline" size={12} />
-                                      Create Permanent Employee
-                                    </>
-                                  )}
+                                  <FaCheck size={11} /> {creatingAppointment === candidate._id ? "Creating Employee..." : "Create Permanent Employee"}
                                 </button>
                               )}
                             </div>
-                          )}
-
-                          {/* Send Both Actions Row */}
-                          {candidate.status !== "Employee Created" && (!offer || offer.status === "Pending") && (!appointment || appointment.status === "Pending") && (
-                            <div className="flex items-center gap-2 border-t border-slate-700/50 pt-2">
-                              <button
-                                onClick={() => handleSendBoth(candidate)}
-                                disabled={creatingOffer === candidate._id || creatingAppointment === candidate._id}
-                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 w-full justify-center shadow-lg hover:shadow-indigo-500/20"
-                              >
-                                {creatingOffer === candidate._id || creatingAppointment === candidate._id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Sending Both...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaPaperPlane className="inline" size={12} />
-                                    Send Both (Offer & Appointment)
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

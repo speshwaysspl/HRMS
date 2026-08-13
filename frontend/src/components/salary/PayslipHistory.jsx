@@ -5,6 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
+import ActionIconButton from "../common/ActionIconButton";
+import { FiDownload, FiEye } from "react-icons/fi";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
@@ -201,13 +205,13 @@ const PayslipHistory = () => {
 
 
   return (
-    <div className="max-w-7xl mx-auto mt-6 sm:mt-10 bg-white p-4 sm:p-8 rounded-md shadow-md">
+    <div className="max-w-7xl mx-auto mt-6 sm:mt-10 bg-surface p-4 sm:p-8 rounded-xl shadow-card">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>Payslip History & Management</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-ink">Payslip History & Management</h2>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <button
             onClick={() => navigate("/admin-dashboard/salary/payslip-generator")}
-            className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-600 text-sm sm:text-base"
+            className="bg-accent-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-accent-700 transition-colors text-sm sm:text-base"
           >
             Generate New Payslip
           </button>
@@ -219,28 +223,28 @@ const PayslipHistory = () => {
 
 
       {/* Filters */}
-      <div className="bg-gray-50 p-4 sm:p-6 rounded-lg mb-6">
-        <h3 className="text-base sm:text-lg font-semibold mb-4">Filters</h3>
+      <div className="bg-surface-muted p-4 sm:p-6 rounded-lg mb-6 border border-surface-subtle">
+        <h3 className="text-base sm:text-lg font-semibold text-ink mb-4">Filters</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID/Name</label>
+            <label className="block text-sm font-medium text-ink mb-1">Employee ID/Name</label>
             <input
               type="text"
               name="employeeId"
               value={filters.employeeId}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               placeholder="Search employee"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+            <label className="block text-sm font-medium text-ink mb-1">Month</label>
             <select
               name="month"
               value={filters.month}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             >
               <option value="">All Months</option>
               {MONTHS.map((month, index) => (
@@ -250,12 +254,12 @@ const PayslipHistory = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+            <label className="block text-sm font-medium text-ink mb-1">Year</label>
             <select
               name="year"
               value={filters.year}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             >
               <option value="">All Years</option>
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
@@ -265,12 +269,12 @@ const PayslipHistory = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <label className="block text-sm font-medium text-ink mb-1">Department</label>
             <select
               name="department"
               value={filters.department}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             >
               <option value="">All Departments</option>
               {departments.map(dept => (
@@ -280,24 +284,24 @@ const PayslipHistory = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+            <label className="block text-sm font-medium text-ink mb-1">From Date</label>
             <input
               type="date"
               name="fromDate"
               value={filters.fromDate}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+            <label className="block text-sm font-medium text-ink mb-1">To Date</label>
             <input
               type="date"
               name="toDate"
               value={filters.toDate}
               onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              className="w-full p-2 border border-surface-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
             />
           </div>
         </div>
@@ -305,7 +309,7 @@ const PayslipHistory = () => {
         <div className="mt-4 flex justify-center sm:justify-end">
           <button
             onClick={clearFilters}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-sm w-full sm:w-auto"
+            className="border border-surface-subtle bg-white text-ink px-4 py-2 rounded-lg hover:bg-surface-muted transition-colors text-sm w-full sm:w-auto"
           >
             Clear Filters
           </button>
@@ -315,83 +319,79 @@ const PayslipHistory = () => {
 
 
       {/* Payslips Table */}
-      <div className="bg-white border rounded-lg">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <h3 className="text-base sm:text-lg font-semibold">
+      <div className="bg-surface border border-surface-subtle rounded-lg shadow-card">
+        <div className="px-4 sm:px-6 py-4 border-b border-surface-subtle">
+          <h3 className="text-base sm:text-lg font-semibold text-ink">
             Payslip Records ({filteredPayslips.length} of {payslips.length})
           </h3>
         </div>
         
         {loading ? (
-          <div className="text-center py-8">
-            <div className="text-gray-500">Loading payslips...</div>
-          </div>
+          <LoadingState message="Loading payslips..." />
         ) : filteredPayslips.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No payslips found matching your criteria.</p>
-          </div>
+          <EmptyState title="No payslips found" message="Try adjusting your filters or search criteria." />
         ) : (
           <>
             {/* Mobile Card View */}
             <div className="block lg:hidden">
               {filteredPayslips.map((payslip) => (
-                <div key={payslip._id} className="border-b border-gray-200 p-4 hover:bg-gray-50">
+                <div key={payslip._id} className="border-b border-surface-subtle p-4 hover:bg-surface-muted">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h4 className="font-medium text-gray-900">{payslip.name}</h4>
-                      <p className="text-sm text-gray-500">{payslip.employeeId}</p>
-                      <p className="text-sm text-gray-500">{payslip.designation}</p>
+                      <h4 className="font-medium text-ink">{payslip.name}</h4>
+                      <p className="text-sm text-ink-muted">{payslip.employeeId}</p>
+                      <p className="text-sm text-ink-muted">{payslip.designation}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-semibold text-green-600">
+                      <div className="text-sm font-semibold text-accent-700">
                         {formatCurrency(payslip.netSalary)}
                       </div>
-                      <div className="text-xs text-gray-500">Net Salary</div>
+                      <div className="text-xs text-ink-muted">Net Salary</div>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                     <div>
-                      <span className="text-gray-500">Period:</span>
+                      <span className="text-ink-muted">Period:</span>
                       <div className="font-medium">{MONTHS[payslip.month - 1]} {payslip.year}</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">Department:</span>
+                      <span className="text-ink-muted">Department:</span>
                       <div className="font-medium">{payslip.department}</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">Basic Salary:</span>
+                      <span className="text-ink-muted">Basic Salary:</span>
                       <div className="font-medium">{formatCurrency(payslip.basicSalary)}</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">LOP Days:</span>
+                      <span className="text-ink-muted">LOP Days:</span>
                       <div className="font-medium">{payslip.lopDays || 0}</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">LOP Amount:</span>
+                      <span className="text-ink-muted">LOP Amount:</span>
                       <div className="font-medium">{formatCurrency(payslip.lopamount || 0)}</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">Deductions:</span>
+                      <span className="text-ink-muted">Deductions:</span>
                       <div className="font-medium">{formatCurrency(payslip.totalDeductions)}</div>
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
+                  <div className="flex justify-between items-center pt-3 border-t border-surface-subtle">
+                    <div className="text-xs text-ink-muted">
                       Generated: {formatDate(payslip.createdAt)}
                     </div>
                     <div className="flex space-x-3">
                       <button
                         onClick={() => downloadPayslip(payslip._id)}
-                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                        className="text-brand-600 hover:text-brand-800 text-sm font-medium transition-colors"
                         title="Download PDF"
                       >
                         Download
                       </button>
                       <button
                         onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)}
-                        className="text-green-600 hover:text-green-900 text-sm font-medium"
+                        className="text-accent-600 hover:text-accent-700 text-sm font-medium transition-colors"
                         title="View Employee Salary Details"
                       >
                         View
@@ -404,92 +404,80 @@ const PayslipHistory = () => {
 
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-surface-subtle">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Employee
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Period
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Department
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Basic Salary
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       LOP Days
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       LOP Amount
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Deductions
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Net Salary
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Generated
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface divide-y divide-surface-subtle">
                   {filteredPayslips.map((payslip) => (
-                    <tr key={payslip._id} className="hover:bg-gray-50">
+                    <tr key={payslip._id} className="hover:bg-surface-muted transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{payslip.name}</div>
-                        <div className="text-sm text-gray-500">{payslip.employeeId}</div>
-                        <div className="text-sm text-gray-500">{payslip.designation}</div>
+                        <div className="text-sm font-medium text-ink">{payslip.name}</div>
+                        <div className="text-sm text-ink-muted">{payslip.employeeId}</div>
+                        <div className="text-sm text-ink-muted">{payslip.designation}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-ink">
                           {MONTHS[payslip.month - 1]} {payslip.year}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {payslip.department}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {formatCurrency(payslip.basicSalary)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {payslip.lopDays || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {formatCurrency(payslip.lopamount || 0)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         <div>{formatCurrency(payslip.totalDeductions)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-green-600">
+                        <div className="text-sm font-semibold text-accent-700">
                           {formatCurrency(payslip.netSalary)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">
                         {formatDate(payslip.createdAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => downloadPayslip(payslip._id)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Download PDF"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)}
-                          className="text-green-600 hover:text-green-900"
-                          title="View Employee Salary Details"
-                        >
-                          View
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <ActionIconButton icon={FiDownload} label="Download PDF" color="brand" onClick={() => downloadPayslip(payslip._id)} />
+                        <ActionIconButton icon={FiEye} label="View Employee Salary Details" color="accent" onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)} />
                       </td>
                     </tr>
                   ))}

@@ -94,19 +94,19 @@ const EditDepartment = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 via-teal-500 to-green-400 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-surface-muted px-4">
       {depLoading ? (
         <div className="flex justify-center items-center">
-          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-accent-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
         <motion.div
-          className="p-6 md:p-8 w-full max-w-md rounded-2xl shadow-xl bg-white"
+          className="p-6 md:p-8 w-full max-w-md rounded-xl shadow-panel bg-white border border-surface-subtle"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <h2 className="text-xl md:text-2xl font-extrabold mb-4 md:mb-6 text-center text-gray-800">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-center text-brand-800">
             Edit Department
           </h2>
           <form onSubmit={handleSubmit}>
@@ -114,19 +114,18 @@ const EditDepartment = () => {
             <div>
               <label
                 htmlFor="dep_name"
-                className="text-sm font-semibold text-gray-700"
+                className="text-sm font-semibold text-ink"
               >
                 Department Name
               </label>
-              <motion.input
+              <input
                 type="text"
                 name="dep_name"
                 onChange={handleChange}
                 value={department.dep_name || ""}
                 placeholder="Department Name"
-                className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+                className="mt-1 w-full p-3 border border-surface-subtle rounded-lg text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 required
-                whileFocus={{ scale: 1.02 }}
               />
             </div>
 
@@ -134,31 +133,27 @@ const EditDepartment = () => {
             <div className="mt-4">
               <label
                 htmlFor="description"
-                className="block text-sm font-semibold text-gray-700"
+                className="block text-sm font-semibold text-ink"
               >
                 Description
               </label>
-              <motion.textarea
+              <textarea
                 name="description"
                 placeholder="Description"
                 onChange={handleChange}
                 value={department.description || ""}
-                className="mt-1 p-3 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+                className="mt-1 p-3 block w-full border border-surface-subtle rounded-lg text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 rows="4"
-                whileFocus={{ scale: 1.02 }}
               />
             </div>
 
             {/* Submit Button */}
-            <motion.button
+            <button
               type="submit"
-              className="w-full mt-6 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
+              className="w-full mt-6 bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-3 text-sm font-medium transition-colors"
             >
               Save Changes
-            </motion.button>
+            </button>
           </form>
         </motion.div>
       )}

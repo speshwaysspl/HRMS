@@ -112,10 +112,20 @@ export const getAllAttendance = async (req, res) => {
     const { date } = req.query;
     if (!date) return res.status(400).json({ message: "Date is required" });
  
-    const employees = await Employee.find().populate('userId', 'name');
+    const employees = await Employee.find().populate('userId', 'name').populate('shiftId');
+    const LATE_GRACE_MINUTES = 15;
     const attendanceData = await Promise.all(
       employees.map(async (emp) => {
         const record = await Attendance.findOne({ userId: emp._id, date });
+
+        let isLate = false;
+        if (record?.inTime && emp.shiftId?.startTime) {
+          const [shiftHour, shiftMin] = emp.shiftId.startTime.split(":").map(Number);
+          const [inHour, inMin] = record.inTime.split(":").map(Number);
+          const shiftMinutes = shiftHour * 60 + shiftMin + LATE_GRACE_MINUTES;
+          const inMinutes = inHour * 60 + inMin;
+          isLate = inMinutes > shiftMinutes;
+        }
         // Calculate working hours if both in and out times are available
         let workingHours = 0;
         let attendanceStatus = "Not Yet";
@@ -234,10 +244,12 @@ export const getAllAttendance = async (req, res) => {
           outLocation: record?.outLocation?.area || "N/A",
           breaks: record?.breaks || [],
           status: attendanceStatus,
+          shiftName: emp.shiftId?.name || null,
+          isLate,
         };
       })
     );
- 
+
     res.status(200).json(attendanceData);
   } catch (error) {
     res.status(500).json({ message: "Error fetching all attendance records", error: error.message });

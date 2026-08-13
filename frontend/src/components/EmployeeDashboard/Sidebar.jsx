@@ -5,37 +5,28 @@ import {
   FaCalendarAlt,
   FaCogs,
   FaMoneyBillWave,
-  FaRegCalendarAlt,
   FaTachometerAlt,
   FaUsers,
-  FaBars,
   FaTimes,
-  FaChevronRight,
-  FaSignOutAlt,
   FaComments,
-  FaCalendarCheck,
   FaClipboardList,
-  FaFolderOpen,
+  FaUserTie,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import SidebarSection from "../dashboard/SidebarSection";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const userRoles = Array.isArray(user?.role) ? user.role : [user?.role];
+  const isTeamLead = userRoles.includes("team_lead");
 
-  // Track window resize for responsive behavior
   useEffect(() => {
-    const handleResize = () => {
-      const newIsDesktop = window.innerWidth >= 768;
-      setIsDesktop(newIsDesktop);
-      if (newIsDesktop) setIsOpen(false); // Close mobile menu when switching to desktop
-    };
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
-  // Close sidebar when clicking outside on mobile
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!isDesktop && isOpen && !e.target.closest('.sidebar-container')) {
@@ -44,9 +35,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDesktop, isOpen]);
+  }, [isDesktop, isOpen, setIsOpen]);
 
-  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
     if (!isDesktop && isOpen) {
       document.body.style.overflow = 'hidden';
@@ -58,137 +48,130 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     };
   }, [isDesktop, isOpen]);
 
-  const navLinks = [
-    { to: "/employee-dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
+  const topLinks = [
+    { to: "/employee-dashboard", label: "Dashboard", icon: <FaTachometerAlt />, end: true },
     { to: `/employee-dashboard/profile/${user?._id}`, label: "My Profile", icon: <FaUsers /> },
-    { to: `/employee-dashboard/leaves/${user?._id}`, label: "Leaves", icon: <FaBuilding /> },
     { to: `/employee-dashboard/salary/${user?._id}`, label: "Salary", icon: <FaMoneyBillWave /> },
-    { to: "/employee-dashboard/tasks", label: "My Tasks", icon: <FaClipboardList /> },
-    { to: "/employee-dashboard/announcements", label: "Announcements", icon: <FaRegCalendarAlt /> },
-    { to: "/employee-dashboard/calendar", label: "Calendar", icon: <FaCalendarCheck /> },
-    { to: "/employee-dashboard/attendance", label: "Attendance", icon: <FaCalendarAlt /> },
-    { to: "/employee-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
-    { to: "/employee-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
     { to: "/employee-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 
+  const sections = [
+    {
+      key: "leave-attendance",
+      label: "Leave & Attendance",
+      icon: <FaCalendarAlt />,
+      links: [
+        { to: `/employee-dashboard/leaves/${user?._id}`, label: "Leaves", icon: <FaBuilding /> },
+        { to: "/employee-dashboard/attendance", label: "Attendance", icon: <FaCalendarAlt /> },
+        { to: "/employee-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
+        { to: "/employee-dashboard/attendance-corrections", label: "Attendance Corrections", icon: <FaCalendarAlt /> },
+        { to: "/employee-dashboard/calendar", label: "Calendar", icon: <FaCalendarAlt /> },
+      ],
+    },
+    {
+      key: "work",
+      label: "Work",
+      icon: <FaClipboardList />,
+      links: [
+        { to: "/employee-dashboard/tasks", label: "My Tasks", icon: <FaClipboardList /> },
+        { to: "/employee-dashboard/my-reviews", label: "My Reviews", icon: <FaClipboardList /> },
+      ],
+    },
+    {
+      key: "communication",
+      label: "Communication",
+      icon: <FaComments />,
+      links: [
+        { to: "/employee-dashboard/announcements", label: "Announcements", icon: <FaComments /> },
+        { to: "/employee-dashboard/feedback", label: "Feedback", icon: <FaComments /> },
+      ],
+    },
+    ...(isTeamLead
+      ? [
+          {
+            key: "team-lead",
+            label: "Team Lead",
+            icon: <FaUserTie />,
+            links: [
+              { to: "/employee-dashboard/team/teams", label: "My Teams", icon: <FaUsers /> },
+              { to: "/employee-dashboard/team/approvals", label: "Attendance Approvals", icon: <FaCalendarAlt /> },
+              { to: "/employee-dashboard/team/reviews", label: "Team Reviews", icon: <FaClipboardList /> },
+            ],
+          },
+        ]
+      : []),
+  ];
+
+  const topLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 py-2.5 px-3.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+      isActive
+        ? "bg-accent-500 text-white shadow-sm"
+        : "text-brand-100/80 hover:bg-white/10 hover:text-white"
+    }`;
+
   return (
     <>
-      {/* Hamburger Button - hidden when sidebar is open */}
-      {!isOpen && (
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-[60] p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg hover:from-teal-600 hover:to-cyan-600 transition-all duration-200"
-          aria-label="Open menu"
-        >
-          <FaBars size={20} />
-        </motion.button>
-      )}
-
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ x: isOpen ? 0 : -300 }}
-        transition={{ type: "spring", stiffness: 80, damping: 15 }}
-        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col`}
+      <div
+        className={`sidebar-container bg-brand-800 text-white h-screen fixed top-0 left-0 bottom-0 shadow-panel w-64 z-40 flex flex-col transform transition-transform duration-200 ease-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-      {/* Top Logo */}
-     {/* Top Logo with Name Side by Side */}
-<div 
-  onClick={() => setIsOpen(!isOpen)}
-  className="cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5 hover:from-blue-700 hover:via-indigo-800 hover:to-teal-700 transition-all duration-300">
-  {/* Logo Image */}
-  <img 
-    src="/images/Logo.jpg"
-    alt="Company Logo" 
-    loading="lazy"
-    width="48"
-    height="48"
-    className="w-12 h-12 rounded-full shadow-lg border-2 border-white mr-3"
-    onError={(e) => {
-      e.target.style.display = 'none';
-      e.target.nextSibling.style.marginLeft = '0';
-    }}
-  />
-  
-  {/* Company Name */}
-  <h1 className="text-white font-bold text-lg sm:text-xl">HRMS Portal</h1>
-</div>
+        <div className="bg-brand-900 h-16 flex items-center px-5 gap-3 border-b border-white/10 flex-shrink-0">
+          <img
+            src="/images/Logo.jpg"
+            alt="Company Logo"
+            loading="lazy"
+            width="36"
+            height="36"
+            className="w-9 h-9 rounded-md object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <h1 className="text-white font-semibold text-base tracking-wide">HRMS Portal</h1>
+          <button
+            className="ml-auto text-brand-200 hover:text-white transition-colors md:hidden"
+            aria-label="Close menu"
+            onClick={() => setIsOpen(false)}
+          >
+            <FaTimes size={16} />
+          </button>
+        </div>
 
-
-        {/* Links */}
-        <div className={`px-4 mt-6 space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-          {navLinks.map((link, idx) => (
+        <div className="px-3 mt-4 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
+          {topLinks.map((link, idx) => (
             <NavLink
               key={idx}
               to={link.to}
-              end={link.to === "/employee-dashboard"}
-              className={({ isActive }) =>
-                `group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 
-                 ${
-                   isActive
-                     ? "bg-gradient-to-r from-teal-500 to-green-500 text-white shadow-xl scale-105"
-                     : "hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white"
-                 }`
-              }
-              onClick={() => setIsOpen(false)} // auto-close always
+              end={link.end}
+              className={topLinkClass}
+              onClick={() => !isDesktop && setIsOpen(false)}
             >
-              <motion.span
-                whileHover={{ scale: 1.3, rotate: 12 }}
-                transition={{ type: "spring", stiffness: 250 }}
-                className="text-xl"
-              >
-                {link.icon}
-              </motion.span>
-              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-                {link.label}
-              </span>
-              {/* Animated Glow on Hover */}
-              <motion.div
-                className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100"
-                initial={false}
-                transition={{ duration: 0.3 }}
-              />
+              <span className="text-base">{link.icon}</span>
+              <span>{link.label}</span>
             </NavLink>
           ))}
-          
-          {/* Logout Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={logout}
-            className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 mt-4 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl hover:from-red-600 hover:to-red-700"
-          >
-            <motion.span
-              whileHover={{ scale: 1.3, rotate: 12 }}
-              transition={{ type: "spring", stiffness: 250 }}
-              className="text-xl"
-            >
-              <FaSignOutAlt />
-            </motion.span>
-            <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-              Logout
-            </span>
-          </motion.button>
+
+          {sections.map((section) => (
+            <SidebarSection
+              key={section.key}
+              icon={section.icon}
+              label={section.label}
+              links={section.links}
+              isDesktop={isDesktop}
+              setIsOpen={setIsOpen}
+            />
+          ))}
         </div>
+      </div>
 
-
-    </motion.div>
-
-    {/* Dark overlay when sidebar open on mobile */}
-    {!isDesktop && isOpen && (
-      <AnimatePresence>
-        <motion.div
-          className="fixed inset-0 bg-black/60 z-40"
+      {!isDesktop && isOpen && (
+        <div
+          className="fixed inset-0 bg-brand-950/60 z-30"
           onClick={() => setIsOpen(false)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
         />
-      </AnimatePresence>
-    )}
-  </>
+      )}
+    </>
   );
 };
 

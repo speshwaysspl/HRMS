@@ -190,7 +190,7 @@ const EmployeeFeedback = () => {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1976d2', fontFamily: 'Times New Roman, serif' }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: '#1e3a5f' }}>
           My Feedback
         </Typography>
         <Button
@@ -198,8 +198,10 @@ const EmployeeFeedback = () => {
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
           sx={{
-            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+            bgcolor: '#16a34a',
+            boxShadow: 'none',
+            textTransform: 'none',
+            '&:hover': { bgcolor: '#15803d' },
           }}
         >
           Submit Feedback
@@ -222,15 +224,17 @@ const EmployeeFeedback = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card 
-                  sx={{ 
+                <Card
+                  sx={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    boxShadow: 'none',
+                    border: '1px solid #eef0f6',
+                    borderRadius: 3,
                     '&:hover': {
-                      boxShadow: 6,
-                      transform: 'translateY(-2px)',
-                      transition: 'all 0.3s ease'
+                      boxShadow: '0 4px 16px rgba(28,35,51,0.08)',
+                      transition: 'box-shadow 0.2s ease'
                     }
                   }}
                 >
@@ -322,7 +326,7 @@ const EmployeeFeedback = () => {
 
       {/* Empty State */}
       {!loading && feedbacks.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center', mt: 3 }}>
+        <Paper sx={{ p: 4, textAlign: 'center', mt: 3, boxShadow: 'none', border: '1px solid #eef0f6', borderRadius: 3 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No feedback found
           </Typography>
@@ -333,6 +337,7 @@ const EmployeeFeedback = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
+            sx={{ bgcolor: '#16a34a', boxShadow: 'none', textTransform: 'none', '&:hover': { bgcolor: '#15803d' } }}
           >
             Submit Your First Feedback
           </Button>
@@ -370,8 +375,8 @@ const EmployeeFeedback = () => {
           sx: { borderRadius: 2 }
         }}
       >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+        <DialogTitle sx={{
+          bgcolor: '#1e3a5f',
           color: 'white',
           display: 'flex',
           justifyContent: 'space-between',
@@ -443,14 +448,16 @@ const EmployeeFeedback = () => {
           </DialogContent>
           <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
             <Button onClick={handleCloseDialog} color="inherit">Cancel</Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
+            <Button
+              type="submit"
+              variant="contained"
               startIcon={<SendIcon />}
               disabled={loading}
               sx={{
-                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
+                bgcolor: '#16a34a',
+                boxShadow: 'none',
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#15803d' }
               }}
             >
               {editingFeedback ? 'Update' : 'Submit'} Feedback
@@ -468,8 +475,8 @@ const EmployeeFeedback = () => {
       >
         {viewingFeedback && (
           <>
-            <DialogTitle sx={{ 
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            <DialogTitle sx={{
+              bgcolor: '#1e3a5f',
               color: 'white',
               display: 'flex',
               justifyContent: 'space-between',

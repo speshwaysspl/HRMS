@@ -362,11 +362,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
   };
 
   const getInputClass = (errorVal) => {
-    const base = "w-full rounded-xl border bg-slate-950/40 px-4 py-3 text-white outline-none transition duration-200";
+    const base = "w-full rounded-lg border bg-white px-4 py-3 text-ink outline-none transition-colors duration-150";
     if (errorVal) {
-      return `${base} border-red-500/80 bg-red-950/10 focus:border-red-500 focus:ring-1 focus:ring-red-500/50`;
+      return `${base} border-red-400 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500/30`;
     }
-    return `${base} border-white/10 focus:border-blue-500`;
+    return `${base} border-surface-subtle focus:border-brand-500`;
   };
 
   // Handle draft save
@@ -445,23 +445,23 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
   ];
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl max-w-4xl mx-auto shadow-2xl">
+    <div className="rounded-xl border border-surface-subtle bg-white p-6 max-w-4xl mx-auto shadow-card">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h3 className="text-xl font-bold">Candidate Onboarding Form</h3>
-          <p className="text-sm text-slate-400 mt-1">Please fill in your details. Progress is automatically saved as draft.</p>
+          <h3 className="text-xl font-semibold text-ink">Candidate Onboarding Form</h3>
+          <p className="text-sm text-ink-muted mt-1">Please fill in your details. Progress is automatically saved as draft.</p>
         </div>
         <button
           onClick={handleSaveDraft}
           disabled={saving}
-          className="flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 px-4 py-2 text-sm font-semibold transition"
+          className="flex items-center gap-2 rounded-lg border border-surface-subtle bg-white text-ink hover:bg-surface-muted px-4 py-2 text-sm font-semibold transition-colors"
         >
           <FaSave /> {saving ? "Saving..." : "Save Draft"}
         </button>
       </div>
 
       {/* Steps Indicator */}
-      <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6 overflow-x-auto scrollbar-hide">
+      <div className="flex justify-between items-center mb-8 border-b border-surface-subtle pb-6 overflow-x-auto scrollbar-hide">
         {stepsList.map((sItem, idx) => {
           const stepNum = idx + 1;
           const isCompleted = stepNum < step;
@@ -469,14 +469,14 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
 
           return (
             <div key={idx} className="flex items-center gap-2 flex-shrink-0 mr-4 last:mr-0">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold border transition ${
-                isCompleted ? "bg-blue-600 border-blue-500 text-white" :
-                isActive ? "bg-slate-800 border-blue-500 text-blue-400" : "border-slate-800 text-slate-500"
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold border transition-colors ${
+                isCompleted ? "bg-accent-600 border-accent-600 text-white" :
+                isActive ? "bg-brand-50 border-brand-500 text-brand-600" : "border-surface-subtle text-ink-faint"
               }`}>
                 {sItem.icon}
               </div>
               <span className={`text-xs font-semibold tracking-wider uppercase ${
-                isActive ? "text-blue-400" : isCompleted ? "text-slate-200" : "text-slate-500"
+                isActive ? "text-brand-600" : isCompleted ? "text-ink" : "text-ink-faint"
               }`}>{sItem.label}</span>
             </div>
           );
@@ -489,7 +489,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">First Name *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">First Name *</label>
                 <input
                   type="text"
                   required
@@ -498,11 +498,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
                 />
                 {errors.firstName && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.firstName}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.firstName}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Last Name *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Last Name *</label>
                 <input
                   type="text"
                   required
@@ -511,11 +511,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
                 />
                 {errors.lastName && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.lastName}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.lastName}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Date of Birth *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Date of Birth *</label>
                 <input
                   type="date"
                   required
@@ -524,28 +524,28 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updatePersonalInfo("dob", e.target.value)}
                 />
                 {errors.dob && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.dob}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.dob}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Gender *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Gender *</label>
                 <select
                   required
                   className={getInputClass(errors.gender)}
                   value={personalInfo.gender}
                   onChange={(e) => updatePersonalInfo("gender", e.target.value)}
                 >
-                  <option value="" disabled className="bg-slate-950">Select Gender</option>
-                  <option value="Male" className="bg-slate-950">Male</option>
-                  <option value="Female" className="bg-slate-950">Female</option>
-                  <option value="Other" className="bg-slate-950">Other</option>
+                  <option value="" disabled>Select Gender</option>
+                  <option value="Male" >Male</option>
+                  <option value="Female" >Female</option>
+                  <option value="Other" >Other</option>
                 </select>
                 {errors.gender && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.gender}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.gender}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Blood Group</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Blood Group</label>
                 <input
                   type="text"
                   placeholder="e.g. O+"
@@ -554,11 +554,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updatePersonalInfo("bloodGroup", e.target.value)}
                 />
                 {errors.bloodGroup && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.bloodGroup}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.bloodGroup}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Nationality</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Nationality</label>
                 <input
                   type="text"
                   className={getInputClass(errors.nationality)}
@@ -566,23 +566,23 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updatePersonalInfo("nationality", e.target.value)}
                 />
                 {errors.nationality && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.nationality}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.nationality}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Marital Status</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Marital Status</label>
                 <select
                   className={getInputClass(errors.maritalStatus)}
                   value={personalInfo.maritalStatus}
                   onChange={(e) => updatePersonalInfo("maritalStatus", e.target.value)}
                 >
-                  <option value="" className="bg-slate-950">Select Status</option>
-                  <option value="Single" className="bg-slate-950">Single</option>
-                  <option value="Married" className="bg-slate-950">Married</option>
-                  <option value="Divorced" className="bg-slate-950">Divorced</option>
+                  <option value="">Select Status</option>
+                  <option value="Single" >Single</option>
+                  <option value="Married" >Married</option>
+                  <option value="Divorced" >Divorced</option>
                 </select>
                 {errors.maritalStatus && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.maritalStatus}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.maritalStatus}</span>
                 )}
               </div>
             </motion.div>
@@ -591,7 +591,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Current Address *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Current Address *</label>
                 <textarea
                   required
                   rows={2}
@@ -600,11 +600,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateContactInfo("currentAddress", e.target.value)}
                 />
                 {errors.currentAddress && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.currentAddress}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.currentAddress}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Permanent Address</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Permanent Address</label>
                 <textarea
                   rows={2}
                   className={getInputClass(errors.permanentAddress)}
@@ -612,14 +612,14 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateContactInfo("permanentAddress", e.target.value)}
                 />
                 {errors.permanentAddress && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.permanentAddress}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.permanentAddress}</span>
                 )}
               </div>
-              <div className="border-t border-white/5 pt-4">
-                <h4 className="text-sm font-semibold mb-4 text-blue-400">Emergency Contact Information</h4>
+              <div className="border-t border-surface-subtle pt-4">
+                <h4 className="text-sm font-semibold mb-4 text-brand-700">Emergency Contact Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Contact Name *</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Contact Name *</label>
                     <input
                       type="text"
                       className={getInputClass(errors.emergencyName)}
@@ -627,11 +627,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                       onChange={(e) => updateEmergencyContact("name", e.target.value)}
                     />
                     {errors.emergencyName && (
-                      <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.emergencyName}</span>
+                      <span className="text-red-600 text-xs mt-1 block font-medium">{errors.emergencyName}</span>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Relationship *</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Relationship *</label>
                     <input
                       type="text"
                       placeholder="e.g. Father"
@@ -640,11 +640,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                       onChange={(e) => updateEmergencyContact("relationship", e.target.value)}
                     />
                     {errors.emergencyRelationship && (
-                      <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.emergencyRelationship}</span>
+                      <span className="text-red-600 text-xs mt-1 block font-medium">{errors.emergencyRelationship}</span>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Contact Mobile Number *</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Contact Mobile Number *</label>
                     <input
                       type="text"
                       className={getInputClass(errors.emergencyPhone)}
@@ -652,7 +652,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                       onChange={(e) => updateEmergencyContact("phone", e.target.value)}
                     />
                     {errors.emergencyPhone && (
-                      <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.emergencyPhone}</span>
+                      <span className="text-red-600 text-xs mt-1 block font-medium">{errors.emergencyPhone}</span>
                     )}
                   </div>
                 </div>
@@ -664,34 +664,34 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
             <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex flex-col">
-                  <h4 className="text-sm font-semibold text-blue-400">Education Background</h4>
+                  <h4 className="text-sm font-semibold text-brand-700">Education Background</h4>
                   {errors.educationList && (
-                    <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.educationList}</span>
+                    <span className="text-red-600 text-xs mt-1 block font-medium">{errors.educationList}</span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={handleAddEducation}
-                  className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-semibold transition"
+                  className="rounded-lg bg-accent-600 hover:bg-accent-700 text-white px-3 py-1.5 text-xs font-semibold transition-colors"
                 >
                   + Add Education
                 </button>
               </div>
 
               {educationDetails.map((edu, idx) => (
-                <div key={idx} className="border border-white/5 rounded-2xl p-5 bg-slate-950/20 space-y-4 relative">
+                <div key={idx} className="border border-surface-subtle rounded-xl p-5 bg-surface-muted/40 space-y-4 relative">
                   {educationDetails.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveEducation(idx)}
-                      className="absolute top-4 right-4 text-xs font-bold text-red-400 hover:text-red-600"
+                      className="absolute top-4 right-4 text-xs font-semibold text-red-600 hover:text-red-700"
                     >
                       Remove
                     </button>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Degree / Qualification</label>
+                      <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Degree / Qualification</label>
                       <input
                         type="text"
                         placeholder="e.g. B.Tech / MBA"
@@ -700,13 +700,13 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         onChange={(e) => updateEducationField(idx, "degree", e.target.value)}
                       />
                       {errors.education && errors.education[idx] && errors.education[idx].degree && (
-                        <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">
+                        <span className="text-red-600 text-xs mt-1 block font-medium">
                           {errors.education[idx].degree}
                         </span>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">College / Institution</label>
+                      <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">College / Institution</label>
                       <input
                         type="text"
                         className={getInputClass(errors.education && errors.education[idx] && errors.education[idx].college)}
@@ -714,13 +714,13 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         onChange={(e) => updateEducationField(idx, "college", e.target.value)}
                       />
                       {errors.education && errors.education[idx] && errors.education[idx].college && (
-                        <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">
+                        <span className="text-red-600 text-xs mt-1 block font-medium">
                           {errors.education[idx].college}
                         </span>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">University / Board</label>
+                      <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">University / Board</label>
                       <input
                         type="text"
                         className={getInputClass(errors.education && errors.education[idx] && errors.education[idx].university)}
@@ -728,13 +728,13 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         onChange={(e) => updateEducationField(idx, "university", e.target.value)}
                       />
                       {errors.education && errors.education[idx] && errors.education[idx].university && (
-                        <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">
+                        <span className="text-red-600 text-xs mt-1 block font-medium">
                           {errors.education[idx].university}
                         </span>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Passing Year</label>
+                      <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Passing Year</label>
                       <input
                         type="number"
                         placeholder="YYYY"
@@ -743,13 +743,13 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         onChange={(e) => updateEducationField(idx, "passingYear", e.target.value)}
                       />
                       {errors.education && errors.education[idx] && errors.education[idx].passingYear && (
-                        <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">
+                        <span className="text-red-600 text-xs mt-1 block font-medium">
                           {errors.education[idx].passingYear}
                         </span>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Percentage / CGPA</label>
+                      <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Percentage / CGPA</label>
                       <input
                         type="text"
                         placeholder="%"
@@ -758,7 +758,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         onChange={(e) => updateEducationField(idx, "percentage", e.target.value)}
                       />
                       {errors.education && errors.education[idx] && errors.education[idx].percentage && (
-                        <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">
+                        <span className="text-red-600 text-xs mt-1 block font-medium">
                           {errors.education[idx].percentage}
                         </span>
                       )}
@@ -772,7 +772,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           {step === 4 && (
             <motion.div key="step4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="col-span-full mb-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-3">Professional Status *</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-3">Professional Status *</label>
                 <div className="flex gap-4">
                   <button
                     type="button"
@@ -784,10 +784,10 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         currentSalary: ""
                       });
                     }}
-                    className={`flex-1 md:flex-initial text-center py-3 px-6 rounded-xl font-bold transition-all duration-200 border ${
+                    className={`flex-1 md:flex-initial text-center py-3 px-6 rounded-lg font-semibold transition-colors duration-150 border ${
                       candidateType === "Fresher"
-                        ? "bg-blue-600/20 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10"
-                        : "bg-slate-950/40 border-white/10 text-slate-400 hover:border-white/20"
+                        ? "bg-brand-50 border-brand-500 text-brand-700"
+                        : "bg-white border-surface-subtle text-ink-muted hover:border-ink-faint"
                     }`}
                   >
                     Fresher
@@ -801,10 +801,10 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                         experience: prev.experience === "Fresher" ? "" : prev.experience
                       }));
                     }}
-                    className={`flex-1 md:flex-initial text-center py-3 px-6 rounded-xl font-bold transition-all duration-200 border ${
+                    className={`flex-1 md:flex-initial text-center py-3 px-6 rounded-lg font-semibold transition-colors duration-150 border ${
                       candidateType === "Experienced"
-                        ? "bg-blue-600/20 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10"
-                        : "bg-slate-950/40 border-white/10 text-slate-400 hover:border-white/20"
+                        ? "bg-brand-50 border-brand-500 text-brand-700"
+                        : "bg-white border-surface-subtle text-ink-muted hover:border-ink-faint"
                     }`}
                   >
                     Experienced
@@ -815,7 +815,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
               {candidateType === "Experienced" && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Total Experience *</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Total Experience *</label>
                     <input
                       type="text"
                       placeholder="e.g. 2 Years"
@@ -824,11 +824,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                       onChange={(e) => updateProfessionalDetails("experience", e.target.value)}
                     />
                     {errors.experience && (
-                      <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.experience}</span>
+                      <span className="text-red-600 text-xs mt-1 block font-medium">{errors.experience}</span>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Current/Last Company</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Current/Last Company</label>
                     <input
                       type="text"
                       className={getInputClass(null)}
@@ -837,7 +837,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Current Salary (Annual CTC in INR)</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Current Salary (Annual CTC in INR)</label>
                     <input
                       type="number"
                       placeholder="e.g. 500000"
@@ -854,7 +854,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           {step === 5 && (
             <motion.div key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Bank Name</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Bank Name</label>
                 <input
                   type="text"
                   className={getInputClass(errors.bankName)}
@@ -862,11 +862,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateBankDetails("bankName", e.target.value)}
                 />
                 {errors.bankName && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.bankName}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.bankName}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Account Number</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Account Number</label>
                 <input
                   type="text"
                   className={getInputClass(errors.accountNumber)}
@@ -874,11 +874,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateBankDetails("accountNumber", e.target.value)}
                 />
                 {errors.accountNumber && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.accountNumber}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.accountNumber}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">IFSC Code</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">IFSC Code</label>
                 <input
                   type="text"
                   placeholder="e.g. SBIN0001234"
@@ -887,7 +887,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateBankDetails("ifscCode", e.target.value.toUpperCase())}
                 />
                 {errors.ifscCode && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.ifscCode}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.ifscCode}</span>
                 )}
               </div>
             </motion.div>
@@ -896,7 +896,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           {step === 6 && (
             <motion.div key="step6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Nominee Full Name</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Nominee Full Name</label>
                 <input
                   type="text"
                   className={getInputClass(errors.nomineeName)}
@@ -904,11 +904,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateNomineeDetails("nomineeName", e.target.value)}
                 />
                 {errors.nomineeName && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.nomineeName}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.nomineeName}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Relationship with Candidate</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Relationship with Candidate</label>
                 <input
                   type="text"
                   placeholder="e.g. Mother / Spouse"
@@ -917,11 +917,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateNomineeDetails("relationship", e.target.value)}
                 />
                 {errors.nomineeRelationship && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.nomineeRelationship}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.nomineeRelationship}</span>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">Nominee Contact Number</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-2">Nominee Contact Number</label>
                 <input
                   type="text"
                   className={getInputClass(errors.nomineePhone)}
@@ -929,7 +929,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
                   onChange={(e) => updateNomineeDetails("contactNumber", e.target.value)}
                 />
                 {errors.nomineePhone && (
-                  <span className="text-red-400 text-xs mt-1 block font-medium animate-pulse">{errors.nomineePhone}</span>
+                  <span className="text-red-600 text-xs mt-1 block font-medium">{errors.nomineePhone}</span>
                 )}
               </div>
             </motion.div>
@@ -938,11 +938,11 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
       </div>
 
       {/* Button Controls */}
-      <div className="flex justify-between items-center mt-10 border-t border-white/5 pt-6">
+      <div className="flex justify-between items-center mt-10 border-t border-surface-subtle pt-6">
         <button
           onClick={handlePrev}
           disabled={step === 1 || loading}
-          className="flex items-center gap-2 rounded-xl border border-white/10 hover:bg-white/5 px-5 py-3 font-semibold transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-lg border border-surface-subtle bg-white text-ink hover:bg-surface-muted px-5 py-3 font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <FaChevronLeft size={12} /> Previous Step
         </button>
@@ -951,7 +951,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
           <button
             onClick={handleNext}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-3 font-semibold transition text-white"
+            className="flex items-center gap-2 rounded-lg bg-accent-600 hover:bg-accent-700 px-6 py-3 font-semibold transition-colors text-white"
           >
             Next Step <FaChevronRight size={12} />
           </button>
@@ -966,7 +966,7 @@ const ProfileCompletionForm = ({ onSave, onSubmitSuccess }) => {
               if (onSubmitSuccess) onSubmitSuccess();
             }}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 px-6 py-3 font-semibold transition text-white"
+            className="flex items-center gap-2 rounded-lg bg-accent-600 hover:bg-accent-700 px-6 py-3 font-semibold transition-colors text-white"
           >
             Complete & Submit
           </button>

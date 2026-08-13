@@ -434,20 +434,20 @@ const AdminDailyQuote = () => {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden bg-brand-800 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl transform -translate-x-10 translate-y-10" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent-500/10 rounded-full blur-3xl transform -translate-x-10 translate-y-10" />
         
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-teal-300 animate-pulse" />
+                <Sparkles className="h-3.5 w-3.5 text-accent-200 animate-pulse" />
                 Featured Banner
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Manage Daily HR Quote</h1>
-            <p className="mt-2 text-blue-100 max-w-xl text-sm sm:text-base">
+            <p className="mt-2 text-accent-100 max-w-xl text-sm sm:text-base">
               Inspire your team with scheduled daily banner quotes. Banners appear dynamically on the employee dashboard once their schedule time arrives.
             </p>
           </div>
@@ -466,16 +466,16 @@ const AdminDailyQuote = () => {
         
         {/* Left Side: Current Active Quote Card */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden flex flex-col h-full">
-            <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-              <span className="font-bold text-gray-700 flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-indigo-600" />
+          <div className="bg-white rounded-2xl border border-surface-subtle shadow-lg overflow-hidden flex flex-col h-full">
+            <div className="p-5 border-b border-surface-subtle bg-surface-muted/50 flex justify-between items-center">
+              <span className="font-bold text-ink flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-accent-600" />
                 Current Active Quote
               </span>
               {currentQuote && (
-                <span className="bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm relative">
-                  <span className="h-2 w-2 rounded-full bg-green-500 animate-ping" />
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="bg-accent-50 text-accent-700 border border-accent-200 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm relative">
+                  <span className="h-2 w-2 rounded-full bg-accent-500 animate-ping" />
+                  <span className="h-2 w-2 rounded-full bg-accent-500" />
                   Live
                 </span>
               )}
@@ -484,13 +484,13 @@ const AdminDailyQuote = () => {
             <div className="p-6 flex-grow flex flex-col justify-between min-h-[300px]">
               {loadingCurrent ? (
                 <div className="space-y-4 w-full flex flex-col items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-                  <p className="text-sm text-gray-500 font-medium animate-pulse">Loading live quote data...</p>
+                  <Loader2 className="h-8 w-8 text-accent-600 animate-spin" />
+                  <p className="text-sm text-ink-muted font-medium animate-pulse">Loading live quote data...</p>
                 </div>
               ) : currentQuote ? (
                 <div className="space-y-6 flex-grow flex flex-col justify-between">
                   <div className="space-y-6">
-                    <div className="relative group overflow-hidden rounded-xl border border-gray-200 bg-gray-50 shadow-md transition-all duration-300 hover:shadow-xl">
+                    <div className="relative group overflow-hidden rounded-xl border border-surface-subtle bg-surface-muted shadow-md transition-all duration-300 hover:shadow-xl">
                       <img 
                         src={currentQuote.imageUrl.startsWith("http") ? currentQuote.imageUrl : `${API_BASE}${currentQuote.imageUrl}`} 
                         alt="Current Daily Quote" 
@@ -501,16 +501,16 @@ const AdminDailyQuote = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2.5">
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <Calendar className="h-4 w-4 text-indigo-500" />
+                    <div className="p-4 bg-surface-muted/70 border border-surface-subtle rounded-xl space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs text-ink-muted">
+                        <Calendar className="h-4 w-4 text-accent-500" />
                         <span>Uploaded on:</span>
-                        <strong className="text-gray-800 ml-auto">{formatDate(currentQuote.createdAt)}</strong>
+                        <strong className="text-ink ml-auto">{formatDate(currentQuote.createdAt)}</strong>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <FileImage className="h-4 w-4 text-indigo-500" />
+                      <div className="flex items-center gap-2 text-xs text-ink-muted">
+                        <FileImage className="h-4 w-4 text-accent-500" />
                         <span>Image File:</span>
-                        <strong className="text-gray-800 truncate max-w-[180px] ml-auto" title={currentQuote.imageUrl}>
+                        <strong className="text-ink truncate max-w-[180px] ml-auto" title={currentQuote.imageUrl}>
                           {currentQuote.imageUrl.split('/').pop()}
                         </strong>
                       </div>
@@ -518,7 +518,7 @@ const AdminDailyQuote = () => {
                   </div>
 
                   {/* CRUD: Edit & Delete directly on active card */}
-                  <div className="pt-4 border-t border-gray-100">
+                  <div className="pt-4 border-t border-surface-subtle">
                     {actionId === currentQuote._id && actionType === "delete" ? (
                       <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center flex flex-col items-center justify-center relative">
                         <p className="text-xs font-semibold text-red-800 mb-2.5">Delete this active quote?</p>
@@ -534,25 +534,25 @@ const AdminDailyQuote = () => {
                           <button
                             disabled={actionLoading}
                             onClick={cancelAction}
-                            className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition active:scale-95"
+                            className="px-3 py-1.5 bg-white border border-surface-subtle hover:bg-surface-muted text-ink text-xs font-bold rounded-lg transition active:scale-95"
                           >
                             Cancel
                           </button>
                         </div>
                       </div>
                     ) : actionId === currentQuote._id && actionType === "editImage" ? (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center flex flex-col items-center justify-center relative">
-                        <p className="text-xs font-semibold text-indigo-850 mb-2 flex items-center gap-1 justify-center">
-                          <ImageIcon className="h-4 w-4 text-indigo-600 animate-pulse" />
+                      <div className="bg-accent-50 border border-accent-200 rounded-xl p-3 text-center flex flex-col items-center justify-center relative">
+                        <p className="text-xs font-semibold text-accent-800 mb-2 flex items-center gap-1 justify-center">
+                          <ImageIcon className="h-4 w-4 text-accent-600 animate-pulse" />
                           Replace Active Image
                         </p>
 
                         {!editFilePreview ? (
                           <div 
                             onClick={() => cardFileInputRef.current.click()}
-                            className="w-full py-4 border border-dashed border-indigo-300 rounded-xl flex flex-col items-center justify-center bg-white hover:bg-indigo-50/50 cursor-pointer p-2 text-indigo-600 transition"
+                            className="w-full py-4 border border-dashed border-accent-300 rounded-xl flex flex-col items-center justify-center bg-white hover:bg-accent-50/50 cursor-pointer p-2 text-accent-600 transition"
                           >
-                            <UploadCloud className="h-5 w-5 mb-1 text-indigo-500" />
+                            <UploadCloud className="h-5 w-5 mb-1 text-accent-500" />
                             <span className="text-[10px] font-bold">Click to select new image</span>
                           </div>
                         ) : (
@@ -560,9 +560,9 @@ const AdminDailyQuote = () => {
                             <img 
                               src={editFilePreview} 
                               alt="Edit Preview" 
-                              className="h-16 w-auto object-contain rounded border border-indigo-150 shadow" 
+                              className="h-16 w-auto object-contain rounded border border-accent-100 shadow" 
                             />
-                            <span className="text-[10px] text-indigo-700 font-semibold truncate max-w-[180px]">{editFile?.name}</span>
+                            <span className="text-[10px] text-accent-700 font-semibold truncate max-w-[180px]">{editFile?.name}</span>
                           </div>
                         )}
 
@@ -572,15 +572,15 @@ const AdminDailyQuote = () => {
                             onClick={() => handleUpdateImage(currentQuote._id)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1 active:scale-95 transition shadow-sm
                               ${!editFile 
-                                ? "bg-slate-300 text-white cursor-not-allowed shadow-none" 
-                                : "bg-indigo-600 hover:bg-indigo-700"}`}
+                                ? "bg-surface-subtle text-white cursor-not-allowed shadow-none" 
+                                : "bg-accent-600 hover:bg-accent-700"}`}
                           >
                             {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save Change"}
                           </button>
                           <button
                             disabled={actionLoading}
                             onClick={cancelEditImage}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition active:scale-95"
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-surface-subtle hover:bg-surface-muted text-ink transition active:scale-95"
                           >
                             Cancel
                           </button>
@@ -591,7 +591,7 @@ const AdminDailyQuote = () => {
                         <button
                           type="button"
                           onClick={() => initiateEditImage(currentQuote._id)}
-                          className="flex-1 py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
+                          className="flex-1 py-2.5 px-4 bg-accent-50 hover:bg-accent-100 text-accent-700 border border-accent-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
                         >
                           <Sparkles className="h-4 w-4" />
                           Edit Image
@@ -599,7 +599,7 @@ const AdminDailyQuote = () => {
                         <button
                           type="button"
                           onClick={() => initiateAction(currentQuote._id, "delete")}
-                          className="flex-1 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-650 hover:text-red-750 border border-red-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
+                          className="flex-1 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete
@@ -609,12 +609,12 @@ const AdminDailyQuote = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-xl py-12 my-auto">
+                <div className="flex flex-col items-center justify-center text-center p-8 bg-surface-muted/50 border-2 border-dashed border-surface-subtle rounded-xl py-12 my-auto">
                   <div className="h-16 w-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 mb-4 shadow-inner">
                     <Sparkles className="h-8 w-8" />
                   </div>
-                  <h3 className="font-bold text-gray-800 text-lg">No Active Quote Found</h3>
-                  <p className="text-sm text-gray-500 mt-2 max-w-[240px]">
+                  <h3 className="font-bold text-ink text-lg">No Active Quote Found</h3>
+                  <p className="text-sm text-ink-muted mt-2 max-w-[240px]">
                     Upload or schedule a quote banner to inspire your team on the landing page.
                   </p>
                 </div>
@@ -625,13 +625,13 @@ const AdminDailyQuote = () => {
 
         {/* Right Side: Upload & Scheduler Box */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-2xl border border-surface-subtle shadow-lg p-6 sm:p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <UploadCloud className="h-5 w-5 text-indigo-600" />
+              <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+                <UploadCloud className="h-5 w-5 text-accent-600" />
                 Upload & Schedule Banner
               </h2>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-ink-muted mt-1">
                 Drag quote images here, or browse. Schedule your quotes to display dynamically on key dates.
               </p>
             </div>
@@ -643,12 +643,12 @@ const AdminDailyQuote = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl flex items-start gap-3"
+                  className="p-4 bg-accent-50 border border-accent-200 text-accent-800 rounded-xl flex items-start gap-3"
                 >
-                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-5 w-5 text-accent-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-sm">Success</h4>
-                    <p className="text-xs text-green-700/90 mt-0.5">{message}</p>
+                    <p className="text-xs text-accent-700/90 mt-0.5">{message}</p>
                   </div>
                 </motion.div>
               )}
@@ -687,10 +687,10 @@ const AdminDailyQuote = () => {
                 onClick={triggerFileInput}
                 className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group min-h-[180px]
                   ${dragActive 
-                    ? "border-indigo-600 bg-indigo-50/40 text-indigo-700" 
+                    ? "border-accent-600 bg-accent-50/40 text-accent-700" 
                     : preview 
-                      ? "border-gray-200 bg-gray-50 hover:bg-gray-100/50 text-gray-500" 
-                      : "border-gray-300 hover:border-indigo-500 bg-gray-50/50 hover:bg-gray-50 text-gray-500"
+                      ? "border-surface-subtle bg-surface-muted hover:bg-surface-muted text-ink-muted" 
+                      : "border-surface-subtle hover:border-accent-500 bg-surface-muted/50 hover:bg-surface-muted text-ink-muted"
                   }`}
               >
                 <input
@@ -703,14 +703,14 @@ const AdminDailyQuote = () => {
 
                 {!preview ? (
                   <div className="space-y-3 flex flex-col items-center">
-                    <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition duration-300 shadow-sm">
+                    <div className="h-12 w-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center group-hover:scale-110 transition duration-300 shadow-sm">
                       <UploadCloud className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-700">
-                        Drag & drop your file here, or <span className="text-indigo-600 group-hover:underline">browse</span>
+                      <p className="text-sm font-semibold text-ink">
+                        Drag & drop your file here, or <span className="text-accent-600 group-hover:underline">browse</span>
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-ink-faint mt-1">
                         Only image formats allowed (Max 5MB)
                       </p>
                     </div>
@@ -721,7 +721,7 @@ const AdminDailyQuote = () => {
                       <img 
                         src={preview} 
                         alt="Preview" 
-                        className="max-h-[140px] w-auto object-contain rounded-lg shadow-md border border-gray-200" 
+                        className="max-h-[140px] w-auto object-contain rounded-lg shadow-md border border-surface-subtle" 
                       />
                       <button
                         type="button"
@@ -736,28 +736,28 @@ const AdminDailyQuote = () => {
                       </button>
                     </div>
 
-                    <div className="bg-white px-4 py-2 border border-gray-150 rounded-xl inline-flex items-center gap-2 text-xs text-gray-600 shadow-sm max-w-full">
-                      <FileImage className="h-4 w-4 text-indigo-500 shrink-0" />
+                    <div className="bg-white px-4 py-2 border border-surface-subtle rounded-xl inline-flex items-center gap-2 text-xs text-ink-muted shadow-sm max-w-full">
+                      <FileImage className="h-4 w-4 text-accent-500 shrink-0" />
                       <span className="font-medium truncate max-w-[180px]">{file.name}</span>
-                      <span className="text-gray-400">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      <span className="text-ink-faint">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Schedule Input */}
-              <div className="bg-gray-50/50 p-4 border border-gray-100 rounded-2xl space-y-2.5">
-                <label className="block text-xs font-bold text-gray-750 flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-indigo-600" />
+              <div className="bg-surface-muted/50 p-4 border border-surface-subtle rounded-2xl space-y-2.5">
+                <label className="block text-xs font-bold text-ink flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-accent-600" />
                   Schedule Publication Date & Time (Optional)
                 </label>
                 <input
                   type="datetime-local"
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full text-xs bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition shadow-inner"
+                  className="w-full text-xs bg-white border border-surface-subtle rounded-xl px-3.5 py-2.5 text-ink focus:outline-none focus:ring-1 focus:ring-accent-500 transition shadow-inner"
                 />
-                <p className="text-[10px] text-gray-400">
+                <p className="text-[10px] text-ink-faint">
                   Leave empty to publish immediately, or specify a future release time.
                 </p>
               </div>
@@ -768,7 +768,7 @@ const AdminDailyQuote = () => {
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 active:scale-95 transition-all"
+                    className="flex-1 py-3 px-4 rounded-xl border border-surface-subtle text-ink font-semibold text-sm hover:bg-surface-muted active:scale-95 transition-all"
                   >
                     Clear
                   </button>
@@ -779,10 +779,10 @@ const AdminDailyQuote = () => {
                   disabled={uploading || !file}
                   className={`flex-[2] py-3 px-4 rounded-xl text-white font-semibold text-sm transition-all duration-300 shadow-md flex items-center justify-center gap-2
                     ${uploading 
-                      ? "bg-gray-400 cursor-not-allowed" 
+                      ? "bg-ink-faint cursor-not-allowed" 
                       : !file 
-                        ? "bg-gray-300 cursor-not-allowed shadow-none" 
-                        : "bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-indigo-600/20"
+                        ? "bg-surface-subtle cursor-not-allowed shadow-none" 
+                        : "bg-accent-600 hover:bg-accent-700 active:scale-95 shadow-accent-600/20"
                     }`}
                 >
                   {uploading ? (
@@ -804,14 +804,14 @@ const AdminDailyQuote = () => {
       </div>
 
       {/* History Gallery */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-6 sm:p-8 space-y-6">
+      <div className="bg-white rounded-2xl border border-surface-subtle shadow-lg p-6 sm:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-accent-600" />
               Daily Quote Gallery & History
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm text-ink-muted mt-1">
               Manage scheduled or past quote banners. You can edit images, reschedule dates, force activate banners, or delete them permanently.
             </p>
           </div>
@@ -833,7 +833,7 @@ const AdminDailyQuote = () => {
                     type="button"
                     disabled={actionLoading}
                     onClick={() => setConfirmDeleteAll(false)}
-                    className="py-1 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition active:scale-95"
+                    className="py-1 px-3 bg-white border border-surface-subtle hover:bg-surface-muted text-ink text-xs font-semibold rounded-lg transition active:scale-95"
                   >
                     Cancel
                   </button>
@@ -846,7 +846,7 @@ const AdminDailyQuote = () => {
                     setError("");
                     setMessage("");
                   }}
-                  className="w-full sm:w-auto py-2 px-4 bg-red-50 hover:bg-red-100 text-red-650 hover:text-red-700 text-xs font-bold rounded-xl transition border border-red-200 flex items-center justify-center gap-1.5 shadow-sm"
+                  className="w-full sm:w-auto py-2 px-4 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-xs font-bold rounded-xl transition border border-red-200 flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete All Banners
@@ -858,7 +858,7 @@ const AdminDailyQuote = () => {
 
         {/* Dynamic Category Tabs */}
         {history.length > 0 && (
-          <div className="flex flex-wrap border-b border-gray-100 gap-4 sm:gap-6 text-sm font-medium pt-2 pb-1">
+          <div className="flex flex-wrap border-b border-surface-subtle gap-4 sm:gap-6 text-sm font-medium pt-2 pb-1">
             <button
               onClick={() => {
                 setActiveTab("live");
@@ -866,16 +866,16 @@ const AdminDailyQuote = () => {
                 setEditingDateId(null);
               }}
               className={`pb-3 relative flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer
-                ${activeTab === "live" ? "text-indigo-650 font-bold" : "text-gray-500 hover:text-gray-700"}`}
+                ${activeTab === "live" ? "text-accent-700 font-bold" : "text-ink-muted hover:text-ink"}`}
             >
               <Play className="h-4 w-4 shrink-0 fill-current" />
               Live
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
-                ${activeTab === "live" ? "bg-indigo-100 text-indigo-700" : "bg-gray-150 text-gray-500"}`}>
+                ${activeTab === "live" ? "bg-accent-100 text-accent-700" : "bg-surface-subtle text-ink-muted"}`}>
                 {liveCount}
               </span>
               {activeTab === "live" && (
-                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-650" />
+                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-600" />
               )}
             </button>
 
@@ -886,16 +886,16 @@ const AdminDailyQuote = () => {
                 setEditingDateId(null);
               }}
               className={`pb-3 relative flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer
-                ${activeTab === "scheduled" ? "text-indigo-650 font-bold" : "text-gray-500 hover:text-gray-700"}`}
+                ${activeTab === "scheduled" ? "text-accent-700 font-bold" : "text-ink-muted hover:text-ink"}`}
             >
               <Calendar className="h-4 w-4 shrink-0" />
               Scheduled
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
-                ${activeTab === "scheduled" ? "bg-indigo-100 text-indigo-700" : "bg-gray-150 text-gray-500"}`}>
+                ${activeTab === "scheduled" ? "bg-accent-100 text-accent-700" : "bg-surface-subtle text-ink-muted"}`}>
                 {scheduledCount}
               </span>
               {activeTab === "scheduled" && (
-                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-650" />
+                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-600" />
               )}
             </button>
 
@@ -906,16 +906,16 @@ const AdminDailyQuote = () => {
                 setEditingDateId(null);
               }}
               className={`pb-3 relative flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer
-                ${activeTab === "all" ? "text-indigo-650 font-bold" : "text-gray-500 hover:text-gray-700"}`}
+                ${activeTab === "all" ? "text-accent-700 font-bold" : "text-ink-muted hover:text-ink"}`}
             >
               <ImageIcon className="h-4 w-4 shrink-0" />
               All Banners
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
-                ${activeTab === "all" ? "bg-indigo-100 text-indigo-700" : "bg-gray-150 text-gray-500"}`}>
+                ${activeTab === "all" ? "bg-accent-100 text-accent-700" : "bg-surface-subtle text-ink-muted"}`}>
                 {history.length}
               </span>
               {activeTab === "all" && (
-                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-650" />
+                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-600" />
               )}
             </button>
           </div>
@@ -923,8 +923,8 @@ const AdminDailyQuote = () => {
 
         {loadingHistory ? (
           <div className="space-y-4 w-full flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-            <p className="text-sm text-gray-500 font-medium animate-pulse">Loading gallery records...</p>
+            <Loader2 className="h-8 w-8 text-accent-600 animate-spin" />
+            <p className="text-sm text-ink-muted font-medium animate-pulse">Loading gallery records...</p>
           </div>
         ) : filteredHistory.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -940,14 +940,14 @@ const AdminDailyQuote = () => {
                   key={item._id}
                   className={`relative overflow-hidden rounded-xl border transition-all duration-300 bg-white flex flex-col justify-between group min-h-[220px]
                     ${isActive 
-                      ? "border-green-300 ring-2 ring-green-500/20 shadow-md" 
+                      ? "border-accent-300 ring-2 ring-accent-500/20 shadow-md" 
                       : isScheduled
-                        ? "border-blue-200 shadow-sm"
-                        : "border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
+                        ? "border-accent-200 shadow-sm"
+                        : "border-surface-subtle hover:border-surface-subtle shadow-sm hover:shadow-md"
                     }`}
                 >
                   {/* Image Frame */}
-                  <div className="relative aspect-video bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                  <div className="relative aspect-video bg-surface-muted flex items-center justify-center overflow-hidden border-b border-surface-subtle">
                     <img 
                       src={item.imageUrl.startsWith("http") ? item.imageUrl : `${API_BASE}${item.imageUrl}`} 
                       alt="Gallery quote" 
@@ -956,12 +956,12 @@ const AdminDailyQuote = () => {
                     
                     {/* Status Ribbon badges */}
                     {isActive ? (
-                      <span className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider flex items-center gap-1 z-10">
+                      <span className="absolute top-2 left-2 bg-accent-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider flex items-center gap-1 z-10">
                         <Check className="h-3 w-3" />
                         Active
                       </span>
                     ) : isScheduled ? (
-                      <span className="absolute top-2 left-2 bg-indigo-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider flex items-center gap-1 z-10 shadow-indigo-500/30">
+                      <span className="absolute top-2 left-2 bg-accent-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider flex items-center gap-1 z-10 shadow-accent-500/30">
                         <Calendar className="h-3 w-3" />
                         Scheduled
                       </span>
@@ -974,7 +974,7 @@ const AdminDailyQuote = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
+                          className="absolute inset-0 bg-brand-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
                         >
                           <p className="text-xs font-semibold mb-3">
                             {actionType === "delete" 
@@ -988,7 +988,7 @@ const AdminDailyQuote = () => {
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1 active:scale-95 transition
                                 ${actionType === "delete" 
                                   ? "bg-red-500 hover:bg-red-600" 
-                                  : "bg-indigo-600 hover:bg-indigo-700"}`}
+                                  : "bg-accent-600 hover:bg-accent-700"}`}
                             >
                               {actionLoading ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1015,9 +1015,9 @@ const AdminDailyQuote = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
+                          className="absolute inset-0 bg-brand-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 mb-1.5 flex items-center gap-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-accent-300 mb-1.5 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             Reschedule Publish
                           </p>
@@ -1025,13 +1025,13 @@ const AdminDailyQuote = () => {
                             type="datetime-local"
                             value={editDateVal}
                             onChange={(e) => setEditDateVal(e.target.value)}
-                            className="w-full text-xs bg-slate-800 border border-slate-700 text-white rounded-lg px-2 py-1.5 mb-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full text-xs bg-brand-800 border border-brand-700 text-white rounded-lg px-2 py-1.5 mb-3 focus:outline-none focus:ring-1 focus:ring-accent-500"
                           />
                           <div className="flex gap-2">
                             <button
                               disabled={actionLoading}
                               onClick={() => handleUpdateDate(item._id)}
-                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition active:scale-95 flex items-center gap-1"
+                              className="px-3 py-1.5 bg-accent-600 hover:bg-accent-700 text-white text-xs font-bold rounded-lg transition active:scale-95 flex items-center gap-1"
                             >
                               {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
                             </button>
@@ -1054,10 +1054,10 @@ const AdminDailyQuote = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
+                          className="absolute inset-0 bg-brand-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center text-white z-20"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 mb-2 flex items-center gap-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-accent-300 mb-2 flex items-center gap-1">
                             <ImageIcon className="h-3 w-3" />
                             Replace Image
                           </p>
@@ -1065,20 +1065,20 @@ const AdminDailyQuote = () => {
                           {!editFilePreview ? (
                             <div 
                               onClick={() => cardFileInputRef.current.click()}
-                              className="w-full aspect-video border border-dashed border-slate-600 rounded-lg flex flex-col items-center justify-center bg-slate-800/50 hover:bg-slate-800 cursor-pointer p-2 text-slate-300 transition-colors"
+                              className="w-full aspect-video border border-dashed border-brand-600 rounded-lg flex flex-col items-center justify-center bg-brand-800/50 hover:bg-brand-800 cursor-pointer p-2 text-brand-100 transition-colors"
                             >
-                              <UploadCloud className="h-5 w-5 mb-1 text-slate-400" />
+                              <UploadCloud className="h-5 w-5 mb-1 text-brand-200" />
                               <span className="text-[9px] font-bold">Click to select image</span>
-                              <span className="text-[7px] text-slate-500">Max 5MB</span>
+                              <span className="text-[7px] text-brand-300">Max 5MB</span>
                             </div>
                           ) : (
                             <div className="w-full flex flex-col items-center gap-1">
                               <img 
                                 src={editFilePreview} 
                                 alt="Edit Preview" 
-                                className="h-12 w-auto object-contain rounded border border-slate-700 shadow" 
+                                className="h-12 w-auto object-contain rounded border border-brand-700 shadow" 
                               />
-                              <span className="text-[8px] text-slate-400 truncate max-w-[120px]">{editFile?.name}</span>
+                              <span className="text-[8px] text-brand-200 truncate max-w-[120px]">{editFile?.name}</span>
                             </div>
                           )}
 
@@ -1088,8 +1088,8 @@ const AdminDailyQuote = () => {
                               onClick={() => handleUpdateImage(item._id)}
                               className={`px-3 py-1 rounded-lg text-[10px] font-bold text-white flex items-center gap-1 active:scale-95 transition
                                 ${!editFile 
-                                  ? "bg-slate-700 text-slate-500 cursor-not-allowed" 
-                                  : "bg-indigo-600 hover:bg-indigo-700"}`}
+                                  ? "bg-brand-700 text-brand-300 cursor-not-allowed"
+                                  : "bg-accent-600 hover:bg-accent-700"}`}
                             >
                               {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
                             </button>
@@ -1109,15 +1109,15 @@ const AdminDailyQuote = () => {
                   {/* Card Bottom details */}
                   <div className="p-4 space-y-3 flex-grow flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-mono text-gray-400 truncate" title={item.imageUrl.split('/').pop()}>
+                      <p className="text-[10px] font-mono text-ink-faint truncate" title={item.imageUrl.split('/').pop()}>
                         {item.imageUrl.split('/').pop()}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-500">
-                        <Calendar className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-ink-muted">
+                        <Calendar className="h-3.5 w-3.5 text-accent-500 shrink-0" />
                         <span>
                           {isScheduled ? "Scheduled for:" : "Published:"}
                         </span>
-                        <strong className="text-gray-700 font-semibold truncate ml-auto">
+                        <strong className="text-ink font-semibold truncate ml-auto">
                           {formatDate(item.createdAt)}
                         </strong>
                       </div>
@@ -1125,19 +1125,19 @@ const AdminDailyQuote = () => {
 
                     {/* Control Buttons */}
                     {!isPendingAction && !isEditingDate && !isEditingImage && (
-                      <div className="flex gap-2 pt-2 border-t border-gray-50">
+                      <div className="flex gap-2 pt-2 border-t border-surface-subtle">
                         {!isActive ? (
                           <button
                             type="button"
                             onClick={() => initiateAction(item._id, "activate")}
-                            className="flex-grow py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                            className="flex-grow py-1.5 px-2 bg-accent-50 hover:bg-accent-100 text-accent-700 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
                             title="Set Active Now"
                           >
                             <Play className="h-3 w-3 fill-current" />
                             Activate
                           </button>
                         ) : (
-                          <div className="flex-grow py-1.5 px-2 bg-green-50 text-green-700 text-xs font-bold rounded-lg flex items-center justify-center gap-1 border border-green-100 cursor-default select-none">
+                          <div className="flex-grow py-1.5 px-2 bg-accent-50 text-accent-700 text-xs font-bold rounded-lg flex items-center justify-center gap-1 border border-accent-100 cursor-default select-none">
                             <Check className="h-3.5 w-3.5" />
                             Live
                           </div>
@@ -1147,7 +1147,7 @@ const AdminDailyQuote = () => {
                         <button
                           type="button"
                           onClick={() => initiateEditImage(item._id)}
-                          className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-750 rounded-lg transition-colors"
+                          className="p-1.5 bg-accent-50 hover:bg-accent-100 text-accent-600 hover:text-accent-700 rounded-lg transition-colors"
                           title="Edit Image Banner"
                         >
                           <ImageIcon className="h-4 w-4" />
@@ -1171,7 +1171,7 @@ const AdminDailyQuote = () => {
                         <button
                           type="button"
                           onClick={() => initiateAction(item._id, "delete")}
-                          className="p-1.5 bg-red-50 hover:bg-red-105 text-red-655 hover:text-red-750 rounded-lg transition-colors"
+                          className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
                           title="Delete Banner"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1184,16 +1184,16 @@ const AdminDailyQuote = () => {
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 border border-gray-150 rounded-2xl py-12">
-            <ImageIcon className="h-12 w-12 text-gray-300 mb-2" />
-            <h3 className="font-bold text-gray-800 text-md">
+          <div className="flex flex-col items-center justify-center text-center p-8 bg-surface-muted/50 border border-surface-subtle rounded-2xl py-12">
+            <ImageIcon className="h-12 w-12 text-ink-faint mb-2" />
+            <h3 className="font-bold text-ink text-md">
               {activeTab === "live" 
                 ? "No live quote found" 
                 : activeTab === "scheduled" 
                   ? "No scheduled quotes found" 
                   : "No quotes in history"}
             </h3>
-            <p className="text-xs text-gray-450 mt-1 max-w-[240px]">
+            <p className="text-xs text-ink-muted mt-1 max-w-[240px]">
               {activeTab === "live" 
                 ? "The currently active/live banner quote will display here." 
                 : activeTab === "scheduled" 

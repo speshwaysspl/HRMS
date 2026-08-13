@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCandidates } from "../../redux/slices/candidateSlice";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaFilter, FaEye, FaChevronLeft, FaChevronRight, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { SkeletonRow } from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
 
 const ProfileCompletionTracker = () => {
   const dispatch = useDispatch();
@@ -18,37 +20,30 @@ const ProfileCompletionTracker = () => {
   }, [dispatch, page, search, status]);
 
   const getProgressColor = (percent) => {
-    if (percent === 100) return "bg-green-500";
-    if (percent >= 50) return "bg-blue-500";
-    if (percent >= 25) return "bg-yellow-500";
-    return "bg-rose-500";
-  };
-
-  const getProgressBg = (percent) => {
-    if (percent === 100) return "bg-green-500/10 text-green-600";
-    if (percent >= 50) return "bg-blue-500/10 text-blue-600";
-    if (percent >= 25) return "bg-yellow-500/10 text-yellow-600";
-    return "bg-rose-500/10 text-rose-600";
+    if (percent === 100) return "bg-accent-500";
+    if (percent >= 50) return "bg-brand-500";
+    if (percent >= 25) return "bg-amber-500";
+    return "bg-red-500";
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800">Pre-Onboarding Profile Tracker</h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">Pre-Onboarding Profile Tracker</h2>
+        <p className="text-sm text-ink-muted mt-1">
           Monitor candidate form completions, bank detail submittals, and emergency contact setups.
         </p>
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-surface-subtle bg-white p-5 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" size={14} />
             <input
               type="text"
               placeholder="Search by candidate name or ID..."
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500"
+              className="w-full rounded-lg border border-surface-subtle pl-10 pr-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -58,9 +53,9 @@ const ProfileCompletionTracker = () => {
           </div>
 
           <div className="relative">
-            <FaFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <FaFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" size={14} />
             <select
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 appearance-none bg-white"
+              className="w-full rounded-lg border border-surface-subtle pl-10 pr-4 py-2.5 text-sm text-ink outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 appearance-none bg-white"
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
@@ -78,49 +73,48 @@ const ProfileCompletionTracker = () => {
       </div>
 
       {/* Grid List */}
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-surface-subtle bg-white overflow-hidden shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                <th className="py-4 px-6">Candidate</th>
-                <th className="py-4 px-6">Onboarding Status</th>
-                <th className="py-4 px-6">Profile Progress</th>
-                <th className="py-4 px-6">Completion</th>
-                <th className="py-4 px-6 text-right">Action</th>
+              <tr className="border-b border-surface-subtle bg-surface-muted text-ink-muted text-xs font-semibold uppercase tracking-wider">
+                <th className="py-3.5 px-6">Candidate</th>
+                <th className="py-3.5 px-6">Onboarding Status</th>
+                <th className="py-3.5 px-6">Profile Progress</th>
+                <th className="py-3.5 px-6">Completion</th>
+                <th className="py-3.5 px-6 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
+            <tbody className="divide-y divide-surface-subtle text-ink text-sm">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
-                    <div className="h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                    Loading tracker...
-                  </td>
-                </tr>
+                <>
+                  <SkeletonRow columns={5} />
+                  <SkeletonRow columns={5} />
+                  <SkeletonRow columns={5} />
+                </>
               ) : candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
-                    No candidates found.
+                  <td colSpan={5} className="py-10">
+                    <EmptyState title="No candidates found" message="Try adjusting your search or filter criteria." />
                   </td>
                 </tr>
               ) : (
                 candidates.map((c) => (
-                  <tr key={c._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 px-6">
+                  <tr key={c._id} className="hover:bg-surface-muted transition-colors">
+                    <td className="py-4 px-6 max-w-[200px]">
                       <div>
-                        <div className="font-semibold text-slate-900">{c.fullName}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{c.candidateId} • {c.position}</div>
+                        <div className="font-semibold text-ink truncate">{c.fullName}</div>
+                        <div className="text-xs text-ink-faint mt-0.5 truncate">{c.candidateId} • {c.position}</div>
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                      <span className="inline-flex items-center rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-ink-muted">
                         {c.status}
                       </span>
                     </td>
                     <td className="py-4 px-6 min-w-[200px]">
                       <div className="flex items-center gap-3">
-                        <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="w-full bg-surface-subtle rounded-full h-2">
                           <div
                             className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(
                               c.profileCompletionPercentage
@@ -128,18 +122,18 @@ const ProfileCompletionTracker = () => {
                             style={{ width: `${c.profileCompletionPercentage}%` }}
                           ></div>
                         </div>
-                        <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                        <span className="text-xs font-semibold text-ink-muted whitespace-nowrap">
                           {c.profileCompletionPercentage}%
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       {c.profileCompletionPercentage === 100 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-xl">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-accent-100 text-accent-700">
                           <CheckCircleIcon /> Completed
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-xl">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
                           <WarningIcon /> Incomplete
                         </span>
                       )}
@@ -147,7 +141,7 @@ const ProfileCompletionTracker = () => {
                     <td className="py-4 px-6 text-right">
                       <button
                         onClick={() => navigate(`/hr-dashboard/candidates/${c._id}`)}
-                        className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition inline-flex items-center justify-center"
+                        className="p-2 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100 transition-colors inline-flex items-center justify-center"
                         title="View & Verify Profile"
                       >
                         <FaEye size={14} />
@@ -162,22 +156,22 @@ const ProfileCompletionTracker = () => {
 
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 bg-slate-50">
-            <span className="text-xs text-slate-500 font-medium">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-surface-subtle px-6 py-4 bg-surface-muted">
+            <span className="text-xs text-ink-muted font-medium">
               Showing page {page} of {pagination.pages}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
                 disabled={page === 1}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
+                className="rounded-lg border border-surface-subtle bg-white p-2 text-ink-muted hover:bg-surface-muted disabled:opacity-40 transition-colors"
               >
                 <FaChevronLeft size={12} />
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(p + 1, pagination.pages))}
                 disabled={page === pagination.pages}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
+                className="rounded-lg border border-surface-subtle bg-white p-2 text-ink-muted hover:bg-surface-muted disabled:opacity-40 transition-colors"
               >
                 <FaChevronRight size={12} />
               </button>

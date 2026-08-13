@@ -1,63 +1,39 @@
 import React from 'react'
+import { FiMenu, FiLogOut } from 'react-icons/fi'
 import NotificationBell from '../notifications/NotificationBell'
+import { useAuth } from '../../context/AuthContext'
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
+  const { logout } = useAuth()
+
   return (
-    <div className="flex items-center justify-between h-12 sm:h-14 md:h-16 px-2 sm:px-4 md:px-6 shadow-lg sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600">
-      
-      {/* Animated Scrolling Company Name */}
-      <div className="overflow-hidden whitespace-nowrap w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto">
-        <h1 className="text-xs sm:text-sm md:text-lg lg:text-xl font-extrabold text-white animate-scroll">
-          <span style={{ fontFamily: "Times New Roman, Times, serif" }}>
-            <span className="hidden sm:inline">SPESHWAY SOLUTIONS PRIVATE LIMITED</span>
-            <span className="sm:hidden">SPESHWAY SOLUTIONS</span>
-          </span>
+    <div className="flex items-center gap-3 h-14 md:h-16 px-4 md:px-6 sticky top-0 z-30 bg-white border-b border-surface-subtle">
+      <button
+        onClick={onMenuClick}
+        className="flex-shrink-0 p-2 -ml-2 rounded-lg text-ink-muted hover:bg-surface-muted transition-colors"
+        aria-label="Toggle menu"
+      >
+        <FiMenu size={20} />
+      </button>
+
+      <div className="min-w-0 flex-1">
+        <h1 className="text-sm md:text-base font-semibold tracking-wide text-brand-700 truncate">
+          <span className="hidden sm:inline">SPESHWAY SOLUTIONS PRIVATE LIMITED</span>
+          <span className="sm:hidden">SPESHWAY SOLUTIONS</span>
         </h1>
       </div>
 
-      {/* Notification Bell */}
-      <div className="flex-shrink-0 text-white notification-bell-wrapper">
+      <div className="flex-shrink-0 flex items-center gap-1 text-ink-muted">
         <NotificationBell />
+        <button
+          onClick={logout}
+          className="p-2 rounded-lg hover:bg-surface-muted hover:text-red-600 transition-colors"
+          aria-label="Logout"
+          title="Logout"
+        >
+          <FiLogOut size={19} />
+        </button>
       </div>
-
-      {/* Extra CSS */}
-      <style>
-        {`
-          @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-
-          @keyframes scroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-          }
-
-          .animate-gradient {
-            background-size: 300% 300%;
-            animation: gradient 9s ease infinite;
-          }
-
-          .animate-scroll {
-            animation: scroll 12s linear infinite;
-            display: inline-block;
-          }
-
-          @media (max-width: 640px) {
-            .animate-scroll {
-              animation: scroll 8s linear infinite;
-            }
-          }
-
-          /* Ensure NotificationBell (svg) appears white */
-          .notification-bell-wrapper svg {
-            fill: white !important;
-            color: white !important;
-            stroke: white !important;
-          }
-        `}
-      </style>
     </div>
   )
 }

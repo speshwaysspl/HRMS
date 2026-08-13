@@ -5,6 +5,7 @@ import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, toISTTimeString } from "../../utils/dateTimeUtils";
 import { reverseGeocodeFast, buildAccuracyLabel, parseAccuracyMeters } from "../../utils/geocodeUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
 const GoogleWrapper = React.lazy(() => import("@googlemaps/react-wrapper").then(m => ({ default: m.Wrapper })));
 
 // Google Maps component
@@ -580,74 +581,74 @@ const Attendance = () => {
   };
  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex justify-center py-4 md:py-8 px-4">
-      <div className="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-4 md:p-6">
-        <h2 className="text-2xl md:text-4xl font-extrabold text-blue-600 mb-4 md:mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
+    <div className="min-h-screen bg-surface-muted flex justify-center py-4 md:py-8 px-4">
+      <div className="w-full max-w-3xl bg-white shadow-card rounded-xl p-4 md:p-6 border border-surface-subtle">
+        <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-4 md:mb-6 text-center">
           Attendance Tracker
         </h2>
- 
+
         {/* Work Mode */}
         <div className="mb-6">
-          <label className="block mb-1 font-medium text-gray-700">Work Mode</label>
+          <label className="block mb-1 font-medium text-ink-muted text-sm">Work Mode</label>
           <select
             value={tracker.workMode}
             onChange={(e) =>
               setTracker((prev) => ({ ...prev, workMode: e.target.value }))
             }
-            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300"
+            className="w-full p-3 border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:outline-none bg-white text-ink"
           >
             <option value="office">Work from Office</option>
             <option value="home">Work from Home</option>
           </select>
         </div>
- 
+
         {/* In & Out Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-xl flex flex-col items-center bg-blue-50">
-            <p className="text-gray-700 text-sm md:text-base">In Time</p>
-            <p className="font-bold text-lg md:text-xl text-blue-600">
+          <div className="p-4 rounded-lg flex flex-col items-center bg-surface-muted border border-surface-subtle">
+            <p className="text-ink-muted text-sm md:text-base">In Time</p>
+            <p className="font-semibold text-lg md:text-xl text-brand-700">
               {tracker.inTime || "Not Set"}
             </p>
             <button
               onClick={() => handleSubmit("inTime")}
               disabled={!!todayRecord?.inTime || loading}
-              className="mt-2 px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm md:text-base"
+              className="mt-2 px-4 py-2 rounded-lg text-white bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-sm md:text-base transition-colors"
             >
               Login
             </button>
           </div>
 
-          <div className="p-4 rounded-xl flex flex-col items-center bg-red-50">
-            <p className="text-gray-700 text-sm md:text-base">Out Time</p>
-            <p className="font-bold text-lg md:text-xl text-red-600">
+          <div className="p-4 rounded-lg flex flex-col items-center bg-surface-muted border border-surface-subtle">
+            <p className="text-ink-muted text-sm md:text-base">Out Time</p>
+            <p className="font-semibold text-lg md:text-xl text-red-600">
               {tracker.outTime || "Not Set"}
             </p>
             <button
               onClick={() => handleSubmit("outTime")}
               disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading}
-              className="mt-2 px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm md:text-base"
+              className="mt-2 px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm md:text-base transition-colors"
             >
               Logout
             </button>
           </div>
         </div>
- 
+
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-gray-700">Break Times</h3>
+          <h3 className="text-lg font-semibold mb-3 text-ink">Break Times</h3>
           {tracker.breaks.some(b => !b.end) && (
-            <div className="mb-3 p-4 rounded-xl bg-amber-100 border-2 border-amber-500 text-amber-800 shadow">
-              <span className="font-bold">On Break</span>
+            <div className="mb-3 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+              <span className="font-semibold">On Break</span>
               <span className="ml-2">started at {tracker.breaks.find(b => !b.end)?.start}</span>
             </div>
           )}
           {tracker.breaks.map((b, idx) => (
             <div
               key={idx}
-              className={`flex justify-between p-3 rounded-xl mb-2 ${
-                b.end ? 'bg-yellow-50' : 'bg-amber-200 border border-amber-500 shadow-md animate-pulse'
+              className={`flex justify-between p-3 rounded-lg mb-2 border ${
+                b.end ? 'bg-surface-muted border-surface-subtle' : 'bg-amber-50 border-amber-200'
               }`}
             >
-              <p>
+              <p className="text-ink">
                 Break {idx + 1}: {b.start} - {b.end || "Ongoing"}
               </p>
               {!b.end && (
@@ -665,7 +666,7 @@ const Attendance = () => {
                     setTimeout(() => saveBreaksToBackend(), 100);
                   }}
                   disabled={!!todayRecord?.outTime || loading}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg ring-2 ring-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   End
                 </button>
@@ -695,24 +696,24 @@ const Attendance = () => {
               setTimeout(() => saveBreaksToBackend(), 100);
             }}
             disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading || tracker.breaks.some(b => !b.end)}
-            className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-2 px-6 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             + Start Break
           </button>
         </div>
- 
+
         {/* Location + Map */}
         <div className="mb-6">
           {tracker.latitude && tracker.longitude ? (
-            <div className="p-4 bg-green-50 rounded-xl text-center mb-4">
-              <p className="text-gray-700 font-medium">📍 Current Location</p>
-              <p className="text-green-700 font-semibold">
+            <div className="p-4 bg-accent-50 rounded-lg text-center mb-4 border border-accent-100">
+              <p className="text-ink font-medium">Current Location</p>
+              <p className="text-accent-700 font-semibold">
                 Lat: {tracker.latitude.toFixed(6)}, Lon:{" "}
                 {tracker.longitude.toFixed(6)}
               </p>
-              <p className="text-gray-800 mt-1 text-sm">📍 {tracker.area}</p>
+              <p className="text-ink mt-1 text-sm">{tracker.area}</p>
               {tracker.accuracy && (
-                <p className="text-gray-600 mt-1 text-xs">
+                <p className="text-ink-muted mt-1 text-xs">
                   <strong>Accuracy:</strong> <span className={`accuracy-${tracker.accuracy.toLowerCase().split(' ')[0]}`}>{tracker.accuracy}</span>
                 </p>
               )}
@@ -734,13 +735,13 @@ const Attendance = () => {
                   font-weight: 600;
                 }
               `}</style>
-              <div className="mt-3 flex justify-center space-x-2">
+              <div className="mt-3 flex justify-center flex-wrap gap-2">
                 <button
                   onClick={() => {
                     const url = `https://www.google.com/maps?q=${tracker.latitude},${tracker.longitude}`;
                     window.open(url, '_blank');
                   }}
-                  className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                  className="px-3 py-1 border border-surface-subtle bg-white text-ink text-xs rounded-lg hover:bg-surface-muted transition-colors"
                 >
                   Open in Google Maps
                 </button>
@@ -749,7 +750,7 @@ const Attendance = () => {
                     const url = `https://www.openstreetmap.org/?mlat=${tracker.latitude}&mlon=${tracker.longitude}#map=17/${tracker.latitude}/${tracker.longitude}`;
                     window.open(url, '_blank');
                   }}
-                  className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-3 py-1 border border-surface-subtle bg-white text-ink text-xs rounded-lg hover:bg-surface-muted transition-colors"
                 >
                   Open in OSM
                 </button>
@@ -758,7 +759,7 @@ const Attendance = () => {
                     navigator.clipboard.writeText(`${tracker.latitude}, ${tracker.longitude}`);
                     alert('Coordinates copied to clipboard!');
                   }}
-                  className="px-3 py-1 bg-gray-500 text-white text-xs rounded-lg hover:bg-gray-600 transition-colors"
+                  className="px-3 py-1 border border-surface-subtle bg-white text-ink text-xs rounded-lg hover:bg-surface-muted transition-colors"
                 >
                   Copy Coordinates
                 </button>
@@ -769,16 +770,16 @@ const Attendance = () => {
                       .finally(() => setAccLoading(false));
                   }}
                   disabled={accLoading}
-                  className="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  className="px-3 py-1 bg-accent-600 text-white text-xs rounded-lg hover:bg-accent-700 transition-colors disabled:opacity-50"
                 >
                   {accLoading ? 'Improving…' : 'Improve Accuracy'}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-center mb-4">
-              <p className="text-yellow-800 font-medium">⚠️ Location Not Available</p>
-              <p className="text-yellow-700 text-sm mt-1">{tracker.area || "Unable to detect current location"}</p>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center mb-4">
+              <p className="text-amber-800 font-medium">Location Not Available</p>
+              <p className="text-amber-700 text-sm mt-1">{tracker.area || "Unable to detect current location"}</p>
               <button
                 onClick={() => {
                   setLoading(true);
@@ -788,17 +789,17 @@ const Attendance = () => {
                       setLoading(false);
                     })
                     .catch((error) => {
-                      setTracker((prev) => ({ 
-                        ...prev, 
-                        area: `Location Error: ${error.message}` 
+                      setTracker((prev) => ({
+                        ...prev,
+                        area: `Location Error: ${error.message}`
                       }));
                       setLoading(false);
                     });
                 }}
                 disabled={loading}
-                className="mt-3 px-4 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                className="mt-3 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
               >
-                {loading ? "🔄 Retrying..." : "🔄 Retry Location"}
+                {loading ? "Retrying..." : "Retry Location"}
               </button>
             </div>
           )}
@@ -806,7 +807,7 @@ const Attendance = () => {
           {tracker.latitude && tracker.longitude && (
             <div className="relative">
               {hasGoogleKey ? (
-                <React.Suspense fallback={<div style={{height: "300px"}}>Loading map…</div>}>
+                <React.Suspense fallback={<div style={{height: "300px"}}><LoadingState message="Loading map…" /></div>}>
                   <GoogleWrapper apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
                     <GoogleMap
                       ref={mapRef}

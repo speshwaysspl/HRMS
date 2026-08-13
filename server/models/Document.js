@@ -11,6 +11,14 @@ const documentSchema = new Schema({
   originalName: { type: String },
   status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
   comments: { type: String },
+  documentType: {
+    type: String,
+    enum: ["ID Proof", "Educational Certificate", "Offer Letter", "Contract", "Other"],
+    default: "Other",
+  },
+  expiryDate: { type: Date, default: null },
+  version: { type: Number, default: 1 },
+  previousVersionId: { type: Schema.Types.ObjectId, ref: "Document", default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

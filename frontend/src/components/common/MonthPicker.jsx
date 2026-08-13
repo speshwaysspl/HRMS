@@ -83,14 +83,14 @@ const MonthPicker = ({ value, onChange, placeholder = "Select month and year" })
     <div className="relative" ref={dropdownRef}>
       {/* Input Field */}
       <div
-        className="w-full p-3 border border-gray-300 rounded-lg bg-white cursor-pointer flex items-center justify-between hover:border-gray-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
+        className="w-full px-3 py-2 border border-surface-subtle rounded-lg bg-white cursor-pointer flex items-center justify-between text-sm hover:border-ink-faint focus-within:ring-2 focus-within:ring-accent-500 focus-within:border-accent-500"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={value ? "text-gray-900" : "text-gray-500"}>
+        <span className={value ? "text-ink" : "text-ink-faint"}>
           {getDisplayValue()}
         </span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -101,13 +101,13 @@ const MonthPicker = ({ value, onChange, placeholder = "Select month and year" })
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-surface-subtle rounded-lg shadow-panel z-50">
           {/* Year Selector */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-3 border-b border-surface-subtle">
             <select
               value={selectedYear}
               onChange={(e) => handleYearChange(parseInt(e.target.value))}
-              className="w-full p-2 border border-gray-300 rounded text-center font-medium"
+              className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink text-center font-medium focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
             >
               {years.map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -124,10 +124,10 @@ const MonthPicker = ({ value, onChange, placeholder = "Select month and year" })
                   <button
                     key={month}
                     onClick={() => handleMonthSelect(index)}
-                    className={`p-2 text-sm rounded hover:bg-blue-50 transition-colors ${
+                    className={`p-2 text-sm rounded-lg hover:bg-surface-muted transition-colors ${
                       isSelected
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'text-gray-700 hover:text-blue-600'
+                        ? 'bg-accent-600 text-white hover:bg-accent-700'
+                        : 'text-ink hover:text-accent-600'
                     }`}
                   >
                     {month}
@@ -138,16 +138,16 @@ const MonthPicker = ({ value, onChange, placeholder = "Select month and year" })
           </div>
 
           {/* Action Buttons */}
-          <div className="p-3 border-t border-gray-200 flex justify-between">
+          <div className="p-3 border-t border-surface-subtle flex justify-between">
             <button
               onClick={handleClear}
-              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              className="px-3 py-1 text-sm text-ink-muted hover:text-ink transition-colors"
             >
               Clear
             </button>
             <button
               onClick={handleThisMonth}
-              className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="px-3 py-1 text-sm text-accent-600 hover:text-accent-700 transition-colors"
             >
               This month
             </button>

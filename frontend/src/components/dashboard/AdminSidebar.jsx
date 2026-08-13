@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import {
   FaBuilding,
   FaCalendarAlt,
@@ -9,252 +8,170 @@ import {
   FaTachometerAlt,
   FaUsers,
   FaBullhorn,
-  FaBars,
   FaTimes,
-  FaChevronRight,
-  FaChevronDown,
-  FaSignOutAlt,
-  FaFileInvoiceDollar,
-  FaClipboardList,
-  FaHistory,
-  FaComments,
-  FaCalendarCheck,
+  FaClipboardCheck,
 } from "react-icons/fa";
-import { AiOutlineFileText } from "react-icons/ai";
-import { motion, AnimatePresence } from "framer-motion";
+import SidebarSection from "./SidebarSection";
 
 const AdminSidebar = ({ isOpen, setIsOpen }) => {
-  const { user, logout } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-  const [salaryDropdownOpen, setSalaryDropdownOpen] = useState(false);
 
-  const links = [
-    { to: "/admin-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true },
-    { to: "/admin-dashboard/employees", label: "Manage Employees", icon: <FaUsers /> },
-    { to: "/admin-dashboard/teams", label: "Manage Teams", icon: <FaUsers /> },
-    { to: "/admin-dashboard/departments", label: "Manage Departments", icon: <FaBuilding /> },
-    { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
-    { to: "/admin-dashboard/calendar", label: "Calendar", icon: <FaCalendarCheck /> },
-    { to: "/admin-dashboard/attendance-report", label: "Admin Attendance Report", icon: <AiOutlineFileText /> },
-    { to: "/admin-dashboard/announcements", label: "Announcements Management", icon: <FaBullhorn /> },
-    { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaComments /> },
-    { to: "/admin-dashboard/daily-quote", label: "Daily Quote", icon: <FaBullhorn /> },
-    { to: "/admin-dashboard/setting", label: "Settings", icon: <FaCogs /> },
+  const topLink = { to: "/admin-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true };
+
+  const sections = [
+    {
+      key: "workforce",
+      label: "Workforce",
+      icon: <FaUsers />,
+      links: [
+        { to: "/admin-dashboard/employees", label: "Manage Employees", icon: <FaUsers /> },
+        { to: "/admin-dashboard/teams", label: "Manage Teams", icon: <FaUsers /> },
+        { to: "/admin-dashboard/departments", label: "Manage Departments", icon: <FaBuilding /> },
+      ],
+    },
+    {
+      key: "leave-attendance",
+      label: "Leave & Attendance",
+      icon: <FaCalendarAlt />,
+      links: [
+        { to: "/admin-dashboard/leaves", label: "Leaves", icon: <FaCalendarAlt /> },
+        { to: "/admin-dashboard/leave-types", label: "Leave Types", icon: <FaCalendarAlt /> },
+        { to: "/admin-dashboard/calendar", label: "Calendar", icon: <FaCalendarAlt /> },
+        { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
+        { to: "/admin-dashboard/attendance-corrections", label: "Attendance Corrections", icon: <FaCalendarAlt /> },
+      ],
+    },
+    {
+      key: "payroll",
+      label: "Payroll",
+      icon: <FaMoneyBillWave />,
+      links: [
+        { to: "/admin-dashboard/salary/template-manager", label: "Payroll Templates", icon: <FaMoneyBillWave /> },
+        { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaMoneyBillWave /> },
+        { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History", icon: <FaMoneyBillWave /> },
+      ],
+    },
+    {
+      key: "performance",
+      label: "Performance",
+      icon: <FaClipboardCheck />,
+      links: [
+        { to: "/admin-dashboard/team-reviews", label: "Performance Reviews", icon: <FaClipboardCheck /> },
+        { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaClipboardCheck /> },
+      ],
+    },
+    {
+      key: "communication",
+      label: "Communication",
+      icon: <FaBullhorn />,
+      links: [
+        { to: "/admin-dashboard/announcements", label: "Announcements", icon: <FaBullhorn /> },
+        { to: "/admin-dashboard/daily-quote", label: "Daily Quote", icon: <FaBullhorn /> },
+      ],
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      icon: <FaCogs />,
+      links: [
+        { to: "/admin-dashboard/setting", label: "General Settings", icon: <FaCogs /> },
+        { to: "/admin-dashboard/report-settings", label: "Report Settings", icon: <FaCogs /> },
+      ],
+    },
   ];
 
-  const salaryLinks = [
-    { to: "/admin-dashboard/salary/template-manager", label: "Payroll Template Manager", icon: <FaClipboardList /> },
-    { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaFileInvoiceDollar /> },
-    { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History & Management", icon: <FaHistory /> },
-  ];
-
-  // Track window resize for responsive behavior
   useEffect(() => {
-    const handleResize = () => {
-      const newIsDesktop = window.innerWidth >= 768;
-      setIsDesktop(newIsDesktop);
-      if (newIsDesktop) setIsOpen(false); // Close mobile menu when switching to desktop
-    };
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
-  // Close sidebar when clicking outside on mobile
+
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!isDesktop && isOpen && !e.target.closest('.sidebar-container')) {
+      if (!isDesktop && isOpen && !e.target.closest(".sidebar-container")) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDesktop, isOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDesktop, isOpen, setIsOpen]);
 
-  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
     if (!isDesktop && isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isDesktop, isOpen]);
 
+  const topLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 py-2.5 px-3.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+      isActive
+        ? "bg-accent-500 text-white shadow-sm"
+        : "text-brand-100/80 hover:bg-white/10 hover:text-white"
+    }`;
+
   return (
     <>
-      {/* Hamburger Button - hidden when sidebar is open */}
-      {!isOpen && (
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-[60] p-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg hover:from-teal-600 hover:to-cyan-600 transition-all duration-200"
-          aria-label="Open menu"
-        >
-          <FaBars size={20} />
-        </motion.button>
-      )}
-
-      {/* Sidebar */}
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ x: isOpen ? 0 : -300 }}
-        transition={{ type: "spring", stiffness: 80, damping: 15 }}
-        className={`sidebar-container backdrop-blur-lg bg-gradient-to-b from-gray-900/95 to-gray-800/95 border-r border-gray-700 text-white h-screen fixed top-0 left-0 bottom-0 shadow-2xl w-64 z-50 flex flex-col`}
+      <div
+        className={`sidebar-container bg-brand-800 text-white h-screen fixed top-0 left-0 bottom-0 shadow-panel w-64 z-40 flex flex-col transform transition-transform duration-200 ease-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        {/* Header (Clickable to toggle) */}
-       <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-700 to-teal-600 h-16 flex items-center justify-center shadow-md px-5 hover:from-blue-700 hover:via-indigo-800 hover:to-teal-700 transition-all duration-300"
-      >
-  {/* Logo Image */}
-  <img 
-    src="/images/Logo.jpg"
-    alt="Company Logo" 
-    loading="lazy"
-    width="48"
-    height="48"
-    className="w-12 h-12 rounded-full shadow-lg border-2 border-white mr-3"
-    onError={(e) => {
-      e.target.style.display = 'none';
-      e.target.nextSibling.style.marginLeft = '0';
-    }}
-  />
-  
-  {/* Company Name */}
-  <h1 className="text-white font-bold text-lg sm:text-xl">HRMS Portal</h1>
-</div>
-
-
-        {/* Links */}
-        <div className={`px-4 ${isDesktop ? "mt-6" : "mt-6"} space-y-2 flex-1 overflow-y-auto scrollbar-hide`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-          {links.map((link, idx) => (
-            <NavLink
-              key={idx}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) =>
-                `group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 
-                 ${
-                   isActive
-                     ? "bg-gradient-to-r from-teal-500 to-green-500 text-white shadow-xl scale-105"
-                     : "hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white"
-                 }`
-              }
-              onClick={() => setIsOpen(false)} // auto-close always
-            >
-              <motion.span
-                whileHover={{ scale: 1.3, rotate: 12 }}
-                transition={{ type: "spring", stiffness: 250 }}
-                className="text-xl"
-              >
-                {link.icon}
-              </motion.span>
-              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-                {link.label}
-              </span>
-              {/* Animated Glow on Hover */}
-              <motion.div
-                className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100"
-                initial={false}
-                transition={{ duration: 0.3 }}
-              />
-            </NavLink>
-          ))}
-
-          {/* Salary Dropdown */}
-          <div className="space-y-1">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSalaryDropdownOpen(!salaryDropdownOpen)}
-              className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white"
-            >
-              <motion.span
-                whileHover={{ scale: 1.3, rotate: 12 }}
-                transition={{ type: "spring", stiffness: 250 }}
-                className="text-xl"
-              >
-                <FaMoneyBillWave />
-              </motion.span>
-              <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-                Salary Management
-              </span>
-              <motion.span
-                animate={{ rotate: salaryDropdownOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="ml-auto text-xs opacity-70"
-              >
-                <FaChevronDown />
-              </motion.span>
-            </motion.button>
-
-            <AnimatePresence>
-              {salaryDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="ml-4 space-y-1 overflow-hidden"
-                >
-                  {salaryLinks.map((subLink, subIdx) => (
-                    <NavLink
-                      key={subIdx}
-                      to={subLink.to}
-                      className={({ isActive }) =>
-                        `group relative flex items-center space-x-3 py-2 px-3 rounded-lg transition-all duration-300 text-sm
-                         ${
-                           isActive
-                             ? "bg-gradient-to-r from-teal-400 to-green-400 text-white shadow-lg"
-                             : "hover:bg-gradient-to-r hover:from-blue-400 hover:to-purple-400 hover:text-white text-gray-300"
-                         }`
-                      }
-                      onClick={() => setIsOpen(false)} // auto-close always
-                    >
-                      <span className="text-base">{subLink.icon}</span>
-                      <span className="font-medium" style={{ fontFamily: 'Times New Roman, serif' }}>{subLink.label}</span>
-                    </NavLink>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Logout Button - After Salary Management */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={logout}
-            className="w-full group relative flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-500 mt-4 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl hover:from-red-600 hover:to-red-700"
-          >
-            <motion.span
-              whileHover={{ scale: 1.3, rotate: 12 }}
-              transition={{ type: "spring", stiffness: 250 }}
-              className="text-xl"
-            >
-              <FaSignOutAlt />
-            </motion.span>
-            <span className="text-sm font-semibold tracking-wide" style={{ fontFamily: 'Times New Roman, serif' }}>
-              Logout
-            </span>
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Dark overlay when sidebar open on mobile */}
-      {!isDesktop && isOpen && (
-        <AnimatePresence>
-          <motion.div
-            className="fixed inset-0 bg-black/60 z-40"
-            onClick={() => setIsOpen(false)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+        <div className="h-16 flex items-center px-5 gap-3 border-b border-white/10 flex-shrink-0">
+          <img
+            src="/images/Logo.jpg"
+            alt="Company Logo"
+            loading="lazy"
+            width="36"
+            height="36"
+            className="w-9 h-9 rounded-md object-cover"
+            onError={(e) => {
+              e.target.style.display = "none";
+            }}
           />
-        </AnimatePresence>
+          <h1 className="text-white font-semibold text-base tracking-wide">HRMS Portal</h1>
+          <button
+            className="ml-auto text-brand-200 hover:text-white transition-colors md:hidden"
+            aria-label="Close menu"
+            onClick={() => setIsOpen(false)}
+          >
+            <FaTimes size={16} />
+          </button>
+        </div>
+
+        <div className="px-3 mt-4 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
+          <NavLink
+            to={topLink.to}
+            end={topLink.end}
+            className={topLinkClass}
+            onClick={() => !isDesktop && setIsOpen(false)}
+          >
+            <span className="text-base">{topLink.icon}</span>
+            <span>{topLink.label}</span>
+          </NavLink>
+
+          {sections.map((section) => (
+            <SidebarSection
+              key={section.key}
+              icon={section.icon}
+              label={section.label}
+              links={section.links}
+              isDesktop={isDesktop}
+              setIsOpen={setIsOpen}
+            />
+          ))}
+        </div>
+      </div>
+
+      {!isDesktop && isOpen && (
+        <div
+          className="fixed inset-0 bg-brand-950/60 z-30"
+          onClick={() => setIsOpen(false)}
+        />
       )}
     </>
   );

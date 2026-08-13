@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiUser, FiBriefcase, FiLock, FiUserCheck, FiHeadphones } from "react-icons/fi";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -111,271 +111,217 @@ const Add = () => {
       
   };
 
+  const inputClass = "mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent";
+
+  const roleOptions = [
+    { value: "team_lead", label: "Team Lead", description: "Can manage a team and assign tasks", icon: FiUserCheck },
+    { value: "hr", label: "HR", description: "Can manage recruitment and onboarding", icon: FiHeadphones },
+  ];
+
+  const toggleAdditionalRole = (value) => {
+    setFormData((prevData) => {
+      const has = prevData.role.includes(value);
+      const newRoles = has ? prevData.role.filter((r) => r !== value) : [...prevData.role, value];
+      return { ...prevData, role: newRoles };
+    });
+  };
+
   return (
-    <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Add New Employee</h2>
-      <form onSubmit={handleSubmit} autoComplete="off">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              onChange={handleChange}
-              placeholder="Insert Name"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              onChange={handleChange}
-              placeholder="Insert Email"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Employee ID */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Employee ID
-            </label>
-            <input
-              type="text"
-              name="employeeId"
-              onChange={handleChange}
-              placeholder="Employee ID"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Date of Birth */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              name="dob"
-              onChange={handleChange}
-              placeholder="DOB"
-              max={new Date().toISOString().split('T')[0]}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Joining Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Joining Date
-            </label>
-            <input
-              type="date"
-              name="joiningDate"
-              onChange={handleChange}
-              placeholder="Joining Date"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Gender */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Gender
-            </label>
-            <select
-              name="gender"
-              onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            >
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          {/* Marital Status */}
-         <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Mobile Number
-            </label>
-            <input
-              type="text"
-              name="mobilenumber"
-              value={formData.mobilenumber || ''}
-              onChange={handleChange}
-              placeholder="Mobile Number (10 digits)"
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              pattern="[0-9]{10}"
-              maxLength="10"
-              title="Please enter exactly 10 digits"
-              required
-            />
-          </div>
-
-          {/* Designation */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700">
-              Designation
-            </label>
-            <input
-              type="text"
-              name="designation"
-              value={formData.designation || ''}
-              onChange={handleChange}
-              onFocus={() => {
-                if (designationSearch.trim()) {
-                  setShowDesignationSuggestions(true);
-                }
-              }}
-              onBlur={() => {
-                // Delay hiding suggestions to allow clicking on them
-                setTimeout(() => setShowDesignationSuggestions(false), 200);
-              }}
-              placeholder="Search or type designation..."
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            />
-            
-            {/* Suggestions dropdown */}
-            {showDesignationSuggestions && filteredDesignations.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                {filteredDesignations.slice(0, 10).map((designation, index) => (
-                  <div
-                    key={index}
-                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                    onMouseDown={(e) => {
-                      e.preventDefault(); // Prevent input blur
-                      setFormData((prevData) => ({ ...prevData, designation }));
-                      setDesignationSearch(designation);
-                      setShowDesignationSuggestions(false);
-                    }}
-                  >
-                    {designation}
-                  </div>
-                ))}
-                {filteredDesignations.length > 10 && (
-                  <div className="px-3 py-2 text-xs text-gray-500 border-t">
-                    Showing first 10 results. Keep typing to narrow down...
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Department */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Department
-            </label>
-            <select
-              name="department"
-              onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-              required
-            >
-              <option value="">Select Department</option>
-              {departments.map((dep) => (
-                <option key={dep._id} value={dep._id}>
-                  {dep.dep_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-         
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="relative">
+    <div className="bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
+      <h2 className="text-xl md:text-2xl font-semibold mb-6 text-ink">Add New Employee</h2>
+      <form onSubmit={handleSubmit} autoComplete="off" className="space-y-8">
+        {/* Personal Information */}
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-700 uppercase tracking-wide mb-4">
+            <FiUser /> Personal Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div>
+              <label className="block text-sm font-medium text-ink">Name</label>
+              <input type="text" name="name" onChange={handleChange} placeholder="Insert Name" className={inputClass} required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Email</label>
+              <input type="email" name="email" onChange={handleChange} placeholder="Insert Email" className={inputClass} required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Mobile Number</label>
               <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password || ''}
+                type="text"
+                name="mobilenumber"
+                value={formData.mobilenumber || ''}
                 onChange={handleChange}
-                placeholder="******"
-                autoComplete="new-password"
-                readOnly
-                onFocus={(e) => e.target.removeAttribute('readonly')}
-                className="mt-1 p-2 pr-10 block w-full border border-gray-300 rounded-md"
+                placeholder="Mobile Number (10 digits)"
+                className={inputClass}
+                pattern="[0-9]{10}"
+                maxLength="10"
+                title="Please enter exactly 10 digits"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600"
-                aria-label="Toggle password visibility"
-              >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
-              </button>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Date of Birth</label>
+              <input type="date" name="dob" onChange={handleChange} max={new Date().toISOString().split('T')[0]} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Gender</label>
+              <select name="gender" onChange={handleChange} className={inputClass} required>
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
           </div>
+        </div>
 
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Role
-            </label>
-            <div className="flex gap-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  name="role"
-                  value="employee"
-                  checked={formData.role.includes('employee')}
-                  onChange={handleChange}
-                  className="form-checkbox h-5 w-5 text-teal-600"
-                />
-                <span className="ml-2 text-gray-700">Employee</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  name="role"
-                  value="team_lead"
-                  checked={formData.role.includes('team_lead')}
-                  onChange={handleChange}
-                  className="form-checkbox h-5 w-5 text-teal-600"
-                />
-                <span className="ml-2 text-gray-700">Team Lead</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  name="role"
-                  value="hr"
-                  checked={formData.role.includes('hr')}
-                  onChange={handleChange}
-                  className="form-checkbox h-5 w-5 text-teal-600"
-                />
-                <span className="ml-2 text-gray-700">HR</span>
-              </label>
+        {/* Employment Details */}
+        <div className="pt-6 border-t border-surface-subtle">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-700 uppercase tracking-wide mb-4">
+            <FiBriefcase /> Employment Details
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div>
+              <label className="block text-sm font-medium text-ink">Employee ID</label>
+              <input type="text" name="employeeId" onChange={handleChange} placeholder="Employee ID" className={inputClass} required />
             </div>
-            {formData.role.length === 0 && (
-               <p className="text-red-500 text-xs mt-1">Please select at least one role</p>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-ink">Joining Date</label>
+              <input type="date" name="joiningDate" onChange={handleChange} className={inputClass} required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Annual CTC / Salary Package (₹)</label>
+              <input
+                type="number"
+                name="salaryPackage"
+                min="0"
+                value={formData.salaryPackage || ''}
+                onChange={handleChange}
+                placeholder="e.g. 600000"
+                className={inputClass}
+              />
+              <p className="text-xs text-ink-faint mt-1">Used to prefill payslip earnings; each component stays editable when generating a payslip.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink">Department</label>
+              <select name="department" onChange={handleChange} className={inputClass} required>
+                <option value="">Select Department</option>
+                {departments.map((dep) => (
+                  <option key={dep._id} value={dep._id}>{dep.dep_name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium text-ink">Designation</label>
+              <input
+                type="text"
+                name="designation"
+                value={formData.designation || ''}
+                onChange={handleChange}
+                onFocus={() => {
+                  if (designationSearch.trim()) setShowDesignationSuggestions(true);
+                }}
+                onBlur={() => setTimeout(() => setShowDesignationSuggestions(false), 200)}
+                placeholder="Search or type designation..."
+                className={inputClass}
+                required
+              />
+              {showDesignationSuggestions && filteredDesignations.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-surface-subtle rounded-lg shadow-panel max-h-60 overflow-y-auto">
+                  {filteredDesignations.slice(0, 10).map((designation, index) => (
+                    <div
+                      key={index}
+                      className="px-3 py-2 hover:bg-surface-muted cursor-pointer text-sm text-ink"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setFormData((prevData) => ({ ...prevData, designation }));
+                        setDesignationSearch(designation);
+                        setShowDesignationSuggestions(false);
+                      }}
+                    >
+                      {designation}
+                    </div>
+                  ))}
+                  {filteredDesignations.length > 10 && (
+                    <div className="px-3 py-2 text-xs text-ink-muted border-t border-surface-subtle">
+                      Showing first 10 results. Keep typing to narrow down...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Account Access */}
+        <div className="pt-6 border-t border-surface-subtle">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-700 uppercase tracking-wide mb-4">
+            <FiLock /> Account Access
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div>
+              <label className="block text-sm font-medium text-ink h-5 leading-5">Password</label>
+              <div className="relative mt-1">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password || ''}
+                  onChange={handleChange}
+                  placeholder="******"
+                  autoComplete="new-password"
+                  readOnly
+                  onFocus={(e) => e.target.removeAttribute('readonly')}
+                  className={`${inputClass} mt-0 pr-10`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </button>
+              </div>
+            </div>
+
+            {/* Additional Roles */}
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-ink h-5 leading-5">Additional Access</label>
+              <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                {roleOptions.map(({ value, label, description, icon: Icon }) => {
+                  const active = formData.role.includes(value);
+                  return (
+                    <button
+                      type="button"
+                      key={value}
+                      onClick={() => toggleAdditionalRole(value)}
+                      aria-pressed={active}
+                      className={`flex-1 flex items-start gap-3 text-left p-3.5 rounded-lg border transition-colors ${
+                        active
+                          ? "border-accent-500 bg-accent-50"
+                          : "border-surface-subtle bg-white hover:bg-surface-muted"
+                      }`}
+                    >
+                      <span className={`w-9 h-9 flex-shrink-0 rounded-lg flex items-center justify-center ${active ? "bg-accent-600 text-white" : "bg-surface-muted text-ink-muted"}`}>
+                        <Icon size={16} />
+                      </span>
+                      <span>
+                        <span className={`block text-sm font-semibold ${active ? "text-accent-800" : "text-ink"}`}>{label}</span>
+                        <span className="block text-xs text-ink-muted mt-0.5">{description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-ink-faint mt-2">Every account is an Employee by default; toggle any additional access above.</p>
+            </div>
           </div>
         </div>
 
         <button
           type="submit"
-          className="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded"
+          className="w-full sm:w-auto sm:px-10 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
         >
           Add Employee
         </button>

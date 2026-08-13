@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { FaBuilding } from "react-icons/fa";
 import { columns, DepartmentButtons } from "../../utils/DepartmentHelper";
 import axios from "axios";
-import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
+import PageHeader from "../common/PageHeader";
+import LoadingState from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
 
 const DepartmentList = () => {
   useMeta({
@@ -70,59 +73,47 @@ const DepartmentList = () => {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 flex items-center justify-center py-10"
-      style={{ fontFamily: "'Times New Roman', Times, serif" }}
-    >
-      <motion.div
-        className="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
+    <div>
+      <PageHeader
+        icon={FaBuilding}
+        title="Manage Departments"
+        subtitle="Add, update, or delete department records"
+        actions={
+          <Link
+            to="/admin-dashboard/add-department"
+            className="px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            + Add Department
+          </Link>
+        }
+      />
+
+      <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 md:p-6">
+        <input
+          type="text"
+          placeholder="Search by Department Name"
+          className="w-full sm:w-80 px-4 py-2 border border-surface-subtle rounded-lg text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none mb-4"
+          onChange={filterDepartments}
+        />
+
         {depLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
+          <LoadingState message="Loading departments…" />
+        ) : filteredDepartments.length === 0 ? (
+          <EmptyState icon={FaBuilding} title="No departments found" />
         ) : (
           <>
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800" style={{ fontFamily: 'Times New Roman, serif' }}>
-                Manage Departments
-              </h3>
-              <p className="text-gray-500 text-sm mt-1">
-                Add, update, or delete department records
-              </p>
-            </div>
-
-            {/* Search + Add */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-5">
-              <input
-                type="text"
-                placeholder="🔍 Search by Department Name"
-                className="w-full sm:w-1/2 px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                onChange={filterDepartments}
-              />
-              <Link
-                to="/admin-dashboard/add-department"
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transition text-center"
-              >
-                + Add Department
-              </Link>
-            </div>
-
             {/* Mobile Card View */}
             <div className="block md:hidden">
-              {filteredDepartments.map((department, index) => (
-                <div key={department._id} className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200">
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+              {filteredDepartments.map((department) => (
+                <div key={department._id} className="bg-white rounded-lg shadow-card p-4 mb-4 border border-surface-subtle">
+                  <div className="flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-block rounded-full bg-accent-100 text-accent-700 text-xs font-medium px-2.5 py-0.5 flex-shrink-0">
                         #{department.sno}
                       </span>
-                      <h4 className="font-semibold text-gray-900">{department.dep_name}</h4>
+                      <h4 className="font-semibold text-ink truncate">{department.dep_name}</h4>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       {department.action}
                     </div>
                   </div>
@@ -131,7 +122,7 @@ const DepartmentList = () => {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+            <div className="hidden md:block rounded-lg overflow-hidden border border-surface-subtle">
               <DataTable
                 columns={columns}
                 data={filteredDepartments}
@@ -142,7 +133,7 @@ const DepartmentList = () => {
             </div>
           </>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };

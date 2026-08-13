@@ -20,8 +20,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState({ email: false, password: false });
- const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState([]);
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
   useMeta({
@@ -85,18 +83,9 @@ const Login = () => {
           return;
         }
 
-        // If multiple roles, show selection
-        if (roles.length > 1) {
-          setAvailableRoles(roles);
-          setShowRoleSelection(true);
-        } else {
-          // Single role navigation
-          if (roles[0] === "team_lead") {
-            navigate("/team-lead-dashboard");
-          } else {
-            navigate("/employee-dashboard");
-          }
-        }
+        // Employee and Team Lead now share a single dashboard, with
+        // team-lead-only sections shown conditionally in the sidebar.
+        navigate("/employee-dashboard");
       } else {
         setError(response.data?.error || "Login failed");
       }
@@ -110,134 +99,46 @@ const Login = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        // overlay + background image
-        backgroundImage:
-          "linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.6)), url('/images/download.jpeg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        padding: "32px",
-      }}
-    >
-      {showRoleSelection && (
-        <div
-          style={{
-            width: "360px",
-            maxWidth: "92%",
-            borderRadius: "14px",
-            padding: "28px",
-            background: "rgba(255,255,255,0.06)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 10px 30px rgba(2,6,23,0.45)",
-            color: "#E8FDF5",
-            animation: "fadeIn 700ms ease-out both",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "20px", color: "#fff" }}>
-            Select Dashboard
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {availableRoles.map((role) => (
-              <button
-                key={role}
-                onClick={() => {
-                  if (role === "admin") navigate("/admin-dashboard");
-                  else if (role === "hr") navigate("/hr-dashboard");
-                  else if (role === "candidate") navigate("/candidate-dashboard");
-                  else if (role === "team_lead") navigate("/team-lead-dashboard");
-                  else navigate("/employee-dashboard");
-                }}
-                style={{
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: "linear-gradient(90deg,#1e90ff,#0066cc)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  textTransform: "capitalize",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-              >
-                {role.replace(/_/g, " ")}
-              </button>
-            ))}
-          </div>
+    <div className="min-h-screen w-full flex">
+      {/* Brand panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-900 flex-col justify-between p-12 relative overflow-hidden">
+        <div className="flex items-center gap-3">
+          <img src="/images/Logo.jpg" alt="Speshway HRMS" className="h-10 w-auto rounded-lg" />
+          <span className="text-white font-semibold tracking-wide">SPESHWAY HRMS</span>
         </div>
-      )}
+        <div className="max-w-md">
+          <h2 className="text-3xl font-semibold text-white leading-tight">
+            The complete HR platform for growing teams
+          </h2>
+          <p className="text-white/60 mt-4 text-sm leading-relaxed">
+            Attendance, leave, payroll, recruitment and performance — unified in one secure portal.
+          </p>
+        </div>
+        <p className="text-white/40 text-xs">
+          &copy; {new Date().getFullYear()} Speshway Solutions Pvt. Ltd.
+        </p>
+      </div>
 
-      {/* floating card */}
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          display: showRoleSelection ? "none" : "block",
-          width: "360px",
-          maxWidth: "92%",
-          borderRadius: "14px",
-          padding: "28px",
-          background: "rgba(255,255,255,0.06)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: hovered
-            ? "0 20px 60px rgba(2,6,23,0.6)"
-            : "0 10px 30px rgba(2,6,23,0.45)",
-          transform: hovered ? "translateY(-6px) scale(1.02)" : "translateY(0) scale(1)",
-          transition: "all 300ms cubic-bezier(.2,.9,.2,1)",
-          color: "#E8FDF5",
-          animation: "fadeIn 700ms ease-out both",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "20px",
-            fontWeight: 700,
-            marginBottom: "12px",
-            textAlign: "center",
-            letterSpacing: "0.6px",
-            color: "#fff",
-            textShadow: "0 2px 10px rgba(0,0,0,0.5)",
-          }}
-        >
-          WELCOME TO<br></br>
-         SPESHWAY SOLUTIONS 
+      {/* Form panel */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-surface-muted p-6 sm:p-8">
+      {/* login card */}
+      <div className="w-[380px] max-w-[92%] rounded-xl p-8 bg-white border border-surface-subtle shadow-panel">
+        <div className="flex flex-col items-center mb-2 lg:hidden">
+          <img src="/images/Logo.jpg" alt="Speshway HRMS" className="h-12 w-auto rounded-md mb-4" />
+        </div>
+
+        <h1 className="text-xl font-semibold mb-1 text-center lg:text-left tracking-wide text-ink">
+          Welcome back
         </h1>
 
-        <p
-          style={{
-            textAlign: "center",
-            marginBottom: "18px",
-            color: "#CFEFE7",
-            fontSize: "13px",
-            opacity: 0.95,
-          }}
-        >
-          Login to your account
+        <p className="text-center lg:text-left mb-6 text-ink-muted text-sm">
+          Sign in to your Speshway HRMS account
         </p>
 
         {error && (
           <div
             role="alert"
-            style={{
-              background: "linear-gradient(90deg,#40120b,#7a1c1c)",
-              color: "#fff",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              marginBottom: "14px",
-              fontSize: "13px",
-              boxShadow: "inset 0 -2px 0 rgba(0,0,0,0.08)",
-            }}
+            className="bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg mb-4 text-sm"
           >
             {error}
           </div>
@@ -245,19 +146,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} noValidate>
           {/* Email */}
-          <div style={{ marginBottom: "14px" }}>
+          <div className="mb-4">
             <label
               htmlFor="email"
-              style={{
-                display: "block",
-                fontSize: "13px",
-                marginBottom: "6px",
-                color: focused.email ? "#C1F7E6" : "#BFDCD3",
-              }}
+              className={`block text-sm mb-1.5 ${focused.email ? "text-brand-700" : "text-ink-muted"}`}
             >
               Email
             </label>
-            <div style={{ position: "relative" }}>
+            <div className="relative">
               {/* input */}
               <input
                 id="email"
@@ -268,19 +164,7 @@ const Login = () => {
                 onBlur={() => setFocused((s) => ({ ...s, email: false }))}
                 placeholder="you@example.com"
                 required
-                style={{
-                  width: "100%",
-                  padding: "12px 14px 12px 42px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "transparent",
-                  color: "#fff",
-                  outline: "none",
-                  transition: "box-shadow 180ms, border 180ms",
-                  boxShadow: focused.email
-                    ? "0 6px 18px rgba(0,188,170,0.08)"
-                    : "none",
-                }}
+                className="w-full py-3 pl-11 pr-3.5 rounded-lg border border-surface-subtle bg-white text-ink placeholder:text-ink-faint outline-none transition focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
 
               {/* icon (simple envelope) */}
@@ -288,27 +172,19 @@ const Login = () => {
                 viewBox="0 0 24 24"
                 width="18"
                 height="18"
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  opacity: 1,
-                  fill: "none",
-                  zIndex: 10,
-                  pointerEvents: "none",
-                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                fill="none"
               >
                 <path
                   d="M3 6.5v11A2.5 2.5 0 0 0 5.5 20h13A2.5 2.5 0 0 0 21 17.5v-11A2.5 2.5 0 0 0 18.5 4h-13A2.5 2.5 0 0 0 3 6.5z"
-                  stroke="#3B82F6"
+                  stroke="#1a3d6d"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M21 7.2l-8 5-8-5"
-                  stroke="#3B82F6"
+                  stroke="#1a3d6d"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -318,19 +194,14 @@ const Login = () => {
           </div>
 
           {/* Password */}
-          <div style={{ marginBottom: "12px" }}>
+          <div className="mb-3">
             <label
               htmlFor="password"
-              style={{
-                display: "block",
-                fontSize: "13px",
-                marginBottom: "6px",
-                color: focused.password ? "#C1F7E6" : "#BFDCD3",
-              }}
+              className={`block text-sm mb-1.5 ${focused.password ? "text-brand-700" : "text-ink-muted"}`}
             >
               Password
             </label>
-            <div style={{ position: "relative" }}>
+            <div className="relative">
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -340,41 +211,14 @@ const Login = () => {
                 onBlur={() => setFocused((s) => ({ ...s, password: false }))}
                 placeholder="Enter your password"
                 required
-                style={{
-                  width: "100%",
-                  padding: "12px 50px 12px 42px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "transparent",
-                  color: "#fff",
-                  outline: "none",
-                  transition: "box-shadow 180ms, border 180ms",
-                  boxShadow: focused.password
-                    ? "0 6px 18px rgba(0,188,170,0.08)"
-                    : "none",
-                }}
+                className="w-full py-3 pl-11 pr-12 rounded-lg border border-surface-subtle bg-white text-ink placeholder:text-ink-faint outline-none transition focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                style={{
-                  position: "absolute",
-                  right: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "rgba(17,24,39,0.35)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  color: "#fff",
-                  cursor: "pointer",
-                  padding: "6px",
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 20,
-                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center p-1.5 rounded-md border border-surface-subtle bg-surface-muted text-ink-muted hover:text-ink"
               >
                 {showPassword ? (
                   <FiEyeOff size={16} />
@@ -388,16 +232,8 @@ const Login = () => {
                 viewBox="0 0 24 24"
                 width="18"
                 height="18"
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  opacity: 1,
-                  fill: "none",
-                  zIndex: 10,
-                  pointerEvents: "none",
-                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                fill="none"
               >
                 <rect
                   x="3"
@@ -405,13 +241,13 @@ const Login = () => {
                   width="18"
                   height="11"
                   rx="2"
-                  stroke="#3B82F6"
+                  stroke="#1a3d6d"
                   strokeWidth="1.5"
                   fill="none"
                 />
                 <path
                   d="M7 10V8a5 5 0 0 1 10 0v2"
-                  stroke="#3B82F6"
+                  stroke="#1a3d6d"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -421,82 +257,39 @@ const Login = () => {
           </div>
 
           {/* remember + forgot */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "right",
-              marginBottom: "16px",
-            }}
-          >
-           
-
+          <div className="flex items-center justify-end mb-4">
             <button
               type="button"
               onClick={() => navigate("/forgot-password")}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#1370daff",
-                fontSize: "13px",
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: 0,
-              }}
+              className="bg-transparent border-none text-brand-600 hover:text-brand-700 text-sm underline cursor-pointer p-0"
             >
               Forgot password?
             </button>
           </div>
 
           {/* submit */}
-          <div style={{ marginBottom: "6px" }}>
+          <div className="mb-1.5">
             <button
-  type="submit"
-  disabled={loading}
-  style={{
-    width: "100%",
-    padding: "12px",
-    borderRadius: "10px",
-    border: "none",
-    cursor: loading ? "not-allowed" : "pointer",
-    background: loading
-      ? "linear-gradient(90deg,#4da3ff,#1d6fe0)"
-      : "linear-gradient(90deg,#1e90ff,#0066cc)", // Blue gradient
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: "15px",
-    boxShadow: loading
-      ? "0 6px 18px rgba(0,0,0,0.15)"
-      : "0 10px 30px rgba(0,102,204,0.28)",
-    transform: hovered ? "translateY(-2px)" : "none",
-    transition: "all 220ms ease",
-  }}
->
-  {loading ? "Signing in..." : "Login"}
-</button>
-
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 rounded-lg border-none font-semibold text-[15px] text-white transition ${
+                loading
+                  ? "bg-accent-300 cursor-not-allowed"
+                  : "bg-accent-600 hover:bg-accent-700 cursor-pointer"
+              }`}
+            >
+              {loading ? "Signing in..." : "Login"}
+            </button>
           </div>
-
-          {/* small note */}
-         
         </form>
-        <p className="text-center text-sm text-white mt-4">
+        <p className="text-center text-sm text-ink-muted mt-4">
           By signing in you agree to our
-          <Link to="/terms-and-conditions" className="hover:text-blue-400 ml-1 mr-1">Terms & Conditions</Link>
+          <Link to="/terms-and-conditions" className="text-brand-600 hover:text-brand-700 ml-1 mr-1">Terms & Conditions</Link>
           and
-          <Link to="/privacy-policy" className="hover:text-blue-400 ml-1">Privacy Policy</Link>.
+          <Link to="/privacy-policy" className="text-brand-600 hover:text-brand-700 ml-1">Privacy Policy</Link>.
         </p>
       </div>
-
-      {/* local style for keyframes */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(6px) scale(0.995); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-          }
-        `}
-      </style>
+      </div>
     </div>
   );
 };

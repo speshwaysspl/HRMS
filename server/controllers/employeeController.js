@@ -23,6 +23,7 @@ const addEmployee = async (req, res) => {
       department,
       password,
       role,
+      salaryPackage,
     } = req.body;
  
     // Check if user exists
@@ -63,6 +64,7 @@ const addEmployee = async (req, res) => {
       mobilenumber,
       designation,
       department,
+      salaryPackage: salaryPackage ? parseFloat(salaryPackage) : null,
     });
 
     try {
@@ -274,6 +276,9 @@ const updateEmployee = async (req, res) => {
       uan,
       location,
       pf,
+      reportsTo,
+      shiftId,
+      salaryPackage,
     } = req.body;
 
     const employee = await Employee.findById(id);
@@ -325,6 +330,17 @@ const updateEmployee = async (req, res) => {
       joiningDate,
       updatedAt: new Date(),
     };
+
+    if (salaryPackage !== undefined && salaryPackage !== "") {
+      employeeUpdateData.salaryPackage = parseFloat(salaryPackage);
+    }
+
+    if (reportsTo !== undefined) {
+      employeeUpdateData.reportsTo = reportsTo === "" ? null : reportsTo;
+    }
+    if (shiftId !== undefined) {
+      employeeUpdateData.shiftId = shiftId === "" ? null : shiftId;
+    }
 
     if (employeeId) {
       employeeUpdateData.employeeId = employeeId;

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
-import { FaFileUpload, FaTrash, FaFilePdf, FaFileImage, FaFileWord, FaDownload, FaEye } from "react-icons/fa";
+import { FaFileUpload, FaTrash, FaFilePdf, FaFileImage, FaFileWord, FaDownload, FaEye, FaFolderOpen } from "react-icons/fa";
+import { SkeletonRow } from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
+
+const DOCUMENT_TYPES = ["ID Proof", "Educational Certificate", "Offer Letter", "Contract", "Other"];
 
 const DocumentUpload = () => {
   const [documents, setDocuments] = useState([]);
   const [file, setFile] = useState(null);
+  const [documentType, setDocumentType] = useState("Other");
+  const [expiryDate, setExpiryDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -39,6 +45,8 @@ const DocumentUpload = () => {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("documentType", documentType);
+    if (expiryDate) formData.append("expiryDate", expiryDate);
 
     setUploading(true);
     try {
@@ -51,6 +59,7 @@ const DocumentUpload = () => {
       if (response.data.success) {
         setDocuments([response.data.document, ...documents]);
         setFile(null);
+        setExpiryDate("");
         // Reset file input
         document.getElementById("fileInput").value = "";
       }
@@ -83,37 +92,64 @@ const DocumentUpload = () => {
       return <FaFileUpload className="text-gray-500 text-2xl" />;
   };
 
+  const getExpiryBadge = (expiryDate) => {
+      if (!expiryDate) return <span className="text-ink-faint text-sm">—</span>;
+      const daysLeft = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+      const label = new Date(expiryDate).toLocaleDateString();
+      if (daysLeft < 0) return <span className="bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Expired {label}</span>;
+      if (daysLeft <= 30) return <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Expires {label}</span>;
+      return <span className="text-ink-muted text-sm">{label}</span>;
+  };
+
   const getStatusBadge = (status) => {
       switch(status) {
-          case 'Approved': return <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Approved</span>;
-          case 'Rejected': return <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Rejected</span>;
-          default: return <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Pending</span>;
+          case 'Approved': return <span className="bg-accent-100 text-accent-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Approved</span>;
+          case 'Rejected': return <span className="bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Rejected</span>;
+          default: return <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Pending</span>;
       }
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6">My Documents</h2>
-      
+    <div className="p-6 bg-white rounded-xl shadow-card border border-surface-subtle">
+      <h2 className="text-2xl font-semibold mb-6 text-ink">My Documents</h2>
+
       {/* Upload Section */}
-      <div className="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-center">
+      <div className="mb-8 p-6 border-2 border-dashed border-surface-subtle rounded-xl bg-surface-muted text-center">
         <form onSubmit={handleUpload} className="flex flex-col items-center gap-4">
-            <input 
-                type="file" 
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+              <select
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value)}
+                className="flex-1 p-2 border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent-500"
+              >
+                {DOCUMENT_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                placeholder="Expiry date (optional)"
+                className="flex-1 p-2 border border-surface-subtle rounded-lg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent-500"
+              />
+            </div>
+            <input
+                type="file"
                 id="fileInput"
-                onChange={handleFileChange} 
-                className="block w-full text-sm text-gray-500
+                onChange={handleFileChange}
+                className="block w-full text-sm text-ink-muted
                 file:mr-4 file:py-2 file:px-4
-                file:rounded-full file:border-0
+                file:rounded-lg file:border-0
                 file:text-sm file:font-semibold
-                file:bg-teal-50 file:text-teal-700
-                hover:file:bg-teal-100"
+                file:bg-accent-50 file:text-accent-700
+                hover:file:bg-accent-100"
             />
-            <button 
-                type="submit" 
+            <button
+                type="submit"
                 disabled={uploading || !file}
                 className={`px-6 py-2 rounded-lg text-white font-medium transition-colors
-                    ${uploading || !file ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700'}
+                    ${uploading || !file ? 'bg-ink-faint cursor-not-allowed' : 'bg-accent-600 hover:bg-accent-700'}
                 `}
             >
                 {uploading ? "Uploading..." : "Upload Document"}
@@ -122,37 +158,54 @@ const DocumentUpload = () => {
       </div>
 
       {/* Documents List */}
-      <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+      <div className="overflow-x-auto rounded-lg border border-surface-subtle">
+          <table className="min-w-full divide-y divide-surface-subtle">
+              <thead className="bg-surface-muted">
                   <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">File</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Expiry</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Comments</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider">Actions</th>
                   </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-surface-subtle">
                   {loading ? (
-                      <tr><td colSpan="6" className="text-center py-4">Loading...</td></tr>
+                      <>
+                        <SkeletonRow columns={8} />
+                        <SkeletonRow columns={8} />
+                        <SkeletonRow columns={8} />
+                      </>
                   ) : documents.length === 0 ? (
-                      <tr><td colSpan="6" className="text-center py-4">No documents uploaded</td></tr>
+                      <tr>
+                        <td colSpan="8">
+                          <EmptyState icon={FaFolderOpen} title="No documents uploaded" message="Upload a document above to see it listed here." />
+                        </td>
+                      </tr>
                   ) : (
                       documents.map((doc) => (
-                          <tr key={doc._id}>
+                          <tr key={doc._id} className="hover:bg-surface-muted">
                               <td className="px-6 py-4 whitespace-nowrap">{getFileIcon(doc.fileType)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doc.originalName}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.createdAt).toLocaleDateString()}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
+                                {doc.originalName}
+                                {doc.version > 1 && (
+                                  <span className="ml-1.5 text-xs text-ink-faint">v{doc.version}</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{doc.documentType || "Other"}</td>
+                              <td className="px-6 py-4 whitespace-nowrap">{getExpiryBadge(doc.expiryDate)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{new Date(doc.createdAt).toLocaleDateString()}</td>
                               <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(doc.status)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.comments || "-"}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">{doc.comments || "-"}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <a href={`${API_BASE}${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 mr-4">
+                                  <a href={`${API_BASE}${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:text-brand-700 mr-4">
                                       <FaEye className="inline" />
                                   </a>
                                   {doc.status === 'Pending' && (
-                                      <button onClick={() => handleDelete(doc._id)} className="text-red-600 hover:text-red-900">
+                                      <button onClick={() => handleDelete(doc._id)} className="text-red-600 hover:text-red-700">
                                           <FaTrash className="inline" />
                                       </button>
                                   )}

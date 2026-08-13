@@ -12,9 +12,9 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
 const NotFound = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-gray-600">404 - Page Not Found</div>;
 
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const EmployeeDashboard = lazy(() => import("./pages/EmployeeDashboard"));
-const TeamLeadDashboard = lazy(() => import("./pages/TeamLeadDashboard"));
 
 // Utils
 import PrivateRoutes from "./utils/PrivateRoutes";
@@ -25,6 +25,7 @@ const TeamList = lazy(() => import("./components/team/TeamList"));
 const CreateTeam = lazy(() => import("./components/team/CreateTeam"));
 const TeamDetail = lazy(() => import("./components/team/TeamDetail"));
 const TaskList = lazy(() => import("./components/task/TaskList"));
+const TaskBoard = lazy(() => import("./components/task/TaskBoard"));
  
 // Admin Components (lazy-loaded)
 const AdminSummary = lazy(() => import("./components/dashboard/AdminSummary"));
@@ -42,11 +43,17 @@ const PayrollTemplateManager = lazy(() => import("./components/salary/PayrollTem
 const PayslipHistory = lazy(() => import("./components/salary/PayslipHistory"));
 const Table = lazy(() => import("./components/leave/Table"));
 const Detail = lazy(() => import("./components/leave/Detail"));
+const LeaveTypeSettings = lazy(() => import("./components/leave/LeaveTypeSettings"));
 const AnnouncementList = lazy(() => import("./components/announcements/AnnouncementList"));
 const AnnouncementView = lazy(() => import("./components/announcements/AnnouncementView"));
 const AnnouncementAdd = lazy(() => import("./components/announcements/AnnouncementAdd"));
 const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
+const RegularizationApprovals = lazy(() => import("./components/attendance/RegularizationApprovals"));
+const RegularizationRequest = lazy(() => import("./components/attendance/RegularizationRequest"));
+const TeamReviews = lazy(() => import("./components/performance/TeamReviews"));
+const MyReviews = lazy(() => import("./components/performance/MyReviews"));
+const ReportSettings = lazy(() => import("./components/dashboard/ReportSettings"));
 const AdminFeedback = lazy(() => import("./components/feedback/AdminFeedback"));
 const AdminCalendar = lazy(() => import("./components/calendar/AdminCalendar"));
 const AdminDailyQuote = lazy(() => import("./components/dailyQuote/AdminDailyQuote"));
@@ -148,10 +155,12 @@ function App() {
           <Route path="leaves" element={<Table />} />
           <Route path="leaves/:id" element={<Detail />} />
           <Route path="employees/leaves/:id" element={<LeaveList />} />
+          <Route path="leave-types" element={<LeaveTypeSettings />} />
  
           {/* Settings */}
           <Route path="setting" element={<Setting />} />
- 
+          <Route path="report-settings" element={<ReportSettings />} />
+
           {/* Announcements */}
           <Route path="announcements" element={<AnnouncementList />} />
           <Route path="announcements/:id" element={<AnnouncementView />} />
@@ -160,7 +169,9 @@ function App() {
  
           {/* Attendance Report */}
           <Route path="attendance-report" element={<AdminAttendanceReport />} />
- 
+          <Route path="attendance-corrections" element={<RegularizationApprovals />} />
+          <Route path="team-reviews" element={<TeamReviews />} />
+
           {/* Feedback */}
           <Route path="feedback" element={<AdminFeedback />} />
           <Route path="calendar" element={<AdminCalendar />} />
@@ -171,62 +182,58 @@ function App() {
           <Route path="create-team" element={<CreateTeam />} />
           <Route path="team/:id" element={<TeamDetail />} />
           <Route path="documents" element={<DocumentList />} />
-        </Route>
- 
-        {/* Team Lead Dashboard */}
-        <Route
-          path="team-lead-dashboard"
-          element={
-            <PrivateRoutes>
-              <RoleBaseRoutes requiredRole={["team_lead"]}>
-                <TeamLeadDashboard />
-              </RoleBaseRoutes>
-            </PrivateRoutes>
-          }
-        >
-          <Route index element={<TeamList />} />
-          <Route path="teams" element={<TeamList />} />
-           <Route path="team/:id" element={<TeamDetail />} />
-          <Route path="tasks" element={<TaskList />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
-        {/* Employee Dashboard */}
+        {/* Employee Dashboard (also serves Team Leads — team-lead-only
+            sections are added conditionally in the sidebar and routed
+            under employee-dashboard/team/*) */}
         <Route
           path="employee-dashboard"
           element={
             <PrivateRoutes>
-              <RoleBaseRoutes requiredRole={["admin", "employee"]}>
+              <RoleBaseRoutes requiredRole={["admin", "employee", "team_lead"]}>
                 <EmployeeDashboard />
               </RoleBaseRoutes>
             </PrivateRoutes>
           }
         >
           <Route index element={<Summary />} />
- 
+
           {/* Profile */}
           <Route path="profile/:id" element={<Profile />} />
- 
+
           {/* Leaves */}
           <Route path="leaves/:id" element={<LeaveList />} />
           <Route path="add-leave" element={<AddLeave />} />
- 
+
           {/* Salary */}
           <Route path="salary/:id" element={<ViewSalary />} />
- 
+
           {/* Settings */}
           <Route path="setting" element={<Setting />} />
- 
+
           {/* Announcements */}
           <Route path="announcements" element={<EmployeeAnnouncements />} />
           <Route path="announcements/:id" element={<EmployeeAnnouncementDetails />} />
- 
+
           {/* Attendance */}
           <Route path="attendance" element={<Attendance />} />
           <Route path="attendance-report" element={<AttendanceReport />} />
+          <Route path="attendance-corrections" element={<RegularizationRequest />} />
+          <Route path="my-reviews" element={<MyReviews />} />
           <Route path="feedback" element={<EmployeeFeedback />} />
           <Route path="calendar" element={<EmployeeCalendar />} />
           <Route path="documents" element={<DocumentList />} />
           <Route path="tasks" element={<TaskList />} />
+          <Route path="tasks/board" element={<TaskBoard />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+
+          {/* Team Lead sections */}
+          <Route path="team/teams" element={<TeamList />} />
+          <Route path="team/:id" element={<TeamDetail />} />
+          <Route path="team/reviews" element={<TeamReviews />} />
+          <Route path="team/approvals" element={<RegularizationApprovals />} />
         </Route>
 
         {/* HR Dashboard */}
@@ -248,6 +255,8 @@ function App() {
           <Route path="offer" element={<ReadyForOffer />} />
           <Route path="interviews" element={<InterviewScheduler />} />
           <Route path="settings" element={<Setting />} />
+          <Route path="report-settings" element={<ReportSettings />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Candidate Dashboard */}

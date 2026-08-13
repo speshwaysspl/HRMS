@@ -50,23 +50,30 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: "url('/images/download.jpeg')" }}
-    >
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl shadow-lg rounded-xl p-6 border border-white/20">
-        <h2 className="text-2xl font-bold text-center text-white mb-4 drop-shadow-lg">
-          Forgot Password
-        </h2>
+    <div className="flex items-center justify-center min-h-screen bg-surface-muted px-4">
+      <div className="w-full max-w-md bg-white shadow-panel rounded-xl p-8 border border-surface-subtle">
+        <div className="flex flex-col items-center mb-6">
+          <img
+            src="/images/Logo.jpg"
+            alt="Speshway HRMS"
+            className="h-12 w-auto rounded-md mb-4"
+          />
+          <h2 className="text-2xl font-semibold text-center text-ink">
+            Forgot Password
+          </h2>
+          <p className="text-sm text-ink-muted text-center mt-1">
+            Enter your registered email to receive a reset link
+          </p>
+        </div>
 
         {message && (
-          <div className="bg-green-100/70 text-green-900 px-4 py-2 rounded-md mb-4">
+          <div className="bg-accent-50 text-accent-700 border border-accent-200 px-4 py-2 rounded-lg mb-4 text-sm">
             {message}
           </div>
         )}
 
         {error && (
-          <div className="bg-red-100/70 text-red-900 px-4 py-2 rounded-md mb-4">
+          <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg mb-4 text-sm">
             {error}
           </div>
         )}
@@ -77,23 +84,23 @@ const ForgotPasswordPage = () => {
             placeholder="Enter your registered email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300/50 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/60"
+            className="w-full border border-surface-subtle rounded-lg px-4 py-2.5 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 rounded-lg text-white font-medium transition ${
+            className={`w-full py-2.5 rounded-lg text-white font-medium transition ${
               loading
-                ? "bg-indigo-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
+                ? "bg-accent-300 cursor-not-allowed"
+                : "bg-accent-600 hover:bg-accent-700"
             }`}
           >
             {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
 
-        <p className="text-sm text-white/80 text-center mt-4">
+        <p className="text-sm text-ink-muted text-center mt-4">
           We’ll send a password reset link to your email.
         </p>
 
@@ -101,7 +108,7 @@ const ForgotPasswordPage = () => {
         <p className="text-sm text-center mt-4">
           <Link
             to="/login"
-            className="text-indigo-300 hover:text-indigo-100 transition"
+            className="text-brand-600 hover:text-brand-700 font-medium transition"
           >
             Back to Login
           </Link>

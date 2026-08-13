@@ -10,7 +10,12 @@ const employeeSchema = new Schema({
   mobilenumber: { type: String },
   designation: { type: String },
   department: { type: Schema.Types.ObjectId, ref:"Department", required: true },
+  reportsTo: { type: Schema.Types.ObjectId, ref: "Employee", default: null },
+  shiftId: { type: Schema.Types.ObjectId, ref: "Shift", default: null },
   status: { type: String, enum: ["active", "inactive"], default: "active" },
+  salaryPackage: { type: Number, default: null }, // annual CTC in INR, used to prefill payslip earnings
+  pan: { type: String, trim: true, default: "" },
+  uan: { type: String, trim: true, default: "" },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

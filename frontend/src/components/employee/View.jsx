@@ -5,6 +5,8 @@ import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBu
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
+import ErrorState from "../common/ErrorState";
 
 const View = () => {
   const { id } = useParams();
@@ -49,19 +51,10 @@ const View = () => {
   }, [id]);
   if (loading) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+      <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 md:p-12">
-            <div className="flex flex-col items-center justify-center space-y-6">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-600 rounded-full animate-spin animation-delay-150"></div>
-              </div>
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Loading Employee Details</h3>
-                <p className="text-gray-500">Please wait while we fetch the information...</p>
-              </div>
-            </div>
+          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
+            <LoadingState message="Please wait while we fetch the employee information..." />
           </div>
         </div>
       </div>
@@ -70,20 +63,14 @@ const View = () => {
 
   if (!employee) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+      <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 md:p-12 text-center">
-            <div className="text-red-500 mb-4">
-              <FaTimesCircle className="mx-auto text-6xl" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Employee Not Found</h3>
-            <p className="text-gray-500 mb-6">The requested employee could not be found.</p>
-            <button
-              onClick={() => navigate('/admin-dashboard/employees')}
-              className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-200 font-medium"
-            >
-              Back to Employees
-            </button>
+          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
+            <ErrorState
+              title="Employee Not Found"
+              message="The requested employee could not be found."
+              onRetry={() => navigate('/admin-dashboard/employees')}
+            />
           </div>
         </div>
       </div>
@@ -91,28 +78,28 @@ const View = () => {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6'>
+    <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="mb-6">
           <button
             onClick={() => navigate('/admin-dashboard/employees')}
-            className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors duration-200 mb-4"
+            className="flex items-center gap-2 text-ink-muted hover:text-accent-600 transition-colors duration-150 mb-4"
           >
             <FaArrowLeft className="text-sm" />
             <span className="font-medium">Back to Employees</span>
           </button>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-4xl font-semibold text-ink">
                 Employee Profile
               </h1>
-              <p className="text-gray-600 mt-2">Comprehensive employee information and details</p>
+              <p className="text-ink-muted mt-2">Comprehensive employee information and details</p>
             </div>
             <button
               onClick={() => navigate(`/admin-dashboard/employees/edit/${id}`)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              className="flex items-center gap-2 px-6 py-3 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition-colors font-medium"
             >
               <FaEdit className="text-sm" />
               Edit Employee
@@ -121,18 +108,18 @@ const View = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card border border-surface-subtle overflow-hidden">
           {/* Header Card */}
-          <div className="bg-gradient-to-r from-teal-500 to-blue-500 p-6 md:p-8">
+          <div className="bg-brand-800 p-6 md:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <FaUser className="text-3xl text-white" />
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
+                <FaUser className="text-2xl text-white" />
               </div>
               <div className="text-center sm:text-left">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">
                   {employee.userId.name}
                 </h2>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-white/90">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-brand-100/90">
                   <span className="flex items-center gap-2">
                     <FaIdCard className="text-sm" />
                     ID: {employee.employeeId}
@@ -151,38 +138,38 @@ const View = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Personal Information */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-teal-500">
+                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
                   Personal Information
                 </h3>
-                
+
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                      <FaEnvelope className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaEnvelope className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Email Address</p>
-                      <p className="text-gray-900 font-semibold break-all">{employee.userId.email}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Email Address</p>
+                      <p className="text-ink font-semibold break-all">{employee.userId.email}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <FaPhone className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaPhone className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Mobile Number</p>
-                      <p className="text-gray-900 font-semibold">{employee.mobilenumber}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Mobile Number</p>
+                      <p className="text-ink font-semibold">{employee.mobilenumber}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <FaCalendarAlt className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaCalendarAlt className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Date of Birth</p>
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-sm font-medium text-ink-muted mb-1">Date of Birth</p>
+                      <p className="text-ink font-semibold">
                         {formatDMY(employee.dob)}
                       </p>
                     </div>
@@ -192,39 +179,39 @@ const View = () => {
 
               {/* Professional Information */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
+                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
                   Professional Information
                 </h3>
-                
+
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                      <FaBuilding className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaBuilding className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Department</p>
-                      <p className="text-gray-900 font-semibold">{employee.department.dep_name}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Department</p>
+                      <p className="text-ink font-semibold">{employee.department.dep_name}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                      <FaBriefcase className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaBriefcase className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Designation</p>
-                      <p className="text-gray-900 font-semibold">{employee.designation}</p>
+                      <p className="text-sm font-medium text-ink-muted mb-1">Designation</p>
+                      <p className="text-ink font-semibold">{employee.designation}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                      <FaCalendarAlt className="text-white text-sm" />
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <FaCalendarAlt className="text-brand-700 text-sm" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Joining Date</p>
-                      <p className="text-gray-900 font-semibold">
-                        {employee.joiningDate 
+                      <p className="text-sm font-medium text-ink-muted mb-1">Joining Date</p>
+                      <p className="text-ink font-semibold">
+                        {employee.joiningDate
                           ? formatDMY(employee.joiningDate)
                           : 'N/A'
                         }
@@ -232,24 +219,24 @@ const View = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                       employee.status === 'active'
-                        ? 'bg-gradient-to-r from-green-500 to-green-600'
-                        : 'bg-gradient-to-r from-red-500 to-red-600'
+                        ? 'bg-accent-100'
+                        : 'bg-red-100'
                     }`}>
                       {employee.status === 'active' ? (
-                        <FaCheckCircle className="text-white text-sm" />
+                        <FaCheckCircle className="text-accent-700 text-sm" />
                       ) : (
-                        <FaTimesCircle className="text-white text-sm" />
+                        <FaTimesCircle className="text-red-700 text-sm" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Employment Status</p>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      <p className="text-sm font-medium text-ink-muted mb-1">Employment Status</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         employee.status === 'active'
-                          ? 'bg-green-100 text-green-800 border border-green-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
+                          ? 'bg-accent-100 text-accent-700'
+                          : 'bg-red-100 text-red-700'
                       }`}>
                         {employee.status === 'active' ? 'Active' : 'Inactive'}
                       </span>

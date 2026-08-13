@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
 
 const Detail = () => {
   const { id } = useParams();
@@ -76,64 +77,67 @@ const Detail = () => {
   return (
     <>
       {leave ? (
-        <div className="max-w-3xl mx-auto mt-10 bg-white p-8 rounded-md shadow-md">
-          <h2 className="text-2xl font-bold mb-8 text-center">
+        <div className="max-w-3xl mx-auto mt-6 md:mt-10 bg-white p-4 sm:p-8 rounded-xl shadow-card border border-surface-subtle">
+          <h2 className="text-xl sm:text-2xl font-semibold text-ink mb-6 md:mb-8 text-center">
             Leave Details
           </h2>
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">Name:</p>
-                <p className="font-medium">{user.name || "N/A"}</p>
-              </div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">Employee ID:</p>
-                <p className="font-medium">{employee.employeeId || "N/A"}</p>
-              </div>
+          <div className="grid grid-cols-1 gap-1 divide-y divide-surface-subtle">
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Name</p>
+              <p className="font-medium text-ink break-words text-right">{user.name || "N/A"}</p>
+            </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Employee ID</p>
+              <p className="font-medium text-ink break-words text-right">{employee.employeeId || "N/A"}</p>
+            </div>
 
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">LeaveType:</p>
-                <p className="font-medium">
-                  {leave.leaveType}
-                </p>
-              </div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">Reason:</p>
-                <p className="font-medium">{leave.reason}</p>
-              </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Leave Type</p>
+              <p className="font-medium text-ink break-words text-right">
+                {leave.leaveType}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Reason</p>
+              <p className="font-medium text-ink sm:text-right max-w-full sm:max-w-md break-words">{leave.reason}</p>
+            </div>
 
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">Department:</p>
-                <p className="font-medium">{department.dep_name || "N/A"}</p>
-              </div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">Start Date:</p>
-                <p className="font-medium">{formattedStartDate}</p>
-              </div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">End Date:</p>
-                <p className="font-medium">{formattedEndDate}</p>
-              </div>
-              <div className="flex space-x-3 mb-2">
-                <p className="text-lg font-bold">
-                    {leave.status === "Pending" ? "Action:" : "Status:"}
-                    </p>
-                    {leave.status === "Pending" ? (
-                        <div className="flex space-x-2">
-                            <button className="px-2 py-0.5 bg-teal-300 hover:bg-teal-400"
-                            onClick={() => changeStatus(leave._id, "Approved")}>Approve</button>
-                            <button className="px-2 py-0.5 bg-red-300 hover:bg-red-400"
-                            onClick={() => changeStatus(leave._id, "Rejected")}>Reject</button>
-                        </div>
-                    ) : 
-                    <p className="font-medium">{leave.status}</p>
-                }
-              </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Department</p>
+              <p className="font-medium text-ink break-words text-right">{department.dep_name || "N/A"}</p>
+            </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">Start Date</p>
+              <p className="font-medium text-ink break-words text-right">{formattedStartDate}</p>
+            </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">End Date</p>
+              <p className="font-medium text-ink break-words text-right">{formattedEndDate}</p>
+            </div>
+            <div className="flex flex-wrap justify-between items-center py-3 gap-1">
+              <p className="text-sm font-medium text-ink-muted">
+                  {leave.status === "Pending" ? "Action" : "Status"}
+                  </p>
+                  {leave.status === "Pending" ? (
+                      <div className="flex flex-wrap gap-2">
+                          <button className="px-3 py-1 rounded-lg text-sm font-medium bg-accent-600 hover:bg-accent-700 text-white transition-colors duration-150"
+                          onClick={() => changeStatus(leave._id, "Approved")}>Approve</button>
+                          <button className="px-3 py-1 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors duration-150"
+                          onClick={() => changeStatus(leave._id, "Rejected")}>Reject</button>
+                      </div>
+                  ) : (
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      leave.status === "Approved"
+                        ? "bg-accent-100 text-accent-700"
+                        : "bg-red-100 text-red-700"
+                    }`}>{leave.status}</span>
+                  )
+              }
             </div>
           </div>
         </div>
       ) : (
-        <div> Loading ....</div>
+        <LoadingState message="Loading leave details..." />
       )}
     </>
   );

@@ -1,8 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCandidateDocuments, verifyDocument } from "../../redux/slices/onboardingSlice";
 import { toast } from "react-toastify";
-import { FaFilter, FaSearch, FaEye, FaCheck, FaTimes, FaFileAlt } from "react-icons/fa";
+import { FaFilter, FaSearch, FaEye, FaCheck, FaTimes, FaUserCircle, FaTimes as FaClose } from "react-icons/fa";
+import LoadingState from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
+
+const getStatusColor = (statusVal) => {
+  switch (statusVal) {
+    case "Approved": return "bg-accent-100 text-accent-700";
+    case "Rejected": return "bg-red-100 text-red-700";
+    default: return "bg-amber-100 text-amber-700";
+  }
+};
+
+// A candidate group's overall status: Pending if any doc pending, Rejected if any rejected (and none pending), else Approved.
+const getGroupStatus = (docs) => {
+  if (docs.some((d) => d.status === "Pending")) return "Pending";
+  if (docs.some((d) => d.status === "Rejected")) return "Rejected";
+  return "Approved";
+};
 
 const DocumentVerificationList = () => {
   const dispatch = useDispatch();
@@ -12,9 +29,9 @@ const DocumentVerificationList = () => {
   const [search, setSearch] = useState("");
   const [commentText, setCommentText] = useState({});
   const [processingId, setProcessingId] = useState(null);
+  const [activeCandidateId, setActiveCandidateId] = useState(null);
 
   useEffect(() => {
-    // Fetch all documents
     dispatch(fetchCandidateDocuments());
   }, [dispatch]);
 
@@ -42,141 +59,207 @@ const DocumentVerificationList = () => {
     }
   };
 
-  const getStatusColor = (statusVal) => {
-    switch (statusVal) {
-      case "Approved": return "bg-green-500/15 text-green-500 border-green-500/20";
-      case "Rejected": return "bg-red-500/15 text-red-500 border-red-500/20";
-      default: return "bg-yellow-500/15 text-yellow-500 border-yellow-500/20";
-    }
-  };
+  // Group flat documents into per-candidate buckets
+  const candidateGroups = useMemo(() => {
+    const map = new Map();
+    (documents || []).forEach((doc) => {
+      const cand = doc.candidateId;
+      const key = cand?._id || "unknown";
+      if (!map.has(key)) {
+        map.set(key, {
+          candidate: cand,
+          docs: [],
+        });
+      }
+      map.get(key).docs.push(doc);
+    });
+    return Array.from(map.values());
+  }, [documents]);
 
-  // Filter local document list
-  const filteredDocuments = documents?.filter((doc) => {
-    const matchesStatus = statusFilter === "" || doc.status === statusFilter;
+  const filteredGroups = candidateGroups.filter(({ candidate, docs }) => {
+    const groupStatus = getGroupStatus(docs);
+    const matchesStatus = statusFilter === "" || groupStatus === statusFilter;
     const matchesSearch =
       search === "" ||
-      doc.candidateId?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      doc.fileType?.toLowerCase().includes(search.toLowerCase());
+      candidate?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      candidate?.position?.toLowerCase().includes(search.toLowerCase()) ||
+      docs.some((d) => d.fileType?.toLowerCase().includes(search.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const activeGroup = candidateGroups.find((g) => (g.candidate?._id || "unknown") === activeCandidateId);
 
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800">Document Verification Center</h2>
-        <p className="text-sm text-slate-500 mt-1">Review identity, education, and professional credentials uploaded by candidates.</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">Document Verification Center</h2>
+        <p className="text-sm text-ink-muted mt-1">Review identity, education, and professional credentials uploaded by candidates.</p>
       </div>
 
       {/* Filters Row */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-surface-subtle bg-white p-5 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
           <div className="relative">
-            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" size={14} />
             <input
               type="text"
               placeholder="Search by candidate name or document type..."
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500"
+              className="w-full rounded-lg border border-surface-subtle pl-10 pr-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none focus:border-brand-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          {/* Status filter */}
           <div className="relative col-span-2 md:col-span-1">
-            <FaFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <FaFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" size={14} />
             <select
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 appearance-none bg-white"
+              className="w-full rounded-lg border border-surface-subtle pl-10 pr-4 py-2.5 text-sm text-ink outline-none focus:border-brand-500 appearance-none bg-white"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">All Uploads</option>
+              <option value="">All Candidates</option>
               <option value="Pending">Pending Review</option>
               <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              <option value="Rejected">Has Rejected Docs</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Documents Grid List */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* Candidate Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
-          <div className="text-center py-10 text-slate-500">
-            <div className="h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            Loading documents...
-          </div>
-        ) : filteredDocuments?.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-400 font-medium text-sm">
-            No onboarding documents found matching the selected filters.
+          <LoadingState message="Loading documents..." />
+        ) : filteredGroups.length === 0 ? (
+          <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-surface-subtle bg-white">
+            <EmptyState title="No candidates found" message="No onboarding documents match the selected filters." />
           </div>
         ) : (
-          filteredDocuments?.map((doc) => (
-            <div
-              key={doc._id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 hover:border-slate-300 transition"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide border ${getStatusColor(doc.status)}`}>
-                    {doc.status}
-                  </span>
-                  <h4 className="font-extrabold text-slate-900 text-lg">{doc.fileType}</h4>
-                  <p className="text-xs text-slate-500">
-                    Uploaded by: <b className="text-slate-700">{doc.candidateId?.fullName || "Candidate"}</b> ({doc.candidateId?.candidateId || "TBD"})
-                  </p>
-                  <p className="text-[10px] text-slate-400">File Name: {doc.originalName} | Uploaded: {new Date(doc.createdAt).toLocaleDateString()}</p>
-                </div>
-
-                <a
-                  href={doc.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-slate-200 hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 transition flex items-center gap-1.5 self-start shrink-0"
-                >
-                  <FaEye /> View Document
-                </a>
-              </div>
-
-              {/* Action area for processing review */}
-              {doc.status === "Pending" && (
-                <div className="flex flex-col md:flex-row items-center gap-4 border-t border-slate-100 pt-4 mt-2">
-                  <input
-                    type="text"
-                    placeholder="Enter reason if rejecting this document..."
-                    className="w-full md:flex-1 rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-800 outline-none focus:border-blue-500"
-                    value={commentText[doc._id] || ""}
-                    onChange={(e) => setCommentText({ ...commentText, [doc._id]: e.target.value })}
-                  />
-                  <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
-                    <button
-                      onClick={() => handleVerify(doc._id, "Rejected")}
-                      disabled={processingId === doc._id}
-                      className="flex-1 md:flex-none rounded-xl border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2.5 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    >
-                      <FaTimes /> Reject
-                    </button>
-                    <button
-                      onClick={() => handleVerify(doc._id, "Approved")}
-                      disabled={processingId === doc._id}
-                      className="flex-1 md:flex-none rounded-xl bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-green-500/10"
-                    >
-                      <FaCheck /> Approve
-                    </button>
+          filteredGroups.map(({ candidate, docs }) => {
+            const groupStatus = getGroupStatus(docs);
+            const pendingCount = docs.filter((d) => d.status === "Pending").length;
+            const key = candidate?._id || "unknown";
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCandidateId(key)}
+                className="text-left rounded-xl border border-surface-subtle bg-white p-5 shadow-card space-y-3 hover:border-brand-300 hover:shadow-panel transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-10 h-10 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">
+                      <FaUserCircle size={22} />
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-ink truncate">{candidate?.fullName || "Candidate"}</h4>
+                      <p className="text-xs text-ink-muted truncate">{candidate?.candidateId || "TBD"}{candidate?.position ? ` · ${candidate.position}` : ""}</p>
+                    </div>
                   </div>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium flex-shrink-0 ${getStatusColor(groupStatus)}`}>
+                    {groupStatus}
+                  </span>
                 </div>
-              )}
 
-              {doc.comments && (
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-xs text-slate-600 mt-2">
-                  <b>Review comment:</b> {doc.comments}
+                <div className="flex items-center justify-between text-xs text-ink-muted border-t border-surface-subtle pt-3">
+                  <span>{docs.length} document{docs.length !== 1 ? "s" : ""}</span>
+                  {pendingCount > 0 && (
+                    <span className="text-amber-700 font-medium">{pendingCount} pending</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
+              </button>
+            );
+          })
         )}
       </div>
+
+      {/* Candidate Document Modal */}
+      {activeGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-950/60" onClick={() => setActiveCandidateId(null)}>
+          <div
+            className="bg-white rounded-xl shadow-panel w-full max-w-2xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 p-5 border-b border-surface-subtle sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-lg font-semibold text-ink">{activeGroup.candidate?.fullName || "Candidate"}</h3>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  {activeGroup.candidate?.candidateId || "TBD"}{activeGroup.candidate?.position ? ` · ${activeGroup.candidate.position}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveCandidateId(null)}
+                className="text-ink-muted hover:text-ink flex-shrink-0"
+                aria-label="Close"
+              >
+                <FaClose size={16} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {activeGroup.docs.map((doc) => (
+                <div
+                  key={doc._id}
+                  className="rounded-xl border border-surface-subtle p-4 space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 min-w-0">
+                    <div className="space-y-1 min-w-0">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(doc.status)}`}>
+                        {doc.status}
+                      </span>
+                      <h4 className="font-semibold text-ink break-words">{doc.fileType}</h4>
+                      <p className="text-[11px] text-ink-faint break-words">File Name: {doc.originalName} | Uploaded: {new Date(doc.createdAt).toLocaleDateString()}</p>
+                    </div>
+
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-surface-subtle bg-white hover:bg-surface-muted px-4 py-2 text-xs font-medium text-ink transition-colors flex items-center gap-1.5 self-start shrink-0"
+                    >
+                      <FaEye /> View Document
+                    </a>
+                  </div>
+
+                  {doc.status === "Pending" && (
+                    <div className="flex flex-col md:flex-row items-center gap-3 border-t border-surface-subtle pt-3">
+                      <input
+                        type="text"
+                        placeholder="Enter reason if rejecting this document..."
+                        className="w-full md:flex-1 rounded-lg border border-surface-subtle px-4 py-2 text-xs text-ink outline-none focus:border-brand-500"
+                        value={commentText[doc._id] || ""}
+                        onChange={(e) => setCommentText({ ...commentText, [doc._id]: e.target.value })}
+                      />
+                      <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
+                        <button
+                          onClick={() => handleVerify(doc._id, "Rejected")}
+                          disabled={processingId === doc._id}
+                          className="flex-1 md:flex-none rounded-lg border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          <FaTimes /> Reject
+                        </button>
+                        <button
+                          onClick={() => handleVerify(doc._id, "Approved")}
+                          disabled={processingId === doc._id}
+                          className="flex-1 md:flex-none rounded-lg bg-accent-600 hover:bg-accent-700 text-white px-5 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          <FaCheck /> Approve
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.comments && (
+                    <div className="bg-surface-muted rounded-lg p-3 border border-surface-subtle text-xs text-ink-muted break-words">
+                      <b className="text-ink">Review comment:</b> {doc.comments}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

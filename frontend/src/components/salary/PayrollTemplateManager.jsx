@@ -9,6 +9,7 @@ import { BANKS } from "../../utils/constants";
 import useMeta from "../../utils/useMeta";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit, Trash2, CheckCircle, Plus, X } from "lucide-react";
+import EmptyState from "../common/EmptyState";
 
 const PayrollTemplateManager = () => {
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/template-manager`, []);
@@ -501,10 +502,10 @@ const PayrollTemplateManager = () => {
       selector: (row) => row.templateName,
       sortable: true,
       cell: (row) => (
-        <div className="text-sm font-medium text-gray-900">
+        <div className="text-sm font-medium text-ink">
           {row.templateName}
           {row.isDefault && (
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-700">
               Default
             </span>
           )}
@@ -517,10 +518,10 @@ const PayrollTemplateManager = () => {
       sortable: true,
       cell: (row) => (
         <div>
-           <div className="text-sm text-gray-900">
+           <div className="text-sm text-ink">
              {row.employeeName || (typeof row.employeeId === 'string' ? row.employeeId : row.employeeId?.employeeId || row.employeeId?._id || 'N/A')}
            </div>
-           <div className="text-xs text-gray-500">{row.designation}</div>
+           <div className="text-xs text-ink-muted">{row.designation}</div>
         </div>
       )
     },
@@ -544,7 +545,7 @@ const PayrollTemplateManager = () => {
       omit: isMobile,
       cell: (row) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          row.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          row.isActive ? 'bg-accent-100 text-accent-700' : 'bg-red-100 text-red-700'
         }`}>
           {row.isActive ? 'Active' : 'Inactive'}
         </span>
@@ -557,7 +558,7 @@ const PayrollTemplateManager = () => {
         <div className="flex space-x-2">
            <button
              onClick={() => handleEdit(row)}
-             className="text-indigo-600 hover:text-indigo-900 p-1"
+             className="text-ink-muted hover:text-brand-600 p-1 transition-colors"
              title="Edit"
            >
              <Edit size={18} />
@@ -565,7 +566,7 @@ const PayrollTemplateManager = () => {
            {!row.isDefault && (
              <button
                onClick={() => handleSetDefault(row._id)}
-               className="text-blue-600 hover:text-blue-900 p-1"
+               className="text-ink-muted hover:text-accent-600 p-1 transition-colors"
                title="Set Default"
              >
                <CheckCircle size={18} />
@@ -573,7 +574,7 @@ const PayrollTemplateManager = () => {
            )}
            <button
              onClick={() => handleDelete(row._id)}
-             className="text-red-600 hover:text-red-900 p-1"
+             className="text-ink-muted hover:text-red-600 p-1 transition-colors"
              title="Delete"
            >
              <Trash2 size={18} />
@@ -588,16 +589,16 @@ const PayrollTemplateManager = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-7xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-md shadow-md"
+      className="max-w-7xl mx-auto mt-4 md:mt-10 bg-surface p-4 md:p-8 rounded-xl shadow-card"
     >
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold mb-4 md:mb-0" style={{ fontFamily: 'Times New Roman, serif' }}>Payroll Template Manager</h2>
+        <h2 className="text-2xl font-semibold text-ink mb-4 md:mb-0">Payroll Template Manager</h2>
         <button
           onClick={() => {
             resetForm();
             setShowForm(!showForm);
           }}
-          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 w-full md:w-auto justify-center"
+          className="flex items-center bg-accent-600 text-white px-4 py-2 rounded-lg hover:bg-accent-700 transition-colors w-full md:w-auto justify-center"
         >
           {showForm ? <><X size={18} className="mr-2"/> Cancel</> : <><Plus size={18} className="mr-2"/> Create New Template</>}
         </button>
@@ -609,9 +610,9 @@ const PayrollTemplateManager = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-gray-50 p-4 md:p-6 rounded-md mb-8 overflow-hidden"
+            className="bg-surface-muted p-4 md:p-6 rounded-lg mb-8 overflow-hidden border border-surface-subtle"
           >
-          <h3 className="text-lg font-semibold mb-4">
+          <h3 className="text-lg font-semibold text-ink mb-4">
             {editingTemplate ? "Edit Template" : "Create New Template"}
           </h3>
           
@@ -619,38 +620,38 @@ const PayrollTemplateManager = () => {
             {/* Employee Selection */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Employee ID *</label>
+                <label className="block text-sm font-medium text-ink">Employee ID *</label>
                 <input
                   type="text"
                   name="employeeId"
                   value={template.employeeId}
                   onChange={handleEmployeeIdChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Enter Employee ID"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Employee Name</label>
+                <label className="block text-sm font-medium text-ink">Employee Name</label>
                 <input
                   type="text"
                   name="employeeName"
                   value={template.employeeName}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg bg-surface-muted text-ink-muted"
                   readOnly
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Template Name *</label>
+                <label className="block text-sm font-medium text-ink">Template Name *</label>
                 <input
                   type="text"
                   name="templateName"
                   value={template.templateName}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Enter template name"
                   required
                 />
@@ -660,35 +661,35 @@ const PayrollTemplateManager = () => {
             {/* Employee Details */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Designation</label>
+                <label className="block text-sm font-medium text-ink">Designation</label>
                 <input
                   type="text"
                   name="designation"
                   value={template.designation}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Department</label>
+                <label className="block text-sm font-medium text-ink">Department</label>
                 <input
                   type="text"
                   name="department"
                   value={template.department}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Location</label>
+                <label className="block text-sm font-medium text-ink">Location</label>
                 <input
                   type="text"
                   name="location"
                   value={template.location}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 />
               </div>
               
@@ -698,22 +699,22 @@ const PayrollTemplateManager = () => {
             {/* Bank & Identity Details */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+                <label className="block text-sm font-medium text-ink">Bank Name</label>
                 <input
                   type="text"
                   name="bankname"
                   value={template.bankname}
                   onChange={handleBankChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="Type to search banks"
                 />
                 {bankSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
+                  <div className="absolute z-10 w-full bg-surface border border-surface-subtle rounded-lg mt-1 max-h-40 overflow-y-auto shadow-panel">
                     {bankSuggestions.map((bank, index) => (
                       <div
                         key={index}
                         onClick={() => selectBank(bank)}
-                        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        className="p-2 hover:bg-surface-muted cursor-pointer text-sm text-ink"
                       >
                         {bank}
                       </div>
@@ -723,24 +724,24 @@ const PayrollTemplateManager = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">Account Number</label>
+                <label className="block text-sm font-medium text-ink">Account Number</label>
                 <input
                   type="text"
                   name="bankaccountnumber"
                   value={template.bankaccountnumber}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">PAN</label>
+                <label className="block text-sm font-medium text-ink">PAN</label>
                 <input
                   type="text"
                   name="pan"
                   value={template.pan}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                   placeholder="ABCDE1234F"
                   maxLength="10"
                   style={{
@@ -753,13 +754,13 @@ const PayrollTemplateManager = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700">UAN</label>
+                <label className="block text-sm font-medium text-ink">UAN</label>
                 <input
                   type="text"
                   name="uan"
                   value={template.uan}
                   onChange={handleChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                 />
               </div>
             </div>
@@ -768,20 +769,20 @@ const PayrollTemplateManager = () => {
             <div className="mb-6">
               <div className="flex flex-col md:flex-row items-end md:items-center justify-between mb-4 gap-4">
                 <div className="w-full md:w-1/2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Salary (Auto Calculate)</label>
+                  <label className="block text-sm font-medium text-ink mb-1">Full Salary (Auto Calculate)</label>
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
                     value={fullSalaryInput}
                     onChange={handleFullSalaryChange}
-                    className="p-2 block w-full border border-gray-300 rounded-md bg-blue-50 focus:ring-blue-500 focus:border-blue-500"
+                    className="p-2 block w-full border border-surface-subtle rounded-lg bg-brand-50 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter Full Salary to auto-fill breakdown"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowSalaryDetails(!showSalaryDetails)}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center shadow-sm w-full md:w-auto justify-center"
+                  className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted px-4 py-2 rounded-lg transition-colors flex items-center shadow-sm w-full md:w-auto justify-center"
                 >
                   {showSalaryDetails ? "Hide Salary Details" : "Salary Details"}
                 </button>
@@ -793,20 +794,20 @@ const PayrollTemplateManager = () => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden mb-4 border rounded-md shadow-sm"
+                    className="overflow-hidden mb-4 border border-surface-subtle rounded-lg shadow-sm"
                   >
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                      <table className="min-w-full divide-y divide-surface-subtle">
+                        <thead className="bg-surface-muted">
                           <tr>
                             {["Full Salary", "Basic", "DA", "HRA", "Conveyance", "Medical Allowances", "Special Allowances"].map((header) => (
-                              <th key={header} className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                              <th key={header} className="px-6 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider whitespace-nowrap">
                                 {header}
                               </th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-surface divide-y divide-surface-subtle">
                           {[
                             { full: 40000, basic: 14860, da: 8173, hra: 7430, conv: 1600, med: 1250, special: 6687 },
                             { full: 30000, basic: 10860, da: 5973, hra: 5430, conv: 1600, med: 1250, special: 4887 },
@@ -815,14 +816,14 @@ const PayrollTemplateManager = () => {
                             { full: 15000, basic: 4860, da: 2673, hra: 2430, conv: 1600, med: 1250, special: 2187 },
                             { full: 20000, basic: 6860, da: 3773, hra: 3430, conv: 1600, med: 1250, special: 3087 },
                           ].map((row, idx) => (
-                            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">{row.full}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.basic}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.da}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.hra}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.conv}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.med}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">{row.special}</td>
+                            <tr key={idx} className={idx % 2 === 0 ? "bg-surface" : "bg-surface-muted"}>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink">{row.full}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.basic}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.da}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.hra}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.conv}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.med}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-ink-muted">{row.special}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -834,144 +835,144 @@ const PayrollTemplateManager = () => {
             </div>
 
             {/* Earnings */}
-            <div className="bg-green-50 p-4 rounded-md mb-6">
-              <h4 className="text-lg font-semibold mb-4">Earnings</h4>
+            <div className="bg-accent-50 p-4 rounded-lg mb-6 border border-accent-100">
+              <h4 className="text-lg font-semibold text-ink mb-4">Earnings</h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Basic Salary *</label>
+                  <label className="block text-sm font-medium text-ink">Basic Salary *</label>
                   <input
                     type="text"
                     name="basicSalary"
                     value={template.basicSalary}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter basic salary"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">DA</label>
+                  <label className="block text-sm font-medium text-ink">DA</label>
                   <input
                     type="text"
                     name="da"
                     value={template.da}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter DA amount"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">HRA</label>
+                  <label className="block text-sm font-medium text-ink">HRA</label>
                   <input
                     type="text"
                     name="hra"
                     value={template.hra}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter HRA amount"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Conveyance</label>
+                  <label className="block text-sm font-medium text-ink">Conveyance</label>
                   <input
                     type="text"
                     name="conveyance"
                     value={template.conveyance}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter conveyance amount"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Medical Allowances</label>
+                  <label className="block text-sm font-medium text-ink">Medical Allowances</label>
                   <input
                     type="text"
                     name="medicalallowances"
                     value={template.medicalallowances}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter medical allowances"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Special Allowances</label>
+                  <label className="block text-sm font-medium text-ink">Special Allowances</label>
                   <input
                     type="text"
                     name="specialallowances"
                     value={template.specialallowances}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter special allowances"
                     required
                   />
                 </div>
                 
-                <div className="bg-green-100 p-3 rounded-md">
-                  <label className="block text-sm font-medium text-gray-700">Total Earnings</label>
-                  <div className="text-lg font-bold text-green-700">₹{calculations.totalEarnings}</div>
+                <div className="bg-accent-100 p-3 rounded-lg">
+                  <label className="block text-sm font-medium text-ink">Total Earnings</label>
+                  <div className="text-lg font-bold text-accent-700">₹{calculations.totalEarnings}</div>
                 </div>
               </div>
             </div>
 
             {/* Deductions */}
-            <div className="bg-red-50 p-4 rounded-md mb-6">
-              <h4 className="text-lg font-semibold mb-4">Deductions</h4>
+            <div className="bg-red-50 p-4 rounded-lg mb-6 border border-red-100">
+              <h4 className="text-lg font-semibold text-ink mb-4">Deductions</h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">PF</label>
+                  <label className="block text-sm font-medium text-ink">PF</label>
                   <input
                     type="text"
                     name="pf"
                     value={template.pf}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter PF amount"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Professional Tax</label>
+                  <label className="block text-sm font-medium text-ink">Professional Tax</label>
                   <input
                     type="text"
                     name="proftax"
                     value={template.proftax}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter professional tax"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Other Deductions</label>
+                  <label className="block text-sm font-medium text-ink">Other Deductions</label>
                   <input
                     type="text"
                     name="deductions"
                     value={template.deductions}
                     onChange={handleChange}
-                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                    className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
                     placeholder="Enter other deductions"
                   />
                 </div>
                 
-                <div className="bg-red-100 p-3 rounded-md">
-                  <label className="block text-sm font-medium text-gray-700">Total Deductions</label>
+                <div className="bg-red-100 p-3 rounded-lg">
+                  <label className="block text-sm font-medium text-ink">Total Deductions</label>
                   <div className="text-lg font-bold text-red-700">₹{calculations.totalDeductions}</div>
                 </div>
               </div>
             </div>
 
             {/* Template Settings */}
-            <div className="bg-blue-50 p-4 rounded-md mb-6">
-              <h4 className="text-lg font-semibold mb-4">Template Settings</h4>
+            <div className="bg-brand-50 p-4 rounded-lg mb-6 border border-brand-100">
+              <h4 className="text-lg font-semibold text-ink mb-4">Template Settings</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center">
                   <input
@@ -981,7 +982,7 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  <label className="text-sm text-gray-700">Set as Default Template</label>
+                  <label className="text-sm text-ink">Set as Default Template</label>
                 </div>
                 
                 <div className="flex items-center">
@@ -992,32 +993,32 @@ const PayrollTemplateManager = () => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  <label className="text-sm text-gray-700">Active Template</label>
+                  <label className="text-sm text-ink">Active Template</label>
                 </div>
                 
-                <div className="bg-blue-100 p-3 rounded-md">
-                  <label className="block text-sm font-medium text-gray-700">Net Salary</label>
-                  <div className="text-lg font-bold text-blue-700">₹{calculations.netSalary}</div>
+                <div className="bg-brand-100 p-3 rounded-lg">
+                  <label className="block text-sm font-medium text-ink">Net Salary</label>
+                  <div className="text-lg font-bold text-brand-700">₹{calculations.netSalary}</div>
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => {
                   resetForm();
                   setShowForm(false);
                 }}
-                className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600"
+                className="w-full sm:w-auto border border-surface-subtle bg-white text-ink px-6 py-2 rounded-lg hover:bg-surface-muted transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 disabled:opacity-50"
+                className="w-full sm:w-auto bg-accent-600 text-white px-6 py-2 rounded-lg hover:bg-accent-700 disabled:opacity-50 transition-colors"
               >
                 {loading ? "Saving..." : (editingTemplate ? "Update Template" : "Create Template")}
               </button>
@@ -1028,29 +1029,27 @@ const PayrollTemplateManager = () => {
       </AnimatePresence>
 
       {/* Templates List */}
-      <div className="bg-white">
+      <div className="bg-surface">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold mb-2 md:mb-0">Existing Templates</h3>
+          <h3 className="text-lg font-semibold text-ink mb-2 md:mb-0">Existing Templates</h3>
           <div className="relative w-full md:w-64">
-            <input 
-              type="text" 
-              placeholder="Search by Name or Employee ID..." 
-              className="p-2 border border-gray-300 rounded-md w-full pr-8"
+            <input
+              type="text"
+              placeholder="Search by Name or Employee ID..."
+              className="p-2 border border-surface-subtle rounded-lg w-full pr-8 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchLoading && (
               <div className="absolute right-2 top-2.5">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent-600"></div>
               </div>
             )}
           </div>
         </div>
-        
+
         {templates.length === 0 && !searchLoading ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No templates found. Create your first template above.</p>
-          </div>
+          <EmptyState title="No templates found" message="Create your first template above." />
         ) : (
           <DataTable
             columns={columns}

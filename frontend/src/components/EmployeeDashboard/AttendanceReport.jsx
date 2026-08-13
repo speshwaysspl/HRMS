@@ -7,6 +7,9 @@ import { formatDMY } from "../../utils/dateUtils";
 import MonthPicker from "../common/MonthPicker";
 import { FixedSizeList as List } from "react-window";
 import useMeta from "../../utils/useMeta";
+import LoadingState from "../common/LoadingState";
+import EmptyState from "../common/EmptyState";
+import { FiCalendar } from "react-icons/fi";
  
 const AttendanceReport = () => {
   useMeta({
@@ -226,14 +229,14 @@ const AttendanceReport = () => {
  
   const renderLocation = (loc, label) =>
     loc ? (
-      <p>
+      <p className="text-ink">
         <strong>{label} Location:</strong> {loc.area || "N/A"}{" "}
         {loc.latitude && loc.longitude && (
           <a
             href={`https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 underline"
+            className="text-brand-600 underline hover:text-brand-700"
           >
             View on Map
           </a>
@@ -241,33 +244,33 @@ const AttendanceReport = () => {
       </p>
     ) : null;
  
-  if (loading) return <div className="p-8 text-center">Loading attendance...</div>;
- 
+  if (loading) return <LoadingState message="Loading attendance..." />;
+
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
-      <h2 className="text-3xl md:text-4xl font-extrabold text-blue-700 mb-4 md:mb-6 text-center" style={{ fontFamily: 'Times New Roman, serif' }}>
+    <div className="p-4 md:p-8 min-h-screen bg-surface-muted">
+      <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-4 md:mb-6 text-center">
         Attendance Report
       </h2>
 
       {/* View Mode Tabs */}
       <div className="mb-4 md:mb-6 flex justify-center">
-        <div className="bg-white rounded-lg p-1 shadow-md w-full max-w-xs">
+        <div className="bg-white rounded-lg p-1 shadow-card border border-surface-subtle w-full max-w-xs">
           <button
             onClick={() => setViewMode("daily")}
-            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-all ${
+            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-colors ${
               viewMode === "daily"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-gray-600 hover:text-blue-600"
+                ? "bg-accent-600 text-white"
+                : "text-ink-muted hover:text-ink"
             }`}
           >
             Daily Report
           </button>
           <button
             onClick={() => setViewMode("monthly")}
-            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-all ${
+            className={`px-4 md:px-6 py-2 rounded-md font-medium transition-colors ${
               viewMode === "monthly"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-gray-600 hover:text-blue-600"
+                ? "bg-accent-600 text-white"
+                : "text-ink-muted hover:text-ink"
             }`}
           >
             Monthly Report
@@ -284,7 +287,7 @@ const AttendanceReport = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="p-2 border rounded"
+              className="p-2 border border-surface-subtle rounded-lg bg-white text-ink focus:ring-2 focus:ring-accent-500 focus:outline-none"
             />
           </div>
         </>
@@ -296,7 +299,7 @@ const AttendanceReport = () => {
           {/* Month Selector */}
           <div className="mb-6 text-center">
             <div className="max-w-md mx-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-ink-muted mb-2">
                 Select Month
               </label>
               <MonthPicker
@@ -313,62 +316,64 @@ const AttendanceReport = () => {
       {viewMode === "daily" && (
         <>
           {attendanceStatus === "Leave" || attendanceStatus.startsWith("Work from Home") ? (
-            <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-300 space-y-4">
+            <div className="max-w-4xl mx-auto bg-white shadow-card rounded-xl p-8 border border-surface-subtle space-y-4">
               <div className="mb-4">
-                <strong>Status: </strong>
-                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-600">
+                <strong className="text-ink">Status: </strong>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700">
                   {attendanceStatus}
                 </span>
               </div>
-              <p className="text-center text-lg text-gray-600">
+              <p className="text-center text-lg text-ink-muted">
                 {attendanceStatus.startsWith("Work from Home")
-                  ? `You are working from home on ${selectedDate}` 
+                  ? `You are working from home on ${selectedDate}`
                   : `You are on approved leave for ${selectedDate}`}
               </p>
             </div>
           ) : !attendance ? (
-            <div className="text-center text-xl text-gray-600">
-              No Attendance Found for {selectedDate}
-            </div>
+            <EmptyState
+              icon={FiCalendar}
+              title="No Attendance Found"
+              message={`No attendance record was found for ${selectedDate}.`}
+            />
           ) : (
-            <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-300 space-y-4">
+            <div className="max-w-4xl mx-auto bg-white shadow-card rounded-xl p-8 border border-surface-subtle space-y-4">
               <div className="mb-4">
-                <strong>Status: </strong>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  attendanceStatus === "Present" 
-                    ? "bg-green-100 text-green-600" 
-                    : attendanceStatus === "Present + Overtime" 
-                    ? "bg-green-200 text-green-800" 
-                    : attendanceStatus === "Half-Day" 
-                    ? "bg-orange-100 text-orange-600" 
-                    : attendanceStatus === "Incomplete" 
-                    ? "bg-yellow-100 text-yellow-600" 
-                    : attendanceStatus === "Leave" 
-                    ? "bg-blue-100 text-blue-600" 
-                    : attendanceStatus === "Work from Home - Present" 
-                    ? "bg-purple-100 text-purple-600" 
-                    : attendanceStatus === "Work from Home + Overtime" 
-                    ? "bg-purple-200 text-purple-800" 
-                    : attendanceStatus === "Work from Home - Half Day" 
-                    ? "bg-purple-50 text-purple-500" 
-                    : attendanceStatus === "Work from Home - Incomplete" 
-                    ? "bg-yellow-100 text-yellow-600" 
-                    : attendanceStatus === "Work from Home - Not Marked" 
-                    ? "bg-gray-100 text-gray-600" 
-                    : attendanceStatus === "Not Yet" 
-                    ? "bg-gray-100 text-gray-600" 
-                    : "bg-red-100 text-red-600"
+                <strong className="text-ink">Status: </strong>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  attendanceStatus === "Present"
+                    ? "bg-accent-100 text-accent-700"
+                    : attendanceStatus === "Present + Overtime"
+                    ? "bg-accent-100 text-accent-700"
+                    : attendanceStatus === "Half-Day"
+                    ? "bg-amber-100 text-amber-700"
+                    : attendanceStatus === "Incomplete"
+                    ? "bg-amber-100 text-amber-700"
+                    : attendanceStatus === "Leave"
+                    ? "bg-brand-100 text-brand-700"
+                    : attendanceStatus === "Work from Home - Present"
+                    ? "bg-brand-100 text-brand-700"
+                    : attendanceStatus === "Work from Home + Overtime"
+                    ? "bg-brand-100 text-brand-700"
+                    : attendanceStatus === "Work from Home - Half Day"
+                    ? "bg-brand-100 text-brand-700"
+                    : attendanceStatus === "Work from Home - Incomplete"
+                    ? "bg-amber-100 text-amber-700"
+                    : attendanceStatus === "Work from Home - Not Marked"
+                    ? "bg-surface-muted text-ink-muted"
+                    : attendanceStatus === "Not Yet"
+                    ? "bg-surface-muted text-ink-muted"
+                    : "bg-red-100 text-red-700"
                 }`}>
                   {attendanceStatus}
                 </span>
               </div>
-              <p>
+              <p className="text-ink">
                 <strong>In Time (IST):</strong> {attendance.inTime || "Not marked"}
               </p>
-              <p>
+              <p className="text-ink">
                 <strong>Out Time (IST):</strong> {attendance.outTime || "Not marked"}
               </p>
-              <p>
+              <p className="text-ink">
                 <strong>Work Mode:</strong> {attendance.workMode}
               </p>
 
@@ -376,9 +381,9 @@ const AttendanceReport = () => {
               {renderLocation(attendance.outLocation, "Out")}
 
               {attendance.breaks?.length > 0 && (
-                <div>
+                <div className="text-ink">
                   <strong>Breaks:</strong>
-                  <ul className="list-disc ml-6 mt-2">
+                  <ul className="list-disc ml-6 mt-2 text-ink-muted">
                     {attendance.breaks.map((b, idx) => (
                       <li key={idx}>
                         Break {idx + 1}: {b.start} - {b.end || "Ongoing"} (IST)
@@ -396,105 +401,109 @@ const AttendanceReport = () => {
       {viewMode === "monthly" && (
         <>
           {monthlyLoading ? (
-            <div className="p-8 text-center">Loading monthly attendance...</div>
+            <LoadingState message="Loading monthly attendance..." />
           ) : !selectedMonth ? (
-            <div className="text-center text-xl text-gray-600">
-              Please select a month to view monthly attendance report
-            </div>
+            <EmptyState
+              icon={FiCalendar}
+              title="Select a month"
+              message="Please select a month to view the monthly attendance report."
+            />
           ) : monthlyData.length === 0 ? (
-            <div className="text-center text-xl text-gray-600">
-              No attendance data found for the selected month
-            </div>
+            <EmptyState
+              icon={FiCalendar}
+              title="No data found"
+              message="No attendance data found for the selected month."
+            />
           ) : (
-            <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-300">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            <div className="max-w-6xl mx-auto bg-white shadow-card rounded-xl p-8 border border-surface-subtle">
+              <h3 className="text-xl font-semibold text-ink mb-6 text-center">
                 Monthly Attendance Report - {selectedMonth}
               </h3>
-              
+
               {/* Monthly Summary (memoized) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-green-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">{monthlySummary.present}</div>
-                  <div className="text-sm text-gray-600">Present Days</div>
+                <div className="bg-surface-muted p-4 rounded-lg text-center border border-surface-subtle">
+                  <div className="text-2xl font-semibold text-accent-600">{monthlySummary.present}</div>
+                  <div className="text-sm text-ink-muted">Present Days</div>
                 </div>
-                <div className="bg-red-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-red-600">{monthlySummary.absent}</div>
-                  <div className="text-sm text-gray-600">Absent Days</div>
+                <div className="bg-surface-muted p-4 rounded-lg text-center border border-surface-subtle">
+                  <div className="text-2xl font-semibold text-red-600">{monthlySummary.absent}</div>
+                  <div className="text-sm text-ink-muted">Absent Days</div>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-orange-600">{monthlySummary.halfDay}</div>
-                  <div className="text-sm text-gray-600">Half Days</div>
+                <div className="bg-surface-muted p-4 rounded-lg text-center border border-surface-subtle">
+                  <div className="text-2xl font-semibold text-amber-600">{monthlySummary.halfDay}</div>
+                  <div className="text-sm text-ink-muted">Half Days</div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600">{monthlySummary.wfh}</div>
-                  <div className="text-sm text-gray-600">Work from Home</div>
+                <div className="bg-surface-muted p-4 rounded-lg text-center border border-surface-subtle">
+                  <div className="text-2xl font-semibold text-brand-600">{monthlySummary.wfh}</div>
+                  <div className="text-sm text-ink-muted">Work from Home</div>
                 </div>
               </div>
 
               {/* Monthly Data Virtualized List */}
               <div className="overflow-x-auto">
                 {/* Desktop Header - Hidden on Mobile */}
-                <div className="hidden md:grid grid-cols-6 bg-gray-50 border border-gray-300">
-                  <div className="px-4 py-2 text-left font-semibold">Date</div>
-                  <div className="px-4 py-2 text-left font-semibold">Status</div>
-                  <div className="px-4 py-2 text-left font-semibold">In Time</div>
-                  <div className="px-4 py-2 text-left font-semibold">Out Time</div>
-                  <div className="px-4 py-2 text-left font-semibold">Work Mode</div>
-                  <div className="px-4 py-2 text-left font-semibold">Working Hours</div>
+                <div className="hidden md:grid grid-cols-6 bg-surface-muted border border-surface-subtle">
+                  <div className="px-4 py-2 text-left font-semibold text-ink">Date</div>
+                  <div className="px-4 py-2 text-left font-semibold text-ink">Status</div>
+                  <div className="px-4 py-2 text-left font-semibold text-ink">In Time</div>
+                  <div className="px-4 py-2 text-left font-semibold text-ink">Out Time</div>
+                  <div className="px-4 py-2 text-left font-semibold text-ink">Work Mode</div>
+                  <div className="px-4 py-2 text-left font-semibold text-ink">Working Hours</div>
                 </div>
-                
+
                 {/* Mobile View - Card Layout */}
                 <div className="md:hidden">
                   {monthlyData.map((record, index) => (
-                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border mb-3">
+                    <div key={index} className="bg-white p-4 rounded-lg shadow-card border border-surface-subtle mb-3">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-semibold">{formatDMY(record.date)}</div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        <div className="font-semibold text-ink">{formatDMY(record.date)}</div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           record.status === "Present"
-                            ? "bg-green-100 text-green-600"
+                            ? "bg-accent-100 text-accent-700"
                             : record.status === "Present + Overtime"
-                            ? "bg-green-200 text-green-800"
+                            ? "bg-accent-100 text-accent-700"
                             : record.status === "Half-Day"
-                            ? "bg-orange-100 text-orange-600"
+                            ? "bg-amber-100 text-amber-700"
                             : record.status === "Incomplete"
-                            ? "bg-yellow-100 text-yellow-600"
+                            ? "bg-amber-100 text-amber-700"
                             : record.status === "Leave"
-                            ? "bg-blue-100 text-blue-600"
+                            ? "bg-brand-100 text-brand-700"
                             : record.status === "Work from Home - Present"
-                            ? "bg-purple-100 text-purple-600"
+                            ? "bg-brand-100 text-brand-700"
                             : record.status === "Work from Home + Overtime"
-                            ? "bg-purple-200 text-purple-800"
+                            ? "bg-brand-100 text-brand-700"
                             : record.status === "Work from Home - Half Day"
-                            ? "bg-purple-50 text-purple-500"
+                            ? "bg-brand-100 text-brand-700"
                             : record.status === "Work from Home - Incomplete"
-                            ? "bg-yellow-100 text-yellow-600"
+                            ? "bg-amber-100 text-amber-700"
                             : record.status === "Work from Home - Not Marked"
-                            ? "bg-gray-100 text-gray-600"
+                            ? "bg-surface-muted text-ink-muted"
                             : record.status === "Not Yet"
-                            ? "bg-gray-100 text-gray-600"
-                            : "bg-red-100 text-red-600"
+                            ? "bg-surface-muted text-ink-muted"
+                            : "bg-red-100 text-red-700"
                         }`}>
                           {record.status}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2 text-sm text-ink">
                         <div>
-                          <span className="text-gray-500">In:</span> {record.inTime || "-"}
+                          <span className="text-ink-muted">In:</span> {record.inTime || "-"}
                         </div>
                         <div>
-                          <span className="text-gray-500">Out:</span> {record.outTime || "-"}
+                          <span className="text-ink-muted">Out:</span> {record.outTime || "-"}
                         </div>
                         <div>
-                          <span className="text-gray-500">Mode:</span> {record.workMode}
+                          <span className="text-ink-muted">Mode:</span> {record.workMode}
                         </div>
                         <div>
-                          <span className="text-gray-500">Hours:</span> {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
+                          <span className="text-ink-muted">Hours:</span> {record.workingHours && record.workingHours !== "0.00" ? `${record.workingHours}h` : "-"}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Desktop View - Virtualized List */}
                 <div className="hidden md:block">
                   <List
@@ -506,33 +515,33 @@ const AttendanceReport = () => {
                     {({ index, style }) => {
                       const record = monthlyData[index];
                       return (
-                        <div style={style} className="grid grid-cols-6 border border-gray-200 hover:bg-gray-50">
+                        <div style={style} className="grid grid-cols-6 border border-surface-subtle hover:bg-surface-muted text-ink">
                           <div className="px-4 py-2">{formatDMY(record.date)}</div>
                           <div className="px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               record.status === "Present"
-                                ? "bg-green-100 text-green-600"
+                                ? "bg-accent-100 text-accent-700"
                                 : record.status === "Present + Overtime"
-                                ? "bg-green-200 text-green-800"
+                                ? "bg-accent-100 text-accent-700"
                                 : record.status === "Half-Day"
-                                ? "bg-orange-100 text-orange-600"
+                                ? "bg-amber-100 text-amber-700"
                                 : record.status === "Incomplete"
-                                ? "bg-yellow-100 text-yellow-600"
+                                ? "bg-amber-100 text-amber-700"
                                 : record.status === "Leave"
-                                ? "bg-blue-100 text-blue-600"
+                                ? "bg-brand-100 text-brand-700"
                                 : record.status === "Work from Home - Present"
-                                ? "bg-purple-100 text-purple-600"
+                                ? "bg-brand-100 text-brand-700"
                                 : record.status === "Work from Home + Overtime"
-                                ? "bg-purple-200 text-purple-800"
+                                ? "bg-brand-100 text-brand-700"
                                 : record.status === "Work from Home - Half Day"
-                                ? "bg-purple-50 text-purple-500"
+                                ? "bg-brand-100 text-brand-700"
                                 : record.status === "Work from Home - Incomplete"
-                                ? "bg-yellow-100 text-yellow-600"
+                                ? "bg-amber-100 text-amber-700"
                                 : record.status === "Work from Home - Not Marked"
-                                ? "bg-gray-100 text-gray-600"
+                                ? "bg-surface-muted text-ink-muted"
                                 : record.status === "Not Yet"
-                                ? "bg-gray-100 text-gray-600"
-                                : "bg-red-100 text-red-600"
+                                ? "bg-surface-muted text-ink-muted"
+                                : "bg-red-100 text-red-700"
                             }`}>
                               {record.status}
                             </span>

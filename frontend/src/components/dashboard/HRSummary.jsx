@@ -30,32 +30,50 @@ import {
 } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import EmptyState from "../common/EmptyState";
+import LoadingState from "../common/LoadingState";
+import ErrorState from "../common/ErrorState";
 
-const StatCard = ({ icon: Icon, title, count, colorClass, gradient, onClick }) => {
+const PIE_COLORS = ["#2c3968", "#337038", "#8898cd", "#5da562", "#c9a227", "#b0bbdf"];
+
+const StatCard = ({ icon: Icon, title, count, colorClass, onClick }) => {
   return (
     <motion.div
-      whileHover={{ y: -5, scale: 1.02 }}
+      whileHover={{ y: -3 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl border border-white/10 p-5 md:p-6 shadow-xl backdrop-blur-md bg-gradient-to-br ${gradient} text-white cursor-pointer transition-shadow hover:shadow-2xl`}
+      className="rounded-xl border border-surface-subtle p-5 md:p-6 shadow-card bg-white text-ink cursor-pointer transition-shadow hover:shadow-panel"
     >
       <div className="flex justify-between items-center">
         <div>
-          <p className="text-white/70 text-xs md:text-sm font-semibold uppercase tracking-wider mb-1">
+          <p className="text-ink-muted text-xs md:text-sm font-medium uppercase tracking-wider mb-1">
             {title}
           </p>
-          <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+          <h3 className="text-2xl md:text-3xl font-semibold text-ink tracking-tight">
             <CountUp end={count} duration={1.5} separator="," />
           </h3>
         </div>
-        <div className={`p-3 md:p-4 rounded-xl bg-white/10 backdrop-blur-sm ${colorClass}`}>
+        <div className={`p-3 md:p-4 rounded-xl bg-surface-muted ${colorClass}`}>
           <Icon className="text-xl md:text-2xl" />
         </div>
       </div>
-      {/* Decorative ambient circle */}
-      <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
     </motion.div>
   );
 };
@@ -288,26 +306,20 @@ const HRSummary = () => {
 
   if (loading && !kpis) {
     return (
-      <div className="flex flex-col justify-center items-center h-[70vh] gap-4">
-        <FaSpinner className="animate-spin text-teal-600 text-5xl" />
-        <p className="text-gray-500 font-semibold text-lg animate-pulse">
-          Analyzing command center records...
-        </p>
+      <div className="flex flex-col justify-center items-center h-[70vh]">
+        <LoadingState message="Analyzing command center records…" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center max-w-lg mx-auto bg-red-50 border border-red-200 rounded-2xl shadow-md mt-10">
-        <h3 className="text-xl font-bold text-red-800 mb-2">Error Loading Dashboard</h3>
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={() => dispatch(fetchHRDashboardSummary())}
-          className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
-          Retry
-        </button>
+      <div className="mt-10 max-w-lg mx-auto">
+        <ErrorState
+          title="Error Loading Dashboard"
+          message={error}
+          onRetry={() => dispatch(fetchHRDashboardSummary())}
+        />
       </div>
     );
   }
@@ -327,52 +339,52 @@ const HRSummary = () => {
   })) || [];
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 min-h-screen text-slate-800">
+    <div className="p-4 md:p-6 bg-surface-muted min-h-screen text-ink">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
 
       {/* Header Block */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4 bg-gradient-to-r from-slate-900 to-indigo-950 p-6 md:p-8 rounded-3xl shadow-xl border border-slate-800 text-white">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4 bg-brand-800 p-6 md:p-8 rounded-2xl shadow-panel text-white">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3">
-            👑 HR Command Center
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
+            HR Command Center
           </h2>
-          <p className="text-indigo-200 text-sm mt-1">
+          <p className="text-brand-100 text-sm mt-1">
             Real-time hiring status, aggregates, onboarding checklists, and automated schedules.
           </p>
         </div>
         <div className="flex items-center gap-3 self-end lg:self-auto relative">
           <button
             onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-            className="flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg transition duration-200 font-medium"
+            className="flex items-center gap-2 px-5 py-2.5 bg-accent-600 hover:bg-accent-700 text-white rounded-lg shadow-sm transition-colors duration-150 font-medium"
           >
             <FaFileExcel className="text-lg" />
             <span>Export Reports</span>
           </button>
-          
+
           <AnimatePresence>
             {exportDropdownOpen && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute right-0 top-14 w-52 bg-white text-slate-800 border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden"
+                className="absolute right-0 top-14 w-52 bg-white text-ink border border-surface-subtle rounded-xl shadow-panel z-50 overflow-hidden"
               >
                 <div className="py-1">
                   <button
                     onClick={() => handleExport("recruitment")}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm font-semibold transition"
+                    className="w-full text-left px-4 py-3 hover:bg-surface-muted text-sm font-medium transition-colors"
                   >
                     Recruitment Funnel
                   </button>
                   <button
                     onClick={() => handleExport("offers")}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm font-semibold transition"
+                    className="w-full text-left px-4 py-3 hover:bg-surface-muted text-sm font-medium transition-colors"
                   >
                     Offers Tracker
                   </button>
                   <button
                     onClick={() => handleExport("employees")}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm font-semibold transition"
+                    className="w-full text-left px-4 py-3 hover:bg-surface-muted text-sm font-medium transition-colors"
                   >
                     Active Employees
                   </button>
@@ -454,31 +466,97 @@ const HRSummary = () => {
         </div>
       )}
 
+      {/* Analytics Charts */}
+      {recruitment && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white border border-surface-subtle rounded-xl shadow-card p-4 md:p-6">
+            <h4 className="text-base font-semibold text-ink mb-4">Recruitment Funnel</h4>
+            {recruitment.funnelData?.some((f) => f.count > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={recruitment.funnelData} layout="vertical" margin={{ left: 24 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: "#5b6376" }} />
+                  <YAxis type="category" dataKey="stage" width={130} tick={{ fontSize: 11, fill: "#5b6376" }} />
+                  <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#eef0f6", fontSize: 13 }} />
+                  <Bar dataKey="count" fill="#337038" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState title="No recruitment activity yet" message="Funnel stages will populate as candidates progress." />
+            )}
+          </div>
+
+          <div className="bg-white border border-surface-subtle rounded-xl shadow-card p-4 md:p-6">
+            <h4 className="text-base font-semibold text-ink mb-4">Payroll Status — {payroll?.month} {payroll?.year}</h4>
+            {payroll && (payroll.payrollProcessed || payroll.payrollPending) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Processed", value: payroll.payrollProcessed },
+                      { name: "Pending", value: payroll.payrollPending },
+                    ]}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
+                    <Cell fill="#337038" />
+                    <Cell fill="#dc2626" />
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#eef0f6", fontSize: 13 }} />
+                  <Legend wrapperStyle={{ fontSize: 13 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState title="No payroll data" message="Payroll status appears once payslips are generated." />
+            )}
+          </div>
+
+          <div className="bg-white border border-surface-subtle rounded-xl shadow-card p-4 md:p-6 lg:col-span-2">
+            <h4 className="text-base font-semibold text-ink mb-4">Hiring Trend (Last 6 Months)</h4>
+            {recruitment.monthlyHiringTrend?.some((m) => m.count > 0) ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={recruitment.monthlyHiringTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#5b6376" }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#5b6376" }} />
+                  <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#eef0f6", fontSize: 13 }} />
+                  <Line type="monotone" dataKey="count" stroke="#2c3968" strokeWidth={2} name="New Hires" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState title="No hiring activity yet" message="Hiring trend will appear once employees join." />
+            )}
+          </div>
+        </div>
+      )}
 
 
       {/* Action Queues (Verification, Conversion) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-sm">
-          <div className="flex border-b border-gray-200 mb-6">
+        <div className="lg:col-span-2 bg-white border border-surface-subtle rounded-xl p-5 md:p-6 shadow-card">
+          <div className="flex border-b border-surface-subtle mb-6">
             <button
               onClick={() => setActiveActionsTab("verifications")}
-              className={`pb-3 pr-6 text-sm font-bold border-b-2 transition duration-200 ${
+              className={`pb-3 pr-6 text-sm font-semibold border-b-2 transition-colors duration-150 ${
                 activeActionsTab === "verifications"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-800"
+                  ? "border-accent-600 text-accent-600"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
-              📄 Documents Pending ({uniquePendingCandidates.length})
+              Documents Pending ({uniquePendingCandidates.length})
             </button>
             <button
               onClick={() => setActiveActionsTab("conversions")}
-              className={`pb-3 pr-6 text-sm font-bold border-b-2 transition duration-200 ${
+              className={`pb-3 pr-6 text-sm font-semibold border-b-2 transition-colors duration-150 ${
                 activeActionsTab === "conversions"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-800"
+                  ? "border-accent-600 text-accent-600"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
-              🤝 Employee Conversion Ready ({pendingActions?.conversionsPending?.length || 0})
+              Employee Conversion Ready ({pendingActions?.conversionsPending?.length || 0})
             </button>
           </div>
 
@@ -489,21 +567,21 @@ const HRSummary = () => {
                   uniquePendingCandidates.map((candidate) => (
                     <div
                       key={candidate._id}
-                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-gray-100 rounded-xl gap-4 hover:shadow-md transition"
+                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-surface-muted border border-surface-subtle rounded-xl gap-4 hover:shadow-card transition-shadow"
                     >
                       <div>
-                        <h4 
-                          className="font-bold text-gray-800 text-sm cursor-pointer hover:text-indigo-600 transition"
+                        <h4
+                          className="font-semibold text-ink text-sm cursor-pointer hover:text-brand-600 transition-colors"
                           onClick={() => navigate(`/hr-dashboard/candidates/${candidate._id}`)}
                         >
                           {candidate.fullName}
                         </h4>
-                        <p className="text-gray-500 text-xs mt-1">
+                        <p className="text-ink-muted text-xs mt-1">
                           Role: {candidate.position || "Unspecified"}
                         </p>
                         <button
                           onClick={() => navigate(`/hr-dashboard/candidates/${candidate._id}`)}
-                          className="inline-block text-xs font-semibold text-blue-600 underline mt-2 hover:text-blue-800"
+                          className="inline-block text-xs font-semibold text-brand-600 underline mt-2 hover:text-brand-700"
                         >
                           View Document Details
                         </button>
@@ -511,7 +589,7 @@ const HRSummary = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-400 text-sm py-4 text-center">No documents waiting for verification.</p>
+                  <EmptyState title="All caught up" message="No documents waiting for verification." />
                 )}
               </div>
             )}
@@ -522,24 +600,24 @@ const HRSummary = () => {
                   pendingActions.conversionsPending.map((candidate) => (
                     <div
                       key={candidate._id}
-                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-gray-100 rounded-xl gap-4 hover:shadow-md transition"
+                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-surface-muted border border-surface-subtle rounded-xl gap-4 hover:shadow-card transition-shadow"
                     >
                       <div>
-                        <h4 className="font-bold text-gray-800 text-sm">{candidate.fullName}</h4>
-                        <p className="text-gray-500 text-xs mt-1">
+                        <h4 className="font-semibold text-ink text-sm">{candidate.fullName}</h4>
+                        <p className="text-ink-muted text-xs mt-1">
                           Position: {candidate.position} | Department: {candidate.department?.dep_name || "General"}
                         </p>
                       </div>
                       <button
                         onClick={() => handleConvertCandidate(candidate)}
-                        className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                        className="w-full sm:w-auto px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
                       >
                         <FaUserCheck /> Review Profile <FaArrowRight />
                       </button>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-400 text-sm py-4 text-center">No candidates ready for employee conversion.</p>
+                  <EmptyState title="Nothing to convert yet" message="No candidates ready for employee conversion." />
                 )}
               </div>
             )}
@@ -547,35 +625,35 @@ const HRSummary = () => {
         </div>
 
         {/* Quick Summary Panels: Leaves, Attendance, Payroll */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-surface-subtle rounded-xl p-5 md:p-6 shadow-card flex flex-col justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-              📊 Operational Summary
+            <h3 className="text-lg font-semibold text-ink mb-6">
+              Operational Summary
             </h3>
 
             {/* Attendance */}
             {attendance && (
               <div className="mb-6">
-                <h4 className="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold uppercase text-ink-faint tracking-wider mb-3 flex items-center gap-1.5">
                   <FaClock /> Attendance (Today)
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl">
-                    <p className="text-emerald-800 font-bold">{attendance.presentToday}</p>
-                    <p className="text-emerald-600 text-xs mt-0.5">Present</p>
+                  <div className="bg-accent-50 border border-accent-100 p-3 rounded-xl">
+                    <p className="text-accent-800 font-semibold">{attendance.presentToday}</p>
+                    <p className="text-accent-600 text-xs mt-0.5">Present</p>
                   </div>
-                  <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl">
-                    <p className="text-blue-800 font-bold">{attendance.wfhEmployees}</p>
-                    <p className="text-blue-600 text-xs mt-0.5 flex items-center gap-1">
+                  <div className="bg-brand-50 border border-brand-100 p-3 rounded-xl">
+                    <p className="text-brand-800 font-semibold">{attendance.wfhEmployees}</p>
+                    <p className="text-brand-600 text-xs mt-0.5 flex items-center gap-1">
                       <FaHome /> WFH
                     </p>
                   </div>
                   <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
-                    <p className="text-amber-800 font-bold">{attendance.lateEmployees}</p>
+                    <p className="text-amber-800 font-semibold">{attendance.lateEmployees}</p>
                     <p className="text-amber-600 text-xs mt-0.5">Late Arrivals</p>
                   </div>
                   <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl">
-                    <p className="text-rose-800 font-bold">{attendance.absentToday}</p>
+                    <p className="text-rose-800 font-semibold">{attendance.absentToday}</p>
                     <p className="text-rose-600 text-xs mt-0.5">Absent</p>
                   </div>
                 </div>
@@ -584,22 +662,22 @@ const HRSummary = () => {
 
             {/* Leaves */}
             {leaves && (
-              <div className="mb-6 border-t border-gray-100 pt-6">
-                <h4 className="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-1.5">
+              <div className="mb-6 border-t border-surface-subtle pt-6">
+                <h4 className="text-xs font-semibold uppercase text-ink-faint tracking-wider mb-3 flex items-center gap-1.5">
                   <FaCalendarAlt /> Leaves Status
                 </h4>
                 <div className="flex justify-between text-sm">
                   <div className="text-center">
-                    <p className="text-amber-600 font-bold text-lg">{leaves.pendingLeaves}</p>
-                    <p className="text-gray-500 text-xs">Pending</p>
+                    <p className="text-amber-600 font-semibold text-lg">{leaves.pendingLeaves}</p>
+                    <p className="text-ink-muted text-xs">Pending</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-emerald-600 font-bold text-lg">{leaves.approvedLeaves}</p>
-                    <p className="text-gray-500 text-xs">Approved</p>
+                    <p className="text-accent-600 font-semibold text-lg">{leaves.approvedLeaves}</p>
+                    <p className="text-ink-muted text-xs">Approved</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-rose-600 font-bold text-lg">{leaves.rejectedLeaves}</p>
-                    <p className="text-gray-500 text-xs">Rejected</p>
+                    <p className="text-rose-600 font-semibold text-lg">{leaves.rejectedLeaves}</p>
+                    <p className="text-ink-muted text-xs">Rejected</p>
                   </div>
                 </div>
               </div>
@@ -607,18 +685,18 @@ const HRSummary = () => {
 
             {/* Payroll */}
             {payroll && (
-              <div className="border-t border-gray-100 pt-6">
-                <h4 className="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-1.5">
+              <div className="border-t border-surface-subtle pt-6">
+                <h4 className="text-xs font-semibold uppercase text-ink-faint tracking-wider mb-3 flex items-center gap-1.5">
                   <FaFileInvoiceDollar /> Payroll: {payroll.month} {payroll.year}
                 </h4>
                 <div className="flex items-center gap-4 text-sm">
-                  <div className="flex-1 bg-slate-50 border border-gray-100 p-3 rounded-xl">
-                    <span className="text-emerald-700 font-bold">{payroll.payrollProcessed}</span>
-                    <span className="text-slate-500 text-xs block mt-0.5">Payslips Processed</span>
+                  <div className="flex-1 bg-surface-muted border border-surface-subtle p-3 rounded-xl">
+                    <span className="text-accent-700 font-semibold">{payroll.payrollProcessed}</span>
+                    <span className="text-ink-muted text-xs block mt-0.5">Payslips Processed</span>
                   </div>
-                  <div className="flex-1 bg-slate-50 border border-gray-100 p-3 rounded-xl">
-                    <span className="text-rose-700 font-bold">{payroll.payrollPending}</span>
-                    <span className="text-slate-500 text-xs block mt-0.5">Pending Action</span>
+                  <div className="flex-1 bg-surface-muted border border-surface-subtle p-3 rounded-xl">
+                    <span className="text-rose-700 font-semibold">{payroll.payrollPending}</span>
+                    <span className="text-ink-muted text-xs block mt-0.5">Pending Action</span>
                   </div>
                 </div>
               </div>
@@ -628,9 +706,9 @@ const HRSummary = () => {
       </div>
 
       {/* Calendar Section */}
-      <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm mb-8">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-          📅 Joint Schedules & Recruitment Calendar
+      <div className="bg-white border border-surface-subtle rounded-2xl p-6 shadow-card mb-8">
+        <h3 className="text-lg font-semibold text-ink mb-6">
+          Joint Schedules & Recruitment Calendar
         </h3>
         <div className="calendar-container">
           <FullCalendar
@@ -667,25 +745,25 @@ const HRSummary = () => {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                className="absolute right-0 bottom-16 bg-white border border-gray-200 p-3 rounded-2xl shadow-2xl flex flex-col gap-2 min-w-[200px]"
+                className="absolute right-0 bottom-16 bg-white border border-surface-subtle p-3 rounded-xl shadow-panel flex flex-col gap-2 min-w-[200px]"
               >
                 <button
                   onClick={() => {
                     setQuickActionsOpen(false);
                     navigate("/hr-dashboard/candidates");
                   }}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-semibold hover:bg-slate-50 rounded-xl text-slate-800 transition"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-semibold hover:bg-surface-muted rounded-lg text-ink transition-colors"
                 >
-                  <FaPlus className="text-teal-600" />
+                  <FaPlus className="text-accent-600" />
                   <span>Add Candidate</span>
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setQuickActionsOpen(!quickActionsOpen)}
-            className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-teal-500 rounded-full flex items-center justify-center text-white shadow-2xl hover:shadow-indigo-300 font-extrabold focus:outline-none"
+            className="w-14 h-14 bg-accent-600 hover:bg-accent-700 rounded-full flex items-center justify-center text-white shadow-panel transition-colors focus:outline-none"
           >
             <FaPlus className={`text-xl transition-transform duration-300 ${quickActionsOpen ? "rotate-45" : ""}`} />
           </motion.button>
@@ -705,43 +783,43 @@ const HRSummary = () => {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-100"
+              className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl shadow-panel p-6 border border-surface-subtle"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-800 text-lg">Verify Document</h3>
+                <h3 className="font-semibold text-ink text-lg">Verify Document</h3>
                 <button
                   onClick={() => {
                     setShowVerifyModal(false);
                     setSelectedDocId(null);
                     setVerificationComments("");
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition p-1.5 hover:bg-gray-100 rounded-full"
+                  className="text-ink-faint hover:text-ink-muted transition-colors p-1.5 hover:bg-surface-muted rounded-full"
                 >
                   <FaTimes size={18} />
                 </button>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Comments / Remarks
                 </label>
                 <textarea
                   value={verificationComments}
                   onChange={(e) => setVerificationComments(e.target.value)}
                   placeholder="Enter comments (mandatory for rejection)..."
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                  className="w-full border border-surface-subtle rounded-lg p-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-shadow"
                   rows={4}
                 />
               </div>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => handleVerifyDocument(selectedDocId, "Rejected")}
-                  className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 text-sm font-bold transition flex items-center gap-1.5"
+                  className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 text-sm font-semibold transition-colors flex items-center gap-1.5"
                 >
                   <FaTimes /> Reject
                 </button>
                 <button
                   onClick={() => handleVerifyDocument(selectedDocId, "Approved")}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition flex items-center gap-1.5 shadow-md hover:shadow-emerald-100"
+                  className="px-5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5"
                 >
                   <FaCheck /> Approve
                 </button>
@@ -758,16 +836,16 @@ const HRSummary = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4"
+            className="fixed inset-0 bg-brand-950/60 backdrop-blur-sm z-50 flex justify-center items-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-100 text-slate-800"
+              className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl shadow-panel p-6 border border-surface-subtle text-ink"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-800 text-lg">
+                <h3 className="font-semibold text-ink text-lg">
                   {isEditMode ? "Edit Onboarding Schedule" : "Schedule Candidate Onboarding"}
                 </h3>
                 <button
@@ -776,7 +854,7 @@ const HRSummary = () => {
                     setSelectedCandidateId("");
                     setOnboardingDate("");
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition p-1.5 hover:bg-gray-100 rounded-full"
+                  className="text-ink-faint hover:text-ink-muted transition-colors p-1.5 hover:bg-surface-muted rounded-full"
                 >
                   <FaTimes size={18} />
                 </button>
@@ -784,14 +862,14 @@ const HRSummary = () => {
 
               <form onSubmit={handleSaveOnboarding} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-ink mb-1">
                     Candidate
                   </label>
                   <select
                     value={selectedCandidateId}
                     onChange={(e) => setSelectedCandidateId(e.target.value)}
                     disabled={isEditMode}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition disabled:bg-slate-100 disabled:text-gray-500"
+                    className="w-full border border-surface-subtle rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-shadow disabled:bg-surface-muted disabled:text-ink-faint"
                     required
                   >
                     <option value="">Select Candidate...</option>
@@ -804,14 +882,14 @@ const HRSummary = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-ink mb-1">
                     Onboarding Date
                   </label>
                   <input
                     type="date"
                     value={onboardingDate}
                     onChange={(e) => setOnboardingDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    className="w-full border border-surface-subtle rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-shadow"
                     required
                   />
                 </div>
@@ -822,7 +900,7 @@ const HRSummary = () => {
                       type="button"
                       onClick={handleCancelOnboarding}
                       disabled={onboardingModalLoading}
-                      className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 text-sm font-bold transition flex items-center gap-1.5 mr-auto disabled:opacity-50"
+                      className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 text-sm font-semibold transition-colors flex items-center gap-1.5 mr-auto disabled:opacity-50"
                     >
                       Clear Schedule
                     </button>
@@ -834,14 +912,14 @@ const HRSummary = () => {
                       setSelectedCandidateId("");
                       setOnboardingDate("");
                     }}
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                    className="px-4 py-2 border border-surface-subtle text-ink-muted rounded-lg hover:bg-surface-muted text-sm font-medium transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={onboardingModalLoading}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition flex items-center gap-1.5 shadow-md hover:shadow-indigo-100 disabled:opacity-50"
+                    className="px-5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {onboardingModalLoading ? "Saving..." : "Save Schedule"}
                   </button>

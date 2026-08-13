@@ -54,11 +54,11 @@ const CreateTeam = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-bold mb-6">Create New Team</h2>
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-card border border-surface-subtle">
+      <h2 className="text-2xl font-semibold mb-6 text-brand-800">Create New Team</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
+          <label className="block text-ink text-sm font-medium mb-2">
             Team Name
           </label>
           <input
@@ -66,20 +66,20 @@ const CreateTeam = () => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
             required
           />
         </div>
 
         <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-ink text-sm font-medium mb-2">
                 Assign Team Lead
             </label>
             <select
                 name="leadId"
                 value={formData.leadId}
                 onChange={handleChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
                 required
             >
                 <option value="">Select Team Lead</option>
@@ -90,7 +90,7 @@ const CreateTeam = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
+          <label className="block text-ink text-sm font-medium mb-2">
             Start Date
           </label>
           <input
@@ -98,12 +98,12 @@ const CreateTeam = () => {
             name="startDate"
             value={formData.startDate}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
           />
         </div>
         <button
           type="submit"
-          className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700"
+          className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
         >
           Create Team
         </button>

@@ -1,9 +1,31 @@
 import React from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FiEye, FiEdit2, FiDollarSign, FiCalendar, FiTrash2 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
-import StatusToggle from "../components/employee/StatusToggle";
+import ActionIconButton from "../components/common/ActionIconButton";
 import { API_BASE } from "./apiConfig";
+
+const toggleEmployeeStatus = async (row) => {
+  const newStatus = row.status === "active" ? "inactive" : "active";
+  try {
+    const response = await axios.patch(
+      `${API_BASE}/api/employee/${row._id}/status`,
+      { status: newStatus },
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.data.success && row.onStatusChange) {
+      row.onStatusChange(row._id, newStatus);
+    }
+  } catch (error) {
+    alert("Error updating status: " + (error.response?.data?.error || error.message));
+  }
+};
 
 export const columns = [
   {
@@ -14,12 +36,23 @@ export const columns = [
   {
     name: "Employee ID",
     selector: (row) => row.employeeId,
-    width: "120px",
+    width: "130px",
   },
   {
     name: "Name",
     selector: (row) => row.name,
-    width: "120px",
+    width: "260px",
+    cell: (row) => (
+      <span className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => toggleEmployeeStatus(row)}
+          className={`w-2 h-2 rounded-full flex-shrink-0 cursor-pointer ${row.status === "active" ? "bg-accent-500" : "bg-red-500"}`}
+          title={`${row.status === "active" ? "Active" : "Inactive"} — click to ${row.status === "active" ? "deactivate" : "activate"}`}
+        />
+        <span className="truncate">{row.name}</span>
+      </span>
+    ),
   },
   {
     name: "Department",
@@ -32,32 +65,16 @@ export const columns = [
     width: "150px",
   },
   {
-    name: "DOB",
-    selector: (row) => row.dob,
-    width: "130px",
-  },
-  {
     name: "Joining Date",
     selector: (row) => row.joiningDate,
-    width: "130px",
-  },
-  {
-    name: "Status",
-    selector: (row) => row.status,
-    width: "100px",
-    cell: (row) => (
-      <StatusToggle
-        employeeId={row._id}
-        currentStatus={row.status}
-        onStatusChange={row.onStatusChange}
-      />
-    ),
+    width: "170px",
   },
   {
     name: "Action",
     selector: (row) => row.action,
     center: true,
-    width: "450px",
+    width: "220px",
+    allowOverflow: true,
   },
 ];
 
@@ -112,37 +129,12 @@ export const EmployeeButtons = ({ Id, onDelete }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-      <button
-        className="px-3 py-1.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-        onClick={() => navigate(`/admin-dashboard/employees/${Id}`)}
-      >
-        View
-      </button>
-      <button
-        className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-        onClick={() => navigate(`/admin-dashboard/employees/edit/${Id}`)}
-      >
-        Edit
-      </button>
-      <button 
-        className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-        onClick={() => navigate(`/admin-dashboard/employees/salary/${Id}`)}
-      >
-        Salary
-      </button>
-      <button 
-        className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-        onClick={() => navigate(`/admin-dashboard/employees/leaves/${Id}`)}
-      >
-        Leave
-      </button>
-      <button
-        className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-        onClick={() => onDelete(Id)}
-      >
-        Delete
-      </button>
+    <div className="grid grid-cols-3 gap-1 place-items-center">
+      <ActionIconButton icon={FiEye} label="View" color="brand" onClick={() => navigate(`/admin-dashboard/employees/${Id}`)} />
+      <ActionIconButton icon={FiEdit2} label="Edit" color="brand" onClick={() => navigate(`/admin-dashboard/employees/edit/${Id}`)} />
+      <ActionIconButton icon={FiDollarSign} label="Salary" color="accent" onClick={() => navigate(`/admin-dashboard/employees/salary/${Id}`)} />
+      <ActionIconButton icon={FiCalendar} label="Leave" color="accent" onClick={() => navigate(`/admin-dashboard/employees/leaves/${Id}`)} />
+      <ActionIconButton icon={FiTrash2} label="Delete" color="danger" onClick={() => onDelete(Id)} />
     </div>
   );
 };

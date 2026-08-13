@@ -253,8 +253,18 @@ const getUserNotifications = async (req, res) => {
     const { userId } = req.params;
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
-    const notifications = await Notification.find({ recipientId: userId }).populate('senderId', 'name email').sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit);
-    const totalNotifications = await Notification.countDocuments({ recipientId: userId });
+
+    const query = { recipientId: userId };
+    if (req.query.types) {
+      const types = req.query.types.split(',').map((t) => t.trim()).filter(Boolean);
+      if (types.length) query.type = { $in: types };
+    }
+    if (req.query.isRead === 'true' || req.query.isRead === 'false') {
+      query.isRead = req.query.isRead === 'true';
+    }
+
+    const notifications = await Notification.find(query).populate('senderId', 'name email').sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit);
+    const totalNotifications = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({ recipientId: userId, isRead: false });
     return res.status(200).json({ success: true, notifications, totalNotifications, unreadCount, currentPage: page, totalPages: Math.ceil(totalNotifications / limit) });
   } catch (err) {

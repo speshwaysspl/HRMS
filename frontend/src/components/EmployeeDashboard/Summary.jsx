@@ -20,6 +20,7 @@ import { API_BASE } from '../../utils/apiConfig'
 import { useNavigate } from 'react-router-dom'
 import { getEmployeeDailyMessage } from '../../utils/greetingUtils'
 import useMeta from '../../utils/useMeta'
+import ErrorState from '../common/ErrorState'
 
 const Summary = () => {
   const { user } = useAuth()
@@ -134,28 +135,28 @@ const Summary = () => {
     {
       title: 'Apply Leave',
       icon: <FaCalendarAlt />,
-      color: 'from-blue-500 to-blue-600',
+      color: 'bg-brand-600',
       description: 'Submit leave request',
       onClick: () => handleQuickActionClick('Apply Leave', '/employee-dashboard/add-leave')
     },
     {
       title: 'View Payslip',
       icon: <FaMoneyBillWave />,
-      color: 'from-green-500 to-green-600',
+      color: 'bg-accent-600',
       description: 'Download payslip',
       onClick: () => handleQuickActionClick('View Payslip', `/employee-dashboard/salary/${user._id}`)
     },
     {
       title: 'Mark Attendance',
       icon: <FaClock />,
-      color: 'from-purple-500 to-purple-600',
+      color: 'bg-brand-700',
       description: 'Check in/out',
       onClick: () => handleQuickActionClick('Mark Attendance', '/employee-dashboard/attendance')
     },
     {
       title: 'View Profile',
       icon: <FaUser />,
-      color: 'from-orange-500 to-orange-600',
+      color: 'bg-ink',
       description: 'Update details',
       onClick: () => handleQuickActionClick('View Profile', `/employee-dashboard/profile/${user._id}`)
     }
@@ -188,21 +189,21 @@ const Summary = () => {
       transition={{ duration: 0.3 }}
     >
       {/* Welcome section skeleton */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+      <div className="bg-white rounded-xl shadow-card p-6 border border-surface-subtle">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          <div className="h-8 bg-surface-muted rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-surface-muted rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-surface-muted rounded w-2/3"></div>
         </div>
       </div>
-      
+
       {/* Quick actions skeleton */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+      <div className="bg-white rounded-xl shadow-card p-6 border border-surface-subtle">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-6 bg-surface-muted rounded w-1/3 mb-4"></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
+              <div key={i} className="h-20 bg-surface-muted rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -219,16 +220,11 @@ const Summary = () => {
   if (error) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <FaExclamationTriangle className="text-4xl text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          title="Something went wrong"
+          message={error}
+          onRetry={() => window.location.reload()}
+        />
       </div>
     )
   }
@@ -243,51 +239,34 @@ const Summary = () => {
       animate="visible"
     >
       {/* Enhanced Welcome Section */}
-      <motion.div 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 md:p-8 text-white shadow-2xl"
+      <motion.div
+        className="relative overflow-hidden rounded-xl bg-brand-800 p-6 md:p-8 text-white shadow-panel"
         variants={itemVariants}
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-black/10">
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
-        </div>
-        
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-          <motion.div 
-            className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30"
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 300 }}
+          <div
+            className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center"
           >
-            <FaUser className="text-3xl text-white" />
-          </motion.div>
-          
+            <FaUser className="text-2xl text-white" />
+          </div>
+
           <div className="text-center sm:text-left flex-1">
-            <motion.p 
-              className="text-lg md:text-xl font-medium text-white/90 mb-1"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+            <p
+              className="text-base md:text-lg font-medium text-white/80 mb-1"
             >
-              {getGreeting()}, 
-            </motion.p>
-            <motion.h1 
-              className="text-2xl md:text-4xl font-bold text-white mb-2"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              {getGreeting()},
+            </p>
+            <h1
+              className="text-2xl md:text-3xl font-semibold text-white mb-2"
             >
               {user.name}
-            </motion.h1>
-            <motion.p 
-              className="text-white/80 text-sm md:text-base"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
+            </h1>
+            <p
+              className="text-white/75 text-sm md:text-base"
             >
               {motivationalMessage}
-            </motion.p>
+            </p>
           </div>
-          
 
         </div>
       </motion.div>
@@ -296,84 +275,39 @@ const Summary = () => {
 
       {/* Quick Actions Section */}
       <motion.div variants={itemVariants}>
-        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <FaChartLine className="text-indigo-600" />
+        <h2 className="text-xl md:text-2xl font-semibold text-ink mb-4 flex items-center gap-2">
+          <FaChartLine className="text-brand-600" />
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action, index) => {
             const isClicked = clickedAction === action.title
             return (
-              <motion.button
+              <button
                 key={index}
                 className={`
-                  group relative flex flex-col items-center space-y-3 py-4 px-4 rounded-lg 
-                  transition-all duration-500 text-white font-semibold tracking-wide
-                  ${isClicked 
-                    ? `bg-gradient-to-r from-teal-500 to-green-500 shadow-xl scale-105` 
-                    : `bg-gradient-to-r ${action.color} hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:shadow-xl hover:scale-105`
-                  }
+                  group relative flex flex-col items-center space-y-3 py-4 px-4 rounded-lg
+                  transition-colors duration-150 text-white font-medium tracking-wide
+                  ${isClicked ? 'bg-accent-700' : `${action.color} hover:opacity-90`}
                 `}
-                whileHover={{ 
-                  scale: isClicked ? 1.05 : 1.05
-                }}
-                whileTap={{ 
-                  scale: 0.98
-                }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 250,
-                  duration: 0.5
-                }}
                 onClick={action.onClick}
                 disabled={isClicked}
               >
-                {/* Animated Glow on Hover - matching sidebar */}
-                <motion.div
-                  className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100"
-                  initial={false}
-                  transition={{ duration: 0.3 }}
-                />
-                
-                {/* Click feedback overlay */}
-                {isClicked && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0 bg-white/20 rounded-lg z-10"
-                  />
-                )}
-                
-                {/* Icon with sidebar-style animation */}
-                <motion.span
-                  whileHover={{ scale: isClicked ? 1 : 1.3, rotate: isClicked ? 0 : 12 }}
-                  animate={{ 
-                    rotate: isClicked ? 360 : 0
-                  }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 250,
-                    duration: isClicked ? 0.5 : 0.3
-                  }}
-                  className="text-2xl relative z-20"
-                >
+                {/* Icon */}
+                <span className="text-2xl relative z-20">
                   {isClicked ? <FaSpinner className="animate-spin" /> : action.icon}
-                </motion.span>
-                
-                {/* Title with sidebar-style typography */}
-                <span className="text-sm font-semibold tracking-wide relative z-20">
+                </span>
+
+                {/* Title */}
+                <span className="text-sm font-medium tracking-wide relative z-20">
                   {isClicked ? 'Loading...' : action.title}
                 </span>
-                
-                {/* Chevron indicator like sidebar */}
-                <motion.div
-                  className="absolute top-2 right-2 text-xs opacity-70"
-                  whileHover={{ x: 2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
+
+                {/* Chevron indicator */}
+                <div className="absolute top-2 right-2 text-xs opacity-70">
                   <FaChevronRight />
-                </motion.div>
-              </motion.button>
+                </div>
+              </button>
             )
           })}
         </div>
@@ -381,25 +315,23 @@ const Summary = () => {
 
       {/* Attendance and Work Policy Guidance Section */}
       <motion.div variants={itemVariants} className="w-full">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+        <h2 className="text-xl md:text-2xl font-semibold text-ink mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
             <FaClock className="text-white text-lg" />
           </div>
           Attendance & Work Policy
         </h2>
-        <motion.div 
-          className="w-full bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300"
-          whileHover={{ y: -2 }}
-          transition={{ type: "spring", stiffness: 300 }}
+        <div
+          className="w-full bg-white rounded-xl p-6 md:p-8 border border-surface-subtle shadow-card"
         >
           {/* Header with icon */}
-          <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-100">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-              <FaClipboardList className="text-white text-2xl" />
+          <div className="flex items-center gap-4 mb-8 pb-6 border-b border-surface-subtle">
+            <div className="w-12 h-12 bg-brand-600 rounded-lg flex items-center justify-center">
+              <FaClipboardList className="text-white text-xl" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-800 mb-1">Important Guidelines</h3>
-              <p className="text-gray-600">Please follow these policies for smooth operations</p>
+              <h3 className="text-lg font-semibold text-ink mb-1">Important Guidelines</h3>
+              <p className="text-ink-muted">Please follow these policies for smooth operations</p>
             </div>
           </div>
 
@@ -407,72 +339,58 @@ const Summary = () => {
           <div className="grid gap-4 md:gap-6">
             {[
               {
-                icon: <FaCalendarCheck className="text-green-600" />,
+                icon: <FaCalendarCheck className="text-accent-600" />,
                 title: "Daily Attendance",
                 description: "Employees are required to mark their attendance daily.",
-                color: "from-green-50 to-emerald-50",
-                borderColor: "border-green-200",
-                iconBg: "bg-green-100"
+                iconBg: "bg-accent-100"
               },
               {
-                icon: <FaClock className="text-blue-600" />,
+                icon: <FaClock className="text-brand-600" />,
                 title: "Working Hours",
                 description: "A minimum of eight (8) working hours is mandatory to be considered a full working day.",
-                color: "from-blue-50 to-sky-50",
-                borderColor: "border-blue-200",
-                iconBg: "bg-blue-100"
+                iconBg: "bg-brand-100"
               },
               {
                 icon: <FaExclamationTriangle className="text-amber-600" />,
                 title: "Partial Attendance",
                 description: "Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.",
-                color: "from-amber-50 to-yellow-50",
-                borderColor: "border-amber-200",
                 iconBg: "bg-amber-100"
               },
               {
-                icon: <FaCoffee className="text-orange-600" />,
+                icon: <FaCoffee className="text-amber-600" />,
                 title: "Break Time Recording",
                 description: "It is mandatory to record break time on a daily basis.",
-                color: "from-orange-50 to-red-50",
-                borderColor: "border-orange-200",
-                iconBg: "bg-orange-100"
+                iconBg: "bg-amber-100"
               },
               {
-                icon: <FaCalendarAlt className="text-purple-600" />,
+                icon: <FaCalendarAlt className="text-brand-600" />,
                 title: "Leave & WFH Requests",
                 description: "Leave and Work From Home (WFH) requests must be submitted at least one day in advance.",
-                color: "from-purple-50 to-pink-50",
-                borderColor: "border-purple-200",
-                iconBg: "bg-purple-100"
+                iconBg: "bg-brand-100"
               }
             ].map((policy, index) => (
-              <motion.div
+              <div
                 key={index}
-                className={`w-full bg-gradient-to-r ${policy.color} rounded-xl p-5 border ${policy.borderColor} hover:shadow-lg hover:border-opacity-60 transition-all duration-300 group`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
+                className="w-full bg-surface-muted rounded-lg p-5 border border-surface-subtle hover:bg-surface-subtle/30 transition-colors duration-150 group"
               >
                 <div className="flex items-start gap-4 w-full">
-                  <div className={`flex-shrink-0 w-12 h-12 ${policy.iconBg} rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300`}>
+                  <div className={`flex-shrink-0 w-10 h-10 ${policy.iconBg} rounded-lg flex items-center justify-center`}>
                     {policy.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-gray-800 mb-2 text-base">{policy.title}</h4>
-                    <p className="text-sm text-gray-700 leading-relaxed">{policy.description}</p>
+                    <h4 className="font-semibold text-ink mb-2 text-base">{policy.title}</h4>
+                    <p className="text-sm text-ink-muted leading-relaxed">{policy.description}</p>
                   </div>
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200 group-hover:shadow-md transition-all duration-300">
-                      <span className="text-sm font-bold text-gray-600">{index + 1}</span>
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-surface-subtle">
+                      <span className="text-sm font-semibold text-ink-muted">{index + 1}</span>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
 

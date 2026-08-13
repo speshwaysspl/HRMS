@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FiEye, FiTrash2 } from "react-icons/fi";
+import ActionIconButton from "../components/common/ActionIconButton";
 import { API_BASE } from "./apiConfig";
 
 export const columns = [
@@ -73,19 +75,9 @@ export const LeaveButtons = ({ Id, onDelete }) => {
   };
 
   return (
-    <div className="flex gap-2">
-      <button
-        className="px-4 py-1 bg-teal-500 rounded text-white hover:bg-teal-600"
-        onClick={() => handleView(Id)}
-      >
-        View
-      </button>
-      <button
-        className="px-4 py-1 bg-red-500 rounded text-white hover:bg-red-600"
-        onClick={() => handleDelete(Id)}
-      >
-        Delete
-      </button>
+    <div className="flex items-center gap-1">
+      <ActionIconButton icon={FiEye} label="View" color="brand" onClick={() => handleView(Id)} />
+      <ActionIconButton icon={FiTrash2} label="Delete" color="danger" onClick={() => handleDelete(Id)} />
     </div>
   );
 };

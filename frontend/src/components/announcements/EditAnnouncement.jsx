@@ -69,7 +69,7 @@ const EditAnnouncement = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-6 flex items-center justify-center"
+      className="min-h-screen bg-surface-muted p-3 sm:p-6 flex items-center justify-center"
     >
       <Box
         p={{ xs: 2, sm: 3, md: 4 }}
@@ -77,16 +77,12 @@ const EditAnnouncement = () => {
         mx="auto"
         bgcolor="white"
         borderRadius={3}
-        boxShadow={6}
+        border="1px solid #eef0f6"
+        boxShadow="0 4px 16px rgba(28,35,51,0.08)"
       >
-        <motion.h2
-          className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent px-2"
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 120 }}
-        >
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-center mb-4 sm:mb-6 text-brand-800 px-2">
           Edit Announcement
-        </motion.h2>
+        </h2>
 
         <form onSubmit={handleSubmit}>
           <TextField
@@ -120,43 +116,35 @@ const EditAnnouncement = () => {
             }}
           />
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-              variant="contained"
-              component="label"
-              sx={{ 
-                mt: { xs: 1.5, sm: 2 }, 
-                mb: { xs: 1.5, sm: 2 },
-                background: "linear-gradient(to right, #2563eb, #06b6d4)",
-                fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                py: { xs: 1, sm: 1.25 },
-                px: { xs: 2, sm: 3 }
+          <Button
+            variant="outlined"
+            component="label"
+            sx={{
+              mt: { xs: 1.5, sm: 2 },
+              mb: { xs: 1.5, sm: 2 },
+              color: "#1c2333",
+              borderColor: "#eef0f6",
+              "&:hover": { borderColor: "#16a34a", bgcolor: "#f6f7fb" },
+              fontSize: { xs: '0.85rem', sm: '0.9rem' },
+              py: { xs: 1, sm: 1.25 },
+              px: { xs: 2, sm: 3 },
+              textTransform: 'none',
+            }}
+          >
+            Upload New Image
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={(e) => {
+                setImage(e.target.files[0]);
+                setPreview(URL.createObjectURL(e.target.files[0]));
               }}
-            >
-              Upload New Image
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={(e) => {
-                  setImage(e.target.files[0]);
-                  setPreview(URL.createObjectURL(e.target.files[0]));
-                }}
-              />
-            </Button>
-          </motion.div>
+            />
+          </Button>
 
           {preview && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              style={{ 
-                marginTop: "16px", 
-                textAlign: "center",
-                marginBottom: "16px"
-              }}
-            >
+            <div style={{ marginTop: "16px", textAlign: "center", marginBottom: "16px" }}>
               <img
                 src={preview}
                 alt={title ? `Preview: ${title}` : 'Announcement image preview'}
@@ -166,30 +154,29 @@ const EditAnnouncement = () => {
                   height: "120px",
                   objectFit: "cover",
                   borderRadius: "8px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
                 }}
               />
-            </motion.div>
+            </div>
           )}
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              sx={{
-                mt: { xs: 3, sm: 4 },
-                height: { xs: 42, sm: 45 },
-                fontWeight: "bold",
-                background: "linear-gradient(to right, #0d9488, #14b8a6)",
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                py: { xs: 1.25, sm: 1.5 }
-              }}
-            >
-              Update Announcement
-            </Button>
-          </motion.div>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: { xs: 3, sm: 4 },
+              height: { xs: 42, sm: 45 },
+              fontWeight: 600,
+              bgcolor: "#16a34a",
+              "&:hover": { bgcolor: "#15803d" },
+              boxShadow: 'none',
+              textTransform: 'none',
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              py: { xs: 1.25, sm: 1.5 }
+            }}
+          >
+            Update Announcement
+          </Button>
         </form>
       </Box>
     </motion.div>

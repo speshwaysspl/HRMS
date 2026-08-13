@@ -22,6 +22,7 @@ const notificationSchema = new mongoose.Schema({
       'documents_uploaded',
       'document_approved',
       'document_rejected',
+      'document_expiring',
       'verification_completed',
       'other'
     ]
@@ -57,6 +58,8 @@ const notificationSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+notificationSchema.index({ recipientId: 1, createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

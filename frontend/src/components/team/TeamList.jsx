@@ -47,11 +47,11 @@ const TeamList = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
 
   return (
     <motion.div
-      className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen"
+      className="p-6 bg-surface-muted min-h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -62,16 +62,13 @@ const TeamList = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.15 }}
       >
-        <h2
-          className="text-3xl font-bold text-gray-800"
-          style={{ fontFamily: "Times New Roman, serif" }}
-        >
+        <h2 className="text-2xl font-semibold text-brand-800">
           Teams
         </h2>
         {user?.role?.includes("admin") && (
           <Link
             to="/admin-dashboard/create-team"
-            className="bg-gradient-to-r from-teal-600 to-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+            className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
           >
             Create Team
           </Link>
@@ -79,23 +76,23 @@ const TeamList = () => {
       </motion.div>
 
       <motion.div
-        className="bg-white rounded-xl shadow-xl overflow-x-auto border hidden sm:block"
+        className="bg-white rounded-xl shadow-card overflow-x-auto border border-surface-subtle hidden sm:block"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.25 }}
       >
         <table className="min-w-full border-collapse">
-          <thead className="bg-indigo-50">
+          <thead className="bg-surface-muted">
             <tr>
-              <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Team Name</th>
-              <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Lead</th>
-              <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Members</th>
+              <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Team Name</th>
+              <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Lead</th>
+              <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Members</th>
               {user?.role?.includes("admin") && (
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-700">Action</th>
+                <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Action</th>
               )}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-surface-subtle">
             <AnimatePresence>
               {teams.map((team, index) => (
                 <motion.tr
@@ -104,18 +101,18 @@ const TeamList = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-blue-50 transition-colors cursor-pointer"
+                  className="hover:bg-surface-muted transition-colors cursor-pointer"
                   onClick={() => {
                     navigate(
                       user?.role?.includes("admin")
                         ? `/admin-dashboard/team/${team._id}`
-                        : `/team-lead-dashboard/team/${team._id}`
+                        : `/employee-dashboard/team/${team._id}`
                     );
                   }}
                 >
-                  <td className="px-5 py-4 font-medium text-gray-800">{team.name}</td>
-                  <td className="px-5 py-4 text-gray-600">{team.leadId?.name || "N/A"}</td>
-                  <td className="px-5 py-4 text-gray-600">{team.members?.length || 0}</td>
+                  <td className="px-5 py-4 font-medium text-ink">{team.name}</td>
+                  <td className="px-5 py-4 text-ink-muted">{team.leadId?.name || "N/A"}</td>
+                  <td className="px-5 py-4 text-ink-muted">{team.members?.length || 0}</td>
                   {user?.role?.includes("admin") && (
                     <td className="px-5 py-4">
                       <button
@@ -123,7 +120,7 @@ const TeamList = () => {
                           e.stopPropagation();
                           handleDelete(team._id);
                         }}
-                        className="text-red-500 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-50"
                         title="Delete Team"
                       >
                         <FaTrash />
@@ -135,7 +132,7 @@ const TeamList = () => {
             </AnimatePresence>
             {teams.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center p-8 text-gray-500">
+                <td colSpan={3} className="text-center p-8 text-ink-muted">
                   No teams found.
                 </td>
               </tr>
@@ -147,29 +144,29 @@ const TeamList = () => {
         {teams.map((team) => (
           <div
             key={team._id}
-            className="bg-white rounded-xl shadow border p-4 cursor-pointer"
+            className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 cursor-pointer"
             onClick={() => {
               navigate(
                 user?.role?.includes("admin")
                   ? `/admin-dashboard/team/${team._id}`
-                  : `/team-lead-dashboard/team/${team._id}`
+                  : `/employee-dashboard/team/${team._id}`
               );
             }}
           >
             <div className="flex justify-between items-center">
               <div>
-                <div className="font-bold text-gray-900">{team.name}</div>
-                <div className="text-xs text-gray-500">Members: {team.members?.length || 0}</div>
+                <div className="font-semibold text-ink">{team.name}</div>
+                <div className="text-xs text-ink-muted">Members: {team.members?.length || 0}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-right text-sm text-gray-600">Lead: <span className="font-semibold">{team.leadId?.name || "N/A"}</span></div>
+                <div className="text-right text-sm text-ink-muted">Lead: <span className="font-medium text-ink">{team.leadId?.name || "N/A"}</span></div>
                 {user?.role?.includes("admin") && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(team._id);
                     }}
-                    className="text-red-500 hover:text-red-700 p-2"
+                    className="text-red-600 hover:text-red-700 p-2"
                   >
                     <FaTrash />
                   </button>
@@ -179,7 +176,7 @@ const TeamList = () => {
           </div>
         ))}
         {teams.length === 0 && (
-          <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">No teams found.</div>
+          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-6 text-center text-ink-muted">No teams found.</div>
         )}
       </div>
     </motion.div>
