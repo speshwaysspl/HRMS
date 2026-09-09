@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class MyTeamsScreen extends StatefulWidget {
@@ -60,7 +61,7 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
                           CenteredMessage(icon: Icons.groups_outlined, message: 'No teams assigned to you yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _teams.map((t) => SimpleCard(
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(builder: (_) => TeamDetailScreen(id: t['_id'].toString(), name: t['name']?.toString() ?? 'Team')),
@@ -68,23 +69,23 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 40,
-                                      height: 40,
+                                      width: context.r(40),
+                                      height: context.r(40),
                                       decoration: BoxDecoration(color: AppColors.brand50, borderRadius: BorderRadius.circular(10)),
-                                      child: const Icon(Icons.groups_outlined, color: AppColors.brand600),
+                                      child: Icon(Icons.groups_outlined, color: AppColors.brand600, size: context.r(22)),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: context.w(12)),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(t['name']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                          const SizedBox(height: 2),
-                                          Text('${(t['members'] as List?)?.length ?? 0} members', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                          SizedBox(height: context.h(2)),
+                                          Text('${(t['members'] as List?)?.length ?? 0} members', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                         ],
                                       ),
                                     ),
-                                    const Icon(Icons.chevron_right, color: AppColors.inkFaint),
+                                    Icon(Icons.chevron_right, color: AppColors.inkFaint, size: context.r(24)),
                                   ],
                                 ),
                               )).toList(),
@@ -128,10 +129,10 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.w(16)),
               children: [
-                const Text('Members', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                const SizedBox(height: 10),
+                Text('Members', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                SizedBox(height: context.h(10)),
                 if (memberStats.isEmpty)
                   const CenteredMessage(icon: Icons.person_outline, message: 'No members in this team yet.')
                 else
@@ -142,24 +143,25 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                            radius: 18,
+                            radius: context.r(18),
                             backgroundColor: AppColors.brand100,
                             child: Text(
                               (user['name']?.toString().isNotEmpty == true ? user['name'].toString()[0] : '?').toUpperCase(),
                               style: const TextStyle(color: AppColors.brand700, fontWeight: FontWeight.w700),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: context.w(12)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(user['name']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                Text('${m['role'] ?? ''}', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                Text('${m['role'] ?? ''}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                               ],
                             ),
                           ),
-                          Text('${m['completed'] ?? 0}/${m['totalTasks'] ?? 0} tasks', style: const TextStyle(color: AppColors.inkFaint, fontSize: 12)),
+                          SizedBox(width: context.w(8)),
+                          Text('${m['completed'] ?? 0}/${m['totalTasks'] ?? 0} tasks', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
                         ],
                       ),
                     );

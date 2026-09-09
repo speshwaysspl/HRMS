@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/document_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -104,22 +105,23 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                           CenteredMessage(icon: Icons.description_outlined, message: 'No documents uploaded yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((d) => SimpleCard(
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.insert_drive_file_outlined, color: AppColors.inkMuted),
-                                    const SizedBox(width: 12),
+                                    Icon(Icons.insert_drive_file_outlined, color: AppColors.inkMuted, size: context.r(24)),
+                                    SizedBox(width: context.w(12)),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(d['documentType']?.toString() ?? 'Document', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                          const SizedBox(height: 2),
-                                          Text(d['originalName']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                          SizedBox(height: context.h(2)),
+                                          Text(d['originalName']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                         ],
                                       ),
                                     ),
+                                    SizedBox(width: context.w(8)),
                                     StatusPill(label: d['status']?.toString() ?? 'Pending'),
                                   ],
                                 ),

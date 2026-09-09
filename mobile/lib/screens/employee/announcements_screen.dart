@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/announcement_service.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                           CenteredMessage(icon: Icons.campaign_outlined, message: 'No announcements yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((a) {
                             String date = '';
                             try {
@@ -75,15 +76,15 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(a['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: context.h(4)),
                                   Text(
                                     a['description']?.toString() ?? '',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                                    style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(date, style: const TextStyle(color: AppColors.inkFaint, fontSize: 11)),
+                                  SizedBox(height: context.h(6)),
+                                  Text(date, style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(11))),
                                 ],
                               ),
                             );
@@ -125,17 +126,17 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.w(20)),
               children: [
                 if (_item?['imageUrl'] != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(_item!['imageUrl'].toString(), fit: BoxFit.cover),
                   ),
-                const SizedBox(height: 14),
-                Text(_item?['title']?.toString() ?? '', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                const SizedBox(height: 10),
-                Text(_item?['description']?.toString() ?? '', style: const TextStyle(color: AppColors.inkMuted, height: 1.5)),
+                SizedBox(height: context.h(14)),
+                Text(_item?['title']?.toString() ?? '', style: TextStyle(fontSize: context.sp(19), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                SizedBox(height: context.h(10)),
+                Text(_item?['description']?.toString() ?? '', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(14), height: 1.5)),
               ],
             ),
     );

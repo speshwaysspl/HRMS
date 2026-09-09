@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/api_client.dart';
 import '../../services/task_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -92,7 +93,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           CenteredMessage(icon: Icons.checklist_outlined, message: 'No tasks assigned yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _tasks.map((t) => _taskCard(t)).toList(),
                         ),
                 ),
@@ -118,30 +119,41 @@ class _TasksScreenState extends State<TasksScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
               ),
+              SizedBox(width: context.w(8)),
               StatusPill(label: t['status']?.toString() ?? 'Assigned'),
             ],
           ),
           if ((t['description'] ?? '').toString().isNotEmpty) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: context.h(6)),
             Text(
               t['description'].toString(),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
             ),
           ],
-          const SizedBox(height: 8),
-          Row(
+          SizedBox(height: context.h(8)),
+          Wrap(
+            spacing: context.w(14),
+            runSpacing: context.h(4),
             children: [
-              const Icon(Icons.flag_outlined, size: 14, color: AppColors.inkFaint),
-              const SizedBox(width: 4),
-              Text(t['priority']?.toString() ?? 'Medium', style: const TextStyle(fontSize: 12, color: AppColors.inkFaint)),
-              if (deadline.isNotEmpty) ...[
-                const SizedBox(width: 14),
-                const Icon(Icons.event_outlined, size: 14, color: AppColors.inkFaint),
-                const SizedBox(width: 4),
-                Text(deadline, style: const TextStyle(fontSize: 12, color: AppColors.inkFaint)),
-              ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.flag_outlined, size: context.r(14), color: AppColors.inkFaint),
+                  SizedBox(width: context.w(4)),
+                  Text(t['priority']?.toString() ?? 'Medium', style: TextStyle(fontSize: context.sp(12), color: AppColors.inkFaint)),
+                ],
+              ),
+              if (deadline.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.event_outlined, size: context.r(14), color: AppColors.inkFaint),
+                    SizedBox(width: context.w(4)),
+                    Text(deadline, style: TextStyle(fontSize: context.sp(12), color: AppColors.inkFaint)),
+                  ],
+                ),
             ],
           ),
         ],

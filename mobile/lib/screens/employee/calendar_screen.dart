@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/api_client.dart';
 import '../../services/event_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           CenteredMessage(icon: Icons.event_busy, message: 'No events scheduled.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _events.map((e) {
                             String date = '';
                             try {
@@ -84,19 +85,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: context.r(40),
+                                    height: context.r(40),
                                     decoration: BoxDecoration(color: AppColors.accent50, borderRadius: BorderRadius.circular(10)),
-                                    child: Icon(_iconFor(type), color: AppColors.accent700, size: 20),
+                                    child: Icon(_iconFor(type), color: AppColors.accent700, size: context.r(20)),
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: context.w(12)),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(e['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                        const SizedBox(height: 2),
-                                        Text(date, style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                        SizedBox(height: context.h(2)),
+                                        Text(date, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                       ],
                                     ),
                                   ),

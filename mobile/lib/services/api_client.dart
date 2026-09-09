@@ -1,19 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Same env-driven base URL pattern as frontend/src/utils/apiConfig.js
-/// (VITE_API_URL there, --dart-define=API_BASE_URL here). Falls back to
-/// 10.0.2.2 for the Android emulator talking to a host-machine backend.
-const String _apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:5001',
-);
+import '../env.dart';
 
 class ApiClient {
   ApiClient._internal() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: _apiBaseUrl,
+        baseUrl: Env.apiBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 20),
         headers: {'Content-Type': 'application/json'},

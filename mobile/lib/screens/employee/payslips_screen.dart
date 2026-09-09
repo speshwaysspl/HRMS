@@ -3,6 +3,7 @@ import 'package:open_filex/open_filex.dart';
 import '../../services/api_client.dart';
 import '../../services/payslip_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class PayslipsScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
                           CenteredMessage(icon: Icons.receipt_long_outlined, message: 'No payslips generated yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((p) => SimpleCard(
                                 onTap: () => _download(p),
                                 child: Row(
@@ -83,12 +84,13 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text('${p['monthName']} ${p['year']}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                          const SizedBox(height: 3),
-                                          Text('Net: ₹${p['netSalary']}', style: const TextStyle(color: AppColors.inkMuted, fontSize: 13)),
+                                          SizedBox(height: context.h(3)),
+                                          Text('Net: ₹${p['netSalary']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
                                         ],
                                       ),
                                     ),
-                                    const Icon(Icons.download_outlined, color: AppColors.brand600),
+                                    SizedBox(width: context.w(8)),
+                                    Icon(Icons.download_outlined, color: AppColors.brand600, size: context.r(24)),
                                   ],
                                 ),
                               )).toList(),

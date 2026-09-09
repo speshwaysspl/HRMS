@@ -368,4 +368,21 @@ const saveFcmToken = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, sendCustomNotification, saveFcmToken };
+const removeFcmToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const userId = (req.user && (req.user._id || req.user.id)) ? (req.user._id || req.user.id) : null;
+
+    if (!token || !userId) {
+      return res.status(400).json({ success: false, error: 'Token and User ID are required' });
+    }
+
+    await User.findByIdAndUpdate(userId, { $pull: { fcmTokens: token } });
+    return res.status(200).json({ success: true, message: 'Token removed' });
+  } catch (error) {
+    console.error('Error removing FCM token:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, sendCustomNotification, saveFcmToken, removeFcmToken };

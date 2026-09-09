@@ -11,6 +11,22 @@ class FeedbackService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  /// Admin: all feedback across the org, newest first.
+  Future<List<Map<String, dynamic>>> getAllFeedback() async {
+    final res = await _dio.get('/api/feedback/', queryParameters: {'limit': 200});
+    final data = (res.data as Map)['data'] as Map? ?? {};
+    final list = data['feedbacks'] as List? ?? [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// Admin: respond to / update the status of a feedback item.
+  Future<void> respond(String id, {String? status, String? adminResponse}) async {
+    await _dio.put('/api/feedback/$id/status', data: {
+      if (status != null) 'status': status,
+      if (adminResponse != null && adminResponse.isNotEmpty) 'adminResponse': adminResponse,
+    });
+  }
+
   Future<void> submit({
     required String title,
     required String category,

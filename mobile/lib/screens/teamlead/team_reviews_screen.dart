@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -64,7 +65,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
                           ),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((r) {
                             final employee = r['employeeId'] as Map? ?? {};
                             final user = employee['userId'] as Map? ?? {};
@@ -76,11 +77,12 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                        const SizedBox(height: 3),
-                                        Text('${r['cycle'] ?? ''}  ·  Overall: ${r['overallRating'] ?? '-'}/5', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                        SizedBox(height: context.h(3)),
+                                        Text('${r['cycle'] ?? ''}  ·  Overall: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                       ],
                                     ),
                                   ),
+                                  SizedBox(width: context.w(8)),
                                   StatusPill(label: r['status']?.toString() ?? 'Draft'),
                                 ],
                               ),

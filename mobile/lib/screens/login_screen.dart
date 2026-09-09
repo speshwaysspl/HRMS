@@ -1,7 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 import 'shell/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,6 +26,18 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  static final Uri _termsUrl = Uri.parse('https://www.speshway.com/terms-of-service');
+  static final Uri _privacyUrl = Uri.parse('https://www.speshway.com/privacy-policy');
+
+  Future<void> _openUrl(Uri url) async {
+    final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open ${url.host}')),
+      );
+    }
   }
 
   Future<void> _submit() async {
@@ -50,21 +65,48 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.brand900,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              _buildBrandHeader(),
-              const SizedBox(height: 40),
-              _buildLoginCard(),
-              const SizedBox(height: 16),
-              const Text(
-                'By signing in you agree to our Terms & Conditions and Privacy Policy.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(horizontal: context.w(24), vertical: context.h(32)),
+          child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: context.isTablet ? 440 : double.infinity),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: context.h(24)),
+                _buildBrandHeader(),
+                SizedBox(height: context.h(40)),
+                _buildLoginCard(),
+                SizedBox(height: context.h(16)),
+                Text.rich(
+                  TextSpan(
+                    text: 'By signing in you agree to our ',
+                    children: [
+                      TextSpan(
+                        text: 'Terms of Service',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_termsUrl),
+                      ),
+                      const TextSpan(text: ' and '),
+                      TextSpan(
+                        text: 'Privacy Policy',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_privacyUrl),
+                      ),
+                      const TextSpan(text: '.'),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white54, fontSize: context.sp(12)),
+                ),
+              ],
+            ),
+          ),
           ),
         ),
       ),
@@ -75,21 +117,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Container(
-          width: 64,
-          height: 64,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
           ),
-          alignment: Alignment.center,
-          child: const Text(
-            'S',
-            style: TextStyle(
-              color: AppColors.brand700,
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          child: Image.asset('assets/logo.png', width: 56, height: 56),
         ),
         const SizedBox(height: 16),
         const Text(

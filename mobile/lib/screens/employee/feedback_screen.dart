@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/feedback_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -80,7 +81,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           CenteredMessage(icon: Icons.chat_bubble_outline, message: 'No feedback submitted yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((f) {
                             final response = f['adminResponse'] as Map?;
                             return SimpleCard(
@@ -90,19 +91,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                   Row(
                                     children: [
                                       Expanded(child: Text(f['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
+                                      SizedBox(width: context.w(8)),
                                       StatusPill(label: f['status']?.toString() ?? 'Pending'),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(f['category']?.toString() ?? '', style: const TextStyle(color: AppColors.inkFaint, fontSize: 11)),
-                                  const SizedBox(height: 6),
-                                  Text(f['description']?.toString() ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.inkMuted, fontSize: 13)),
+                                  SizedBox(height: context.h(4)),
+                                  Text(f['category']?.toString() ?? '', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(11))),
+                                  SizedBox(height: context.h(6)),
+                                  Text(f['description']?.toString() ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
                                   if (response != null && response['message'] != null) ...[
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: context.h(8)),
                                     Container(
-                                      padding: const EdgeInsets.all(10),
+                                      padding: EdgeInsets.all(context.w(10)),
                                       decoration: BoxDecoration(color: AppColors.surfaceMuted, borderRadius: BorderRadius.circular(8)),
-                                      child: Text('HR: ${response['message']}', style: const TextStyle(fontSize: 12, color: AppColors.inkMuted)),
+                                      child: Text('HR: ${response['message']}', style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
                                     ),
                                   ],
                                 ],
@@ -156,54 +158,56 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.w(20)),
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Submit Feedback', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (v) => setState(() => _category = v ?? _category),
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _descController,
-                maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Description'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-              ),
-              CheckboxListTile(
-                value: _anonymous,
-                onChanged: (v) => setState(() => _anonymous = v ?? false),
-                title: const Text('Submit anonymously', style: TextStyle(fontSize: 13)),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Submit'),
-              ),
-              const SizedBox(height: 8),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Submit Feedback', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                SizedBox(height: context.h(16)),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                SizedBox(height: context.h(14)),
+                DropdownButtonFormField<String>(
+                  initialValue: _category,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setState(() => _category = v ?? _category),
+                ),
+                SizedBox(height: context.h(14)),
+                TextFormField(
+                  controller: _descController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                CheckboxListTile(
+                  value: _anonymous,
+                  onChanged: (v) => setState(() => _anonymous = v ?? false),
+                  title: Text('Submit anonymously', style: TextStyle(fontSize: context.sp(13))),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+                SizedBox(height: context.h(10)),
+                ElevatedButton(
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Submit'),
+                ),
+                SizedBox(height: context.h(8)),
+              ],
+            ),
           ),
         ),
       ),

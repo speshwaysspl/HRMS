@@ -120,8 +120,12 @@ export const updateDocumentStatus = async (req, res) => {
     const { id } = req.params;
     const { status, comments } = req.body;
     
-    // Check permissions - Admin and Team Lead can update
-    if (req.user.role !== "admin" && req.user.role !== "team_lead") {
+    // Check permissions - Admin and Team Lead can update. req.user.role is an
+    // array of roles on the JWT, so normalise before comparing.
+    const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isAdmin = roles.includes("admin");
+    const isTeamLead = roles.includes("team_lead");
+    if (!isAdmin && !isTeamLead) {
         return res.status(403).json({ success: false, error: "Access denied" });
     }
 
@@ -131,7 +135,7 @@ export const updateDocumentStatus = async (req, res) => {
     }
 
     // Additional check for Team Lead: ensure document belongs to a team member
-    if (req.user.role === "team_lead") {
+    if (isTeamLead && !isAdmin) {
          const teams = await Team.find({ leadId: req.user._id });
          const memberEmployeeIds = teams.flatMap(team => team.members.map(m => m.employeeId.toString()));
          

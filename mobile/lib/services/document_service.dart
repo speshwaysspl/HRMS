@@ -10,6 +10,14 @@ class DocumentService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  /// Admin: 'Approved' | 'Rejected' | 'Pending', with an optional comment.
+  Future<void> setStatus(String id, String status, {String? comments}) async {
+    await _dio.put('/api/document/$id/status', data: {
+      'status': status,
+      if (comments != null && comments.isNotEmpty) 'comments': comments,
+    });
+  }
+
   Future<void> upload({
     required String filePath,
     required String fileName,

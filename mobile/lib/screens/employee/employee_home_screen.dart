@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_client.dart';
 import '../../services/auth_provider.dart';
+import '../../services/app_events.dart';
 import '../../services/dashboard_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/summary_card.dart';
 
@@ -24,6 +27,15 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   void initState() {
     super.initState();
     _load();
+    AppEvents.attendanceChanged.addListener(_load);
+    AppEvents.leaveChanged.addListener(_load);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.attendanceChanged.removeListener(_load);
+    AppEvents.leaveChanged.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -52,6 +64,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     final user = context.watch<AuthProvider>().user;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Speshway HRMS'),
       ),
@@ -86,23 +99,30 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     final leave = _stats?['leaveBalance'] as Map<String, dynamic>? ?? {};
     final employee = _stats?['employee'] as Map<String, dynamic>? ?? {};
 
+    final pad = context.w(16);
+    final gap = context.h(20);
+    // Cell height that always fits the 44px icon box + card padding + 2 text
+    // lines, then derive the grid aspect ratio from the real available width.
+    final cardW = (context.screenW - pad * 2 - context.w(10)) / context.gridColumns();
+    final cardH = context.r(44) + context.h(40);
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(pad),
       children: [
         Text(
-          'Welcome back, ${name.split(' ').first}',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink),
+          'Welcome back, $name',
+          style: TextStyle(fontSize: context.sp(20), fontWeight: FontWeight.w700, color: AppColors.ink),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: context.h(4)),
         Text(
           '${employee['designation'] ?? ''} · ${employee['department'] ?? ''}',
-          style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+          style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: gap),
 
         // Today's attendance card
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.w(16)),
           decoration: BoxDecoration(
             color: AppColors.brand900,
             borderRadius: BorderRadius.circular(AppRadius.panel),
@@ -111,18 +131,19 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             children: [
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Today's Status", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    const SizedBox(height: 6),
+                    Text("Today's Status", style: TextStyle(color: Colors.white70, fontSize: context.sp(12))),
+                    SizedBox(height: context.h(6)),
                     Text(
                       (today['status'] ?? 'Not Marked').toString(),
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: Colors.white, fontSize: context.sp(18), fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: context.h(6)),
                     Text(
                       'In: ${today['inTime'] ?? '--:--'}   Out: ${today['outTime'] ?? '--:--'}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: Colors.white70, fontSize: context.sp(12)),
                     ),
                   ],
                 ),
@@ -130,22 +151,22 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               Icon(
                 (today['status']?.toString().contains('Present') ?? false) ? Icons.check_circle : Icons.access_time,
                 color: AppColors.accent400,
-                size: 36,
+                size: context.r(36),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: gap),
 
-        const Text('This Month', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-        const SizedBox(height: 10),
+        Text('This Month', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+        SizedBox(height: context.h(10)),
         GridView.count(
-          crossAxisCount: 2,
+          crossAxisCount: context.gridColumns(),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 2.4,
+          mainAxisSpacing: context.h(10),
+          crossAxisSpacing: context.w(10),
+          childAspectRatio: cardW / cardH,
           children: [
             SummaryCard(
               icon: Icons.event_available,
@@ -173,12 +194,12 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        const Text('Quick Status', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-        const SizedBox(height: 10),
+        SizedBox(height: gap),
+        Text('Quick Status', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+        SizedBox(height: context.h(10)),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: context.w(8),
+          runSpacing: context.h(8),
           children: [
             StatusPill(label: (today['status'] ?? 'Not Marked').toString()),
             if ((leave['pendingRequests'] ?? 0) > 0) const StatusPill(label: 'Pending'),

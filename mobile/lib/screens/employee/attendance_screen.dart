@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_client.dart';
+import '../../services/app_events.dart';
 import '../../services/attendance_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/status_pill.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -56,6 +59,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       await _service.checkIn(date: _todayDate, inTime: _nowTime);
       await _load();
+      AppEvents.bumpAttendance();
       if (mounted) _toast('Checked in at $_nowTime');
     } catch (e) {
       if (mounted) _toast(extractErrorMessage(e), isError: true);
@@ -69,6 +73,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       await _service.checkOut(date: _todayDate, outTime: _nowTime);
       await _load();
+      AppEvents.bumpAttendance();
       if (mounted) _toast('Checked out at $_nowTime');
     } catch (e) {
       if (mounted) _toast(extractErrorMessage(e), isError: true);
@@ -92,18 +97,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final hasCheckedOut = _today != null && _today!['outTime'] != null;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Attendance')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(context.w(24)),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
+                        SizedBox(height: context.h(12)),
                         OutlinedButton(onPressed: _load, child: const Text('Retry')),
                       ],
                     ),
@@ -112,12 +118,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.w(16)),
                     children: [
                       _buildCheckCard(hasCheckedIn, hasCheckedOut),
-                      const SizedBox(height: 24),
-                      const Text('Recent History', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                      const SizedBox(height: 10),
+                      SizedBox(height: context.h(24)),
+                      Text('Recent History', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                      SizedBox(height: context.h(10)),
                       if (_history.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
@@ -133,7 +139,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildCheckCard(bool hasCheckedIn, bool hasCheckedOut) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(context.w(18)),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.panel),
@@ -143,20 +149,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-              style: const TextStyle(color: AppColors.inkMuted, fontSize: 13)),
-          const SizedBox(height: 12),
+              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+          SizedBox(height: context.h(12)),
           Row(
             children: [
               Expanded(
                 child: _timeBlock('Check In', _today?['inTime']?.toString() ?? '--:--'),
               ),
-              Container(width: 1, height: 40, color: AppColors.surfaceSubtle),
+              Container(width: 1, height: context.h(40), color: AppColors.surfaceSubtle),
               Expanded(
                 child: _timeBlock('Check Out', _today?['outTime']?.toString() ?? '--:--'),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: context.h(18)),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -186,9 +192,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink)),
+        Text(label, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+        SizedBox(height: context.h(4)),
+        Text(value, style: TextStyle(fontSize: context.sp(20), fontWeight: FontWeight.w700, color: AppColors.ink)),
       ],
     );
   }
@@ -204,8 +210,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final status = hasOut ? 'Present' : (record['inTime'] != null ? 'Pending' : 'Absent');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: EdgeInsets.only(bottom: context.h(8)),
+      padding: EdgeInsets.symmetric(horizontal: context.w(14), vertical: context.h(12)),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
@@ -217,15 +223,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink, fontSize: 13)),
-                const SizedBox(height: 3),
+                Text(formattedDate, style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink, fontSize: context.sp(13))),
+                SizedBox(height: context.h(3)),
                 Text(
                   'In: ${record['inTime'] ?? '--:--'}   Out: ${record['outTime'] ?? '--:--'}',
-                  style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
+                  style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
                 ),
               ],
             ),
           ),
+          SizedBox(width: context.w(8)),
           StatusPill(label: status),
         ],
       ),

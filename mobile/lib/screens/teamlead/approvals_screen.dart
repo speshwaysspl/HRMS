@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class ApprovalsScreen extends StatefulWidget {
@@ -75,7 +76,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                           CenteredMessage(icon: Icons.fact_check_outlined, message: 'No pending correction requests.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((r) {
                             final id = r['_id'].toString();
                             final employee = r['employeeId'] as Map? ?? {};
@@ -86,11 +87,11 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                  const SizedBox(height: 4),
-                                  Text('${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text('Reason: ${r['reason']}', style: const TextStyle(color: AppColors.inkFaint, fontSize: 12)),
-                                  const SizedBox(height: 10),
+                                  SizedBox(height: context.h(4)),
+                                  Text('${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                  SizedBox(height: context.h(4)),
+                                  Text('Reason: ${r['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
+                                  SizedBox(height: context.h(10)),
                                   Row(
                                     children: [
                                       Expanded(
@@ -100,7 +101,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                                           child: const Text('Reject'),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      SizedBox(width: context.w(10)),
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: busy ? null : () => _decide(id, 'Approved'),

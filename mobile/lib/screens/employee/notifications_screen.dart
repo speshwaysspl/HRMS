@@ -5,6 +5,7 @@ import '../../services/api_client.dart';
 import '../../services/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -85,7 +86,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           CenteredMessage(icon: Icons.notifications_none, message: 'No notifications yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((n) {
                             final isRead = n['isRead'] == true;
                             String date = '';
@@ -98,9 +99,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 children: [
                                   if (!isRead)
                                     Container(
-                                      width: 8,
-                                      height: 8,
-                                      margin: const EdgeInsets.only(right: 10),
+                                      width: context.r(8),
+                                      height: context.r(8),
+                                      margin: EdgeInsets.only(right: context.w(10)),
                                       decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
                                     ),
                                   Expanded(
@@ -114,10 +115,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             color: AppColors.ink,
                                           ),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text(n['message']?.toString() ?? '', style: const TextStyle(color: AppColors.inkMuted, fontSize: 13)),
-                                        const SizedBox(height: 4),
-                                        Text(date, style: const TextStyle(color: AppColors.inkFaint, fontSize: 11)),
+                                        SizedBox(height: context.h(3)),
+                                        Text(n['message']?.toString() ?? '', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+                                        SizedBox(height: context.h(4)),
+                                        Text(date, style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(11))),
                                       ],
                                     ),
                                   ),

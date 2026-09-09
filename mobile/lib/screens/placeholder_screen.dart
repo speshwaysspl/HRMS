@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 /// Used for modules that exist on the web app but haven't been ported to
 /// mobile yet, so every role has a fully navigable shell from day one.
@@ -17,27 +18,30 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final box = context.r(72);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(context.w(32)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
-                child: Icon(icon, size: 32, color: AppColors.brand500),
+                width: box,
+                height: box,
+                decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                child: Icon(icon, size: context.r(32), color: AppColors.brand500),
               ),
-              const SizedBox(height: 16),
-              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              const SizedBox(height: 8),
+              SizedBox(height: context.h(16)),
+              Text(title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+              SizedBox(height: context.h(8)),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
               ),
             ],
           ),

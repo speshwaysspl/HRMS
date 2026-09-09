@@ -1,3 +1,9 @@
+# Firebase Admin service account / private keys — never commit
+service-account.json
+*-firebase-adminsdk-*.json
+/google-services.json
+/GoogleService-Info.plist
+
 # Dependencies
 node_modules/
 npm-debug.log*

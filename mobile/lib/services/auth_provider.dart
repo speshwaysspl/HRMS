@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import 'api_client.dart';
+import 'push_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -19,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
       try {
         user = AppUser.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
         status = AuthStatus.authenticated;
+        unawaited(PushService.instance.registerForUser());
       } catch (_) {
         status = AuthStatus.unauthenticated;
       }
@@ -43,6 +46,7 @@ class AuthProvider extends ChangeNotifier {
         user = AppUser.fromJson(userMap);
         status = AuthStatus.authenticated;
         notifyListeners();
+        unawaited(PushService.instance.registerForUser());
         return true;
       }
       lastError = data['error']?.toString() ?? 'Login failed';
@@ -54,6 +58,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await PushService.instance.unregisterForUser();
     await _api.clearSession();
     user = null;
     status = AuthStatus.unauthenticated;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 class StatusPill extends StatelessWidget {
   final String label;
@@ -8,7 +9,7 @@ class StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: context.w(10), vertical: context.h(4)),
       decoration: BoxDecoration(
         color: StatusColors.bg(label),
         borderRadius: BorderRadius.circular(999),
@@ -17,7 +18,7 @@ class StatusPill extends StatelessWidget {
         label,
         style: TextStyle(
           color: StatusColors.fg(label),
-          fontSize: 12,
+          fontSize: context.sp(12),
           fontWeight: FontWeight.w600,
         ),
       ),

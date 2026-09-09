@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
+import '../admin/admin_employees_screen.dart';
+import '../admin/admin_home_screen.dart';
+import '../admin/admin_leaves_screen.dart';
 import '../employee/attendance_screen.dart';
 import '../employee/employee_home_screen.dart';
 import '../employee/leaves_screen.dart';
-import '../more_screen.dart';
 import '../placeholder_screen.dart';
 import '../profile_screen.dart';
 
@@ -48,13 +50,9 @@ class _AppShellState extends State<AppShell> {
     switch (role) {
       case 'admin':
         return [
-          _TabSpec('Home', Icons.dashboard_outlined,
-              const PlaceholderScreen(title: 'Admin Dashboard', icon: Icons.dashboard_outlined,
-                  message: 'Org-wide analytics are on the web Admin dashboard for now — mobile support is next.')),
-          _TabSpec('Employees', Icons.groups_outlined,
-              const PlaceholderScreen(title: 'Employees', icon: Icons.groups_outlined)),
-          _TabSpec('Approvals', Icons.fact_check_outlined,
-              const PlaceholderScreen(title: 'Approvals', icon: Icons.fact_check_outlined)),
+          _TabSpec('Home', Icons.dashboard_outlined, const AdminHomeScreen()),
+          _TabSpec('Leaves', Icons.beach_access_outlined, const AdminLeavesScreen()),
+          _TabSpec('Employees', Icons.groups_outlined, const AdminEmployeesScreen()),
           _TabSpec('Profile', Icons.person_outline, const ProfileScreen()),
         ];
       case 'hr':
@@ -79,13 +77,12 @@ class _AppShellState extends State<AppShell> {
       case 'employee':
       default:
         // Employee tab set also covers team_lead, matching the web app's
-        // merged Employee + Team Lead dashboard. Team-lead-only modules
-        // (My Teams, Approvals, Team Reviews) live in the More tab.
+        // merged Employee + Team Lead dashboard. Every other module
+        // (Tasks, Documents, Team Lead tools, …) lives in the side drawer.
         return [
           _TabSpec('Home', Icons.dashboard_outlined, const EmployeeHomeScreen()),
           _TabSpec('Attendance', Icons.access_time, const AttendanceScreen()),
           _TabSpec('Leaves', Icons.beach_access_outlined, const LeavesScreen()),
-          _TabSpec('More', Icons.grid_view_outlined, const MoreScreen()),
         ];
     }
   }

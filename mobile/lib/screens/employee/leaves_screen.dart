@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_client.dart';
+import '../../services/app_events.dart';
 import '../../services/auth_provider.dart';
 import '../../services/leave_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -65,12 +68,16 @@ class _LeavesScreenState extends State<LeavesScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _ApplyLeaveSheet(userId: userId, leaveTypes: _leaveTypes, service: _service),
     );
-    if (applied == true) _load();
+    if (applied == true) {
+      _load();
+      AppEvents.bumpLeave();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Leaves')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openApplySheet,
@@ -84,22 +91,22 @@ class _LeavesScreenState extends State<LeavesScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.w(16)),
                     children: [
                       if (_balance.isNotEmpty) ...[
-                        const Text('Leave Balance', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                        const SizedBox(height: 10),
+                        Text('Leave Balance', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                        SizedBox(height: context.h(10)),
                         SizedBox(
-                          height: 92,
+                          height: context.h(60) + context.sp(20) + context.sp(11) * 2,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: _balance.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 10),
+                            separatorBuilder: (_, _) => SizedBox(width: context.w(10)),
                             itemBuilder: (_, i) {
                               final b = _balance[i];
                               return Container(
-                                width: 130,
-                                padding: const EdgeInsets.all(12),
+                                width: context.w(130),
+                                padding: EdgeInsets.all(context.w(12)),
                                 decoration: BoxDecoration(
                                   color: AppColors.brand50,
                                   borderRadius: BorderRadius.circular(12),
@@ -107,19 +114,19 @@ class _LeavesScreenState extends State<LeavesScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('${b['remaining']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.brand700)),
-                                    const SizedBox(height: 2),
-                                    Text('${b['leaveType']}', maxLines: 2, style: const TextStyle(fontSize: 11, color: AppColors.inkMuted)),
+                                    Text('${b['remaining']}', style: TextStyle(fontSize: context.sp(20), fontWeight: FontWeight.w700, color: AppColors.brand700)),
+                                    SizedBox(height: context.h(2)),
+                                    Text('${b['leaveType']}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted)),
                                   ],
                                 ),
                               );
                             },
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: context.h(20)),
                       ],
-                      const Text('My Requests', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                      const SizedBox(height: 10),
+                      Text('My Requests', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                      SizedBox(height: context.h(10)),
                       if (_leaves.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
@@ -134,15 +141,16 @@ class _LeavesScreenState extends State<LeavesScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text('${l['leaveType']}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                        const SizedBox(height: 4),
-                                        Text(_dateRange(l), style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                        SizedBox(height: context.h(4)),
+                                        Text(_dateRange(l), style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                         if ((l['reason'] ?? '').toString().isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text('${l['reason']}', style: const TextStyle(color: AppColors.inkFaint, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                          SizedBox(height: context.h(4)),
+                                          Text('${l['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12)), maxLines: 2, overflow: TextOverflow.ellipsis),
                                         ],
                                       ],
                                     ),
                                   ),
+                                  SizedBox(width: context.w(8)),
                                   StatusPill(label: (l['status'] ?? 'Pending').toString()),
                                 ],
                               ),
@@ -235,19 +243,20 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.w(20)),
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Apply for Leave', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              const SizedBox(height: 16),
+              Text('Apply for Leave', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+              SizedBox(height: context.h(16)),
               DropdownButtonFormField<String>(
                 initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Leave Type'),
@@ -257,7 +266,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
                 onChanged: (v) => setState(() => _selectedType = v),
                 validator: (v) => v == null ? 'Required' : null,
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: context.h(14)),
               Row(
                 children: [
                   Expanded(
@@ -266,7 +275,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
                       child: Text(_startDate == null ? 'Start Date' : DateFormat('d MMM, yyyy').format(_startDate!)),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: context.w(10)),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _pickDate(isStart: false),
@@ -275,22 +284,23 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: context.h(14)),
               TextFormField(
                 controller: _reasonController,
                 maxLines: 3,
                 decoration: const InputDecoration(labelText: 'Reason'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Please provide a reason' : null,
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: context.h(18)),
               ElevatedButton(
                 onPressed: _submitting ? null : _submit,
                 child: _submitting
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('Submit Request'),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.h(8)),
             ],
+          ),
           ),
         ),
       ),

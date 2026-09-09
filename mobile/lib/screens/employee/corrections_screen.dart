@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -77,7 +78,7 @@ class _CorrectionsScreenState extends State<CorrectionsScreen> {
                           CenteredMessage(icon: Icons.edit_calendar_outlined, message: 'No correction requests yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((r) => SimpleCard(
                                 child: Row(
                                   children: [
@@ -86,13 +87,14 @@ class _CorrectionsScreenState extends State<CorrectionsScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text('${r['date']}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                          const SizedBox(height: 4),
-                                          Text('In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
-                                          const SizedBox(height: 4),
-                                          Text('${r['reason']}', style: const TextStyle(color: AppColors.inkFaint, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                          SizedBox(height: context.h(4)),
+                                          Text('In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                          SizedBox(height: context.h(4)),
+                                          Text('${r['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12)), maxLines: 2, overflow: TextOverflow.ellipsis),
                                         ],
                                       ),
                                     ),
+                                    SizedBox(width: context.w(8)),
                                     StatusPill(label: r['status']?.toString() ?? 'Pending'),
                                   ],
                                 ),
@@ -149,19 +151,20 @@ class _RequestCorrectionSheetState extends State<_RequestCorrectionSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.w(20)),
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Request Attendance Correction', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              const SizedBox(height: 16),
+              Text('Request Attendance Correction', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+              SizedBox(height: context.h(16)),
               OutlinedButton(
                 onPressed: () async {
                   final picked = await showDatePicker(
@@ -174,7 +177,7 @@ class _RequestCorrectionSheetState extends State<_RequestCorrectionSheet> {
                 },
                 child: Text(_date == null ? 'Select Date' : DateFormat('d MMM, yyyy').format(_date!)),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: context.h(10)),
               Row(
                 children: [
                   Expanded(
@@ -186,7 +189,7 @@ class _RequestCorrectionSheetState extends State<_RequestCorrectionSheet> {
                       child: Text(_inTime == null ? 'In Time' : _fmtTime(_inTime!)),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: context.w(10)),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () async {
@@ -198,22 +201,23 @@ class _RequestCorrectionSheetState extends State<_RequestCorrectionSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: context.h(14)),
               TextFormField(
                 controller: _reasonController,
                 maxLines: 3,
                 decoration: const InputDecoration(labelText: 'Reason'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Please provide a reason' : null,
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: context.h(18)),
               ElevatedButton(
                 onPressed: _submitting ? null : _submit,
                 child: _submitting
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('Submit Request'),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.h(8)),
             ],
+          ),
           ),
         ),
       ),

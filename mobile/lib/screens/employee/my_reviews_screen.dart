@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 
@@ -61,7 +62,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                           CenteredMessage(icon: Icons.rate_review_outlined, message: 'No reviews shared with you yet.'),
                         ])
                       : ListView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(context.w(16)),
                           children: _items.map((r) {
                             final reviewer = r['reviewerId'] as Map? ?? {};
                             final user = reviewer['userId'] as Map? ?? {};
@@ -75,28 +76,29 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                                       Expanded(
                                         child: Text('${r['cycle'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
+                                      SizedBox(width: context.w(8)),
                                       StatusPill(label: r['status']?.toString() ?? 'Submitted'),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text('Reviewer: ${user['name'] ?? 'Manager'}', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text('Overall Rating: ${r['overallRating'] ?? '-'}/5', style: const TextStyle(color: AppColors.inkMuted, fontSize: 12)),
+                                  SizedBox(height: context.h(4)),
+                                  Text('Reviewer: ${user['name'] ?? 'Manager'}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                  SizedBox(height: context.h(4)),
+                                  Text('Overall Rating: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                   if (ratings.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: context.h(8)),
                                     Wrap(
-                                      spacing: 8,
-                                      runSpacing: 6,
+                                      spacing: context.w(8),
+                                      runSpacing: context.h(6),
                                       children: ratings.map<Widget>((c) => Chip(
-                                            label: Text('${c['competency']}: ${c['score']}/5', style: const TextStyle(fontSize: 11)),
+                                            label: Text('${c['competency']}: ${c['score']}/5', style: TextStyle(fontSize: context.sp(11))),
                                             backgroundColor: AppColors.surfaceMuted,
                                             visualDensity: VisualDensity.compact,
                                           )).toList(),
                                     ),
                                   ],
                                   if ((r['managerComments'] ?? '').toString().isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Text('"${r['managerComments']}"', style: const TextStyle(color: AppColors.inkFaint, fontSize: 12, fontStyle: FontStyle.italic)),
+                                    SizedBox(height: context.h(8)),
+                                    Text('"${r['managerComments']}"', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12), fontStyle: FontStyle.italic)),
                                   ],
                                 ],
                               ),

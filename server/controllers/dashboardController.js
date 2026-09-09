@@ -74,7 +74,9 @@ const getSummary = async (req, res) => {
 const getEmployeeDashboardStats = async (req, res) => {
     try {
         // Get employee from authenticated user
-        const employee = await Employee.findOne({ userId: req.user._id });
+        const employee = await Employee.findOne({ userId: req.user._id })
+            .populate('userId', 'name email')
+            .populate('department', 'dep_name');
         if (!employee) {
             return res.status(404).json({ success: false, error: "Employee profile not found" });
         }
@@ -398,10 +400,10 @@ const getEmployeeDashboardStats = async (req, res) => {
                 
                 // Employee Info
                 employee: {
-                    name: employee.name,
+                    name: employee.userId?.name || employee.name,
                     employeeId: employee.employeeId,
                     designation: employee.designation,
-                    department: employee.department
+                    department: employee.department?.dep_name || ""
                 }
             }
         });

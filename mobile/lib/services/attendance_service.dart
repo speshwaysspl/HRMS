@@ -25,7 +25,7 @@ class AttendanceService {
   Future<Map<String, dynamic>> checkIn({
     required String date,
     required String inTime,
-    String workMode = 'Office',
+    String workMode = 'office',
   }) async {
     final res = await _dio.post('/api/attendance', data: {
       'date': date,

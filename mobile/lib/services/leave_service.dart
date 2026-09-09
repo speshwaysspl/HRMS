@@ -10,6 +10,24 @@ class LeaveService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  /// Admin/HR: every leave request across the org, newest first.
+  Future<List<Map<String, dynamic>>> getAllLeaves() async {
+    final res = await _dio.get('/api/leave/');
+    final list = (res.data as Map)['leaves'] as List? ?? [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// Admin/HR: approve or reject a leave request ('Approved' | 'Rejected').
+  Future<void> setStatus(String leaveId, String status) async {
+    await _dio.put('/api/leave/$leaveId', data: {'status': status});
+  }
+
+  /// Full detail of one leave request (employee + department populated).
+  Future<Map<String, dynamic>> getLeaveDetail(String id) async {
+    final res = await _dio.get('/api/leave/detail/$id');
+    return Map<String, dynamic>.from((res.data as Map)['leave'] as Map);
+  }
+
   Future<List<Map<String, dynamic>>> getLeaveTypes() async {
     final res = await _dio.get('/api/leave-types', queryParameters: {'activeOnly': 'true'});
     final list = (res.data as Map)['leaveTypes'] as List? ?? [];
