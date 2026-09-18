@@ -4,6 +4,8 @@ import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 
 class MyReviewsScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _error;
+  Object? _lastError;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
       if (!mounted) return;
       setState(() {
         _error = extractErrorMessage(e);
+        _lastError = e;
         _loading = false;
       });
     }
@@ -51,15 +55,22 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My Reviews')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_lastError ?? _error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.rate_review_outlined, message: 'No reviews shared with you yet.'),
+                          EmptyStateView(icon: Icons.rate_review_outlined, title: 'No reviews shared with you yet', subtitle: 'Performance reviews will appear here once shared.'),
                         ])
                       : ListView(
                           padding: EdgeInsets.all(context.w(16)),
@@ -73,6 +84,13 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                                 children: [
                                   Row(
                                     children: [
+                                      Container(
+                                        width: context.r(34),
+                                        height: context.r(34),
+                                        decoration: const BoxDecoration(color: Color(0xFFF3E8FF), shape: BoxShape.circle),
+                                        child: Icon(Icons.rate_review_rounded, size: context.r(17), color: const Color(0xFF9333EA)),
+                                      ),
+                                      SizedBox(width: context.w(10)),
                                       Expanded(
                                         child: Text('${r['cycle'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
@@ -80,10 +98,18 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                                       StatusPill(label: r['status']?.toString() ?? 'Submitted'),
                                     ],
                                   ),
-                                  SizedBox(height: context.h(4)),
-                                  Text('Reviewer: ${user['name'] ?? 'Manager'}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                  SizedBox(height: context.h(4)),
-                                  Text('Overall Rating: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                  SizedBox(height: context.h(8)),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: context.w(44)),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Reviewer: ${user['name'] ?? 'Manager'}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                        SizedBox(height: context.h(4)),
+                                        Text('Overall Rating: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                      ],
+                                    ),
+                                  ),
                                   if (ratings.isNotEmpty) ...[
                                     SizedBox(height: context.h(8)),
                                     Wrap(

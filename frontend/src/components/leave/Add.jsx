@@ -146,7 +146,7 @@ const Add = () => {
             </select>
             {selectedBalance && (
               <p className="text-xs text-ink-muted mt-1.5">
-                {selectedBalance.remaining} of {selectedBalance.annualQuota} days remaining this year
+                {selectedBalance.remaining} of {selectedBalance.monthlyQuota || (selectedBalance.annualQuota ? Math.round(selectedBalance.annualQuota / 12) : 1)} {((selectedBalance.monthlyQuota || (selectedBalance.annualQuota ? Math.round(selectedBalance.annualQuota / 12) : 1)) === 1 ? 'day' : 'days')} remaining this month
               </p>
             )}
           </div>

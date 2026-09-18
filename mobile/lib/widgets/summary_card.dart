@@ -22,7 +22,10 @@ class SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final box = context.r(44);
     return Container(
-      padding: EdgeInsets.all(context.w(14)),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.w(12),
+        vertical: context.h(10),
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),

@@ -200,7 +200,6 @@ const Add = () => {
                 placeholder="e.g. 600000"
                 className={inputClass}
               />
-              <p className="text-xs text-ink-faint mt-1">Used to prefill payslip earnings; each component stays editable when generating a payslip.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-ink">Department</label>

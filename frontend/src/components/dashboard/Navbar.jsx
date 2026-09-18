@@ -1,11 +1,8 @@
 import React from 'react'
-import { FiMenu, FiLogOut } from 'react-icons/fi'
+import { FiMenu } from 'react-icons/fi'
 import NotificationBell from '../notifications/NotificationBell'
-import { useAuth } from '../../context/AuthContext'
 
 const Navbar = ({ onMenuClick }) => {
-  const { logout } = useAuth()
-
   return (
     <div className="flex items-center gap-3 h-14 md:h-16 px-4 md:px-6 sticky top-0 z-30 bg-white border-b border-surface-subtle">
       <button
@@ -25,14 +22,6 @@ const Navbar = ({ onMenuClick }) => {
 
       <div className="flex-shrink-0 flex items-center gap-1 text-ink-muted">
         <NotificationBell />
-        <button
-          onClick={logout}
-          className="p-2 rounded-lg hover:bg-surface-muted hover:text-red-600 transition-colors"
-          aria-label="Logout"
-          title="Logout"
-        >
-          <FiLogOut size={19} />
-        </button>
       </div>
     </div>
   )

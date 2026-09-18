@@ -182,8 +182,15 @@ export const generatePayslip = async (req, res) => {
     }
     
     const totalDeductions = Object.values(deductions).reduce((sum, val) => sum + val, 0);
-    const netSalary = Math.max(0, totalEarnings - totalDeductions);
-    
+    // Net pay is normally Total Earnings − Total Deductions, but a caller
+    // (e.g. GeneratePayslipByDays.jsx, for a partial-month payslip) can
+    // supply an explicit netPayOverride when Net Pay must be computed
+    // differently from what the Earnings/Deductions line items show —
+    // e.g. prorated by days actually worked, while Earnings/Deductions
+    // themselves still display their standard full-month figures.
+    const hasNetPayOverride = payload.netPayOverride !== undefined && payload.netPayOverride !== null && payload.netPayOverride !== "" && !isNaN(Number(payload.netPayOverride));
+    const netSalary = hasNetPayOverride ? Math.max(0, Number(payload.netPayOverride)) : Math.max(0, totalEarnings - totalDeductions);
+
     // Create salary record
     const newSalary = new Salary({
       employeeId: payload.employeeObjectId || payload.employeeId,
@@ -657,6 +664,15 @@ export const getPayslipHistory = async (req, res) => {
         monthName: typeof payslip.month === 'string' ? payslip.month : monthNames[monthNumber - 1],
         year: payslip.year || new Date(payslip.createdAt).getFullYear(),
         basicSalary: payslip.basicSalary || 0,
+        da: payslip.da || 0,
+        hra: payslip.hra || 0,
+        conveyance: payslip.conveyance || 0,
+        medicalallowances: payslip.medicalallowances || 0,
+        specialallowances: payslip.specialallowances || 0,
+        pf: payslip.pf || 0,
+        proftax: payslip.proftax || 0,
+        deductions: payslip.deductions || 0,
+        workingdays: payslip.workingdays || 0,
         lopDays: payslip.lopDays || 0,
         lopamount: payslip.lopamount || 0,
         totalDeductions: totalDeductions,
@@ -885,17 +901,27 @@ export const previewPayslip = async (req, res) => {
       lopamount: num(payload.lopamount)
     };
     
-    // Auto-calculate PF if enabled
+    // Auto-calculate PF if enabled — kept in sync with generatePayslip's
+    // 24% default so a preview matches what actually gets generated.
     if (payload.autoCalculatePF) {
-      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 12)) / 100;
+      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 24)) / 100;
     }
-    
+
+    // Auto-calculate LOP if enabled (based on total earnings) — mirrors
+    // generatePayslip so preview and generate never disagree on this.
+    if (payload.autoCalculateLOP && payload.lopDays) {
+      const dailySalary = totalEarnings / (num(payload.workingdays) || 30);
+      deductions.lopamount = dailySalary * num(payload.lopDays);
+    }
+
     // Calculate total deductions
     const totalDeductions = Object.values(deductions).reduce((sum, val) => sum + val, 0);
     
-    // Calculate net salary
-    const netSalary = Math.max(0, totalEarnings - totalDeductions);
-    
+    // Calculate net salary — see the matching comment in generatePayslip
+    // for why an explicit netPayOverride can take precedence here.
+    const hasNetPayOverride = payload.netPayOverride !== undefined && payload.netPayOverride !== null && payload.netPayOverride !== "" && !isNaN(Number(payload.netPayOverride));
+    const netSalary = hasNetPayOverride ? Math.max(0, Number(payload.netPayOverride)) : Math.max(0, totalEarnings - totalDeductions);
+
     // Create preview payslip object (not saved to database)
     const previewPayslip = {
       employeeId: payload.employeeId,

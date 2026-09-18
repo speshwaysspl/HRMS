@@ -51,6 +51,8 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Speshway HRMS uses Face ID to unlock the app when App Lock is turned on.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Speshway HRMS uses your location to record where you checked in and out for attendance.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

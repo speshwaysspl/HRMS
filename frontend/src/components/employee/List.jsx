@@ -197,8 +197,8 @@ const List = () => {
             fontSize: '13px',
             fontWeight: '600',
             color: '#5b6376',
-            paddingLeft: '16px',
-            paddingRight: '16px',
+            paddingLeft: '12px',
+            paddingRight: '12px',
           },
         },
         rows: {
@@ -214,8 +214,8 @@ const List = () => {
           style: {
             fontSize: '14px',
             color: '#1c2333',
-            paddingLeft: '16px',
-            paddingRight: '16px',
+            paddingLeft: '12px',
+            paddingRight: '12px',
           },
         },
         pagination: {
@@ -232,7 +232,6 @@ const List = () => {
         return (
           <div>
             <PageHeader
-              icon={FaSearch}
               title="Manage Employees"
               subtitle="Efficiently manage your workforce with our comprehensive employee management system"
             />
@@ -246,7 +245,6 @@ const List = () => {
   return (
     <div>
       <PageHeader
-        icon={FaSearch}
         title="Manage Employees"
         subtitle="Efficiently manage your workforce with our comprehensive employee management system"
       />

@@ -209,7 +209,7 @@ export const wrapEmail = (bodyHtml, subject) => {
 /**
  * Generate HTML template for announcements
  */
-export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, recipientName, createdAt }) => {
+export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, recipientName, createdAt, category = 'important' }) => {
   const formattedDate = new Date(createdAt).toLocaleDateString('en-IN', {
     weekday: 'long',
     year: 'numeric',
@@ -218,10 +218,58 @@ export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, rec
     timeZone: 'Asia/Kolkata'
   });
 
+  let heading = "New Announcement 📢";
+  let intro = "We have an important announcement to share with you from SPESHWAY SOLUTIONS PVT LTD.";
+  let badgeColor = "#2563eb";
+  let badgeText = "Announcement";
+
+  switch (category) {
+    case 'quote':
+      heading = "Today's Quote ✨";
+      intro = "Here is today's quote of inspiration from SPESHWAY SOLUTIONS PVT LTD.";
+      badgeColor = "#8b5cf6";
+      badgeText = "Today's Quote";
+      break;
+    case 'festival':
+      heading = "Festive Greetings & Celebration 🎉";
+      intro = "Warm festive greetings and heartfelt wishes from everyone at SPESHWAY SOLUTIONS PVT LTD!";
+      badgeColor = "#f59e0b";
+      badgeText = "Festival Greeting";
+      break;
+    case 'event':
+      heading = "Upcoming Event 📅";
+      intro = "We are pleased to invite you to an upcoming company event from SPESHWAY SOLUTIONS PVT LTD.";
+      badgeColor = "#06b6d4";
+      badgeText = "Company Event";
+      break;
+    case 'achievement':
+      heading = "Milestone & Achievement 🏆";
+      intro = "Let's celebrate this proud achievement together at SPESHWAY SOLUTIONS PVT LTD!";
+      badgeColor = "#10b981";
+      badgeText = "Achievement";
+      break;
+    case 'general':
+      heading = "Company Notice 📌";
+      intro = "Please take note of the following update from SPESHWAY SOLUTIONS PVT LTD.";
+      badgeColor = "#64748b";
+      badgeText = "Notice";
+      break;
+    case 'important':
+    default:
+      heading = "Important Announcement 📢";
+      intro = "We have an important announcement to share with you from SPESHWAY SOLUTIONS PVT LTD.";
+      badgeColor = "#dc2626";
+      badgeText = "Important Announcement";
+      break;
+  }
+
   return `
-    <h2>New Announcement 📢</h2>
+    <div style="display: inline-block; padding: 4px 12px; background: ${badgeColor}15; color: ${badgeColor}; border: 1px solid ${badgeColor}35; border-radius: 9999px; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+      ${badgeText}
+    </div>
+    <h2>${heading}</h2>
     <p>Dear ${recipientName || 'Team Member'},</p>
-    <p>We have an important announcement to share with you from SPESHWAY SOLUTIONS PVT LTD.</p>
+    <p>${intro}</p>
     
     <h3>${title}</h3>
     
@@ -236,7 +284,7 @@ export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, rec
     
     <p>We believe this information will be valuable to our team. Together, we look forward to achieving new milestones and building a bright future.</p>
     
-    <p>If you have any questions about this announcement, please feel free to reach out to the HR department.</p>
+    <p>If you have any questions, please feel free to reach out to the HR department.</p>
     
     <p>Best regards,<br>
     HR Team</p>
@@ -248,10 +296,25 @@ export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, rec
 /**
  * Generate email subject for announcements
  * @param {string} title - Announcement title
+ * @param {string} category - Announcement category ('important', 'quote', 'festival', etc.)
  * @returns {string} Email subject
  */
-export const getAnnouncementEmailSubject = (title) => {
-  return `📢 Important Announcement: ${title} - SPESHWAY SOLUTIONS`;
+export const getAnnouncementEmailSubject = (title, category = 'important') => {
+  switch (category) {
+    case 'quote':
+      return `✨ Today's Quote: ${title} - SPESHWAY SOLUTIONS`;
+    case 'festival':
+      return `🎉 Festival Greeting: ${title} - SPESHWAY SOLUTIONS`;
+    case 'event':
+      return `📅 Event Update: ${title} - SPESHWAY SOLUTIONS`;
+    case 'achievement':
+      return `🏆 Milestone & Achievement: ${title} - SPESHWAY SOLUTIONS`;
+    case 'general':
+      return `📌 Company Notice: ${title} - SPESHWAY SOLUTIONS`;
+    case 'important':
+    default:
+      return `📢 Important Announcement: ${title} - SPESHWAY SOLUTIONS`;
+  }
 };
 
 export default wrapEmail;

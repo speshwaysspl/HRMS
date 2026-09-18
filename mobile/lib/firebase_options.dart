@@ -1,5 +1,8 @@
-// File generated for the Speshway HRMS Firebase project (speshway-hrms).
-// Values mirror android/app/google-services.json and ios/Runner/GoogleService-Info.plist.
+// Firebase project: new-hrms-d8eaf — must match android/app/google-services.json
+// and server/service-account.json (the backend's FCM sender). These three
+// must all reference the SAME Firebase project, otherwise FCM push tokens
+// registered by the app belong to a different project than the one the
+// backend sends from, and notifications silently fail to deliver.
 // If you re-run `flutterfire configure`, let it overwrite this file.
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -27,19 +30,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCy7Hgoyk0KSUYZ91tmSkPfSVQI52h571A',
-    appId: '1:858623831710:android:113248fe50df1f63ba958f',
-    messagingSenderId: '858623831710',
-    projectId: 'speshway-hrms',
-    storageBucket: 'speshway-hrms.firebasestorage.app',
+    apiKey: 'AIzaSyCh1bU2TCCbz4hmuSGMTPcvOq81i7lXfQw',
+    appId: '1:800902168034:android:a0b7e0c31a6503646f4dbb',
+    messagingSenderId: '800902168034',
+    projectId: 'new-hrms-d8eaf',
+    storageBucket: 'new-hrms-d8eaf.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBQH7NW2be7pIf2eWYLYitsNekB_tW0lvk',
-    appId: '1:858623831710:ios:5550a4345d3f6054ba958f',
-    messagingSenderId: '858623831710',
-    projectId: 'speshway-hrms',
-    storageBucket: 'speshway-hrms.firebasestorage.app',
+    apiKey: 'AIzaSyDN2Lwb797W4x3lnDAe9RyIkoQORiE1Hz0',
+    appId: '1:800902168034:ios:3c927eb6791911966f4dbb',
+    messagingSenderId: '800902168034',
+    projectId: 'new-hrms-d8eaf',
+    storageBucket: 'new-hrms-d8eaf.firebasestorage.app',
     iosBundleId: 'com.speshway.hrms',
   );
 }

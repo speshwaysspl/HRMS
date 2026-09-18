@@ -1,18 +1,19 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { FiPlus, FiTrash2, FiEdit2, FiTag } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiEdit2, FiTag, FiAlertTriangle } from "react-icons/fi";
 import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
 import EmptyState from "../common/EmptyState";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import ActionIconButton from "../common/ActionIconButton";
 
-const emptyForm = { name: "", annualQuota: 12, requiresApproval: true };
+const emptyForm = { name: "", monthlyQuota: 1, requiresApproval: true };
 
 const LeaveTypeSettings = () => {
   useMeta({
     title: "Leave Types — Speshway HRMS",
-    description: "Configure leave types and annual quotas.",
+    description: "Configure leave types and monthly quotas.",
     robots: "noindex,nofollow",
   });
 
@@ -21,10 +22,13 @@ const LeaveTypeSettings = () => {
   const [error, setError] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name }
+  const [deleting, setDeleting] = useState(false);
 
-  const authHeaders = () => ({
-    Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}`,
-  });
+  const authHeaders = () => {
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   const fetchLeaveTypes = useCallback(async () => {
     setLoading(true);
@@ -51,10 +55,15 @@ const LeaveTypeSettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        monthlyQuota: Number(form.monthlyQuota),
+        annualQuota: Math.round(Number(form.monthlyQuota) * 12),
+      };
       if (editingId) {
-        await axios.put(`${API_BASE}/api/leave-types/${editingId}`, form, { headers: authHeaders() });
+        await axios.put(`${API_BASE}/api/leave-types/${editingId}`, payload, { headers: authHeaders() });
       } else {
-        await axios.post(`${API_BASE}/api/leave-types`, form, { headers: authHeaders() });
+        await axios.post(`${API_BASE}/api/leave-types`, payload, { headers: authHeaders() });
       }
       resetForm();
       fetchLeaveTypes();
@@ -64,7 +73,8 @@ const LeaveTypeSettings = () => {
   };
 
   const handleEdit = (lt) => {
-    setForm({ name: lt.name, annualQuota: lt.annualQuota, requiresApproval: lt.requiresApproval });
+    const mq = lt.monthlyQuota !== undefined ? lt.monthlyQuota : (lt.annualQuota ? Math.round((lt.annualQuota / 12) * 10) / 10 : 1);
+    setForm({ name: lt.name, monthlyQuota: mq, requiresApproval: lt.requiresApproval });
     setEditingId(lt._id);
   };
 
@@ -81,13 +91,18 @@ const LeaveTypeSettings = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this leave type? Existing leave requests will be unaffected.")) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
     try {
-      await axios.delete(`${API_BASE}/api/leave-types/${id}`, { headers: authHeaders() });
-      fetchLeaveTypes();
+      await axios.delete(`${API_BASE}/api/leave-types/${deleteConfirm.id}`, { headers: authHeaders() });
+      setLeaveTypes((prev) => prev.filter((lt) => lt._id !== deleteConfirm.id));
+      setDeleteConfirm(null);
     } catch (err) {
-      alert("Failed to delete leave type");
+      alert(err.response?.data?.error || err.message || "Failed to delete leave type");
+      fetchLeaveTypes();
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -112,12 +127,13 @@ const LeaveTypeSettings = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Annual Quota (days)</label>
+          <label className="block text-sm font-medium text-ink-muted mb-1">Monthly Quota (days)</label>
           <input
             type="number"
             min="0"
-            value={form.annualQuota}
-            onChange={(e) => setForm((f) => ({ ...f, annualQuota: Number(e.target.value) }))}
+            step="0.5"
+            value={form.monthlyQuota}
+            onChange={(e) => setForm((f) => ({ ...f, monthlyQuota: Number(e.target.value) }))}
             className="w-full p-2 border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500"
             required
           />
@@ -147,32 +163,67 @@ const LeaveTypeSettings = () => {
         ) : leaveTypes.length === 0 ? (
           <EmptyState icon={FiTag} title="No leave types configured" />
         ) : (
-          leaveTypes.map((lt) => (
-            <div key={lt._id} className="p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink truncate">{lt.name}</p>
-                <p className="text-xs text-ink-muted mt-0.5">{lt.annualQuota} days/year</p>
+          leaveTypes.map((lt) => {
+            const mq = lt.monthlyQuota !== undefined ? lt.monthlyQuota : (lt.annualQuota ? Math.round((lt.annualQuota / 12) * 10) / 10 : 1);
+            return (
+              <div key={lt._id} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink truncate">{lt.name}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">{mq} {mq === 1 ? "day/month" : "days/month"}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActive(lt)}
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      lt.isActive ? "bg-accent-100 text-accent-700" : "bg-surface-muted text-ink-faint"
+                    }`}
+                  >
+                    {lt.isActive ? "Active" : "Inactive"}
+                  </button>
+                  <ActionIconButton icon={FiEdit2} label="Edit" color="brand" onClick={() => handleEdit(lt)} />
+                  <ActionIconButton icon={FiTrash2} label="Delete" color="danger" onClick={() => setDeleteConfirm({ id: lt._id, name: lt.name })} />
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => handleToggleActive(lt)}
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    lt.isActive ? "bg-accent-100 text-accent-700" : "bg-surface-muted text-ink-faint"
-                  }`}
-                >
-                  {lt.isActive ? "Active" : "Inactive"}
-                </button>
-                <button onClick={() => handleEdit(lt)} className="text-ink-muted hover:text-brand-700">
-                  <FiEdit2 size={16} />
-                </button>
-                <button onClick={() => handleDelete(lt._id)} className="text-ink-muted hover:text-red-600">
-                  <FiTrash2 size={16} />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-surface-subtle max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-600 mb-3">
+              <div className="p-2.5 bg-red-50 rounded-xl">
+                <FiAlertTriangle size={22} />
+              </div>
+              <h3 className="text-lg font-semibold text-ink">Delete Leave Type</h3>
+            </div>
+            <p className="text-sm text-ink-muted mb-6">
+              Are you sure you want to delete <strong className="text-ink font-semibold">{deleteConfirm.name}</strong>? Existing leave requests will remain unaffected.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 text-sm font-medium text-ink-muted hover:text-ink hover:bg-surface-muted rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

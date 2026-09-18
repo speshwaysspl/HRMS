@@ -144,12 +144,14 @@ const getEmployee = async (req, res) => {
     const { id } = req.params;
     let employee = await Employee.findById(id)
       .populate("userId", { password: 0 })
-      .populate("department");
- 
+      .populate("department")
+      .populate("shiftId");
+
     if (!employee) {
       employee = await Employee.findOne({ userId: id })
         .populate("userId", { password: 0 })
-        .populate("department");
+        .populate("department")
+        .populate("shiftId");
     }
  
     if (!employee) {

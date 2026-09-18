@@ -44,6 +44,7 @@ import onboardingRouter from "./routes/onboardingRoutes.js";
 import offerRouter from "./routes/offerRoutes.js";
 import appointmentRouter from "./routes/appointmentRoutes.js";
 import hrDashboardRouter from "./routes/hrDashboardRoutes.js";
+import accountDeletionRouter from "./routes/accountDeletion.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
 import { metricsMiddleware, metricsEndpoint } from "./middleware/metrics.js";
 
@@ -159,6 +160,7 @@ app.use("/api/onboarding", onboardingRouter);
 app.use("/api/offers", offerRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/hr-dashboard", hrDashboardRouter);
+app.use("/api/account", accountDeletionRouter);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

@@ -7,8 +7,10 @@ import '../../services/dashboard_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/summary_card.dart';
+import '../employee/notifications_screen.dart';
 import '../teamlead/approvals_screen.dart';
 import 'admin_announcements_screen.dart';
 
@@ -57,7 +59,45 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     final name = context.watch<AuthProvider>().user?.name ?? '';
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Speshway HRMS')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/appbar_bg.png',
+              fit: BoxFit.cover,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.25),
+                    AppColors.brand900.withValues(alpha: 0.45),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        title: const MarqueeAppBarTitle(),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            tooltip: 'Notifications',
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              );
+            },
+          ),
+          SizedBox(width: context.w(6)),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

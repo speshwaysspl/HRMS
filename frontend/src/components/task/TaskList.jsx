@@ -13,6 +13,7 @@ const TaskList = () => {
   const boardPath = `${location.pathname.replace(/\/$/, "")}/board`;
   const [selectedTask, setSelectedTask] = useState(null);
   const [updateData, setUpdateData] = useState({ status: "", comments: "" });
+  const [updating, setUpdating] = useState(false);
 
   const userRoles = user?.role ? (Array.isArray(user.role) ? user.role : [user.role]) : [];
 
@@ -64,6 +65,7 @@ const TaskList = () => {
       formData.append("file", updateData.file);
     }
     try {
+      setUpdating(true);
       const response = await axios.put(
         `${API_BASE}/api/task/${selectedTask._id}`,
         formData,
@@ -75,12 +77,13 @@ const TaskList = () => {
         }
       );
       if (response.data.success) {
-        alert("Task updated successfully");
         setSelectedTask(null);
         fetchTasks();
       }
     } catch {
-      alert("Failed to update task");
+      // Failed to update task
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -305,9 +308,10 @@ const TaskList = () => {
                     </button>
                     <button
                       type="submit"
-                      className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                      disabled={updating}
+                      className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
                     >
-                      Update Task
+                      {updating ? "Updating..." : "Update Task"}
                     </button>
                   </div>
                 </form>

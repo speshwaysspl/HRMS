@@ -13,7 +13,7 @@ class TaskService {
   Future<void> updateStatus(String taskId, String status, {String? comments}) async {
     final form = FormData.fromMap({
       'status': status,
-      if (comments != null) 'comments': comments,
+      'comments': ?comments,
     });
     await _dio.put('/api/task/$taskId', data: form);
   }

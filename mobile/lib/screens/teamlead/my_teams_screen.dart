@@ -113,10 +113,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   void initState() {
     super.initState();
     _service.getTeamDetail(widget.id).then((v) {
-      if (mounted) setState(() {
-        _detail = v;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _detail = v;
+          _loading = false;
+        });
+      }
     });
   }
 

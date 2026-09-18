@@ -13,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   AuthStatus status = AuthStatus.unknown;
   AppUser? user;
   String? lastError;
+  Object? lastErrorRaw;
 
   Future<void> restoreSession() async {
     final token = await _api.readToken();
@@ -33,6 +34,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     lastError = null;
+    lastErrorRaw = null;
     try {
       final response = await _api.dio.post(
         '/api/auth/login',
@@ -53,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       lastError = extractErrorMessage(e);
+      lastErrorRaw = e;
       return false;
     }
   }

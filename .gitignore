@@ -4,6 +4,12 @@ service-account.json
 /google-services.json
 /GoogleService-Info.plist
 
+# Release signing secrets — never commit these
+key.properties
+**/key.properties
+*.jks
+*.keystore
+
 # Dependencies
 node_modules/
 npm-debug.log*

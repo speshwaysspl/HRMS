@@ -1,0 +1,15 @@
+# Production Release Signing Configuration Template
+# ----------------------------------------------------
+# 1. Copy this file to `mobile/android/key.properties`
+# 2. Replace the placeholder values below with your actual keystore credentials.
+# 3. Ensure your keystore file (.jks) is located at the path specified by `storeFile`.
+#
+# IMPORTANT:
+# - NEVER commit `key.properties` or keystore files (*.jks, *.keystore) to version control.
+# - Both files are ignored in .gitignore.
+# - Back up your keystore file and passwords in a secure password manager or offline vault!
+
+storePassword=YOUR_KEYSTORE_PASSWORD_HERE
+keyPassword=YOUR_KEY_PASSWORD_HERE
+keyAlias=upload
+storeFile=upload-keystore.jks

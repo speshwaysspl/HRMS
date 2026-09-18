@@ -12,12 +12,13 @@ class LeaveTypeService {
 
   Future<void> add({
     required String name,
-    required int annualQuota,
+    required num monthlyQuota,
     bool requiresApproval = true,
   }) async {
     await _dio.post('/api/leave-types', data: {
       'name': name,
-      'annualQuota': annualQuota,
+      'monthlyQuota': monthlyQuota,
+      'annualQuota': (monthlyQuota * 12).round(),
       'requiresApproval': requiresApproval,
     });
   }
@@ -25,13 +26,14 @@ class LeaveTypeService {
   Future<void> update(
     String id, {
     required String name,
-    required int annualQuota,
+    required num monthlyQuota,
     required bool requiresApproval,
     required bool isActive,
   }) async {
     await _dio.put('/api/leave-types/$id', data: {
       'name': name,
-      'annualQuota': annualQuota,
+      'monthlyQuota': monthlyQuota,
+      'annualQuota': (monthlyQuota * 12).round(),
       'requiresApproval': requiresApproval,
       'isActive': isActive,
     });

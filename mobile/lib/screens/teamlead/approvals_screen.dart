@@ -86,11 +86,32 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                  SizedBox(height: context.h(4)),
-                                  Text('${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                  SizedBox(height: context.h(4)),
-                                  Text('Reason: ${r['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: context.r(34),
+                                        height: context.r(34),
+                                        decoration: const BoxDecoration(color: Color(0xFFFFEDD5), shape: BoxShape.circle),
+                                        child: Icon(Icons.edit_calendar_rounded, size: context.r(17), color: const Color(0xFFEA580C)),
+                                      ),
+                                      SizedBox(width: context.w(10)),
+                                      Expanded(
+                                        child: Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: context.h(8)),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: context.w(44)),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                                        SizedBox(height: context.h(4)),
+                                        Text('Reason: ${r['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
+                                      ],
+                                    ),
+                                  ),
                                   SizedBox(height: context.h(10)),
                                   Row(
                                     children: [

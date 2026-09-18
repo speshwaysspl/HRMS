@@ -64,3 +64,27 @@ String extractErrorMessage(Object error) {
   }
   return 'Something went wrong. Please try again.';
 }
+
+/// True when [error] represents a "couldn't reach the server" style failure
+/// (no internet / DNS / timeout / connection refused) rather than a server
+/// returning an actual error response. Used to decide whether to show the
+/// dedicated [NetworkErrorView] instead of a generic [ErrorView].
+bool isNetworkError(Object error) {
+  if (error is DioException) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.connectionError:
+        return true;
+      case DioExceptionType.unknown:
+        // A DioException wrapping another DioException is not a raw
+        // socket/connectivity failure; anything else (e.g. SocketException)
+        // usually is.
+        return error.error is! DioException;
+      default:
+        return false;
+    }
+  }
+  return false;
+}

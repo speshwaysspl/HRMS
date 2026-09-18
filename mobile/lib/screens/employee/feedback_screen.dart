@@ -4,6 +4,8 @@ import '../../services/feedback_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 
 const _categories = [
@@ -22,6 +24,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _error;
+  Object? _lastError;
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       if (!mounted) return;
       setState(() {
         _error = extractErrorMessage(e);
+        _lastError = e;
         _loading = false;
       });
     }
@@ -70,15 +74,22 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         label: const Text('Submit'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_lastError ?? _error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.chat_bubble_outline, message: 'No feedback submitted yet.'),
+                          EmptyStateView(icon: Icons.chat_bubble_outline, title: 'No feedback submitted yet', subtitle: 'Share your thoughts with HR using the Submit button.'),
                         ])
                       : ListView(
                           padding: EdgeInsets.all(context.w(16)),

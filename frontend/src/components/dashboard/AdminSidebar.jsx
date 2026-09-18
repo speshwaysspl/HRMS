@@ -10,10 +10,14 @@ import {
   FaBullhorn,
   FaTimes,
   FaClipboardCheck,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import SidebarSection from "./SidebarSection";
+import brandLogo from "../../assets/logo.jpg";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminSidebar = ({ isOpen, setIsOpen }) => {
+  const { logout } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   const topLink = { to: "/admin-dashboard", label: "Dashboard Overview", icon: <FaTachometerAlt />, end: true };
@@ -38,7 +42,6 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         { to: "/admin-dashboard/leave-types", label: "Leave Types", icon: <FaCalendarAlt /> },
         { to: "/admin-dashboard/calendar", label: "Calendar", icon: <FaCalendarAlt /> },
         { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
-        { to: "/admin-dashboard/attendance-corrections", label: "Attendance Corrections", icon: <FaCalendarAlt /> },
       ],
     },
     {
@@ -48,6 +51,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       links: [
         { to: "/admin-dashboard/salary/template-manager", label: "Payroll Templates", icon: <FaMoneyBillWave /> },
         { to: "/admin-dashboard/salary/payslip-generator", label: "Generate Payslip", icon: <FaMoneyBillWave /> },
+        { to: "/admin-dashboard/salary/generate-by-days", label: "Generate Payslip (Custom Days)", icon: <FaMoneyBillWave /> },
         { to: "/admin-dashboard/salary/payslip-history", label: "Payslip History", icon: <FaMoneyBillWave /> },
       ],
     },
@@ -123,7 +127,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       >
         <div className="h-16 flex items-center px-5 gap-3 border-b border-white/10 flex-shrink-0">
           <img
-            src="/images/Logo.jpg"
+            src={brandLogo}
             alt="Company Logo"
             loading="lazy"
             width="36"
@@ -148,7 +152,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
             to={topLink.to}
             end={topLink.end}
             className={topLinkClass}
-            onClick={() => !isDesktop && setIsOpen(false)}
+            onClick={() => setIsOpen(false)}
           >
             <span className="text-base">{topLink.icon}</span>
             <span>{topLink.label}</span>
@@ -164,6 +168,16 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
               setIsOpen={setIsOpen}
             />
           ))}
+        </div>
+
+        <div className="px-3 py-3 border-t border-white/10 flex-shrink-0">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 py-2.5 px-3.5 rounded-lg text-sm font-medium text-brand-100/80 hover:bg-red-500/10 hover:text-red-300 transition-colors duration-150"
+          >
+            <FaSignOutAlt className="text-base" />
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 

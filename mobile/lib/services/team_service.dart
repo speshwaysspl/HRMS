@@ -32,7 +32,7 @@ class TeamService {
       'name': name,
       'leadId': leadId,
       'description': description,
-      if (startDate != null) 'startDate': startDate,
+      'startDate': ?startDate,
     });
   }
 

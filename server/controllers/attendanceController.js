@@ -4,7 +4,12 @@ import User from "../models/User.js";
 import Leave from "../models/Leave.js";
 import ExcelJS from "exceljs";
 import { toISTDateString, toISTTimeString, getCurrentISTDateTime } from "../utils/dateTimeUtils.js";
- 
+
+// A day's shift is only "closed out" once that calendar day (IST) has
+// fully elapsed. Used to turn a check-in with no check-out into a
+// Half-Day once the day is over, instead of leaving it "Incomplete" forever.
+const isPastDate = (dateStr) => dateStr < toISTDateString(new Date());
+
 /**
  * Save or update attendance for logged-in employee
  */
@@ -151,20 +156,7 @@ export const getAllAttendance = async (req, res) => {
               workingHours = (outHour - inHour) + (outMin - inMin) / 60;
               if (workingHours < 0) workingHours += 24;
               
-              // Subtract break times if any
-              if (record.breaks && record.breaks.length > 0) {
-                record.breaks.forEach(breakPeriod => {
-                  if (breakPeriod.start && breakPeriod.end) {
-                    const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                    const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                    
-                    let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                    if (breakHours < 0) breakHours += 24;
-                    
-                    workingHours -= breakHours;
-                  }
-                });
-              }
+              // Breaks are tracked separately and no longer deducted from Working Hours.
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
@@ -194,20 +186,7 @@ export const getAllAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24; // Handle overnight shifts
             
-            // Subtract break times if any
-            if (record.breaks && record.breaks.length > 0) {
-              record.breaks.forEach(breakPeriod => {
-                if (breakPeriod.start && breakPeriod.end) {
-                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                  
-                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                  if (breakHours < 0) breakHours += 24;
-                  
-                  workingHours -= breakHours;
-                }
-              });
-            }
+            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Determine status based on working hours
             if (workingHours >= 8) {
@@ -219,7 +198,7 @@ export const getAllAttendance = async (req, res) => {
             }
           } else {
             // Only in-time is marked, no out-time
-            attendanceStatus = "Incomplete";
+            attendanceStatus = isPastDate(date) ? "Half-Day" : "Incomplete";
           }
         } else {
           // No attendance record - check if date has passed
@@ -317,20 +296,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Subtract break times if any
-            if (record.breaks && record.breaks.length > 0) {
-              record.breaks.forEach(breakPeriod => {
-                if (breakPeriod.start && breakPeriod.end) {
-                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                  
-                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                  if (breakHours < 0) breakHours += 24;
-                  
-                  workingHours -= breakHours;
-                }
-              });
-            }
+            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -360,20 +326,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Subtract break times if any
-          if (record.breaks && record.breaks.length > 0) {
-            record.breaks.forEach(breakPeriod => {
-              if (breakPeriod.start && breakPeriod.end) {
-                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                
-                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                if (breakHours < 0) breakHours += 24;
-                
-                workingHours -= breakHours;
-              }
-            });
-          }
+          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -385,7 +338,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
         }
       } else {
         // No attendance record - check if date has passed
@@ -480,20 +433,7 @@ export const getMonthlyAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Subtract break times if any
-            if (record.breaks && record.breaks.length > 0) {
-              record.breaks.forEach(breakPeriod => {
-                if (breakPeriod.start && breakPeriod.end) {
-                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                  
-                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                  if (breakHours < 0) breakHours += 24;
-                  
-                  workingHours -= breakHours;
-                }
-              });
-            }
+            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -523,20 +463,7 @@ export const getMonthlyAttendance = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Subtract break times if any
-          if (record.breaks && record.breaks.length > 0) {
-            record.breaks.forEach(breakPeriod => {
-              if (breakPeriod.start && breakPeriod.end) {
-                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                
-                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                if (breakHours < 0) breakHours += 24;
-                
-                workingHours -= breakHours;
-              }
-            });
-          }
+          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -548,7 +475,7 @@ export const getMonthlyAttendance = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
         }
       } else {
         // No attendance record - check if date has passed
@@ -624,20 +551,7 @@ export const exportAttendanceExcel = async (req, res) => {
               workingHours = (outHour - inHour) + (outMin - inMin) / 60;
               if (workingHours < 0) workingHours += 24;
               
-              // Subtract break times if any
-              if (record.breaks && record.breaks.length > 0) {
-                record.breaks.forEach(breakPeriod => {
-                  if (breakPeriod.start && breakPeriod.end) {
-                    const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                    const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                    
-                    let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                    if (breakHours < 0) breakHours += 24;
-                    
-                    workingHours -= breakHours;
-                  }
-                });
-              }
+              // Breaks are tracked separately and no longer deducted from Working Hours.
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
@@ -667,20 +581,7 @@ export const exportAttendanceExcel = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24; // Handle overnight shifts
             
-            // Subtract break times if any
-            if (record.breaks && record.breaks.length > 0) {
-              record.breaks.forEach(breakPeriod => {
-                if (breakPeriod.start && breakPeriod.end) {
-                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                  
-                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                  if (breakHours < 0) breakHours += 24;
-                  
-                  workingHours -= breakHours;
-                }
-              });
-            }
+            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Determine status based on working hours
             if (workingHours >= 8) {
@@ -692,7 +593,7 @@ export const exportAttendanceExcel = async (req, res) => {
             }
           } else {
             // Only in-time is marked, no out-time
-            attendanceStatus = "Incomplete";
+            attendanceStatus = isPastDate(date) ? "Half-Day" : "Incomplete";
           }
         }
        
@@ -817,20 +718,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Subtract break times if any
-            if (record.breaks && record.breaks.length > 0) {
-              record.breaks.forEach(breakPeriod => {
-                if (breakPeriod.start && breakPeriod.end) {
-                  const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                  const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                  
-                  let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                  if (breakHours < 0) breakHours += 24;
-                  
-                  workingHours -= breakHours;
-                }
-              });
-            }
+            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -860,20 +748,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Subtract break times if any
-          if (record.breaks && record.breaks.length > 0) {
-            record.breaks.forEach(breakPeriod => {
-              if (breakPeriod.start && breakPeriod.end) {
-                const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                
-                let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                if (breakHours < 0) breakHours += 24;
-                
-                workingHours -= breakHours;
-              }
-            });
-          }
+          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -885,7 +760,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
         }
       }
      

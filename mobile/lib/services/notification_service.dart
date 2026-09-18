@@ -20,6 +20,14 @@ class NotificationService {
     await _dio.put('/api/notifications/read-all/$userId');
   }
 
+  Future<void> deleteNotification(String notificationId) async {
+    await _dio.delete('/api/notifications/$notificationId');
+  }
+
+  Future<void> clearAll(String userId) async {
+    await _dio.delete('/api/notifications/clear-all/$userId');
+  }
+
   /// Registers the device's FCM token with the backend so the logged-in
   /// user receives push notifications. Mirrors the web app's saveFcmToken.
   Future<void> registerFcmToken(String token) async {

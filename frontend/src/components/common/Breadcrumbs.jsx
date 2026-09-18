@@ -31,7 +31,6 @@ const LABELS = {
   tasks: "Tasks",
   documents: "Documents",
   team: "Team Lead",
-  teams: "Teams",
   reviews: "Reviews",
   approvals: "Approvals",
 };

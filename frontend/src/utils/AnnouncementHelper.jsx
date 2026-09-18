@@ -12,10 +12,19 @@ export const fetchAnnouncements = async () => {
     const res = await axios.get(`${API_BASE}/api/announcement`, { headers: getAuthHeaders() });
     if (res.data.success) {
       // backend already returns imageUrl and createdAt; still normalize
-      return res.data.announcements.map((a) => ({
-        ...a,
-        imageUrl: a.imageUrl || (a.image ? `${API_BASE}/uploads/announcements/${a.image}` : null),
-      }));
+      return res.data.announcements.map((a) => {
+        const raw = a.imageUrl || a.image;
+        let imgUrl = null;
+        if (raw) {
+          imgUrl = (raw.startsWith('http://') || raw.startsWith('https://'))
+            ? raw
+            : `${API_BASE}/${raw.replace(/^\//, '')}`;
+        }
+        return {
+          ...a,
+          imageUrl: imgUrl,
+        };
+      });
     }
     return [];
   } catch (err) {

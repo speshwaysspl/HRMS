@@ -136,12 +136,15 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.accent600,
-        unselectedItemColor: AppColors.inkFaint,
+      // Same dark navy palette as the home screen's app bar, instead of a
+      // plain white bar with a green highlight.
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.brand900,
+        selectedItemColor: AppColors.accent400,
+        unselectedItemColor: Colors.white.withValues(alpha: 0.55),
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
+        elevation: 0,
       ),
     );
   }

@@ -5,6 +5,8 @@ import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   const AnnouncementsScreen({super.key});
@@ -18,6 +20,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _error;
+  Object? _lastError;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       if (!mounted) return;
       setState(() {
         _error = extractErrorMessage(e);
+        _lastError = e;
         _loading = false;
       });
     }
@@ -51,15 +55,22 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Announcements')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_lastError ?? _error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.campaign_outlined, message: 'No announcements yet.'),
+                          EmptyStateView(icon: Icons.campaign_outlined, title: 'No announcements yet', subtitle: 'Company announcements will show up here.'),
                         ])
                       : ListView(
                           padding: EdgeInsets.all(context.w(16)),
@@ -112,10 +123,12 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
   void initState() {
     super.initState();
     _service.getAnnouncement(widget.id).then((v) {
-      if (mounted) setState(() {
-        _item = v;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _item = v;
+          _loading = false;
+        });
+      }
     });
   }
 

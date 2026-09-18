@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom"; // ✅ Import Link
 import { API_BASE } from "../utils/apiConfig";
 import useMeta from "../utils/useMeta";
+import brandLogo from "../assets/logo.jpg";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -54,7 +55,7 @@ const ForgotPasswordPage = () => {
       <div className="w-full max-w-md bg-white shadow-panel rounded-xl p-8 border border-surface-subtle">
         <div className="flex flex-col items-center mb-6">
           <img
-            src="/images/Logo.jpg"
+            src={brandLogo}
             alt="Speshway HRMS"
             className="h-12 w-auto rounded-md mb-4"
           />

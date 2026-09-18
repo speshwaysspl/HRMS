@@ -106,27 +106,12 @@ const getEmployeeDashboardStats = async (req, res) => {
             attendanceStatus = "Leave";
         } else if (todayAttendance) {
             if (todayAttendance.inTime && todayAttendance.outTime) {
-                // Calculate working hours using the same logic as attendance controller
+                // Calculate working hours using plain check-in to check-out span matching web AttendanceReport
                 const [inHour, inMin] = todayAttendance.inTime.split(":").map(Number);
                 const [outHour, outMin] = todayAttendance.outTime.split(":").map(Number);
                 
                 workingHours = (outHour - inHour) + (outMin - inMin) / 60;
                 if (workingHours < 0) workingHours += 24; // Handle overnight shifts
-                
-                // Subtract break times if any
-                if (todayAttendance.breaks && todayAttendance.breaks.length > 0) {
-                    todayAttendance.breaks.forEach(breakPeriod => {
-                        if (breakPeriod.start && breakPeriod.end) {
-                            const [breakStartHour, breakStartMin] = breakPeriod.start.split(":").map(Number);
-                            const [breakEndHour, breakEndMin] = breakPeriod.end.split(":").map(Number);
-                            
-                            let breakHours = (breakEndHour - breakStartHour) + (breakEndMin - breakStartMin) / 60;
-                            if (breakHours < 0) breakHours += 24;
-                            
-                            workingHours -= breakHours;
-                        }
-                    });
-                }
                 
                 // Round working hours
                 workingHours = Math.round(workingHours * 100) / 100;

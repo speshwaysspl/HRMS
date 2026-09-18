@@ -44,7 +44,13 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
     Number(payslip.lopamount || 0) +
     Number(payslip.deductions || 0);
 
-  const netPay = totalEarnings - totalDeductions;
+  // Prefer the authoritative netSalary the backend already computed
+  // (which may reflect a netPayOverride — e.g. for a partial-month payslip
+  // where Net Pay is prorated by days worked but Earnings/Deductions still
+  // display their standard full-month figures) over recomputing it here.
+  // For a normal full-month payslip this is always the same value anyway.
+  const hasStoredNetSalary = payslip.netSalary !== undefined && payslip.netSalary !== null && !isNaN(Number(payslip.netSalary));
+  const netPay = hasStoredNetSalary ? Number(payslip.netSalary) : totalEarnings - totalDeductions;
 
   const handleDownloadPDF = async () => {
     if (!payslip) {
@@ -124,27 +130,27 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
               {/* Left Column */}
               <div className="p-3 space-y-2">
                 <div className="flex">
-                  <span className="w-24 text-sm">Name:</span>
+                  <span className="w-32 shrink-0 text-sm">Name:</span>
                   <span className="text-sm font-medium">{payslip.name || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Joining Date:</span>
+                  <span className="w-32 shrink-0 text-sm">Joining Date:</span>
                   <span className="text-sm">{formatDate(payslip.joiningDate)}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Designation:</span>
+                  <span className="w-32 shrink-0 text-sm">Designation:</span>
                   <span className="text-sm">{payslip.designation || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Department:</span>
+                  <span className="w-32 shrink-0 text-sm">Department:</span>
                   <span className="text-sm">{payslip.department || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Work Days:</span>
+                  <span className="w-32 shrink-0 text-sm">Work Days:</span>
                   <span className="text-sm">{payslip.workingdays || 0}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">LOP Days:</span>
+                  <span className="w-32 shrink-0 text-sm">LOP Days:</span>
                   <span className="text-sm">{payslip.lopDays || 0}</span>
                 </div>
               </div>
@@ -152,23 +158,23 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
               {/* Right Column */}
               <div className="p-3 space-y-2">
                 <div className="flex">
-                  <span className="w-24 text-sm">Employee No:</span>
+                  <span className="w-32 shrink-0 text-sm">Employee No:</span>
                   <span className="text-sm">{payslip.employeeId || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Bank Name:</span>
+                  <span className="w-32 shrink-0 text-sm">Bank Name:</span>
                   <span className="text-sm">{payslip.bankname || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">Bank Account No:</span>
+                  <span className="w-32 shrink-0 text-sm">Bank Account No:</span>
                   <span className="text-sm">{payslip.bankaccountnumber || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">PAN No:</span>
+                  <span className="w-32 shrink-0 text-sm">PAN No:</span>
                   <span className="text-sm">{payslip.pan || 'N/A'}</span>
                 </div>
                 <div className="flex">
-                  <span className="w-24 text-sm">UAN No:</span>
+                  <span className="w-32 shrink-0 text-sm">UAN No:</span>
                   <span className="text-sm">{payslip.uan || 'N/A'}</span>
                 </div>
               </div>

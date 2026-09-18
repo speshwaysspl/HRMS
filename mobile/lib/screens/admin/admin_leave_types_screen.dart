@@ -119,7 +119,7 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
                                             style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                         SizedBox(height: context.h(3)),
                                         Text(
-                                          '${t['annualQuota'] ?? 0} days/year'
+                                          '${t['monthlyQuota'] ?? ((t['annualQuota'] != null && t['annualQuota'] > 0) ? (t['annualQuota'] / 12).round() : 1)} days/month'
                                           '${t['requiresApproval'] == false ? '  ·  auto-approved' : ''}',
                                           style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
                                         ),
@@ -165,7 +165,11 @@ class _TypeSheetState extends State<_TypeSheet> {
   void initState() {
     super.initState();
     _name = TextEditingController(text: widget.existing?['name']?.toString() ?? '');
-    _quota = TextEditingController(text: (widget.existing?['annualQuota'] ?? '').toString());
+    final initialQuota = widget.existing?['monthlyQuota'] ??
+        ((widget.existing?['annualQuota'] != null)
+            ? (widget.existing!['annualQuota'] / 12).round()
+            : 1);
+    _quota = TextEditingController(text: initialQuota.toString());
     _requiresApproval = widget.existing?['requiresApproval'] != false;
     _isActive = widget.existing?['isActive'] != false;
   }
@@ -179,21 +183,21 @@ class _TypeSheetState extends State<_TypeSheet> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final quota = int.tryParse(_quota.text.trim()) ?? 0;
+    final quota = num.tryParse(_quota.text.trim()) ?? 1;
     setState(() => _saving = true);
     try {
       if (_isEdit) {
         await widget.service.update(
           widget.existing!['_id'].toString(),
           name: _name.text.trim(),
-          annualQuota: quota,
+          monthlyQuota: quota,
           requiresApproval: _requiresApproval,
           isActive: _isActive,
         );
       } else {
         await widget.service.add(
           name: _name.text.trim(),
-          annualQuota: quota,
+          monthlyQuota: quota,
           requiresApproval: _requiresApproval,
         );
       }
@@ -235,9 +239,9 @@ class _TypeSheetState extends State<_TypeSheet> {
                 SizedBox(height: context.h(14)),
                 TextFormField(
                   controller: _quota,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Annual quota (days)'),
-                  validator: (v) => (int.tryParse(v?.trim() ?? '') == null) ? 'Enter a number' : null,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Monthly quota (days)'),
+                  validator: (v) => (num.tryParse(v?.trim() ?? '') == null) ? 'Enter a number' : null,
                 ),
                 SwitchListTile(
                   value: _requiresApproval,

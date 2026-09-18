@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../utils/apiConfig";
 import useMeta from "../utils/useMeta";
+import brandLogo from "../assets/logo.jpg";
  
 export default function ResetPassword() {
   const { token } = useParams();
@@ -62,7 +63,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-md bg-white shadow-panel rounded-xl p-8 border border-surface-subtle">
         <div className="flex flex-col items-center mb-6">
           <img
-            src="/images/Logo.jpg"
+            src={brandLogo}
             alt="Speshway HRMS"
             className="h-12 w-auto rounded-md mb-4"
           />

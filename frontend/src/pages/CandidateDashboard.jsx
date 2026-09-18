@@ -29,6 +29,7 @@ import ProfileCompletionForm from "../components/candidate/ProfileCompletionForm
 import OnboardingDocsUpload from "../components/candidate/OnboardingDocsUpload";
 import OfferLetterPortal from "../components/offer/OfferLetterPortal";
 import LoadingState from "../components/common/LoadingState";
+import brandLogo from "../assets/logo.jpg";
 
 const getMissingFields = (candidate) => {
   if (!candidate) return [];
@@ -216,7 +217,7 @@ const CandidateDashboard = () => {
       <div className="w-64 border-r border-white/10 bg-brand-800 text-white p-6 flex flex-col justify-between hidden md:flex">
         <div>
           <div className="flex items-center gap-3 mb-8">
-            <img src="/images/Logo.jpg" className="w-9 h-9 rounded-md object-cover" alt="Logo" />
+            <img src={brandLogo} className="w-9 h-9 rounded-md object-cover" alt="Logo" />
             <h1 className="font-semibold text-base tracking-wide">Onboarding</h1>
           </div>
 

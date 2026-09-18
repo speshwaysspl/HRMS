@@ -3,7 +3,8 @@ import { Schema } from "mongoose";
 
 const leaveTypeSchema = new Schema({
   name: { type: String, required: true, unique: true, trim: true },
-  annualQuota: { type: Number, required: true, default: 12 },
+  monthlyQuota: { type: Number, default: 1 },
+  annualQuota: { type: Number, default: 12 },
   requiresApproval: { type: Boolean, default: true },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },

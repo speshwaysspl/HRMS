@@ -37,7 +37,7 @@ const SidebarSection = ({ icon, label, links, defaultOpen = false, isDesktop, se
                 key={idx}
                 to={link.to}
                 end={link.end}
-                onClick={() => !isDesktop && setIsOpen(false)}
+                onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 py-2 px-3 rounded-lg text-sm transition-colors duration-150 ${
                     isActive

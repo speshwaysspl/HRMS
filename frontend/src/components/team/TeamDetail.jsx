@@ -249,8 +249,6 @@ const TeamDetail = () => {
         }
       );
       if (response.data.success) {
-        alert("Task updated successfully");
-        
         // Update local state immediately
         setTasks(prev => prev.map(t => 
             t._id === editingTask._id ? { ...t, status: newTaskStatus, description: newTaskRemark, workProof: workProofFile ? response.data.task.workProof : t.workProof } : t

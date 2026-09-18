@@ -90,8 +90,12 @@ const View = () => {
       Number(salary.lopamount || 0) +
       Number(salary.deductions || 0);
 
-    const netPay = totalEarnings - totalDeductions;
-    
+    // Prefer the stored netSalary (may reflect a netPayOverride from a
+    // partial-month payslip) over recomputing Total Earnings − Total
+    // Deductions — see the matching comment in PayslipPreview.jsx.
+    const hasStoredNetSalary = salary.netSalary !== undefined && salary.netSalary !== null && !isNaN(Number(salary.netSalary));
+    const netPay = hasStoredNetSalary ? Number(salary.netSalary) : totalEarnings - totalDeductions;
+
     const formatAmt = (amt) => Number(amt || 0).toFixed(0);
     const formatCurrencyINR = (val) => `INR ${Number(val || 0).toFixed(2)}`;
     

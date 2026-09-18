@@ -2,9 +2,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/api_client.dart';
 import '../services/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
+import '../widgets/state_views.dart';
 import 'shell/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _networkError = false;
 
   @override
   void dispose() {
@@ -42,17 +45,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _networkError = false;
+    });
     final auth = context.read<AuthProvider>();
     final ok = await auth.login(_emailController.text.trim(), _passwordController.text);
     if (!mounted) return;
-    setState(() => _loading = false);
     if (ok) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AppShell()),
         (route) => false,
       );
-    } else {
+      return;
+    }
+    final rawError = auth.lastErrorRaw;
+    final isNetwork = rawError != null && isNetworkError(rawError);
+    setState(() {
+      _loading = false;
+      _networkError = isNetwork;
+    });
+    if (!isNetwork) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.lastError ?? 'Login failed')),
       );
@@ -61,53 +74,102 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: AppColors.brand900,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: context.w(24), vertical: context.h(32)),
-          child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: context.isTablet ? 440 : double.infinity),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: context.h(24)),
-                _buildBrandHeader(),
-                SizedBox(height: context.h(40)),
-                _buildLoginCard(),
-                SizedBox(height: context.h(16)),
-                Text.rich(
-                  TextSpan(
-                    text: 'By signing in you agree to our ',
+        bottom: false,
+        child: Column(
+          children: [
+            // Dark hero fills the space above the card, logo+tagline
+            // centered squarely in the middle of it.
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: context.w(24)),
+                  // FittedBox lets the logo/title/tagline scale down instead
+                  // of overflowing when the keyboard opens and shrinks this
+                  // Expanded region below the header's natural height. The
+                  // fixed-width SizedBox keeps the tagline wrapping at a
+                  // sane width before FittedBox scales the whole block.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: SizedBox(
+                      width: 280,
+                      child: _buildBrandHeader(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Full-width bottom sheet, rounded top corners only.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: context.isTablet ? 440 : double.infinity),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    context.w(24),
+                    context.h(28),
+                    context.w(24),
+                    context.h(20) + bottomInset,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      TextSpan(
-                        text: 'Terms of Service',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          decoration: TextDecoration.underline,
+                      if (_networkError) ...[
+                        SizedBox(
+                          height: context.h(240),
+                          child: NetworkErrorView(onRetry: _submit),
                         ),
-                        recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_termsUrl),
+                        SizedBox(height: context.h(8)),
+                      ],
+                      Offstage(
+                        offstage: _networkError,
+                        child: _buildLoginCard(),
                       ),
-                      const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Privacy Policy',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          decoration: TextDecoration.underline,
+                      SizedBox(height: context.h(16)),
+                      Text.rich(
+                        TextSpan(
+                          text: 'By signing in you agree to our ',
+                          children: [
+                            TextSpan(
+                              text: 'Terms of Service',
+                              style: const TextStyle(
+                                color: AppColors.inkMuted,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_termsUrl),
+                            ),
+                            const TextSpan(text: ' and '),
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              style: const TextStyle(
+                                color: AppColors.inkMuted,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_privacyUrl),
+                            ),
+                            const TextSpan(text: '.'),
+                          ],
                         ),
-                        recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_privacyUrl),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
                       ),
-                      const TextSpan(text: '.'),
                     ],
                   ),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54, fontSize: context.sp(12)),
                 ),
-              ],
+              ),
             ),
-          ),
-          ),
+          ],
         ),
       ),
     );
@@ -115,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildBrandHeader() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(12),
@@ -145,17 +208,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.panel),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             const Text(
               'Welcome back',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink),
@@ -173,7 +230,6 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               decoration: const InputDecoration(
-                hintText: 'you@example.com',
                 prefixIcon: Icon(Icons.mail_outline, size: 20),
               ),
               validator: (v) {
@@ -191,7 +247,6 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _passwordController,
               obscureText: _obscurePassword,
               decoration: InputDecoration(
-                hintText: 'Enter your password',
                 prefixIcon: const Icon(Icons.lock_outline, size: 20),
                 suffixIcon: IconButton(
                   icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
@@ -215,8 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     : const Text('Login'),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

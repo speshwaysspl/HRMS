@@ -11,13 +11,15 @@ import {
   FaRegMoon,
   FaSun,
   FaCalendarAlt,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleDarkMode } from "../../redux/slices/recruitmentSlice";
 import SidebarSection from "./SidebarSection";
+import brandLogo from "../../assets/logo.jpg";
 
 const HRSidebar = ({ isOpen, setIsOpen }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const dispatch = useDispatch();
   const darkMode = useSelector((state) => state.recruitment.darkMode);
 
@@ -88,7 +90,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
         <div className="bg-brand-900 h-16 flex items-center justify-between px-5 gap-3 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/images/Logo.jpg"
+              src={brandLogo}
               alt="Logo"
               loading="lazy"
               width="36"
@@ -123,7 +125,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
             to={topLink.to}
             end={topLink.end}
             className={topLinkClass}
-            onClick={() => !isDesktop && setIsOpen(false)}
+            onClick={() => setIsOpen(false)}
           >
             <span className="text-base">{topLink.icon}</span>
             <span>{topLink.label}</span>
@@ -143,13 +145,21 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
         </div>
 
         <div className="p-4 border-t border-white/10 bg-brand-900 flex items-center flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-white font-semibold text-xs uppercase">
+          <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-white font-semibold text-xs uppercase flex-shrink-0">
             {user?.name?.substring(0, 2) || "HR"}
           </div>
-          <div className="ml-3 truncate">
+          <div className="ml-3 truncate min-w-0 flex-1">
             <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
             <p className="text-xs text-brand-200 truncate">HR Manager</p>
           </div>
+          <button
+            onClick={logout}
+            className="ml-2 p-2 rounded-lg text-brand-200 hover:text-red-300 hover:bg-red-500/10 transition-colors flex-shrink-0"
+            aria-label="Logout"
+            title="Logout"
+          >
+            <FaSignOutAlt size={16} />
+          </button>
         </div>
       </div>
 

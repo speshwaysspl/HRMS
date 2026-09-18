@@ -6,9 +6,21 @@ const announcementSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
-    // scope: 'all' means send to all employees, 'specific' means use recipients list
-    scope: { type: String, enum: ["all", "specific"], default: "all" },
-    // recipients: optional list of User ObjectIds (targeted users) when scope is 'specific'
+    // category: 'important', 'quote', 'festival', 'event', 'achievement', 'general'
+    category: {
+      type: String,
+      enum: ["important", "quote", "festival", "event", "achievement", "general"],
+      default: "important"
+    },
+    // scope: 'all', 'specific', 'team_leads', 'team_members', 'team'
+    scope: { 
+      type: String, 
+      enum: ["all", "specific", "team_leads", "team_members", "team"], 
+      default: "all" 
+    },
+    // targetTeam: optional reference to Team when scope is 'team'
+    targetTeam: { type: Schema.Types.ObjectId, ref: "Team", default: null },
+    // recipients: optional list of User ObjectIds (targeted users) when scope is not 'all'
     recipients: [{ type: Schema.Types.ObjectId, ref: "User" }],
     image: { type: String, default: null }, // S3 URL
     imageKey: { type: String, default: null }, // S3 object key for deletion

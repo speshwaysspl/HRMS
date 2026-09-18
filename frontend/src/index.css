@@ -12,6 +12,20 @@
   ::selection {
     @apply bg-brand-200 text-brand-900;
   }
+
+  /* Hide scrollbars globally on every page (scrolling still works) */
+  html,
+  body {
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE / old Edge */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;               /* Chrome / Safari / Edge */
+  }
 }
 
 @layer utilities {

@@ -90,24 +90,44 @@ const createLeaveStatusNotification = async (leaveData, status, adminId, io) => 
 // target only those users. Otherwise, use announcementData.recipients if present, or all active employees.
 const createAnnouncementNotification = async (announcementData, adminId, io, recipients = null) => {
   try {
-    let employees = [];
-    if (Array.isArray(recipients) && recipients.length) {
-      employees = await Employee.find({ userId: { $in: recipients }, status: 'active' }).populate('userId', 'name email role');
-    } else if (Array.isArray(announcementData?.recipients) && announcementData.recipients.length) {
-      employees = await Employee.find({ userId: { $in: announcementData.recipients }, status: 'active' }).populate('userId', 'name email role');
+    let targetUserIds = new Set();
+
+    const targetList = (Array.isArray(recipients) && recipients.length)
+      ? recipients
+      : (Array.isArray(announcementData?.recipients) && announcementData.recipients.length)
+        ? announcementData.recipients
+        : null;
+
+    if (targetList) {
+      targetList.forEach(id => {
+        if (id) targetUserIds.add(id.toString());
+      });
     } else {
-      employees = await Employee.find({ status: 'active' }).populate('userId', 'name email role');
+      // All active employees
+      const employees = await Employee.find({ status: 'active' }).select('userId');
+      employees.forEach(emp => {
+        if (emp.userId) targetUserIds.add(emp.userId.toString());
+      });
     }
 
+    const categoryLabels = {
+      quote: "✨ Today's Quote",
+      festival: "🎉 Festival Greeting",
+      event: "📅 Event Update",
+      achievement: "🏆 Milestone & Achievement",
+      general: "📌 Company Notice",
+      important: "📢 Important Announcement",
+    };
+    const notifTitle = categoryLabels[announcementData?.category] || 'New Announcement';
+
     const created = [];
-    for (const emp of employees) {
-      if (!emp.userId || !emp.userId._id) continue;
+    for (const userId of targetUserIds) {
       const data = {
         type: 'announcement',
-        title: 'New Announcement',
+        title: notifTitle,
         message: announcementData?.title || announcementData?.description || 'Announcement',
         senderId: adminId,
-        recipientId: emp.userId._id,
+        recipientId: userId,
         relatedId: announcementData?._id
       };
       created.push(await createNotification(data, io));
@@ -314,6 +334,25 @@ const clearAllNotifications = async (req, res) => {
   }
 };
 
+const deleteNotification = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+    const authUserId = (req.user && (req.user._id || req.user.id)) ? (req.user._id || req.user.id).toString() : null;
+    if (authUserId && notification.recipientId.toString() !== authUserId) {
+      return res.status(403).json({ success: false, error: 'Unauthorized to delete this notification' });
+    }
+    await Notification.findByIdAndDelete(notificationId);
+    return res.status(200).json({ success: true, message: 'Notification deleted' });
+  } catch (err) {
+    console.error('deleteNotification error', err);
+    return res.status(500).json({ success: false, error: 'Failed to delete notification' });
+  }
+};
+
 const sendCustomNotification = async (req, res) => {
   try {
     const { userId, title, message, data } = req.body;
@@ -385,4 +424,4 @@ const removeFcmToken = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, sendCustomNotification, saveFcmToken, removeFcmToken };
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, deleteNotification, sendCustomNotification, saveFcmToken, removeFcmToken };

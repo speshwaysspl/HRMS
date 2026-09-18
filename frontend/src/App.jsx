@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 const Contact = lazy(() => import("./pages/Contact"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
@@ -39,6 +40,7 @@ const Edit = lazy(() => import("./components/employee/Edit"));
 
 const ViewSalary = lazy(() => import("./components/salary/View"));
 const PayslipGenerator = lazy(() => import("./components/salary/PayslipGenerator"));
+const GeneratePayslipByDays = lazy(() => import("./components/salary/GeneratePayslipByDays"));
 const PayrollTemplateManager = lazy(() => import("./components/salary/PayrollTemplateManager"));
 const PayslipHistory = lazy(() => import("./components/salary/PayslipHistory"));
 const Table = lazy(() => import("./components/leave/Table"));
@@ -50,7 +52,6 @@ const AnnouncementAdd = lazy(() => import("./components/announcements/Announceme
 const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
 const RegularizationApprovals = lazy(() => import("./components/attendance/RegularizationApprovals"));
-const RegularizationRequest = lazy(() => import("./components/attendance/RegularizationRequest"));
 const TeamReviews = lazy(() => import("./components/performance/TeamReviews"));
 const MyReviews = lazy(() => import("./components/performance/MyReviews"));
 const ReportSettings = lazy(() => import("./components/dashboard/ReportSettings"));
@@ -109,6 +110,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms-and-conditions" element={<Terms />} />
         <Route path="/privacy-policy" element={<Privacy />} />
+        <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
  
@@ -148,6 +150,7 @@ function App() {
           <Route path="salary" element={<ViewSalary />} />
 
           <Route path="salary/payslip-generator" element={<PayslipGenerator />} />
+          <Route path="salary/generate-by-days" element={<GeneratePayslipByDays />} />
           <Route path="salary/template-manager" element={<PayrollTemplateManager />} />
           <Route path="salary/payslip-history" element={<PayslipHistory />} />
  
@@ -169,7 +172,6 @@ function App() {
  
           {/* Attendance Report */}
           <Route path="attendance-report" element={<AdminAttendanceReport />} />
-          <Route path="attendance-corrections" element={<RegularizationApprovals />} />
           <Route path="team-reviews" element={<TeamReviews />} />
 
           {/* Feedback */}
@@ -220,7 +222,6 @@ function App() {
           {/* Attendance */}
           <Route path="attendance" element={<Attendance />} />
           <Route path="attendance-report" element={<AttendanceReport />} />
-          <Route path="attendance-corrections" element={<RegularizationRequest />} />
           <Route path="my-reviews" element={<MyReviews />} />
           <Route path="feedback" element={<EmployeeFeedback />} />
           <Route path="calendar" element={<EmployeeCalendar />} />

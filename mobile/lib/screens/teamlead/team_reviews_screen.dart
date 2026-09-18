@@ -69,14 +69,24 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
                           children: _items.map((r) {
                             final employee = r['employeeId'] as Map? ?? {};
                             final user = employee['userId'] as Map? ?? {};
+                            final name = user['name']?.toString() ?? 'Employee';
                             return SimpleCard(
                               child: Row(
                                 children: [
+                                  CircleAvatar(
+                                    radius: context.r(18),
+                                    backgroundColor: const Color(0xFFF3E8FF),
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: const TextStyle(color: Color(0xFF9333EA), fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                  SizedBox(width: context.w(12)),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                        Text(name, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                         SizedBox(height: context.h(3)),
                                         Text('${r['cycle'] ?? ''}  ·  Overall: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                       ],

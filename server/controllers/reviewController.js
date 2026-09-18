@@ -84,11 +84,20 @@ const updateReview = async (req, res) => {
   }
 };
 
-// Manager's view: reviews they authored for their direct reports
+// Manager's view: reviews they authored for their direct reports.
+// Admins/HR without their own Employee profile fall back to seeing every
+// review in the org, since they have no "direct reports" of their own.
 const getTeamReviews = async (req, res) => {
   try {
     const reviewerEmployee = await Employee.findOne({ userId: req.user._id });
     if (!reviewerEmployee) {
+      if (isAdminOrHR(req.user)) {
+        const reviews = await Review.find()
+          .populate({ path: "employeeId", populate: { path: "userId", select: "name" } })
+          .populate({ path: "reviewerId", populate: { path: "userId", select: "name" } })
+          .sort({ createdAt: -1 });
+        return res.status(200).json({ success: true, reviews });
+      }
       return res.status(404).json({ success: false, error: "Employee profile not found" });
     }
     const reviews = await Review.find({ reviewerId: reviewerEmployee._id })
@@ -135,11 +144,16 @@ const getAllReviews = async (req, res) => {
   }
 };
 
-// Reports (Employee list) available to the logged-in manager, for the "create review" picker
+// Reports (Employee list) available to the logged-in manager, for the "create review" picker.
+// Admins/HR without their own Employee profile can pick from every employee.
 const getMyDirectReports = async (req, res) => {
   try {
     const reviewerEmployee = await Employee.findOne({ userId: req.user._id });
     if (!reviewerEmployee) {
+      if (isAdminOrHR(req.user)) {
+        const reports = await Employee.find().populate("userId", "name");
+        return res.status(200).json({ success: true, reports });
+      }
       return res.status(404).json({ success: false, error: "Employee profile not found" });
     }
     const reports = await Employee.find({ reportsTo: reviewerEmployee._id }).populate("userId", "name");

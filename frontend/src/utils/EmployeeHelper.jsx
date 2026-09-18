@@ -41,7 +41,8 @@ export const columns = [
   {
     name: "Name",
     selector: (row) => row.name,
-    width: "260px",
+    minWidth: "160px",
+    wrap: true,
     cell: (row) => (
       <span className="flex items-center gap-2">
         <button
@@ -50,30 +51,33 @@ export const columns = [
           className={`w-2 h-2 rounded-full flex-shrink-0 cursor-pointer ${row.status === "active" ? "bg-accent-500" : "bg-red-500"}`}
           title={`${row.status === "active" ? "Active" : "Inactive"} — click to ${row.status === "active" ? "deactivate" : "activate"}`}
         />
-        <span className="truncate">{row.name}</span>
+        <span>{row.name}</span>
       </span>
     ),
   },
   {
     name: "Department",
     selector: (row) => row.dep_name,
-    width: "120px",
+    minWidth: "130px",
+    wrap: true,
   },
   {
     name: "Designation",
     selector: (row) => row.designation,
-    width: "150px",
+    minWidth: "190px",
+    wrap: true,
   },
   {
     name: "Joining Date",
     selector: (row) => row.joiningDate,
-    width: "170px",
+    minWidth: "190px",
+    wrap: true,
   },
   {
     name: "Action",
     selector: (row) => row.action,
     center: true,
-    width: "220px",
+    width: "210px",
     allowOverflow: true,
   },
 ];
@@ -129,7 +133,7 @@ export const EmployeeButtons = ({ Id, onDelete }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-3 gap-1 place-items-center">
+    <div className="flex items-center justify-center gap-1 flex-nowrap">
       <ActionIconButton icon={FiEye} label="View" color="brand" onClick={() => navigate(`/admin-dashboard/employees/${Id}`)} />
       <ActionIconButton icon={FiEdit2} label="Edit" color="brand" onClick={() => navigate(`/admin-dashboard/employees/edit/${Id}`)} />
       <ActionIconButton icon={FiDollarSign} label="Salary" color="accent" onClick={() => navigate(`/admin-dashboard/employees/salary/${Id}`)} />

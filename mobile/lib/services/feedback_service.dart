@@ -22,7 +22,7 @@ class FeedbackService {
   /// Admin: respond to / update the status of a feedback item.
   Future<void> respond(String id, {String? status, String? adminResponse}) async {
     await _dio.put('/api/feedback/$id/status', data: {
-      if (status != null) 'status': status,
+      'status': ?status,
       if (adminResponse != null && adminResponse.isNotEmpty) 'adminResponse': adminResponse,
     });
   }
@@ -41,7 +41,7 @@ class FeedbackService {
       'description': description,
       'priority': priority,
       'isAnonymous': isAnonymous,
-      if (rating != null) 'rating': rating,
+      'rating': ?rating,
     });
   }
 }

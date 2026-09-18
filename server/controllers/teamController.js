@@ -93,19 +93,33 @@ export const getTeams = async (req, res) => {
     if (userRoles.includes("admin")) {
       teams = await Team.find()
         .populate("leadId", "name email")
-        // Removed deep population of members as it's not needed for the list view and slows down response
-        .select("name leadId members"); 
+        .populate({
+          path: "members.employeeId",
+          populate: { path: "userId", select: "name email" },
+          select: "userId employeeId designation department"
+        })
+        .select("name description leadId members"); 
     } else if (userRoles.includes("team_lead")) {
       teams = await Team.find({ leadId: req.user._id })
         .populate("leadId", "name email")
-        .select("name leadId members");
+        .populate({
+          path: "members.employeeId",
+          populate: { path: "userId", select: "name email" },
+          select: "userId employeeId designation department"
+        })
+        .select("name description leadId members");
     } else {
       // Employee view - teams they belong to
       const employee = await Employee.findOne({ userId: req.user._id });
       if (employee) {
         teams = await Team.find({ "members.employeeId": employee._id })
            .populate("leadId", "name")
-           .select("name leadId members");
+           .populate({
+             path: "members.employeeId",
+             populate: { path: "userId", select: "name email" },
+             select: "userId employeeId designation department"
+           })
+           .select("name description leadId members");
       } else {
          teams = [];
       }

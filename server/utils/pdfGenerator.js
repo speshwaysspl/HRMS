@@ -195,7 +195,14 @@ const generateSalaryPDFContent = (doc, salary) => {
     Number(salary.lopamount || 0) +
     Number(salary.deductions || 0);
 
-  const netPay = totalEarnings - totalDeductions;
+  // Prefer the authoritative netSalary already computed by
+  // generatePayslip/previewPayslip (which may reflect a netPayOverride,
+  // e.g. for a partial-month payslip where Net Pay is prorated but
+  // Earnings/Deductions still display their standard full-month figures)
+  // over blindly recomputing it here — for a normal full-month payslip
+  // this is always the same value anyway.
+  const hasStoredNetSalary = salary.netSalary !== undefined && salary.netSalary !== null && !isNaN(Number(salary.netSalary));
+  const netPay = hasStoredNetSalary ? Number(salary.netSalary) : totalEarnings - totalDeductions;
 
   // Totals horizontal line
   const totalsY = cursorY + sectionHeight - footerHeight;

@@ -11,12 +11,14 @@ import {
   FaComments,
   FaClipboardList,
   FaUserTie,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import SidebarSection from "../dashboard/SidebarSection";
+import brandLogo from "../../assets/logo.jpg";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const userRoles = Array.isArray(user?.role) ? user.role : [user?.role];
   const isTeamLead = userRoles.includes("team_lead");
@@ -52,6 +54,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { to: "/employee-dashboard", label: "Dashboard", icon: <FaTachometerAlt />, end: true },
     { to: `/employee-dashboard/profile/${user?._id}`, label: "My Profile", icon: <FaUsers /> },
     { to: `/employee-dashboard/salary/${user?._id}`, label: "Salary", icon: <FaMoneyBillWave /> },
+  ];
+
+  const bottomLinks = [
     { to: "/employee-dashboard/setting", label: "Settings", icon: <FaCogs /> },
   ];
 
@@ -64,7 +69,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { to: `/employee-dashboard/leaves/${user?._id}`, label: "Leaves", icon: <FaBuilding /> },
         { to: "/employee-dashboard/attendance", label: "Attendance", icon: <FaCalendarAlt /> },
         { to: "/employee-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
-        { to: "/employee-dashboard/attendance-corrections", label: "Attendance Corrections", icon: <FaCalendarAlt /> },
         { to: "/employee-dashboard/calendar", label: "Calendar", icon: <FaCalendarAlt /> },
       ],
     },
@@ -118,7 +122,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       >
         <div className="bg-brand-900 h-16 flex items-center px-5 gap-3 border-b border-white/10 flex-shrink-0">
           <img
-            src="/images/Logo.jpg"
+            src={brandLogo}
             alt="Company Logo"
             loading="lazy"
             width="36"
@@ -145,7 +149,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               to={link.to}
               end={link.end}
               className={topLinkClass}
-              onClick={() => !isDesktop && setIsOpen(false)}
+              onClick={() => setIsOpen(false)}
             >
               <span className="text-base">{link.icon}</span>
               <span>{link.label}</span>
@@ -162,6 +166,29 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               setIsOpen={setIsOpen}
             />
           ))}
+
+          {bottomLinks.map((link, idx) => (
+            <NavLink
+              key={idx}
+              to={link.to}
+              end={link.end}
+              className={topLinkClass}
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="text-base">{link.icon}</span>
+              <span>{link.label}</span>
+            </NavLink>
+          ))}
+        </div>
+
+        <div className="px-3 py-3 border-t border-white/10 flex-shrink-0">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 py-2.5 px-3.5 rounded-lg text-sm font-medium text-brand-100/80 hover:bg-red-500/10 hover:text-red-300 transition-colors duration-150"
+          >
+            <FaSignOutAlt className="text-base" />
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 

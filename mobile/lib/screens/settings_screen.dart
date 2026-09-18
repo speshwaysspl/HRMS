@@ -61,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+
   Future<void> _toggleAppLock(bool value) async {
     if (_busyLock) return;
     setState(() => _busyLock = true);
@@ -322,12 +323,13 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.surfaceSubtle),
+        side: const BorderSide(color: AppColors.surfaceSubtle),
       ),
+      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }

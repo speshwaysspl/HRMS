@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../main.dart';
 import '../../services/api_client.dart';
 import '../../services/app_events.dart';
 import '../../services/auth_provider.dart';
@@ -9,6 +10,8 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 
 class LeavesScreen extends StatefulWidget {
@@ -21,40 +24,53 @@ class LeavesScreen extends StatefulWidget {
 class _LeavesScreenState extends State<LeavesScreen> {
   final _service = LeaveService();
   List<Map<String, dynamic>> _leaves = [];
-  List<Map<String, dynamic>> _balance = [];
   List<Map<String, dynamic>> _leaveTypes = [];
   bool _loading = true;
   String? _error;
+  Object? _lastError;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    final cache = AppCaches.of(context).leavesList;
+    if (cache.hasData) {
+      _leaves = cache.data!;
+      _loading = false;
+      _load(silent: true);
+    } else {
+      _load();
+    }
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _lastError = null;
+      });
+    }
     final userId = context.read<AuthProvider>().user?.id ?? '';
     try {
       final results = await Future.wait([
         _service.getLeaves(userId),
-        _service.getBalance(),
         _service.getLeaveTypes(),
       ]);
       if (!mounted) return;
+      AppCaches.of(context).leavesList.set(results[0]);
       setState(() {
         _leaves = results[0];
-        _balance = results[1];
-        _leaveTypes = results[2];
+        _leaveTypes = results[1];
         _loading = false;
+        _error = null;
+        _lastError = null;
       });
     } catch (e) {
       if (!mounted) return;
+      if (silent && _leaves.isNotEmpty) return;
       setState(() {
         _error = extractErrorMessage(e);
+        _lastError = e;
         _loading = false;
       });
     }
@@ -85,57 +101,49 @@ class _LeavesScreenState extends State<LeavesScreen> {
         label: const Text('Apply'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_lastError ?? _error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
                     padding: EdgeInsets.all(context.w(16)),
                     children: [
-                      if (_balance.isNotEmpty) ...[
-                        Text('Leave Balance', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
-                        SizedBox(height: context.h(10)),
-                        SizedBox(
-                          height: context.h(60) + context.sp(20) + context.sp(11) * 2,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _balance.length,
-                            separatorBuilder: (_, _) => SizedBox(width: context.w(10)),
-                            itemBuilder: (_, i) {
-                              final b = _balance[i];
-                              return Container(
-                                width: context.w(130),
-                                padding: EdgeInsets.all(context.w(12)),
-                                decoration: BoxDecoration(
-                                  color: AppColors.brand50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('${b['remaining']}', style: TextStyle(fontSize: context.sp(20), fontWeight: FontWeight.w700, color: AppColors.brand700)),
-                                    SizedBox(height: context.h(2)),
-                                    Text('${b['leaveType']}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted)),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        SizedBox(height: context.h(20)),
-                      ],
                       Text('My Requests', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
                       SizedBox(height: context.h(10)),
                       if (_leaves.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: CenteredMessage(icon: Icons.beach_access_outlined, message: 'No leave requests yet.'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: EmptyStateView(
+                            icon: Icons.beach_access_outlined,
+                            title: 'No leave requests yet',
+                            subtitle: 'Apply for a leave and it will show up here.',
+                            action: OutlinedButton.icon(
+                              onPressed: _openApplySheet,
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Apply for Leave'),
+                            ),
+                          ),
                         )
                       else
                         ..._leaves.map((l) => SimpleCard(
                               child: Row(
                                 children: [
+                                  Container(
+                                    width: context.r(36),
+                                    height: context.r(36),
+                                    decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                                    child: Icon(Icons.calendar_month_rounded, size: context.r(18), color: AppColors.brand600),
+                                  ),
+                                  SizedBox(width: context.w(10)),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,6 +197,8 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _submitting = false;
+  bool _startDateError = false;
+  bool _endDateError = false;
 
   @override
   void dispose() {
@@ -207,16 +217,34 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
       setState(() {
         if (isStart) {
           _startDate = picked;
+          _startDateError = false;
         } else {
           _endDate = picked;
+          _endDateError = false;
         }
       });
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _startDate == null || _endDate == null || _selectedType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all fields')));
+    setState(() {
+      _startDateError = _startDate == null;
+      _endDateError = _endDate == null || (_startDate != null && _endDate != null && _endDate!.isBefore(_startDate!));
+    });
+
+    final formOk = _formKey.currentState!.validate();
+    if (!formOk || _startDateError || _endDateError) {
+      String message = 'Please fill in all fields';
+      if (_startDateError) {
+        message = 'Please select a start date';
+      } else if (_endDateError) {
+        message = (_endDate != null && _startDate != null && _endDate!.isBefore(_startDate!))
+            ? 'End date must be on or after the start date'
+            : 'Please select an end date';
+      } else if (_selectedType == null) {
+        message = 'Please select a leave type';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: AppColors.danger));
       return;
     }
     setState(() => _submitting = true);
@@ -255,8 +283,21 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Apply for Leave', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
-              SizedBox(height: context.h(16)),
+              Row(
+                children: [
+                  Container(
+                    width: context.r(34),
+                    height: context.r(34),
+                    decoration: const BoxDecoration(color: AppColors.accent100, shape: BoxShape.circle),
+                    child: Icon(Icons.event_note_rounded, size: context.r(18), color: AppColors.accent700),
+                  ),
+                  SizedBox(width: context.w(10)),
+                  Text('Apply for Leave', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                ],
+              ),
+              SizedBox(height: context.h(18)),
+              Text('LEAVE DETAILS', style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.6)),
+              SizedBox(height: context.h(8)),
               DropdownButtonFormField<String>(
                 initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Leave Type'),
@@ -270,20 +311,41 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: () => _pickDate(isStart: true),
-                      child: Text(_startDate == null ? 'Start Date' : DateFormat('d MMM, yyyy').format(_startDate!)),
+                      icon: Icon(Icons.calendar_today_outlined, size: 15, color: _startDateError ? AppColors.danger : AppColors.inkMuted),
+                      label: Text(
+                        _startDate == null ? 'Start Date' : DateFormat('d MMM, yyyy').format(_startDate!),
+                        style: TextStyle(color: _startDateError ? AppColors.danger : AppColors.ink),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: _startDateError ? AppColors.danger : AppColors.surfaceSubtle, width: _startDateError ? 1.5 : 1),
+                      ),
                     ),
                   ),
                   SizedBox(width: context.w(10)),
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: () => _pickDate(isStart: false),
-                      child: Text(_endDate == null ? 'End Date' : DateFormat('d MMM, yyyy').format(_endDate!)),
+                      icon: Icon(Icons.calendar_today_outlined, size: 15, color: _endDateError ? AppColors.danger : AppColors.inkMuted),
+                      label: Text(
+                        _endDate == null ? 'End Date' : DateFormat('d MMM, yyyy').format(_endDate!),
+                        style: TextStyle(color: _endDateError ? AppColors.danger : AppColors.ink),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: _endDateError ? AppColors.danger : AppColors.surfaceSubtle, width: _endDateError ? 1.5 : 1),
+                      ),
                     ),
                   ),
                 ],
               ),
+              if (_startDateError || _endDateError) ...[
+                SizedBox(height: context.h(6)),
+                Text(
+                  _startDateError ? 'Start date is required.' : 'End date must be on or after the start date.',
+                  style: TextStyle(color: AppColors.danger, fontSize: context.sp(11.5)),
+                ),
+              ],
               SizedBox(height: context.h(14)),
               TextFormField(
                 controller: _reasonController,

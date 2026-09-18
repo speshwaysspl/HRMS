@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -29,6 +30,7 @@ final FlutterLocalNotificationsPlugin _localNotifications =
 /// Runs in a separate isolate — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  if (kIsWeb) return;
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await _showLocalNotification(message);
 }
@@ -69,6 +71,10 @@ class PushService {
   String? _lastRegisteredToken;
 
   Future<void> initFirebase() async {
+    if (kIsWeb) {
+      debugPrint('Push notifications are skipped on Web.');
+      return;
+    }
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -96,6 +102,7 @@ class PushService {
   /// Re-applies the user's Notifications preference: registers the token when
   /// notifications are on, removes it from the backend when off.
   Future<void> applyNotificationPreference() async {
+    if (kIsWeb) return;
     if (AppSettings.notificationsEnabled.value) {
       await registerForUser();
     } else {
@@ -106,6 +113,7 @@ class PushService {
   /// Called after login / on session restore. Requests permission, grabs the
   /// FCM token, registers it with the backend, and wires message listeners.
   Future<void> registerForUser() async {
+    if (kIsWeb) return;
     if (!AppSettings.notificationsEnabled.value) {
       // User turned push off — make sure the backend has no token for us.
       await unregisterForUser();
@@ -155,6 +163,7 @@ class PushService {
 
   /// Called on logout so this device stops receiving the previous user's pushes.
   Future<void> unregisterForUser() async {
+    if (kIsWeb) return;
     try {
       final token = _lastRegisteredToken ??
           await FirebaseMessaging.instance.getToken();

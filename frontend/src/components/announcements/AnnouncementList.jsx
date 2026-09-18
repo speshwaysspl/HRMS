@@ -9,9 +9,46 @@ import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
 
 const columns = [
-  { name: "S.No", selector: (row) => row.sno, width: "80px" },
+  { name: "S.No", selector: (row) => row.sno, width: "65px" },
+  {
+    name: "Type",
+    cell: (row) => {
+      const catMap = {
+        quote: { label: "Today's Quote", emoji: "✨", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
+        festival: { label: "Festival", emoji: "🎉", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+        event: { label: "Event", emoji: "📅", bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200" },
+        achievement: { label: "Achievement", emoji: "🏆", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+        general: { label: "Notice", emoji: "📌", bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200" },
+        important: { label: "Important", emoji: "📢", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+      };
+      const info = catMap[row.category] || catMap.important;
+      return (
+        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${info.bg} ${info.text} ${info.border} inline-flex items-center gap-1 whitespace-nowrap`}>
+          <span>{info.emoji}</span>
+          <span>{info.label}</span>
+        </span>
+      );
+    },
+    width: "145px",
+  },
   { name: "Title", selector: (row) => row.title, sortable: true },
-  { name: "Date", selector: (row) => row.date, sortable: true, width: "150px" },
+  {
+    name: "Audience",
+    cell: (row) => {
+      let label = "All Employees";
+      if (row.scope === 'team_leads') label = "Team Leads";
+      else if (row.scope === 'team_members') label = "Team Members";
+      else if (row.scope === 'team') label = `Team: ${row.targetTeam?.name || 'Team'}`;
+      else if (row.scope === 'specific') label = "Specific";
+      return (
+        <span className="px-2.5 py-1 bg-surface-muted text-ink-muted text-xs font-medium rounded-full border border-surface-subtle whitespace-nowrap">
+          {label}
+        </span>
+      );
+    },
+    width: "140px",
+  },
+  { name: "Date", selector: (row) => row.date, sortable: true, width: "130px" },
   {
     name: "Image",
     cell: (row) =>
@@ -25,12 +62,12 @@ const columns = [
       ) : (
         "No Image"
       ),
-    width: "120px",
+    width: "110px",
   },
   {
     name: "Action",
     cell: (row) => <div className="w-full"><AnnouncementButtons Id={row._id} /></div>,
-    width: "220px",
+    width: "200px",
   },
 ];
 
@@ -122,6 +159,26 @@ const AnnouncementList = () => {
               <div className="flex items-center gap-2">
                 <span className="bg-brand-100 text-brand-700 text-xs font-semibold px-2 py-1 rounded-full">
                   #{announcement.sno}
+                </span>
+                {(() => {
+                  const catMap = {
+                    quote: { label: "Quote", emoji: "✨", cls: "bg-purple-50 text-purple-700 border-purple-200" },
+                    festival: { label: "Festival", emoji: "🎉", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+                    event: { label: "Event", emoji: "📅", cls: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+                    achievement: { label: "Win", emoji: "🏆", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                    general: { label: "Notice", emoji: "📌", cls: "bg-slate-50 text-slate-700 border-slate-200" },
+                    important: { label: "Important", emoji: "📢", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+                  };
+                  const info = catMap[announcement.category] || catMap.important;
+                  return (
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${info.cls} inline-flex items-center gap-1`}>
+                      <span>{info.emoji}</span>
+                      <span>{info.label}</span>
+                    </span>
+                  );
+                })()}
+                <span className="bg-surface-muted text-ink-muted text-xs font-medium px-2 py-0.5 rounded-full border border-surface-subtle">
+                  {announcement.scope === 'team_leads' ? 'Team Leads' : announcement.scope === 'team_members' ? 'Team Members' : announcement.scope === 'team' ? `Team: ${announcement.targetTeam?.name || 'Team'}` : announcement.scope === 'specific' ? 'Specific' : 'All'}
                 </span>
                 <span className="text-xs text-ink-muted">{announcement.date}</span>
               </div>
