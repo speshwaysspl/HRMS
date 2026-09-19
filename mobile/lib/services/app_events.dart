@@ -20,5 +20,8 @@ class AppEvents {
 
   static void bumpAttendance() => attendanceChanged.value++;
   static void bumpLeave() => leaveChanged.value++;
-  static void switchToTab(int index) => tabSwitch.value = index;
+  static void switchToTab(int index) {
+    tabSwitch.value = null; // reset so re-selecting the same tab still notifies
+    tabSwitch.value = index;
+  }
 }

@@ -76,3 +76,4 @@ MERN stack + Flutter mobile app.
 
 ## Update 2026-09-19
 - Mobile: launcher quick actions (Leaves/Attendance/Payslips/Announcements) via quick_actions_service.dart; location permission asked after login (auth_provider._askPermissions, after notifications); drawer/web accordions closed by default; attendance treats "" outTime as not checked out; lock screen + drawer show logo; Account & Privacy card restacked (Flutter + web Profile).
+- Navigation: mobile Back/swipe on non-home tab -> Home, on Home exits app (AppShell PopScope); drawer destinations stack on shell with Home underneath; web useBackToHome hook sends Back from top-level dashboard sections to dashboard home on <768px.

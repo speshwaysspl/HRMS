@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user.dart';
+import '../services/app_events.dart';
 import '../services/auth_provider.dart';
 import '../services/dashboard_service.dart';
 import '../theme/app_theme.dart';
@@ -41,13 +42,22 @@ class AppDrawer extends StatelessWidget {
 
   void _go(BuildContext context, WidgetBuilder builder) {
     Navigator.of(context).pop(); // close the drawer
-    Navigator.of(context).push(MaterialPageRoute(builder: builder));
+    // Always stack drawer destinations directly on the shell, with Home as
+    // the tab underneath, so Back / swipe returns Home (not the last screen).
+    final nav = Navigator.of(context, rootNavigator: true);
+    final role = context.read<AuthProvider>().user?.primaryRole ?? 'employee';
+    nav.popUntil((r) => r.isFirst);
+    AppEvents.switchToTab(role == 'employee' ? 2 : 0);
+    nav.push(MaterialPageRoute(builder: builder));
   }
 
   Future<void> _openPayslips(BuildContext context) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final role = context.read<AuthProvider>().user?.primaryRole ?? 'employee';
     navigator.pop();
+    navigator.popUntil((r) => r.isFirst);
+    AppEvents.switchToTab(role == 'employee' ? 2 : 0);
     try {
       final stats = await DashboardService().getEmployeeStats();
       final code = (stats['employee'] as Map?)?['employeeId']?.toString();

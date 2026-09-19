@@ -53,6 +53,9 @@ class _AppShellState extends State<AppShell> {
     super.dispose();
   }
 
+  // Employees land on the centre Home tab; other roles on the first tab.
+  int _homeIndexFor(String role) => role == 'employee' ? 2 : 0;
+
   void _handleTabSwitch() {
     final target = AppEvents.tabSwitch.value;
     if (target != null && mounted) {
@@ -68,12 +71,22 @@ class _AppShellState extends State<AppShell> {
     final tabs = _tabsForRole(role);
     if (_index >= tabs.length) _index = 0;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: tabs.map((t) => t.screen).toList(),
+    final homeIndex = _homeIndexFor(role);
+
+    // Back / swipe: on any other tab go to Home first; on Home the pop is
+    // allowed through and Android closes the app.
+    return PopScope(
+      canPop: _index == homeIndex,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _index = homeIndex);
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _index,
+          children: tabs.map((t) => t.screen).toList(),
+        ),
+        bottomNavigationBar: _buildModernBottomNav(context, tabs),
       ),
-      bottomNavigationBar: _buildModernBottomNav(context, tabs),
     );
   }
 

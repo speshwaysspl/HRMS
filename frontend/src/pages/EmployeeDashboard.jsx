@@ -1,5 +1,6 @@
 import {Outlet, useLocation} from 'react-router-dom'
 import useMeta from '../utils/useMeta'
+import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from 'react'
 import Breadcrumbs from '../components/common/Breadcrumbs'
 import Sidebar from '../components/EmployeeDashboard/Sidebar'
@@ -9,6 +10,7 @@ import LoadingState from '../components/common/LoadingState'
 
 const EmployeeDashboard = () => {
   const canonical = useMemo(() => `${window.location.origin}/employee-dashboard`, [])
+  useBackToHome()
   useMeta({
     title: 'Employee Dashboard — Speshway HRMS',
     description: 'View attendance, apply leave, access payslips and announcements.',

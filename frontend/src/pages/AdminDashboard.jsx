@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import useMeta from '../utils/useMeta'
+import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from 'react'
 import Breadcrumbs from '../components/common/Breadcrumbs'
 import AdminSidebar from '../components/dashboard/AdminSidebar'
@@ -8,6 +9,7 @@ import LoadingState from '../components/common/LoadingState'
 
 const AdminDashboard = () => {
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard`, [])
+  useBackToHome()
   useMeta({
     title: 'Admin Dashboard — Speshway HRMS',
     description: 'Manage employees, departments, announcements, attendance and payroll.',

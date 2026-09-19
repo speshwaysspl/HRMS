@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import useMeta from "../utils/useMeta";
+import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from "react";
 import Breadcrumbs from "../components/common/Breadcrumbs";
 import HRSidebar from "../components/dashboard/HRSidebar";
@@ -8,6 +9,7 @@ import LoadingState from "../components/common/LoadingState";
 
 const HRDashboard = () => {
   const canonical = useMemo(() => `${window.location.origin}/hr-dashboard`, []);
+  useBackToHome()
   useMeta({
     title: "HR Dashboard — Speshway HRMS",
     description: "Manage candidates, recruitment tracker, document verification, and offer letters.",
