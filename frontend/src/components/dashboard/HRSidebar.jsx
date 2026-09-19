@@ -83,7 +83,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
   return (
     <>
       <div
-        className={`hr-sidebar-container bg-brand-800 text-white h-screen fixed top-0 left-0 bottom-0 shadow-panel w-64 z-40 flex flex-col transform transition-transform duration-200 ease-out ${
+        className={`hr-sidebar-container bg-brand-800 text-white fixed top-0 left-0 bottom-0 shadow-panel w-64 z-50 flex flex-col transform transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
