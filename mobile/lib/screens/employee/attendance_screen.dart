@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../services/api_client.dart';
 import '../../services/app_events.dart';
@@ -553,15 +552,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                 ),
                 SizedBox(height: context.h(10)),
                 Text(_location!.area, style: TextStyle(color: AppColors.ink, fontSize: context.sp(13))),
-                SizedBox(height: context.h(8)),
-                TextButton.icon(
-                  onPressed: () => launchUrl(
-                    Uri.parse('https://www.google.com/maps?q=${_location!.latitude},${_location!.longitude}'),
-                    mode: LaunchMode.externalApplication,
-                  ),
-                  icon: const Icon(Icons.open_in_new, size: 14),
-                  label: const Text('View on Map'),
-                ),
               ],
             )
           else
