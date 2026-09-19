@@ -115,23 +115,53 @@ class LocationService {
     return await _reverseGeocodeOsm(lat, lng) ?? 'Unknown Area';
   }
 
-  /// Best-effort current fix: high accuracy first, then a quicker/lower
-  /// accuracy attempt if the first one times out.
-  Future<LocationFix> getCurrentFix() async {
-    await _ensurePermission();
-
-    Position position;
+  Future<Position> _position({required bool allowCached}) async {
+    // A recent cached fix is instant — good enough to draw the map.
+    Position? last;
     try {
-      position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 20)),
+      last = await Geolocator.getLastKnownPosition();
+    } catch (_) {}
+    if (allowCached && last != null && DateTime.now().difference(last.timestamp) < const Duration(minutes: 2)) {
+      return last;
+    }
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 12)),
       );
     } catch (_) {
-      position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: Duration(seconds: 10)),
-      );
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)),
+        );
+      } catch (_) {
+        if (last != null) return last;
+        throw LocationPermissionDenied('Could not get a GPS fix. Move to an open area and make sure GPS is on.');
+      }
     }
+  }
 
-    final area = await _reverseGeocode(position.latitude, position.longitude);
+  /// Fast fix for showing the map: coordinates only, area still "Locating…".
+  /// Follow with [resolveArea] to fill in the address.
+  Future<LocationFix> getQuickFix() async {
+    await _ensurePermission();
+    final p = await _position(allowCached: true);
+    return LocationFix(latitude: p.latitude, longitude: p.longitude, area: 'Locating area…');
+  }
+
+  /// Address for a coordinate; never hangs (bounded) and never throws.
+  Future<String> resolveArea(double lat, double lng) async {
+    try {
+      return await _reverseGeocode(lat, lng).timeout(const Duration(seconds: 8));
+    } catch (_) {
+      return 'Unknown Area';
+    }
+  }
+
+  /// Fresh, fully-resolved fix — used right before check-in / check-out.
+  Future<LocationFix> getCurrentFix() async {
+    await _ensurePermission();
+    final position = await _position(allowCached: false);
+    final area = await resolveArea(position.latitude, position.longitude);
     return LocationFix(latitude: position.latitude, longitude: position.longitude, area: area);
   }
 }

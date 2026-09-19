@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/app_events.dart';
+import '../../services/notification_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/api_client.dart';
@@ -30,6 +32,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) =>
+        NotificationService().refreshUnread(context.read<AuthProvider>().user?.id ?? ''));
     _load();
   }
 
@@ -86,14 +90,33 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         title: const MarqueeAppBarTitle(),
         centerTitle: false,
         actions: [
-          IconButton(
-            tooltip: 'Notifications',
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-              );
-            },
+          ValueListenableBuilder<int>(
+            valueListenable: AppEvents.unreadNotifications,
+            builder: (_, unread, _) => Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  tooltip: 'Notifications',
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  onPressed: () {
+                    final userId = context.read<AuthProvider>().user?.id ?? '';
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))
+                        .then((_) => NotificationService().refreshUnread(userId));
+                  },
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 10,
+                    right: 11,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                    ),
+                  ),
+              ],
+            ),
           ),
           SizedBox(width: context.w(6)),
         ],

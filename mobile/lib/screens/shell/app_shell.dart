@@ -140,10 +140,10 @@ class _AppShellState extends State<AppShell> {
                           color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.28),
                           shape: BoxShape.circle,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.home_rounded,
-                            color: Colors.white,
+                            color: isActive ? AppColors.brand900 : Colors.white,
                             size: 22,
                           ),
                         ),

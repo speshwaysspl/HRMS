@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../services/announcement_service.dart';
@@ -49,7 +50,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     super.dispose();
   }
 
+  void _refreshUnread() =>
+      NotificationService().refreshUnread(context.read<AuthProvider>().user?.id ?? '');
+
   Future<void> _load() async {
+    _refreshUnread();
     setState(() {
       _loading = true;
       _error = null;
@@ -151,22 +156,29 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                   tooltip: 'Notifications',
                   icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                    );
+                    final userId = context.read<AuthProvider>().user?.id ?? '';
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))
+                        .then((_) => NotificationService().refreshUnread(userId));
                   },
                 ),
-                Positioned(
-                  top: context.h(10),
-                  right: context.w(11),
-                  child: Container(
-                    width: context.r(8),
-                    height: context.r(8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                // Red dot only while there is something unread.
+                ValueListenableBuilder<int>(
+                  valueListenable: AppEvents.unreadNotifications,
+                  builder: (_, unread, _) => unread > 0
+                      ? Positioned(
+                          top: context.h(10),
+                          right: context.w(11),
+                          child: Container(
+                            width: context.r(8),
+                            height: context.r(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -412,14 +424,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Widget _buildQuickActionsHeader() {
     return Row(
       children: [
-        Icon(Icons.bolt_rounded, color: const Color(0xFF0F172A), size: context.r(20)),
+        Icon(Icons.bolt_rounded, color: AppColors.ink, size: context.r(20)),
         SizedBox(width: context.w(6)),
         Text(
           'Quick Actions',
           style: TextStyle(
             fontSize: context.sp(16.5),
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF0F172A),
+            color: AppColors.ink,
           ),
         ),
       ],
@@ -572,7 +584,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                   style: TextStyle(
                     fontSize: context.sp(14),
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.ink,
                     height: 1.2,
                   ),
                 ),
@@ -584,7 +596,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                   style: TextStyle(
                     fontSize: context.sp(11.5),
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF64748B),
+                    color: AppColors.inkMuted,
                   ),
                 ),
               ],
@@ -663,9 +675,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       statusBorderColor = AppColors.tint(const Color(0xFFFECACA));
     } else {
       statusText = serverStatus != null && serverStatus.isNotEmpty ? serverStatus : 'Not Marked';
-      statusTextColor = Color(0xFF64748B);
-      statusBgColor = AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)));
-      statusBorderColor = AppColors.tint(AppColors.tint(Color(0xFFE2E8F0)));
+      statusTextColor = AppColors.inkMuted;
+      statusBgColor = AppColors.tint(AppColors.surfaceSubtle);
+      statusBorderColor = AppColors.tint(AppColors.surfaceSubtle);
     }
 
     return Container(
@@ -673,7 +685,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(context.r(20)),
-        border: Border.all(color: AppColors.tint(AppColors.tint(const Color(0xFFF1F5F9))), width: 1.2),
+        border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -691,14 +703,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, color: const Color(0xFF0F172A), size: context.r(19)),
+                  Icon(Icons.calendar_today_rounded, color: AppColors.ink, size: context.r(19)),
                   SizedBox(width: context.w(8)),
                   Text(
                     "Today's Attendance",
                     style: TextStyle(
                       fontSize: context.sp(16.5),
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
+                      color: AppColors.ink,
                     ),
                   ),
                 ],
@@ -744,7 +756,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             style: TextStyle(
               fontSize: context.sp(12.5),
               fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
+              color: AppColors.inkMuted,
             ),
           ),
           SizedBox(height: context.h(14)),
@@ -757,9 +769,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
                   decoration: BoxDecoration(
-                    color: AppColors.tint(AppColors.tint(Color(0xFFF8FAFC))),
+                    color: AppColors.tint(AppColors.surfaceMuted),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)))),
+                    border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle)),
                   ),
                   child: Row(
                     children: [
@@ -785,7 +797,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                               style: TextStyle(
                                 fontSize: context.sp(10.5),
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
+                                color: AppColors.inkMuted,
                               ),
                             ),
                             SizedBox(height: context.h(2)),
@@ -797,7 +809,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                                 style: TextStyle(
                                   fontSize: context.sp(14),
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.ink,
                                 ),
                               ),
                             ),
@@ -810,16 +822,16 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: context.w(4)),
-                child: Container(width: 1, height: context.h(36), color: AppColors.tint(AppColors.tint(Color(0xFFE2E8F0)))),
+                child: Container(width: 1, height: context.h(36), color: AppColors.tint(AppColors.surfaceSubtle)),
               ),
               // Check Out Box
               Expanded(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
                   decoration: BoxDecoration(
-                    color: AppColors.tint(AppColors.tint(Color(0xFFF8FAFC))),
+                    color: AppColors.tint(AppColors.surfaceMuted),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)))),
+                    border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle)),
                   ),
                   child: Row(
                     children: [
@@ -845,7 +857,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                               style: TextStyle(
                                 fontSize: context.sp(10.5),
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
+                                color: AppColors.inkMuted,
                               ),
                             ),
                             SizedBox(height: context.h(2)),
@@ -857,7 +869,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                                 style: TextStyle(
                                   fontSize: context.sp(14),
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.ink,
                                 ),
                               ),
                             ),
@@ -881,7 +893,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       height: context.r(62),
                       child: CircularProgressIndicator(
                         value: displayGaugeProgress,
-                        backgroundColor: AppColors.tint(AppColors.tint(const Color(0xFFE2E8F0))),
+                        backgroundColor: AppColors.tint(AppColors.surfaceSubtle),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                         strokeWidth: context.r(6),
                         strokeCap: StrokeCap.round,
@@ -895,7 +907,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                           style: TextStyle(
                             fontSize: context.sp(11.5),
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF0F172A),
+                            color: AppColors.ink,
                           ),
                         ),
                         Text(
@@ -903,7 +915,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                           style: TextStyle(
                             fontSize: context.sp(9),
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF64748B),
+                            color: AppColors.inkMuted,
                           ),
                         ),
                       ],
@@ -956,14 +968,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Widget _buildRecentAnnouncementsHeader() {
     return Row(
       children: [
-        Icon(Icons.campaign_rounded, color: const Color(0xFF0F172A), size: context.r(20)),
+        Icon(Icons.campaign_rounded, color: AppColors.ink, size: context.r(20)),
         SizedBox(width: context.w(6)),
         Text(
           'Recent Announcements',
           style: TextStyle(
             fontSize: context.sp(16.5),
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF0F172A),
+            color: AppColors.ink,
           ),
         ),
       ],
@@ -1059,7 +1071,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                                 style: TextStyle(
                                   fontSize: context.sp(13.5),
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A),
+                                  color: AppColors.ink,
                                   height: 1.3,
                                 ),
                               ),
@@ -1096,7 +1108,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                           style: TextStyle(
                             fontSize: context.sp(11.5),
                             fontWeight: FontWeight.w400,
-                            color: const Color(0xFF64748B),
+                            color: AppColors.inkMuted,
                             height: 1.4,
                           ),
                         ),
@@ -1113,14 +1125,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, size: context.r(13), color: const Color(0xFF94A3B8)),
+                      Icon(Icons.access_time_rounded, size: context.r(13), color: AppColors.inkFaint),
                       SizedBox(width: context.w(5)),
                       Text(
                         timeStr,
                         style: TextStyle(
                           fontSize: context.sp(11),
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.inkFaint,
                         ),
                       ),
                     ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/app_events.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_client.dart';
@@ -35,6 +36,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  void _syncBadge() => AppEvents.unreadNotifications.value =
+      _items.where((n) => n['isRead'] != true).length;
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    if (!_loading) _syncBadge();
   }
 
   Future<void> _load() async {

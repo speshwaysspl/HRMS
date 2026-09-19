@@ -18,6 +18,9 @@ class AppEvents {
   /// Fired when an action requests changing the bottom navigation tab.
   static final ValueNotifier<int?> tabSwitch = ValueNotifier<int?>(null);
 
+  /// Unread notification count - drives the bell's red dot.
+  static final ValueNotifier<int> unreadNotifications = ValueNotifier<int>(0);
+
   static void bumpAttendance() => attendanceChanged.value++;
   static void bumpLeave() => leaveChanged.value++;
   static void switchToTab(int index) {

@@ -76,14 +76,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       _locationError = null;
     });
     try {
-      final fix = await _locationService.getCurrentFix();
+      // Map first (fast GPS / cached fix), address fills in right after.
+      final quick = await _locationService.getQuickFix();
       if (!mounted) return;
-      setState(() => _location = fix);
+      setState(() {
+        _location = quick;
+        _locationLoading = false;
+      });
+      final area = await _locationService.resolveArea(quick.latitude, quick.longitude);
+      if (!mounted) return;
+      setState(() => _location = LocationFix(latitude: quick.latitude, longitude: quick.longitude, area: area));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _locationError = e.toString());
-    } finally {
-      if (mounted) setState(() => _locationLoading = false);
+      setState(() {
+        _locationError = e.toString();
+        _locationLoading = false;
+      });
     }
   }
 

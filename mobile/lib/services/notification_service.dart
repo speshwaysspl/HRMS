@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'app_events.dart';
 import 'api_client.dart';
 
 class NotificationService {
@@ -10,6 +11,17 @@ class NotificationService {
       'limit': limit,
     });
     return Map<String, dynamic>.from(res.data as Map);
+  }
+
+  /// Refreshes [AppEvents.unreadNotifications]; failures leave it unchanged.
+  Future<void> refreshUnread(String userId) async {
+    if (userId.isEmpty) return;
+    try {
+      final data = await getNotifications(userId, limit: 50);
+      final list = (data['notifications'] as List?) ?? [];
+      AppEvents.unreadNotifications.value =
+          list.where((n) => n is Map && n['isRead'] != true).length;
+    } catch (_) {}
   }
 
   Future<void> markRead(String notificationId) async {

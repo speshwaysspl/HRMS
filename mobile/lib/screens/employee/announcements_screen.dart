@@ -206,7 +206,7 @@ class _AnnouncementCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: context.sp(12.5),
-                            color: const Color(0xFF475569),
+                            color: AppColors.inkMuted,
                             height: 1.45,
                           ),
                         ),
@@ -223,11 +223,11 @@ class _AnnouncementCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded, size: context.r(12), color: const Color(0xFF94A3B8)),
+                      Icon(Icons.calendar_today_rounded, size: context.r(12), color: AppColors.inkFaint),
                       SizedBox(width: context.w(5)),
                       Text(
                         date,
-                        style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w500, color: const Color(0xFF94A3B8)),
+                        style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w500, color: AppColors.inkFaint),
                       ),
                     ],
                   ),

@@ -107,7 +107,7 @@ class _LockScreen extends StatelessWidget {
               width: 84,
               height: 84,
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(22)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
               child: Image.asset('assets/logo.png', fit: BoxFit.contain),
             ),
             const SizedBox(height: 28),
