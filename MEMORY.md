@@ -73,3 +73,6 @@ MERN stack + Flutter mobile app.
 ## 12. Last Updated
 2026-09-19 06:40 IST
 
+
+## Update 2026-09-19
+- Mobile: launcher quick actions (Leaves/Attendance/Payslips/Announcements) via quick_actions_service.dart; location permission asked after login (auth_provider._askPermissions, after notifications); drawer/web accordions closed by default; attendance treats "" outTime as not checked out; lock screen + drawer show logo; Account & Privacy card restacked (Flutter + web Profile).

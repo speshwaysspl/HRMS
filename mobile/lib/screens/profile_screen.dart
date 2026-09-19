@@ -395,42 +395,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           Divider(height: context.h(20)),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Request Account Deletion',
-                      style: TextStyle(
-                        fontSize: context.sp(13),
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    SizedBox(height: context.h(2)),
-                    Text(
-                      'Submit request to HR/Admin to verify & delete account',
-                      style: TextStyle(
-                        fontSize: context.sp(11),
-                        color: AppColors.inkMuted,
-                      ),
-                    ),
-                  ],
-                ),
+          Text(
+            'Request Account Deletion',
+            style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600, color: AppColors.ink),
+          ),
+          SizedBox(height: context.h(4)),
+          Text(
+            'Submit a request to HR/Admin to verify your identity and delete your account.',
+            style: TextStyle(fontSize: context.sp(12), height: 1.4, color: AppColors.inkMuted),
+          ),
+          SizedBox(height: context.h(12)),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                side: const BorderSide(color: AppColors.danger),
+                padding: EdgeInsets.symmetric(vertical: context.h(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.danger,
-                  side: const BorderSide(color: AppColors.danger),
-                  padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(8)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                onPressed: () => _showDeletionRequestSheet(context),
-                child: Text('Request', style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w600)),
-              ),
-            ],
+              onPressed: () => _showDeletionRequestSheet(context),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text('Request Account Deletion', style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),

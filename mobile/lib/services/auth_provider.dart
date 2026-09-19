@@ -3,11 +3,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import 'api_client.dart';
+import 'location_service.dart';
 import 'push_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
+  /// Post-login permission prompts, one after another (Android only shows a
+  /// single system dialog at a time): notifications first, then location.
+  Future<void> _askPermissions() async {
+    await PushService.instance.registerForUser();
+    await LocationService.requestPermissionOnLaunch();
+  }
+
   final _api = ApiClient.instance;
 
   AuthStatus status = AuthStatus.unknown;
@@ -22,7 +30,7 @@ class AuthProvider extends ChangeNotifier {
       try {
         user = AppUser.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
         status = AuthStatus.authenticated;
-        unawaited(PushService.instance.registerForUser());
+        unawaited(_askPermissions());
       } catch (_) {
         status = AuthStatus.unauthenticated;
       }
@@ -48,7 +56,7 @@ class AuthProvider extends ChangeNotifier {
         user = AppUser.fromJson(userMap);
         status = AuthStatus.authenticated;
         notifyListeners();
-        unawaited(PushService.instance.registerForUser());
+        unawaited(_askPermissions());
         return true;
       }
       lastError = data['error']?.toString() ?? 'Login failed';

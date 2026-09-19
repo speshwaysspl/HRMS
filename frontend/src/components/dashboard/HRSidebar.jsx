@@ -137,7 +137,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
               icon={section.icon}
               label={section.label}
               links={section.links}
-              defaultOpen={section.key !== "settings"}
+              defaultOpen={false}
               isDesktop={isDesktop}
               setIsOpen={setIsOpen}
             />

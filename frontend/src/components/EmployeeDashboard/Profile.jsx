@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { useParams, Link } from "react-router-dom";
+import { FaUser, FaIdCard, FaEnvelope, FaCalendarAlt, FaPhone, FaBriefcase, FaBuilding, FaCheckCircle, FaTimesCircle, FaShieldAlt, FaTrashAlt } from "react-icons/fa";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
@@ -145,6 +145,26 @@ const Profile = () => {
 
         <Section title="Personal Information" icon={FaUser} bg="#DBEAFE" fg="#2563EB" rows={personal} />
         <Section title="Employment Information" icon={FaBriefcase} bg="#F3E8FF" fg="#9333EA" rows={employment} />
+
+        <div className="bg-white rounded-2xl border border-surface-subtle p-4">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+              <FaShieldAlt size={14} />
+            </span>
+            <h2 className="text-sm font-bold text-ink">Account &amp; Privacy</h2>
+          </div>
+          <hr className="my-3 border-surface-subtle" />
+          <p className="text-[13px] font-semibold text-ink">Request Account Deletion</p>
+          <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+            Submit a request to HR/Admin to verify your identity and delete your account.
+          </p>
+          <Link
+            to="/delete-account"
+            className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-[10px] border border-red-600 text-red-600 py-3 text-[13px] font-semibold hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
+          >
+            <FaTrashAlt size={13} /> Request Account Deletion
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import 'services/app_settings.dart';
 import 'services/auth_provider.dart';
 import 'services/data_cache.dart';
 import 'services/push_service.dart';
+import 'services/quick_actions_service.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/responsive.dart';
@@ -17,6 +18,7 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Firebase init failed: $e');
   }
+  await QuickActionsService.init();
   runApp(const SpeshwayApp());
 }
 

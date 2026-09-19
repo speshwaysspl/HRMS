@@ -137,6 +137,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  /// The API returns "" (not null) for a time that hasn't happened yet.
+  bool _hasTime(String key) {
+    final v = _today?[key]?.toString().trim();
+    return v != null && v.isNotEmpty && v != 'null';
+  }
+
+  String _timeOrDash(String key) => _hasTime(key) ? _today![key].toString() : '--:--';
+
   String get _todayDate => DateFormat('yyyy-MM-dd').format(DateTime.now());
   String get _nowTime => DateFormat('HH:mm').format(DateTime.now());
 
@@ -209,8 +217,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasCheckedIn = _today != null && _today!['inTime'] != null;
-    final hasCheckedOut = _today != null && _today!['outTime'] != null;
+    final hasCheckedIn = _hasTime('inTime');
+    final hasCheckedOut = _hasTime('outTime');
 
     return Scaffold(
       drawer: const AppDrawer(),
@@ -266,17 +274,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   AppColors.accent600,
                   AppColors.accent50,
                   'Check In',
-                  _today?['inTime']?.toString() ?? '--:--',
+                  _timeOrDash('inTime'),
                 ),
               ),
-              Container(width: 1, height: context.h(48), color: AppColors.surfaceSubtle),
+              Container(width: 1, height: context.h(56), color: AppColors.surfaceSubtle),
               Expanded(
                 child: _timeBlock(
                   Icons.logout_rounded,
                   const Color(0xFFDC2626),
                   const Color(0xFFFEF2F2),
                   'Check Out',
-                  _today?['outTime']?.toString() ?? '--:--',
+                  _timeOrDash('outTime'),
                 ),
               ),
             ],
@@ -541,10 +549,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   style: TextStyle(color: AppColors.danger, fontSize: context.sp(12.5)),
                 ),
                 SizedBox(height: context.h(8)),
-                OutlinedButton.icon(
-                  onPressed: _fetchLocation,
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Retry Location'),
+                Wrap(
+                  spacing: context.w(8),
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _fetchLocation,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Retry Location'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: LocationService.openSettings,
+                      icon: const Icon(Icons.settings_outlined, size: 16),
+                      label: const Text('Open Settings'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -607,8 +625,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildSummaryCard() {
-    final inTime = _today?['inTime']?.toString();
-    final outTime = _today?['outTime']?.toString();
     final checkInLocation = (_today?['inLocation'] as Map?)?['area']?.toString() ?? _location?.area;
     final checkOutLocation = (_today?['outLocation'] as Map?)?['area']?.toString();
 
@@ -630,8 +646,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ],
           ),
           SizedBox(height: context.h(12)),
-          _summaryRow(Icons.login_rounded, AppColors.accent600, AppColors.accent50, 'Check In', inTime ?? '--:--'),
-          _summaryRow(Icons.logout_rounded, const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'Check Out', outTime ?? '--:--'),
+          _summaryRow(Icons.login_rounded, AppColors.accent600, AppColors.accent50, 'Check In', _timeOrDash('inTime')),
+          _summaryRow(Icons.logout_rounded, const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'Check Out', _timeOrDash('outTime')),
           _summaryRow(Icons.access_time_rounded, const Color(0xFF2563EB), const Color(0xFFDBEAFE), 'Working Hours', _formatDuration(_workingMinutes)),
           _summaryRow(Icons.free_breakfast_outlined, const Color(0xFFEA580C), const Color(0xFFFFEDD5), 'Break Time', '${_totalBreakMinutes}m'),
           _summaryRow(Icons.badge_outlined, AppColors.brand600, AppColors.brand50, 'Status', _todayStatus),
@@ -690,20 +706,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _timeBlock(IconData icon, Color iconColor, Color iconBg, String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: context.r(30),
-          height: context.r(30),
-          decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-          child: Icon(icon, size: context.r(16), color: iconColor),
-        ),
-        SizedBox(height: context.h(8)),
-        Text(label, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-        SizedBox(height: context.h(4)),
-        Text(value, style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700, color: AppColors.ink)),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: context.w(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: context.r(28),
+                height: context.r(28),
+                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                child: Icon(icon, size: context.r(15), color: iconColor),
+              ),
+              SizedBox(width: context.w(8)),
+              Flexible(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+              ),
+            ],
+          ),
+          SizedBox(height: context.h(8)),
+          Text(value, style: TextStyle(fontSize: context.sp(22), fontWeight: FontWeight.w700, color: AppColors.ink)),
+        ],
+      ),
     );
   }
 

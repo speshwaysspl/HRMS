@@ -103,8 +103,16 @@ class _LockScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, color: Colors.white, size: 56),
-            const SizedBox(height: 16),
+            Container(
+              width: 84,
+              height: 84,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+              child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+            ),
+            const SizedBox(height: 28),
+            const Icon(Icons.lock_outline, color: Colors.white, size: 36),
+            const SizedBox(height: 12),
             const Text(
               'Speshway HRMS is locked',
               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
@@ -115,10 +123,18 @@ class _LockScreen extends StatelessWidget {
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onUnlock,
-              icon: const Icon(Icons.fingerprint, size: 18),
-              label: const Text('Unlock'),
+            SizedBox(
+              width: 200,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: onUnlock,
+                icon: const Icon(Icons.fingerprint, size: 20),
+                label: const Text('Unlock'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(200, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
             ),
           ],
         ),

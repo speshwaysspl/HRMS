@@ -76,7 +76,6 @@ class AppDrawer extends StatelessWidget {
   List<Widget> _employeeSections(BuildContext context, bool isTeamLead) => [
         _Section(
           title: 'Leave & Attendance',
-          initiallyExpanded: true,
           children: [
             _Item(Icons.fingerprint_rounded, 'Attendance', color: _blue, iconBg: _blueBg,
                 onTap: () => _go(context, (_) => const AttendanceScreen())),
@@ -90,7 +89,6 @@ class AppDrawer extends StatelessWidget {
         ),
         _Section(
           title: 'Work',
-          initiallyExpanded: true,
           children: [
             _Item(Icons.task_alt_rounded, 'Tasks', color: _purple, iconBg: _purpleBg,
                 onTap: () => _go(context, (_) => const TasksScreen())),
@@ -134,7 +132,6 @@ class AppDrawer extends StatelessWidget {
   List<Widget> _adminSections(BuildContext context) => [
         _Section(
           title: 'Organisation',
-          initiallyExpanded: true,
           children: [
             _Item(Icons.apartment_rounded, 'Departments', color: _blue, iconBg: _blueBg,
                 onTap: () => _go(context, (_) => const AdminDepartmentsScreen())),
@@ -161,7 +158,6 @@ class AppDrawer extends StatelessWidget {
         ),
         _Section(
           title: 'Communication',
-          initiallyExpanded: true,
           children: [
             _Item(Icons.campaign_rounded, 'Announcements', color: _orange, iconBg: _orangeBg,
                 onTap: () => _go(context, (_) => const AdminAnnouncementsScreen())),
@@ -184,6 +180,7 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: AppColors.surface,
       child: SafeArea(
+        top: false,
         child: Column(
           children: [
             _Header(name: user?.name ?? '', role: _roleLabel(user)),
@@ -244,18 +241,18 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return Container(
       width: double.infinity,
       color: AppColors.brand900,
-      padding: EdgeInsets.fromLTRB(context.w(20), context.h(20), context.w(20), context.h(20)),
+      padding: EdgeInsets.fromLTRB(context.w(20), MediaQuery.of(context).padding.top + context.h(20), context.w(20), context.h(20)),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: context.r(24),
-            backgroundColor: AppColors.brand600,
-            child: Text(initial,
-                style: TextStyle(color: Colors.white, fontSize: context.sp(20), fontWeight: FontWeight.w700)),
+          Container(
+            width: context.r(48),
+            height: context.r(48),
+            padding: EdgeInsets.all(context.r(6)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(context.r(12))),
+            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
           ),
           SizedBox(width: context.w(12)),
           Expanded(
@@ -281,8 +278,7 @@ class _Header extends StatelessWidget {
 class _Section extends StatelessWidget {
   final String title;
   final List<Widget> children;
-  final bool initiallyExpanded;
-  const _Section({required this.title, required this.children, this.initiallyExpanded = false});
+  const _Section({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +286,6 @@ class _Section extends StatelessWidget {
       title: Text(title,
           style: TextStyle(
               fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted, letterSpacing: 0.3)),
-      initiallyExpanded: initiallyExpanded,
       shape: const Border(),
       collapsedShape: const Border(),
       tilePadding: EdgeInsets.symmetric(horizontal: context.w(16)),

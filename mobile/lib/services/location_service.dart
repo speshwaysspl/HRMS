@@ -30,6 +30,24 @@ class LocationPermissionDenied implements Exception {
 }
 
 class LocationService {
+  /// Asks for location permission up front (no GPS fix). Returns true when
+  /// granted. Safe to call repeatedly — it only prompts while still undecided.
+  static Future<bool> requestPermissionOnLaunch() async {
+    if (kIsWeb) return true;
+    try {
+      var p = await Geolocator.checkPermission();
+      if (p == LocationPermission.denied) p = await Geolocator.requestPermission();
+      return p == LocationPermission.whileInUse || p == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> openSettings() async {
+    await Geolocator.openAppSettings();
+    await Geolocator.openLocationSettings();
+  }
+
   Future<void> _ensurePermission() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw LocationPermissionDenied('Location services are turned off. Please enable them and try again.');

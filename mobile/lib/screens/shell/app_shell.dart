@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/app_events.dart';
 import '../../services/auth_provider.dart';
+import '../../services/quick_actions_service.dart';
 import '../admin/admin_employees_screen.dart';
 import '../admin/admin_home_screen.dart';
 import '../admin/admin_leaves_screen.dart';
@@ -31,6 +32,8 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     AppEvents.tabSwitch.addListener(_handleTabSwitch);
+    // A launcher shortcut tapped while logged out / cold-starting opens here.
+    WidgetsBinding.instance.addPostFrameCallback((_) => QuickActionsService.consumePending());
   }
 
   @override

@@ -31,6 +31,7 @@ dependencies:
   geocoding: ^5.0.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  quick_actions: ^1.1.1
 
 dev_dependencies:
   flutter_test:
