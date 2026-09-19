@@ -82,7 +82,7 @@ const List = () => {
         {(Array.isArray(user.role) ? user.role.includes("employee") : user.role === "employee") && (
           <Link
             to="/employee-dashboard/add-leave"
-            className="px-4 sm:px-5 py-2 bg-accent-600 hover:bg-accent-700 rounded-lg text-white font-medium text-center text-sm sm:text-base transition-colors duration-150"
+            className="px-4 sm:px-5 py-3 sm:py-2 bg-accent-600 hover:bg-accent-700 rounded-xl sm:rounded-lg text-white font-bold sm:font-medium text-center text-sm sm:text-base transition-colors duration-150 shadow-card"
           >
             + Add New Leave
           </Link>
@@ -100,34 +100,31 @@ const List = () => {
             {leaves.map((leave, index) => (
               <motion.div
                 key={leave._id}
-                className="bg-white rounded-xl shadow-card p-4 mb-4 border border-surface-subtle"
+                className="bg-white rounded-2xl p-4 mb-3 border border-surface-subtle"
+                style={{ boxShadow: "0 4px 12px rgba(28,35,68,0.08)" }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-brand-50 text-brand-700 text-xs font-semibold px-2 py-1 rounded">
-                      #{sno++}
-                    </span>
-                    <span className="font-semibold text-ink">{leave.leaveType}</span>
-                  </div>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(leave.status)}`}>
-                    {leave.status}
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </span>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-ink-muted min-w-[60px]">From:</span>
-                    <span className="text-ink">{formatDMY(leave.startDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-ink-muted min-w-[60px]">To:</span>
-                    <span className="text-ink">{formatDMY(leave.endDate)}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="font-medium text-ink-muted min-w-[60px]">Reason:</span>
-                    <span className="text-ink flex-1">{leave.reason}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-extrabold text-ink text-[15px] leading-snug">{leave.leaveType}</span>
+                      <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusBadgeClass(leave.status)}`}>
+                        {leave.status}
+                      </span>
+                    </div>
+                    <div className="text-[13px] text-ink-muted mt-1">
+                      {formatDMY(leave.startDate)} – {formatDMY(leave.endDate)}
+                    </div>
+                    {leave.reason && (
+                      <div className="text-xs text-ink-faint mt-1 line-clamp-2">{leave.reason}</div>
+                    )}
                   </div>
                 </div>
               </motion.div>

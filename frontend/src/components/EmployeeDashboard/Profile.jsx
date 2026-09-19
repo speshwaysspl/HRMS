@@ -77,160 +77,74 @@ const Profile = () => {
     );
   }
 
+  const isActive = employee.status === 'active';
+  const personal = [
+    { icon: FaEnvelope, bg: '#DBEAFE', fg: '#2563EB', label: 'Email Address', value: employee.userId.email, wrap: true },
+    { icon: FaPhone, bg: '#DCFCE7', fg: '#16A34A', label: 'Mobile Number', value: employee.mobilenumber || 'Not provided' },
+    { icon: FaCalendarAlt, bg: '#FFEDD5', fg: '#EA580C', label: 'Date of Birth', value: employee.dob ? formatDMY(employee.dob) : 'Not provided' },
+    { icon: FaUser, bg: '#F3E8FF', fg: '#9333EA', label: 'Gender', value: employee.gender || 'Not specified' },
+  ];
+  const employment = [
+    { icon: FaBuilding, bg: '#DBEAFE', fg: '#2563EB', label: 'Department', value: employee.department?.dep_name },
+    { icon: FaBriefcase, bg: '#F3E8FF', fg: '#9333EA', label: 'Designation', value: employee.designation },
+    { icon: FaCalendarAlt, bg: '#FFEDD5', fg: '#EA580C', label: 'Joining Date', value: employee.joiningDate ? formatDMY(employee.joiningDate) : 'Not provided' },
+  ];
+
+  const Section = ({ title, icon: Icon, bg, fg, rows }) => (
+    <div className="bg-white rounded-2xl border border-surface-subtle p-4 md:p-5" style={{ boxShadow: '0 4px 12px rgba(28,35,68,0.06)' }}>
+      <div className="flex items-center gap-2.5 pb-3 mb-1 border-b border-surface-subtle">
+        <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: bg, color: fg }}>
+          <Icon size={14} />
+        </span>
+        <h3 className="text-sm md:text-base font-bold text-ink">{title}</h3>
+      </div>
+      <div className="divide-y divide-surface-subtle">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center gap-3 py-3">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: r.bg, color: r.fg }}>
+              <r.icon size={14} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-ink-faint uppercase tracking-wide">{r.label}</p>
+              <p className={`text-sm font-semibold text-ink ${r.wrap ? 'break-all' : 'truncate'}`}>{r.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
-      <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-ink mb-2">
-                My Profile
-              </h1>
-              <p className="text-ink-muted mt-2">Your personal information and details</p>
+    <div className='bg-surface-muted md:p-2'>
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Header card — same layout as the Flutter Profile screen (no avatar) */}
+        <div className="rounded-2xl p-5 md:p-6 text-white bg-gradient-to-br from-brand-800 to-brand-900 shadow-panel">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-2xl font-extrabold truncate">{employee.userId.name}</h1>
+              <p className="text-sm text-brand-200 mt-1 truncate">
+                {employee.designation} · {employee.department?.dep_name}
+              </p>
             </div>
+            <span
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white border"
+              style={{
+                backgroundColor: isActive ? 'rgba(63,139,69,0.25)' : 'rgba(220,38,38,0.25)',
+                borderColor: isActive ? '#5DA562' : '#DC2626',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive ? '#5DA562' : '#DC2626' }} />
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold">
+            <FaIdCard size={12} className="text-white/70" />
+            ID: {employee.employeeId}
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white rounded-xl shadow-card border border-surface-subtle overflow-hidden">
-          {/* Header Card */}
-          <div className="bg-brand-800 p-6 md:p-8">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
-                <FaUser className="text-3xl text-white" />
-              </div>
-              <div className="text-center sm:text-left">
-                <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">
-                  {employee.userId.name}
-                </h2>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-white/80">
-                  <span className="flex items-center gap-2">
-                    <FaIdCard className="text-sm" />
-                    ID: {employee.employeeId}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <FaBriefcase className="text-sm" />
-                    {employee.designation}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Details Grid */}
-          <div className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
-                  Personal Information
-                </h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaEnvelope className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Email Address</p>
-                      <p className="text-ink font-semibold break-all">{employee.userId.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaPhone className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Mobile Number</p>
-                      <p className="text-ink font-semibold">{employee.mobilenumber || 'Not provided'}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaCalendarAlt className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Date of Birth</p>
-                      <p className="text-ink font-semibold">
-                        {employee.dob ? formatDMY(employee.dob) : 'Not provided'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaUser className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Gender</p>
-                      <p className="text-ink font-semibold">{employee.gender || 'Not specified'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Employment Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-ink mb-4 pb-2 border-b border-surface-subtle">
-                  Employment Information
-                </h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaBuilding className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Department</p>
-                      <p className="text-ink font-semibold">{employee.department.dep_name}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaBriefcase className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Designation</p>
-                      <p className="text-ink font-semibold">{employee.designation}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaCalendarAlt className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Joining Date</p>
-                      <p className="text-ink font-semibold">
-                        {employee.joiningDate ? formatDMY(employee.joiningDate) : 'Not provided'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-surface-muted rounded-lg hover:bg-surface-subtle/40 transition-colors duration-200 border border-surface-subtle">
-                    <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center">
-                      <FaCheckCircle className="text-white text-sm" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink-muted mb-1">Employment Status</p>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        employee.status === 'active' 
-                          ? 'bg-accent-100 text-accent-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {employee.status === 'active' ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Section title="Personal Information" icon={FaUser} bg="#DBEAFE" fg="#2563EB" rows={personal} />
+        <Section title="Employment Information" icon={FaBriefcase} bg="#F3E8FF" fg="#9333EA" rows={employment} />
       </div>
     </div>
   );

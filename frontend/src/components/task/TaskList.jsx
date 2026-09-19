@@ -174,30 +174,71 @@ const TaskList = () => {
         </table>
       </motion.div>
       <div className="sm:hidden space-y-3">
-        {tasks.map((task) => (
+        {tasks.map((task) => {
+          const pri = (task.priority || "Medium").toLowerCase();
+          const priStyle =
+            pri === "high"
+              ? { color: "#DC2626", bg: "#FEE2E2" }
+              : pri === "low"
+              ? { color: "#16A34A", bg: "#DCFCE7" }
+              : { color: "#EA580C", bg: "#FFEDD5" };
+          const st = (task.status || "").toLowerCase();
+          const statusStyle = st.includes("complete")
+            ? { color: "#16A34A", bg: "#DCFCE7", icon: "✓" }
+            : st.includes("progress")
+            ? { color: "#2563EB", bg: "#DBEAFE", icon: "↻" }
+            : st.includes("review")
+            ? { color: "#9333EA", bg: "#F3E8FF", icon: "★" }
+            : { color: "#2C3968", bg: "#EEF1F8", icon: "☰" };
+          return (
           <div
             key={task._id}
-            className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 cursor-pointer"
+            className="bg-white rounded-2xl border border-surface-subtle p-4 cursor-pointer active:scale-[0.99] transition-transform"
+            style={{ boxShadow: "0 4px 12px rgba(28,35,68,0.08)" }}
             onClick={() => {
               setSelectedTask(task);
               setUpdateData({ status: task.status, comments: task.comments || "" });
             }}
           >
-            <div className="flex justify-between items-start">
-              <div className="font-semibold text-ink">{task.title}</div>
-              <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-accent-100 text-accent-700">
-                {task.status}
+            <div className="flex items-start gap-3">
+              <span
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
+                style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
+              >
+                {statusStyle.icon}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-extrabold text-ink text-[15px] leading-snug break-words">{task.title}</div>
+                  <span
+                    className="flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                    style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
+                  >
+                    {task.status}
+                  </span>
+                </div>
+                {task.description && (
+                  <div className="mt-1 text-[13px] text-ink-muted line-clamp-2">{task.description}</div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-surface-subtle text-xs text-ink-muted flex-wrap">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold"
+                style={{ backgroundColor: priStyle.bg, color: priStyle.color }}
+              >
+                ⚑ {task.priority || "Medium"}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                Start: {task.startDate ? new Date(task.startDate).toLocaleDateString() : "N/A"}
+              </span>
+              <span className="inline-flex items-center gap-1 font-medium text-ink">
+                Due: {formatDateOrNA(task.deadline)}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-ink-muted">
-              <div>Start: {task.startDate ? new Date(task.startDate).toLocaleDateString() : "N/A"}</div>
-              <div>Due: {formatDateOrNA(task.deadline)}</div>
-            </div>
-            {task.description && (
-              <div className="mt-2 text-ink-muted">{task.description}</div>
-            )}
           </div>
-        ))}
+          );
+        })}
         {tasks.length === 0 && (
           <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-6 text-center text-ink-muted">No tasks found.</div>
         )}

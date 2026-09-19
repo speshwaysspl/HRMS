@@ -1030,9 +1030,9 @@ const PayrollTemplateManager = () => {
 
       {/* Templates List */}
       <div className="bg-surface">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-ink mb-2 md:mb-0">Existing Templates</h3>
-          <div className="relative w-full md:w-64">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-4">
+          <h3 className="text-lg font-semibold text-ink">Existing Templates</h3>
+          <div className="relative w-full sm:w-64">
             <input
               type="text"
               placeholder="Search by Name or Employee ID..."
@@ -1051,18 +1051,91 @@ const PayrollTemplateManager = () => {
         {templates.length === 0 && !searchLoading ? (
           <EmptyState title="No templates found" message="Create your first template above." />
         ) : (
-          <DataTable
-            columns={columns}
-            data={templates}
-            pagination
-            responsive
-            paginationComponentOptions={{
-              rowsPerPageText: 'Rows per page:',
-              rangeSeparatorText: 'of',
-              selectAllRowsItem: true,
-              selectAllRowsItemText: 'All',
-            }}
-          />
+          <>
+            {/* Desktop: data table */}
+            <div className="hidden sm:block">
+              <DataTable
+                columns={columns}
+                data={templates}
+                pagination
+                responsive
+                paginationComponentOptions={{
+                  rowsPerPageText: 'Rows per page:',
+                  rangeSeparatorText: 'of',
+                  selectAllRowsItem: true,
+                  selectAllRowsItemText: 'All',
+                }}
+              />
+            </div>
+
+            {/* Mobile: card list */}
+            <div className="sm:hidden space-y-3">
+              {templates.map((row) => {
+                const employeeLabel = row.employeeName || (typeof row.employeeId === 'string' ? row.employeeId : row.employeeId?.employeeId || row.employeeId?._id || 'N/A');
+                return (
+                  <div key={row._id} className="bg-white border border-surface-subtle rounded-xl p-4 shadow-card">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-ink break-words">{row.templateName}</span>
+                          {row.isDefault && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-accent-100 text-accent-700">
+                              Default
+                            </span>
+                          )}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                            row.isActive ? 'bg-accent-100 text-accent-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {row.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-ink-muted mt-1">{employeeLabel}</div>
+                        <div className="text-xs text-ink-faint">{row.designation}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-surface-subtle">
+                      <div className="grid grid-cols-2 gap-x-4 text-sm">
+                        <div>
+                          <div className="text-[11px] text-ink-faint uppercase tracking-wide">Basic</div>
+                          <div className="font-medium text-ink">₹{parseFloat(row.basicSalary || 0).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-ink-faint uppercase tracking-wide">Net Salary</div>
+                          <div className="font-semibold text-accent-700">₹{parseFloat(row.netSalary || 0).toLocaleString()}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleEdit(row)}
+                          className="text-ink-muted hover:text-brand-600 hover:bg-surface-muted p-2 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit size={17} />
+                        </button>
+                        {!row.isDefault && (
+                          <button
+                            onClick={() => handleSetDefault(row._id)}
+                            className="text-ink-muted hover:text-accent-600 hover:bg-surface-muted p-2 rounded-lg transition-colors"
+                            title="Set Default"
+                          >
+                            <CheckCircle size={17} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(row._id)}
+                          className="text-ink-muted hover:text-red-600 hover:bg-surface-muted p-2 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </motion.div>

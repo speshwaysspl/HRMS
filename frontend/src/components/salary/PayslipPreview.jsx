@@ -92,16 +92,16 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
     <div className="fixed inset-0 bg-brand-950/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-panel max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* PDF-like Content — intentionally kept as a formal printable document layout, not restyled */}
-        <div className="p-6 bg-white" style={{ fontFamily: 'Times, serif' }}>
+        <div className="p-3 sm:p-6 bg-white" style={{ fontFamily: 'Times, serif' }}>
           {/* Header - matching PDF layout */}
-          <div className="border-2 border-black p-4 mb-4">
-            <div className="flex items-center justify-between">
+          <div className="border-2 border-black p-2 sm:p-4 mb-4">
+            <div className="flex items-center justify-between gap-2">
               {/* Logo */}
-              <div className="w-16 h-16 flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 flex-shrink-0 flex items-center justify-center">
                 {logoUrl ? (
-                  <img 
-                    src={logoUrl} 
-                    alt="Company Logo" 
+                  <img
+                    src={logoUrl}
+                    alt="Company Logo"
                     className="w-full h-full object-contain"
                     onError={() => setLogoUrl(null)}
                   />
@@ -111,22 +111,22 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
                   </div>
                 )}
               </div>
-              
+
               {/* Company Info - Center aligned */}
-              <div className="flex-1 text-center">
-                <h1 className="text-xl font-bold text-blue-600">SPESHWAY SOLUTIONS PRIVATE LIMITED</h1>
-                <p className="text-sm">Hitech City, Hyderabad</p>
-                <h2 className="text-sm font-bold mt-1">Payslip for the month of {payslip.month} {payslip.year}</h2>
+              <div className="flex-1 text-center min-w-0">
+                <h1 className="text-sm sm:text-xl font-bold text-blue-600 break-words">SPESHWAY SOLUTIONS PRIVATE LIMITED</h1>
+                <p className="text-xs sm:text-sm">Hitech City, Hyderabad</p>
+                <h2 className="text-xs sm:text-sm font-bold mt-1">Payslip for the month of {payslip.month} {payslip.year}</h2>
               </div>
-              
+
               {/* Right side spacer */}
-              <div className="w-16"></div>
+              <div className="w-10 sm:w-16 flex-shrink-0"></div>
             </div>
           </div>
 
           {/* Personal Info Section - matching PDF layout */}
           <div className="border-2 border-black mb-4">
-            <div className="grid grid-cols-2 divide-x-2 divide-black">
+            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-black">
               {/* Left Column */}
               <div className="p-3 space-y-2">
                 <div className="flex">
@@ -183,7 +183,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
 
           {/* Earnings and Deductions - matching PDF layout */}
           <div className="border-2 border-black mb-4">
-            <div className="grid grid-cols-2 divide-x-2 divide-black">
+            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-black">
               {/* Earnings */}
               <div className="p-3">
                 <div className="flex justify-between mb-2">
@@ -248,7 +248,7 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
             
             {/* Totals */}
             <div className="border-t-2 border-black p-3">
-              <div className="grid grid-cols-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-0">
                 <div className="text-sm font-bold">
                   Total Earnings: {formatCurrency(totalEarnings)}
                 </div>

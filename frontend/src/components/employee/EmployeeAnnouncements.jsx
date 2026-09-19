@@ -72,46 +72,58 @@ const EmployeeAnnouncements = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6 md:mb-8"
+          className="mb-5 md:mb-8"
         >
-          <h1 className="text-2xl md:text-4xl font-semibold text-brand-700 mb-2">Announcements</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-ink mb-1">Announcements</h1>
           <p className="text-ink-muted text-sm md:text-base">Stay updated with the latest company news</p>
         </motion.div>
 
-        <div className="space-y-4">
-          {announcements.map(({ _id, title, createdAt }, index) => (
-            <motion.div
-              key={_id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-card border border-surface-subtle"
-            >
-              <div className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg md:text-xl font-semibold text-ink mb-2 break-words">
-                      {title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-ink-muted">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{formatISTDate(new Date(createdAt))}</span>
+        <div className="space-y-3 md:space-y-4">
+          {announcements.map(({ _id, title, description, createdAt }, index) => {
+            const isNew = createdAt ? Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000 : false;
+            return (
+              <motion.button
+                key={_id}
+                type="button"
+                onClick={() => navigate(`/employee-dashboard/announcements/${_id}`)}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+                className="w-full text-left rounded-2xl p-4 md:p-5 border bg-gradient-to-b from-[#F0FDF4] to-white hover:shadow-panel transition-shadow"
+                style={{ borderColor: "#BBF7D0", boxShadow: "0 4px 12px rgba(22,163,74,0.08)" }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center flex-shrink-0">
+                    <FiBell size={20} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[15px] md:text-lg font-extrabold text-ink leading-snug line-clamp-2 break-words">
+                        {title}
+                      </h3>
+                      {isNew && (
+                        <span className="flex-shrink-0 text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-[#16A34A] text-white">
+                          NEW
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <button
-                      onClick={() => navigate(`/employee-dashboard/announcements/${_id}`)}
-                      className="w-full sm:w-auto px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                    >
-                      View Details
-                    </button>
+                    {description && (
+                      <p className="text-[13px] text-[#475569] leading-relaxed line-clamp-3 mt-1.5">{description}</p>
+                    )}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#DCFCE7]">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-faint">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {formatISTDate(new Date(createdAt))}
+                  </span>
+                  <span className="text-xs font-bold text-[#16A34A]">Read more ›</span>
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
     </div>

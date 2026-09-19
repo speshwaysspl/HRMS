@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -44,19 +46,55 @@ class LocationService {
     }
   }
 
-  Future<String> _reverseGeocode(double lat, double lng) async {
+  // Plain Dio (NOT ApiClient.instance.dio): that one attaches the user's
+  // auth token to every request, which must never be sent to a third party.
+  final Dio _osmDio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 8),
+    receiveTimeout: const Duration(seconds: 8),
+    headers: {'Accept': 'application/json'},
+  ));
+
+  /// OpenStreetMap Nominatim — same fallback the web app uses
+  /// (frontend/src/utils/geocodeUtils.js). Works on every platform incl.
+  /// Flutter web, where the `geocoding` plugin isn't supported.
+  Future<String?> _reverseGeocodeOsm(double lat, double lng) async {
     try {
-      final placemarks = await Geocoding().placemarkFromCoordinates(lat, lng);
-      if (placemarks.isEmpty) return 'Unknown Area';
-      final p = placemarks.first;
-      final parts = <String>[
-        for (final s in [p.subLocality, p.locality, p.administrativeArea, p.postalCode, p.country])
-          if (s != null && s.trim().isNotEmpty) s,
-      ];
-      return parts.isEmpty ? 'Unknown Area' : parts.join(', ');
-    } catch (_) {
-      return 'Unknown Area';
+      final res = await _osmDio.get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {'format': 'jsonv2', 'lat': lat, 'lon': lng},
+      );
+      final data = res.data;
+      if (data is Map) {
+        final display = data['display_name']?.toString().trim();
+        if (display != null && display.isNotEmpty) return display;
+        final addr = data['address'];
+        if (addr is Map) {
+          for (final k in ['suburb', 'village', 'town', 'city']) {
+            final v = addr[k]?.toString().trim();
+            if (v != null && v.isNotEmpty) return v;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<String> _reverseGeocode(double lat, double lng) async {
+    // Native geocoder first (not available on web), then OSM Nominatim.
+    if (!kIsWeb) {
+      try {
+        final placemarks = await Geocoding().placemarkFromCoordinates(lat, lng);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final parts = <String>[
+            for (final s in [p.subLocality, p.locality, p.administrativeArea, p.postalCode, p.country])
+              if (s != null && s.trim().isNotEmpty) s,
+          ];
+          if (parts.isNotEmpty) return parts.join(', ');
+        }
+      } catch (_) {}
     }
+    return await _reverseGeocodeOsm(lat, lng) ?? 'Unknown Area';
   }
 
   /// Best-effort current fix: high accuracy first, then a quicker/lower

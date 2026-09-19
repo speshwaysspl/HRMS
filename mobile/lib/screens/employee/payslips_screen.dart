@@ -73,7 +73,13 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
     setState(() => _downloadingId = id);
     try {
       final file = await _service.downloadPayslip(id);
-      await OpenFilex.open(file.path);
+      final result = await OpenFilex.open(file.path, type: 'application/pdf');
+      if (result.type != ResultType.done && mounted) {
+        final msg = result.type == ResultType.noAppToOpen
+            ? 'No PDF viewer found. Install a PDF app (e.g. Google Drive PDF Viewer) to open payslips.'
+            : 'Could not open the payslip: ${result.message}';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
@@ -128,6 +134,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
                           separatorBuilder: (_, _) => SizedBox(height: context.h(10)),
                           itemBuilder: (_, i) => _PayslipCard(
                             payslip: _items[i],
+                            index: i,
                             formatCurrency: _inr,
                             downloading: _downloadingId == _items[i]['_id'].toString(),
                             onTap: () => _openPreview(_items[i]),
@@ -141,6 +148,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
 
 class _PayslipCard extends StatelessWidget {
   final Map<String, dynamic> payslip;
+  final int index;
   final NumberFormat formatCurrency;
   final bool downloading;
   final VoidCallback onTap;
@@ -148,6 +156,7 @@ class _PayslipCard extends StatelessWidget {
 
   const _PayslipCard({
     required this.payslip,
+    required this.index,
     required this.formatCurrency,
     required this.downloading,
     required this.onTap,
@@ -157,114 +166,99 @@ class _PayslipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final net = num.tryParse(payslip['netSalary']?.toString() ?? '') ?? 0;
+    final basic = num.tryParse(payslip['basicSalary']?.toString() ?? '') ?? 0;
+    final ded = num.tryParse(payslip['deductions']?.toString() ?? '') ?? 0;
+    final emp = payslip['employeeId'];
+    final empId = emp is Map ? (emp['employeeId']?.toString() ?? 'N/A') : (emp?.toString() ?? 'N/A');
+    Widget stat(String label, String value) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: context.sp(12), color: AppColors.inkFaint)),
+              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w500, color: AppColors.ink)),
+            ],
+          ),
+        );
     return Container(
+      padding: EdgeInsets.all(context.w(16)),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(context.r(16)),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF3F0FF), Colors.white],
-        ),
-        border: Border.all(color: const Color(0xFFE4DEFF)),
-        boxShadow: [
-          BoxShadow(color: AppColors.brand500.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(context.r(12)),
+        border: Border.all(color: AppColors.surfaceSubtle),
+        boxShadow: [BoxShadow(color: AppColors.brand500.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Padding(
-        padding: EdgeInsets.all(context.w(14)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Month icon chip — brand → accent gradient for a bit of
-                // colour without straying from the app's two-tone palette.
-                Container(
-                  width: context.r(46),
-                  height: context.r(46),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF7C3AED), Color(0xFF2563EB)],
-                    ),
-                    borderRadius: BorderRadius.circular(context.r(13)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: context.r(24),
+                height: context.r(24),
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                child: Text('${index + 1}', style: TextStyle(fontSize: context.sp(11), fontWeight: FontWeight.w600, color: AppColors.brand700)),
+              ),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: Text('${payslip['monthName']} ${payslip['year']}',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: context.sp(14), color: AppColors.ink)),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(2)),
+                decoration: BoxDecoration(color: AppColors.accent50, borderRadius: BorderRadius.circular(context.r(20))),
+                child: Text('Payslip', style: TextStyle(color: AppColors.accent700, fontWeight: FontWeight.w700, fontSize: context.sp(11))),
+              ),
+            ],
+          ),
+          SizedBox(height: context.h(12)),
+          Text('NET SALARY', style: TextStyle(fontSize: context.sp(11), color: AppColors.inkFaint, letterSpacing: 0.5)),
+          Text(formatCurrency.format(net),
+              style: TextStyle(fontSize: context.sp(24), fontWeight: FontWeight.w700, color: AppColors.accent700)),
+          SizedBox(height: context.h(12)),
+          Container(height: 1, color: AppColors.surfaceSubtle),
+          SizedBox(height: context.h(12)),
+          Row(children: [
+            stat('Emp ID', empId),
+            stat('Salary', formatCurrency.format(basic)),
+            stat('Deduction', formatCurrency.format(ded)),
+          ]),
+          SizedBox(height: context.h(16)),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onTap,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    side: const BorderSide(color: AppColors.surfaceSubtle),
+                    padding: EdgeInsets.symmetric(vertical: context.h(11)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(12))),
                   ),
-                  child: Icon(Icons.receipt_long_rounded, color: Colors.white, size: context.r(23)),
+                  icon: Icon(Icons.visibility_outlined, size: context.r(16)),
+                  label: Text('Preview', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700)),
                 ),
-                SizedBox(width: context.w(12)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${payslip['monthName']} ${payslip['year']}',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: context.sp(14.5), color: AppColors.ink),
-                      ),
-                      SizedBox(height: context.h(4)),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(3)),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent100,
-                          borderRadius: BorderRadius.circular(context.r(20)),
-                        ),
-                        child: Text(
-                          'Net pay: ${formatCurrency.format(net)}',
-                          style: TextStyle(color: AppColors.accent800, fontWeight: FontWeight.w700, fontSize: context.sp(12)),
-                        ),
-                      ),
-                    ],
+              ),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: downloading ? null : onDownload,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent600,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(vertical: context.h(11)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(12))),
                   ),
+                  icon: downloading
+                      ? SizedBox(width: context.r(15), height: context.r(15), child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Icon(Icons.download_rounded, size: context.r(16)),
+                  label: Text(downloading ? 'Opening…' : 'Download', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700)),
                 ),
-              ],
-            ),
-            SizedBox(height: context.h(12)),
-            // Explicit Preview + Download actions instead of a single
-            // tap-anywhere-to-preview card.
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onTap,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF7C3AED),
-                      side: const BorderSide(color: Color(0xFFD8CCFB)),
-                      backgroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: context.h(11)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(11))),
-                    ),
-                    icon: Icon(Icons.visibility_outlined, size: context.r(17)),
-                    label: Text('Preview', style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600)),
-                  ),
-                ),
-                SizedBox(width: context.w(10)),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: downloading ? null : onDownload,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: context.h(11)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(11))),
-                    ),
-                    icon: downloading
-                        ? SizedBox(
-                            width: context.r(15),
-                            height: context.r(15),
-                            child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : Icon(Icons.download_rounded, size: context.r(17)),
-                    label: Text(
-                      downloading ? 'Opening…' : 'Download',
-                      style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

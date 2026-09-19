@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../services/api_client.dart';
@@ -138,6 +140,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String get _todayDate => DateFormat('yyyy-MM-dd').format(DateTime.now());
   String get _nowTime => DateFormat('HH:mm').format(DateTime.now());
 
+  /// Fresh fix right before check-in/out so we never submit a stale, missing
+  /// or "Unknown Area" location captured minutes earlier. Falls back to the
+  /// last known fix if a new one can't be obtained; returns null only when
+  /// there is no usable location at all.
+  Future<LocationFix?> _freshLocation() async {
+    try {
+      final fix = await _locationService.getCurrentFix();
+      if (mounted) setState(() => _location = fix);
+      return fix;
+    } catch (_) {
+      return _location;
+    }
+  }
+
   Future<void> _checkIn() async {
     if (_workMode == null) {
       _toast('Please select a work mode before checking in.', isError: true);
@@ -145,7 +161,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await _service.checkIn(date: _todayDate, inTime: _nowTime, workMode: _workMode!, location: _location);
+      final loc = await _freshLocation();
+      if (loc == null) {
+        _toast('Could not get your location. Turn on location/GPS, allow permission and try again.', isError: true);
+        return;
+      }
+      await _service.checkIn(date: _todayDate, inTime: _nowTime, workMode: _workMode!, location: loc);
       await _load();
       AppEvents.bumpAttendance();
       if (mounted) _toast('Checked in at $_nowTime');
@@ -165,7 +186,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         final open = b['end'] == null || b['end'] == '';
         return open ? {...b, 'end': _nowTime} : b;
       }).toList();
-      await _service.checkOut(date: _todayDate, outTime: _nowTime, breaks: closedBreaks, location: _location);
+      final loc = await _freshLocation();
+      await _service.checkOut(date: _todayDate, outTime: _nowTime, breaks: closedBreaks, location: loc);
       await _load();
       AppEvents.bumpAttendance();
       if (mounted) _toast('Checked out at $_nowTime');
@@ -465,19 +487,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://staticmap.openstreetmap.de/staticmap.php?center=${_location!.latitude},${_location!.longitude}&zoom=16&size=600x280&markers=${_location!.latitude},${_location!.longitude},red-pushpin',
-                    height: context.h(140),
+                  // OpenStreetMap tiles via flutter_map — same map source as
+                  // the web Attendance page's OSM embed, and (unlike a
+                  // static-map image URL) works on Android, iOS and web.
+                  child: SizedBox(
+                    height: context.h(150),
                     width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (ctx, child, progress) => progress == null
-                        ? child
-                        : Container(height: context.h(140), color: AppColors.surfaceSubtle, child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-                    errorBuilder: (ctx, err, stack) => Container(
-                      height: context.h(140),
-                      color: AppColors.surfaceSubtle,
-                      alignment: Alignment.center,
-                      child: Text('Map unavailable', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: LatLng(_location!.latitude, _location!.longitude),
+                        initialZoom: 16.5,
+                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.speshway.hrms',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(_location!.latitude, _location!.longitude),
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.topCenter,
+                              child: const Icon(Icons.location_on, color: Color(0xFFDC2626), size: 36),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),

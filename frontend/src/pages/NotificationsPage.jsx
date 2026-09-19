@@ -138,7 +138,7 @@ const NotificationsPage = () => {
         </label>
       </div>
 
-      <div className="bg-white border border-surface-subtle rounded-xl shadow-card divide-y divide-surface-subtle">
+      <div className="space-y-3">
         {loading ? (
           <LoadingState message="Loading notifications…" />
         ) : error ? (
@@ -146,29 +146,43 @@ const NotificationsPage = () => {
         ) : notifications.length === 0 ? (
           <EmptyState icon={FiBell} title="No notifications" message="You're all caught up." />
         ) : (
-          notifications.map((notification) => (
-            <div
-              key={notification._id}
-              onClick={() => handleClick(notification)}
-              className={`p-4 cursor-pointer hover:bg-surface-muted transition-colors ${
-                !notification.isRead ? "bg-accent-50/40" : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-ink">{notification.title}</p>
-                {!notification.isRead && (
-                  <span className="w-2 h-2 rounded-full bg-accent-500 flex-shrink-0 mt-1.5" />
-                )}
+          notifications.map((notification) => {
+            const unread = !notification.isRead;
+            return (
+              <div
+                key={notification._id}
+                onClick={() => handleClick(notification)}
+                className="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-shadow hover:shadow-panel"
+                style={{
+                  background: unread ? "linear-gradient(180deg,#EFF6FF,#FFFFFF)" : "#FFFFFF",
+                  borderColor: unread ? "#BFDBFE" : "#EEF0F6",
+                  boxShadow: "0 4px 12px rgba(28,35,68,0.06)",
+                }}
+              >
+                <span
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: unread ? "#DBEAFE" : "#F6F7FB", color: unread ? "#2563EB" : "#8B93A7" }}
+                >
+                  <FiBell size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-sm text-ink leading-snug ${unread ? "font-extrabold" : "font-semibold"}`}>
+                      {notification.title}
+                    </p>
+                    {unread && <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB] flex-shrink-0 mt-1" />}
+                  </div>
+                  <p className="text-[13px] text-ink-muted mt-1 line-clamp-3">{notification.message}</p>
+                  <div className="flex items-center justify-between mt-2 gap-2">
+                    <p className="text-[11px] text-ink-faint">{formatDMY(notification.createdAt)}</p>
+                    {notification.senderId?.name && (
+                      <p className="text-[11px] text-ink-faint truncate">From: {notification.senderId.name}</p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-ink-muted mt-1">{notification.message}</p>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-ink-faint">{formatDMY(notification.createdAt)}</p>
-                {notification.senderId?.name && (
-                  <p className="text-xs text-ink-faint">From: {notification.senderId.name}</p>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

@@ -17,7 +17,9 @@ const HRDashboard = () => {
     robots: "noindex,nofollow"
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Open by default on desktop (matches the md:ml-64 breakpoint below), closed
+  // on mobile so the sidebar overlay doesn't cover the screen on first load.
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
 
   return (
     <div className="hr-dashboard-layout flex min-h-screen bg-surface-muted text-ink">

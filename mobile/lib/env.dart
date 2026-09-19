@@ -31,7 +31,7 @@ class Env {
   /// Set to `true` to make DEBUG builds hit production too (handy for testing
   /// live data on the simulator without passing a flag). Ignored by release
   /// builds (always production) and when an ENV / API_BASE_URL define is set.
-  static const bool devUsesProduction = false;
+  static const bool devUsesProduction = true;
   
   // ── Base URLs ──────────────────────────────────────────────────────────
   static const String productionBaseUrl = 'https://backend.speshwayhrms.com';

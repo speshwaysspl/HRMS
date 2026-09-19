@@ -980,9 +980,21 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         : 'Please check the updated holiday calendar.';
     final timeStr = _getAnnouncementTime(latest?['createdAt']?.toString());
 
+    // "NEW" badge when the latest announcement is under 24h old.
+    var isNew = false;
+    final createdRaw = latest?['createdAt']?.toString();
+    if (createdRaw != null && createdRaw.isNotEmpty) {
+      final created = DateTime.tryParse(createdRaw);
+      if (created != null) {
+        isNew = DateTime.now().difference(created) < const Duration(hours: 24);
+      }
+    }
+
+    // Same design as the web Home's Recent Announcements card (Summary.jsx):
+    // soft green gradient tile, icon chip + title (+ NEW pill) + description,
+    // then a divider and a footer row with the time and "View all".
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(context.r(16)),
+      color: Colors.transparent,
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
@@ -991,13 +1003,15 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         },
         borderRadius: BorderRadius.circular(context.r(16)),
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: context.w(14),
-            vertical: context.h(14),
-          ),
+          padding: EdgeInsets.all(context.w(14)),
           decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFF0FDF4), Colors.white],
+            ),
             borderRadius: BorderRadius.circular(context.r(16)),
-            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+            border: Border.all(color: const Color(0xFFDCFCE7), width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -1006,66 +1020,126 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: context.r(46),
-                height: context.r(46),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.campaign_rounded,
-                    color: const Color(0xFF16A34A),
-                    size: context.r(24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: context.r(44),
+                    height: context.r(44),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(context.r(12)),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.campaign_rounded,
+                        color: const Color(0xFF16A34A),
+                        size: context.r(22),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(width: context.w(12)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: context.sp(13.5),
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                            if (isNew) ...[
+                              SizedBox(width: context.w(8)),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: context.w(8),
+                                  vertical: context.h(2),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF16A34A),
+                                  borderRadius: BorderRadius.circular(context.r(20)),
+                                ),
+                                child: Text(
+                                  'NEW',
+                                  style: TextStyle(
+                                    fontSize: context.sp(10),
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: context.h(4)),
+                        Text(
+                          desc,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: context.sp(11.5),
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFF64748B),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: context.w(12)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: context.sp(13.5),
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
+              SizedBox(height: context.h(12)),
+              const Divider(height: 1, color: Color(0xFFDCFCE7)),
+              SizedBox(height: context.h(10)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.access_time_rounded, size: context.r(13), color: const Color(0xFF94A3B8)),
+                      SizedBox(width: context.w(5)),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          fontSize: context.sp(11),
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF94A3B8),
+                        ),
                       ),
-                    ),
-                    SizedBox(height: context.h(3)),
-                    Text(
-                      desc,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: context.sp(11.5),
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF64748B),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'View all',
+                        style: TextStyle(
+                          fontSize: context.sp(12),
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF16A34A),
+                        ),
                       ),
-                    ),
-                    SizedBox(height: context.h(4)),
-                    Text(
-                      timeStr,
-                      style: TextStyle(
-                        fontSize: context.sp(10.5),
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: const Color(0xFF64748B),
-                size: context.r(20),
+                      SizedBox(width: context.w(2)),
+                      Icon(Icons.chevron_right_rounded, size: context.r(16), color: const Color(0xFF16A34A)),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

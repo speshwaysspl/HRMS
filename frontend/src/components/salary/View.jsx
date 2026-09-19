@@ -8,7 +8,7 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
-import { FiDownload } from "react-icons/fi";
+import { FiDownload, FiEye } from "react-icons/fi";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -155,11 +155,11 @@ const View = () => {
             </div>
 
             {/* Header with Logo */}
-            <div style={{border: '1px solid black', height: '70px', display: 'flex', alignItems: 'center', position: 'relative'}}>
-              <div style={{width: '70px', height: '66px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', marginLeft: '10px'}}>
-                <img 
-                  src="https://media.licdn.com/dms/image/v2/C4E0BAQFCeV7EWFY7mA/company-logo_200_200/company-logo_200_200/0/1660829823147?e=2147483647&v=beta&t=dqXv3GOH9QultP_4TbKdVXsdUJNBs6R0V80OPMDRWbA" 
-                  alt="Speshway Logo" 
+            <div className="flex-col sm:flex-row" style={{border: '1px solid black', minHeight: '70px', display: 'flex', alignItems: 'center'}}>
+              <div style={{width: '70px', height: '66px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', margin: '6px auto'}}>
+                <img
+                  src="https://media.licdn.com/dms/image/v2/C4E0BAQFCeV7EWFY7mA/company-logo_200_200/company-logo_200_200/0/1660829823147?e=2147483647&v=beta&t=dqXv3GOH9QultP_4TbKdVXsdUJNBs6R0V80OPMDRWbA"
+                  alt="Speshway Logo"
                   style={{width: '70px', height: 'auto', maxHeight: '66px', objectFit: 'contain'}}
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -168,16 +168,16 @@ const View = () => {
                 />
                 <div style={{display: 'none', fontSize: '10px', textAlign: 'center', color: '#666'}}>Logo</div>
               </div>
-              <div style={{flex: 1, textAlign: 'center', position: 'absolute', left: 0, right: 0}}>
-                <div style={{fontFamily: 'Times, serif', fontSize: '16px', fontWeight: 'bold', marginBottom: '2px'}}>SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
+              <div style={{flex: 1, textAlign: 'center', padding: '4px 8px'}}>
+                <div style={{fontFamily: 'Times, serif', fontSize: '16px', fontWeight: 'bold', marginBottom: '2px', wordBreak: 'break-word'}}>SPESHWAY SOLUTIONS PRIVATE LIMITED</div>
                 <div style={{fontFamily: 'Times, serif', fontSize: '10px', marginBottom: '2px'}}>Hitech City, Hyderabad</div>
                 <div style={{fontFamily: 'Times, serif', fontSize: '11px', fontWeight: 'bold'}}>Payslip for the month of {salary.month} {salary.year}</div>
               </div>
             </div>
 
             {/* Personal Info Section */}
-            <div style={{border: '1px solid black', borderTop: 'none', height: '100px', display: 'flex'}}>
-              <div style={{width: '50%', padding: '10px', borderRight: '1px solid black'}}>
+            <div className="flex-col sm:flex-row" style={{border: '1px solid black', borderTop: 'none', minHeight: '100px', display: 'flex'}}>
+              <div className="w-full sm:w-1/2" style={{padding: '10px', borderRight: '1px solid black'}}>
                 <div style={{fontFamily: 'Times, serif', fontSize: '10px', lineHeight: '15px'}}>
                   <div style={{marginBottom: '15px'}}>Name: <span style={{marginLeft: '65px'}}>{salary.name || '-'}</span></div>
                   <div style={{marginBottom: '15px'}}>Joining Date: <span style={{marginLeft: '32px'}}>{salary.joiningDate ? new Date(salary.joiningDate).toLocaleDateString() : '-'}</span></div>
@@ -187,7 +187,7 @@ const View = () => {
                   <div>LOP Days: <span style={{marginLeft: '50px'}}>{salary.lopDays || 0}</span></div>
                 </div>
               </div>
-              <div style={{width: '50%', padding: '10px'}}>
+              <div className="w-full sm:w-1/2" style={{padding: '10px'}}>
                 <div style={{fontFamily: 'Times, serif', fontSize: '10px', lineHeight: '15px'}}>
                   <div style={{marginBottom: '15px'}}>Employee No: <span style={{marginLeft: '32px'}}>{salary.employeeId?.employeeId || salary.employeeId || '-'}</span></div>
                   <div style={{marginBottom: '15px'}}>Bank Name: <span style={{marginLeft: '40px'}}>{salary.bankname || '-'}</span></div>
@@ -199,72 +199,72 @@ const View = () => {
             </div>
 
             {/* Earnings & Deductions Section */}
-            <div style={{border: '1px solid black', borderTop: 'none', height: '140px'}}>
+            <div style={{border: '1px solid black', borderTop: 'none', minHeight: '140px'}}>
               {/* Headers */}
-              <div style={{display: 'flex', fontFamily: 'Times, serif', fontSize: '10px', fontWeight: 'bold', padding: '5px'}}>
-                <div style={{width: '25%', paddingLeft: '5px'}}>Earnings</div>
-                <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>Actual</div>
-                <div style={{width: '25%', paddingLeft: '5px'}}>Deductions</div>
-                <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>Actual</div>
+              <div className="flex-wrap" style={{display: 'flex', fontFamily: 'Times, serif', fontSize: '10px', fontWeight: 'bold', padding: '5px'}}>
+                <div className="w-1/2 sm:w-1/4 pl-1">Earnings</div>
+                <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">Actual</div>
+                <div className="w-1/2 sm:w-1/4 pl-1">Deductions</div>
+                <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">Actual</div>
               </div>
               
               {/* Earnings and Deductions Rows */}
               <div style={{fontFamily: 'Times, serif', fontSize: '10px'}}>
                 {/* Row 1 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>BASIC</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.basicSalary)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>PROF TAX</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.proftax)}</div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">BASIC</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.basicSalary)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1">PROF TAX</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.proftax)}</div>
                 </div>
                 
                 {/* Row 2 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center', marginTop: '3px'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>DA</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.da)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>PF</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.pf)}</div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center', marginTop: '3px'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">DA</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.da)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1">PF</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.pf)}</div>
                 </div>
                 
                 {/* Row 3 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center', marginTop: '3px'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>HRA</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.hra)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>LOSS OF PAY</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.lopamount)}</div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center', marginTop: '3px'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">HRA</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.hra)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1">LOSS OF PAY</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.lopamount)}</div>
                 </div>
                 
                 {/* Row 4 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center', marginTop: '3px'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>CONVEYANCE</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.conveyance)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}></div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}></div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center', marginTop: '3px'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">CONVEYANCE</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.conveyance)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1"></div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]"></div>
                 </div>
                 
                 {/* Row 5 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center', marginTop: '3px'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>MEDICAL ALLOWANCE</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.medicalallowances)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}></div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}></div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center', marginTop: '3px'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">MEDICAL ALLOWANCE</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.medicalallowances)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1"></div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]"></div>
                 </div>
                 
                 {/* Row 6 */}
-                <div style={{display: 'flex', height: '18px', alignItems: 'center', marginTop: '3px'}}>
-                  <div style={{width: '25%', paddingLeft: '5px'}}>SPECIAL ALLOWANCE</div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatAmt(salary.specialallowances)}</div>
-                  <div style={{width: '25%', paddingLeft: '5px'}}></div>
-                  <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}></div>
+                <div className="flex-wrap" style={{display: 'flex', minHeight: '18px', alignItems: 'center', marginTop: '3px'}}>
+                  <div className="w-1/2 sm:w-1/4 pl-1">SPECIAL ALLOWANCE</div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatAmt(salary.specialallowances)}</div>
+                  <div className="w-1/2 sm:w-1/4 pl-1"></div>
+                  <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]"></div>
                 </div>
               </div>
               
               {/* Totals Row */}
-              <div style={{display: 'flex', fontFamily: 'Times, serif', fontSize: '10px', fontWeight: 'bold', marginTop: '5px', padding: '5px'}}>
-                <div style={{width: '25%', paddingLeft: '5px'}}>Total Earnings:</div>
-                <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatCurrencyINR(totalEarnings)}</div>
-                <div style={{width: '25%', paddingLeft: '5px'}}>Total Deductions:</div>
-                <div style={{width: '25%', textAlign: 'right', paddingRight: '50px'}}>{formatCurrencyINR(totalDeductions)}</div>
+              <div className="flex-wrap" style={{display: 'flex', fontFamily: 'Times, serif', fontSize: '10px', fontWeight: 'bold', marginTop: '5px', padding: '5px'}}>
+                <div className="w-1/2 sm:w-1/4 pl-1">Total Earnings:</div>
+                <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatCurrencyINR(totalEarnings)}</div>
+                <div className="w-1/2 sm:w-1/4 pl-1">Total Deductions:</div>
+                <div className="w-1/2 sm:w-1/4 text-right pr-2 sm:pr-[50px]">{formatCurrencyINR(totalDeductions)}</div>
               </div>
             </div>
 
@@ -363,56 +363,136 @@ const View = () => {
       ) : salaries.length === 0 ? (
         <EmptyState title="No records found" message="No salary records are available yet." />
       ) : (
-        <div className="overflow-x-auto">
-        <table className="w-full text-sm text-ink border border-surface-subtle rounded-lg overflow-hidden">
-          <thead className="bg-surface-muted">
-            <tr>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">SNO</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Emp ID</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Salary</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Deduction</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Total</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Joining Date</th>
-              <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {salaries.map((salary, index) => (
-              <tr key={salary._id} className={`${index % 2 === 0 ? "bg-surface" : "bg-surface-muted"} hover:bg-surface-muted transition-colors`}>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center">{index + 1}</td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center">
-                  {(() => {
-                    if (salary.employeeId) {
-                      if (typeof salary.employeeId === 'object' && salary.employeeId.employeeId) {
-                        return salary.employeeId.employeeId;
-                      } else if (typeof salary.employeeId === 'string') {
-                        return salary.employeeId;
-                      }
-                    }
-                    return 'N/A';
-                  })()}
-                </td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.basicSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.deductions).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center font-medium text-accent-700">{Number(salary.netSalary).toFixed(2)}</td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap">{salary.joiningDate ? formatDMY(salary.joiningDate) : (salary.payDate ? formatDMY(salary.payDate) : '-')}</td>
-                <td className="px-6 py-3 border-b border-surface-subtle text-center">
-                  <div className="flex justify-center">
-                    <ActionIconButton
-                      icon={FiDownload}
-                      label={`Download payslip PDF for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
-                      color="accent"
-                      onClick={() =>
-                        downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
-                      }
-                    />
-                  </div>
-                </td>
+        <>
+          {/* Desktop: table */}
+          <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-sm text-ink border border-surface-subtle rounded-lg overflow-hidden">
+            <thead className="bg-surface-muted">
+              <tr>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">SNO</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Emp ID</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Salary</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Deduction</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Total</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Payslip Month</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
+            </thead>
+            <tbody>
+              {salaries.map((salary, index) => (
+                <tr key={salary._id} className={`${index % 2 === 0 ? "bg-surface" : "bg-surface-muted"} hover:bg-surface-muted transition-colors`}>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{index + 1}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">
+                    {(() => {
+                      if (salary.employeeId) {
+                        if (typeof salary.employeeId === 'object' && salary.employeeId.employeeId) {
+                          return salary.employeeId.employeeId;
+                        } else if (typeof salary.employeeId === 'string') {
+                          return salary.employeeId;
+                        }
+                      }
+                      return 'N/A';
+                    })()}
+                  </td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.basicSalary).toFixed(2)}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.deductions).toFixed(2)}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center font-medium text-accent-700">{Number(salary.netSalary).toFixed(2)}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap">{salary.month ? `${salary.month} ${salary.year}` : '-'}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">
+                    <div className="flex justify-center gap-1">
+                      <ActionIconButton
+                        icon={FiEye}
+                        label="Preview payslip"
+                        color="brand"
+                        onClick={() => setSelectedSalary(salary)}
+                      />
+                      <ActionIconButton
+                        icon={FiDownload}
+                        label={`Download payslip PDF for ${salary?.employeeId?.employeeId || salary?.employeeId || 'employee'}`}
+                        color="accent"
+                        onClick={() =>
+                          downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
+                        }
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+
+          {/* Mobile: square cards */}
+          <div className="sm:hidden grid grid-cols-1 gap-3">
+            {salaries.map((salary, index) => {
+              const empId = (() => {
+                if (salary.employeeId) {
+                  if (typeof salary.employeeId === 'object' && salary.employeeId.employeeId) {
+                    return salary.employeeId.employeeId;
+                  } else if (typeof salary.employeeId === 'string') {
+                    return salary.employeeId;
+                  }
+                }
+                return 'N/A';
+              })();
+              return (
+                <div
+                  key={salary._id}
+                  className="bg-white border border-surface-subtle rounded-xl p-4 shadow-card"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-brand-50 text-brand-700 text-[11px] font-semibold shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-bold text-ink">
+                        {salary.month} {salary.year}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-accent-50 text-accent-700">Payslip</span>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="text-[11px] text-ink-faint uppercase tracking-wide">Net Salary</div>
+                    <div className="text-2xl font-bold text-accent-700">₹{Number(salary.netSalary).toFixed(2)}</div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-surface-subtle text-xs">
+                    <div>
+                      <div className="text-ink-faint">Emp ID</div>
+                      <div className="font-medium text-ink truncate">{empId}</div>
+                    </div>
+                    <div>
+                      <div className="text-ink-faint">Salary</div>
+                      <div className="font-medium text-ink truncate">₹{Number(salary.basicSalary).toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-ink-faint">Deduction</div>
+                      <div className="font-medium text-ink truncate">₹{Number(salary.deductions).toFixed(2)}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSalary(salary)}
+                      className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-surface-subtle bg-white text-ink text-sm font-bold hover:bg-surface-muted transition-colors"
+                    >
+                      <FiEye size={15} /> Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadPDF(salary._id, empId, salary.payDate)}
+                      className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-sm font-bold transition-colors"
+                    >
+                      <FiDownload size={15} /> Download
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}      </div>
       
       {/* Detailed Salary View Modal */}
