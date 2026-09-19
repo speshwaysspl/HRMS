@@ -643,24 +643,24 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     } else if (norm.contains('half')) {
       statusText = 'Half Day';
       statusTextColor = const Color(0xFFD97706);
-      statusBgColor = const Color(0xFFFEF3C7);
+      statusBgColor = AppColors.tint(const Color(0xFFFEF3C7));
       statusBorderColor = const Color(0xFFFDE68A);
     } else if (norm.contains('leave') || norm.contains('wfh')) {
       statusText = norm.contains('wfh') ? 'WFH' : 'On Leave';
       statusTextColor = Color(0xFF2563EB);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFEFF6FF)));
-      statusBorderColor = const Color(0xFFBFDBFE);
+      statusBorderColor = AppColors.tint(const Color(0xFFBFDBFE));
     } else if (norm == 'checked in' || (today['inTime'] != null && (today['outTime'] == null || today['outTime'].toString().isEmpty))) {
       statusText = 'Checked In';
       statusTextColor = const Color(0xFF0D9488);
-      statusBgColor = const Color(0xFFCCFBF1);
+      statusBgColor = AppColors.tint(const Color(0xFFCCFBF1));
       statusBorderColor = const Color(0xFF99F6E4);
     } else if (norm.contains('absent') || (today['inTime'] != null && today['outTime'] != null && workingHours < 4.0)) {
       // Under 4 hours is treated as Absent per company policy & web dashboard
       statusText = 'Absent';
       statusTextColor = Color(0xFFDC2626);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2)));
-      statusBorderColor = const Color(0xFFFECACA);
+      statusBorderColor = AppColors.tint(const Color(0xFFFECACA));
     } else {
       statusText = serverStatus != null && serverStatus.isNotEmpty ? serverStatus : 'Not Marked';
       statusTextColor = Color(0xFF64748B);

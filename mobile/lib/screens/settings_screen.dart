@@ -119,19 +119,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           _sectionLabel(context, 'Appearance'),
           _Card(
-            child: ValueListenableBuilder<bool>(
-              valueListenable: AppSettings.darkMode,
-              builder: (_, dark, _) => SwitchListTile(
-                value: dark,
-                onChanged: AppSettings.setDarkMode,
-                secondary: Icon(dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                    color: AppColors.inkMuted, size: context.r(22)),
-                title: Text('Dark Mode', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                subtitle: Text(
-                  dark ? 'Dark theme is on' : 'Switch to a dark theme',
-                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: AppSettings.themeMode,
+              builder: (_, mode, _) => Padding(
+                padding: EdgeInsets.all(context.w(14)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.brightness_6_outlined, color: AppColors.inkMuted, size: context.r(22)),
+                        SizedBox(width: context.w(14)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Theme', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
+                              Text("System follows your phone's light/dark setting",
+                                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: context.h(12)),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ThemeMode>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.phone_android, size: 16)),
+                          ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode_outlined, size: 16)),
+                          ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined, size: 16)),
+                        ],
+                        selected: {mode},
+                        onSelectionChanged: (s) => AppSettings.setThemeMode(s.first),
+                      ),
+                    ),
+                  ],
                 ),
-                activeThumbColor: AppColors.accent600,
               ),
             ),
           ),

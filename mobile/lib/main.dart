@@ -13,18 +13,6 @@ import 'widgets/app_lock_gate.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.init();
-  // Neutral colours are read straight from AppColors (not via Theme), so a
-  // theme flip must rebuild every element once the new theme is applied.
-  AppSettings.darkMode.addListener(() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      void rebuild(Element e) {
-        e.markNeedsBuild();
-        e.visitChildren(rebuild);
-      }
-      WidgetsBinding.instance.rootElement?.visitChildren(rebuild);
-    });
-    WidgetsBinding.instance.scheduleFrame();
-  });
   try {
     await PushService.instance.initFirebase();
   } catch (e) {
@@ -34,8 +22,55 @@ Future<void> main() async {
   runApp(const SpeshwayApp());
 }
 
-class SpeshwayApp extends StatelessWidget {
+/// Neutral colours are read straight from AppColors (not only via Theme), so
+/// a light/dark flip rebuilds every element once the new theme is applied —
+/// the whole app switches, not just the screen in front.
+void rebuildEntireApp() {
+  void rebuild(Element e) {
+    e.markNeedsBuild();
+    e.visitChildren(rebuild);
+  }
+
+  WidgetsBinding.instance.addPostFrameCallback(
+      (_) => WidgetsBinding.instance.rootElement?.visitChildren(rebuild));
+  WidgetsBinding.instance.scheduleFrame();
+}
+
+class SpeshwayApp extends StatefulWidget {
   const SpeshwayApp({super.key});
+
+  @override
+  State<SpeshwayApp> createState() => _SpeshwayAppState();
+}
+
+class _SpeshwayAppState extends State<SpeshwayApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    AppSettings.themeMode.addListener(rebuildEntireApp);
+  }
+
+  @override
+  void dispose() {
+    AppSettings.themeMode.removeListener(rebuildEntireApp);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Phone switched between light/dark while "System" is selected.
+  @override
+  void didChangePlatformBrightness() {
+    if (AppSettings.themeMode.value == ThemeMode.system) {
+      setState(() {});
+      rebuildEntireApp();
+    }
+  }
+
+  bool _isDark(ThemeMode mode) =>
+      mode == ThemeMode.dark ||
+      (mode == ThemeMode.system &&
+          WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
 
   @override
   Widget build(BuildContext context) {
@@ -44,20 +79,18 @@ class SpeshwayApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         Provider(create: (_) => DataCaches()),
       ],
-      child: ValueListenableBuilder<bool>(
-        valueListenable: AppSettings.darkMode,
-        builder: (context, dark, _) => MaterialApp(
-        title: 'Speshway',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: appNavigatorKey,
-        theme: AppTheme.build(dark: dark),
-        scrollBehavior: const MaterialScrollBehavior().copyWith(
-          scrollbars: false,
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: AppSettings.themeMode,
+        builder: (context, mode, _) => MaterialApp(
+          title: 'Speshway',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: appNavigatorKey,
+          theme: AppTheme.build(dark: _isDark(mode)),
+          scrollBehavior: const MaterialScrollBehavior().copyWith(scrollbars: false),
+          builder: (context, child) =>
+              clampTextScale(context, AppLockGate(child: child ?? const SizedBox.shrink())),
+          home: const SplashScreen(),
         ),
-        builder: (context, child) =>
-            clampTextScale(context, AppLockGate(child: child ?? const SizedBox.shrink())),
-        home: const SplashScreen(),
-      ),
       ),
     );
   }

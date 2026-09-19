@@ -660,9 +660,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
           if (_workMode != null)
             _summaryRow(Icons.apartment_rounded, Color(0xFF9333EA), AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))), 'Work Mode', _workMode == 'home' ? 'Home' : 'Office'),
           if (checkInLocation != null)
-            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), const Color(0xFFCCFBF1), 'Check-in Location', checkInLocation, wrap: true),
+            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), AppColors.tint(const Color(0xFFCCFBF1)), 'Check-in Location', checkInLocation, wrap: true),
           if (checkOutLocation != null)
-            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), const Color(0xFFCCFBF1), 'Check-out Location', checkOutLocation, wrap: true),
+            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), AppColors.tint(const Color(0xFFCCFBF1)), 'Check-out Location', checkOutLocation, wrap: true),
         ],
       ),
     );
