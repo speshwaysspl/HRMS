@@ -57,7 +57,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
-                      ? ListView(children: const [
+                      ? ListView(children: [
                           SizedBox(height: 100),
                           CenteredMessage(
                             icon: Icons.rate_review_outlined,
@@ -75,7 +75,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
                                 children: [
                                   CircleAvatar(
                                     radius: context.r(18),
-                                    backgroundColor: const Color(0xFFF3E8FF),
+                                    backgroundColor: AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
                                     child: Text(
                                       name.isNotEmpty ? name[0].toUpperCase() : '?',
                                       style: const TextStyle(color: Color(0xFF9333EA), fontWeight: FontWeight.w700),
@@ -86,7 +86,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(name, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                        Text(name, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                         SizedBox(height: context.h(3)),
                                         Text('${r['cycle'] ?? ''}  ·  Overall: ${r['overallRating'] ?? '-'}/5', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                       ],

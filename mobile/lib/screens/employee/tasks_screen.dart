@@ -130,11 +130,11 @@ class _TasksScreenState extends State<TasksScreen> {
   (Color, Color) _priorityColors(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
-        return (const Color(0xFFDC2626), const Color(0xFFFEE2E2));
+        return (Color(0xFFDC2626), AppColors.tint(AppColors.tint(const Color(0xFFFEE2E2))));
       case 'low':
-        return (const Color(0xFF16A34A), const Color(0xFFDCFCE7));
+        return (Color(0xFF16A34A), AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))));
       default:
-        return (const Color(0xFFEA580C), const Color(0xFFFFEDD5));
+        return (Color(0xFFEA580C), AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))));
     }
   }
 
@@ -179,7 +179,7 @@ class _TasksScreenState extends State<TasksScreen> {
               Expanded(
                 child: Text(
                   t['title']?.toString() ?? 'Untitled',
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
               ),
               SizedBox(width: context.w(8)),
@@ -207,7 +207,7 @@ class _TasksScreenState extends State<TasksScreen> {
               children: [
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: context.w(9), vertical: context.h(4)),
-                  decoration: BoxDecoration(color: priBg, borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(color: AppColors.tint(priBg), borderRadius: BorderRadius.circular(999)),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

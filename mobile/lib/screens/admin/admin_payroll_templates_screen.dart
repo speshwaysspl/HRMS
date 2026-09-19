@@ -152,7 +152,7 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(t['templateName']?.toString() ?? 'Template',
-                                                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                                 SizedBox(height: context.h(3)),
                                                 Text(
                                                   '${t['name'] ?? ''} · ${t['employeeId'] ?? ''}  ·  net ${_inr.format(_num(t['netSalary']))}',
@@ -196,7 +196,7 @@ class _TemplateDetailSheet extends StatelessWidget {
     final t = template;
     return Container(
       padding: EdgeInsets.all(context.w(20)),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
       ),

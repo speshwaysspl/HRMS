@@ -77,7 +77,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                                     children: [
                                       Expanded(
                                         child: Text(empUser['name']?.toString() ?? 'Employee',
-                                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
                                       SizedBox(width: context.w(8)),
                                       StatusPill(label: r['status']?.toString() ?? 'Draft'),

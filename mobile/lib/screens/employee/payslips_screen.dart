@@ -182,7 +182,7 @@ class _PayslipCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(context.w(16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(context.r(12)),
         border: Border.all(color: AppColors.surfaceSubtle),
         boxShadow: [BoxShadow(color: AppColors.brand500.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))],
@@ -196,7 +196,7 @@ class _PayslipCard extends StatelessWidget {
                 width: context.r(24),
                 height: context.r(24),
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
                 child: Text('${index + 1}', style: TextStyle(fontSize: context.sp(11), fontWeight: FontWeight.w600, color: AppColors.brand700)),
               ),
               SizedBox(width: context.w(8)),
@@ -231,7 +231,7 @@ class _PayslipCard extends StatelessWidget {
                   onPressed: onTap,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.ink,
-                    side: const BorderSide(color: AppColors.surfaceSubtle),
+                    side: BorderSide(color: AppColors.surfaceSubtle),
                     padding: EdgeInsets.symmetric(vertical: context.h(11)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(12))),
                   ),
@@ -306,8 +306,8 @@ class _PayslipPreviewSheet extends StatelessWidget {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(

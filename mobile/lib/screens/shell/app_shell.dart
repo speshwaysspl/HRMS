@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/app_events.dart';
 import '../../services/auth_provider.dart';
@@ -92,19 +93,17 @@ class _AppShellState extends State<AppShell> {
 
   Widget _buildModernBottomNav(BuildContext context, List<_TabSpec> tabs) {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
-    const activeColor = Color(0xFF10B981); // Emerald green from mockup
-    const haloGreen = Color(0xFFE6F8F0); // Light mint halo ring
-    const inactiveColor = Color(0xFF64748B); // Slate grey
+    // Same navy as the app bar (deeper in dark mode) — white = active.
+    final barColor = AppColors.isDark ? AppColors.brand950 : AppColors.brand900;
+    const activeColor = Colors.white;
+    final inactiveColor = Colors.white.withValues(alpha: 0.55);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: barColor,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
-        ),
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
         ),
       ),
       padding: EdgeInsets.only(
@@ -132,13 +131,13 @@ class _AppShellState extends State<AppShell> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: isActive ? haloGreen : const Color(0xFFF1F5F9),
+                        color: isActive ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       padding: const EdgeInsets.all(3.5),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isActive ? activeColor : const Color(0xFF94A3B8),
+                          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.28),
                           shape: BoxShape.circle,
                         ),
                         child: const Center(

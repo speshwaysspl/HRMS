@@ -117,6 +117,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: EdgeInsets.all(context.w(16)),
         children: [
+          _sectionLabel(context, 'Appearance'),
+          _Card(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: AppSettings.darkMode,
+              builder: (_, dark, _) => SwitchListTile(
+                value: dark,
+                onChanged: AppSettings.setDarkMode,
+                secondary: Icon(dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                    color: AppColors.inkMuted, size: context.r(22)),
+                title: Text('Dark Mode', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
+                subtitle: Text(
+                  dark ? 'Dark theme is on' : 'Switch to a dark theme',
+                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
+                ),
+                activeThumbColor: AppColors.accent600,
+              ),
+            ),
+          ),
+          SizedBox(height: context.h(20)),
           _sectionLabel(context, 'Security'),
           _Card(
             child: ValueListenableBuilder<bool>(
@@ -158,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               leading: Icon(Icons.password_outlined, color: AppColors.inkMuted, size: context.r(22)),
               title: Text('Change password', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-              trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.inkFaint),
+              trailing: Icon(Icons.chevron_right, size: 18, color: AppColors.inkFaint),
               onTap: _changePassword,
             ),
           ),
@@ -185,14 +204,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: Icon(Icons.description_outlined, color: AppColors.inkMuted, size: context.r(22)),
                   title: Text('Terms of Service', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-                  trailing: const Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
+                  trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
                   onTap: () => _openUrl('https://www.speshway.com/terms-of-service'),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: Icon(Icons.privacy_tip_outlined, color: AppColors.inkMuted, size: context.r(22)),
                   title: Text('Privacy Policy', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-                  trailing: const Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
+                  trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
                   onTap: () => _openUrl('https://www.speshway.com/privacy-policy'),
                 ),
               ],
@@ -266,7 +285,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
@@ -327,7 +346,7 @@ class _Card extends StatelessWidget {
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        side: const BorderSide(color: AppColors.surfaceSubtle),
+        side: BorderSide(color: AppColors.surfaceSubtle),
       ),
       clipBehavior: Clip.antiAlias,
       child: child,

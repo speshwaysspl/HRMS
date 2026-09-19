@@ -91,12 +91,12 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                                       Container(
                                         width: context.r(34),
                                         height: context.r(34),
-                                        decoration: const BoxDecoration(color: Color(0xFFFFEDD5), shape: BoxShape.circle),
+                                        decoration: BoxDecoration(color: AppColors.tint(const Color(0xFFFFEDD5)), shape: BoxShape.circle),
                                         child: Icon(Icons.edit_calendar_rounded, size: context.r(17), color: const Color(0xFFEA580C)),
                                       ),
                                       SizedBox(width: context.w(10)),
                                       Expanded(
-                                        child: Text(user['name']?.toString() ?? 'Employee', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                        child: Text(user['name']?.toString() ?? 'Employee', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
                                     ],
                                   ),

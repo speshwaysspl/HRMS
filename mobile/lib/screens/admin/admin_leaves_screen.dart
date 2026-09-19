@@ -153,7 +153,7 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
             children: [
               Expanded(
                 child: Text(user['name']?.toString() ?? 'Employee',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
               ),
               SizedBox(width: context.w(8)),
               StatusPill(label: status),

@@ -15,7 +15,7 @@ class SimpleCard extends StatelessWidget {
         color: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.surfaceSubtle),
+          side: BorderSide(color: AppColors.surfaceSubtle),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

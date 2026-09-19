@@ -438,10 +438,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               title: 'Apply Leave',
               subtitle: 'Request time off',
               icon: Icons.calendar_month_rounded,
-              iconColor: const Color(0xFF16A34A),
-              iconBg: const Color(0xFFDCFCE7),
-              gradientColors: [const Color(0xFFF0FDF4), Colors.white],
-              borderColor: const Color(0xFFDCFCE7),
+              iconColor: Color(0xFF16A34A),
+              iconBg: AppColors.tint(AppColors.tint(Color(0xFFDCFCE7))),
+              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFF0FDF4))), Colors.white],
+              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
               onTap: () => AppEvents.switchToTab(0),
             ),
             SizedBox(width: context.w(10)),
@@ -449,10 +449,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               title: 'View Payslip',
               subtitle: 'Monthly records',
               icon: Icons.article_rounded,
-              iconColor: const Color(0xFF2563EB),
-              iconBg: const Color(0xFFDBEAFE),
-              gradientColors: [const Color(0xFFEFF6FF), Colors.white],
-              borderColor: const Color(0xFFDBEAFE),
+              iconColor: Color(0xFF2563EB),
+              iconBg: AppColors.tint(AppColors.tint(Color(0xFFDBEAFE))),
+              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFEFF6FF))), Colors.white],
+              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
               onTap: () => _openPayslips(employee['employeeId']?.toString()),
             ),
           ],
@@ -464,10 +464,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               title: 'Mark Attendance',
               subtitle: 'Punch In / Out',
               icon: Icons.access_time_filled_rounded,
-              iconColor: const Color(0xFFEA580C),
-              iconBg: const Color(0xFFFFEDD5),
-              gradientColors: [const Color(0xFFFFF7ED), Colors.white],
-              borderColor: const Color(0xFFFFEDD5),
+              iconColor: Color(0xFFEA580C),
+              iconBg: AppColors.tint(AppColors.tint(Color(0xFFFFEDD5))),
+              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFFFF7ED))), Colors.white],
+              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))),
               onTap: () => AppEvents.switchToTab(1),
             ),
             SizedBox(width: context.w(10)),
@@ -475,10 +475,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               title: 'My Profile',
               subtitle: 'Personal details',
               icon: Icons.person_rounded,
-              iconColor: const Color(0xFF9333EA),
-              iconBg: const Color(0xFFF3E8FF),
-              gradientColors: [const Color(0xFFFAF5FF), Colors.white],
-              borderColor: const Color(0xFFF3E8FF),
+              iconColor: Color(0xFF9333EA),
+              iconBg: AppColors.tint(AppColors.tint(Color(0xFFF3E8FF))),
+              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFFAF5FF))), Colors.white],
+              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
               onTap: () => AppEvents.switchToTab(4),
             ),
           ],
@@ -509,10 +509,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: gradientColors,
+                colors: gradientColors.map(AppColors.tint).toList(),
               ),
               borderRadius: BorderRadius.circular(context.r(16)),
-              border: Border.all(color: borderColor, width: 1.2),
+              border: Border.all(color: AppColors.tint(borderColor), width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -533,7 +533,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       width: context.r(34),
                       height: context.r(34),
                       decoration: BoxDecoration(
-                        color: iconBg,
+                        color: AppColors.tint(iconBg),
                         borderRadius: BorderRadius.circular(context.r(9)),
                       ),
                       child: Center(
@@ -544,7 +544,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       width: context.r(22),
                       height: context.r(22),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -632,13 +632,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     final norm = (serverStatus ?? '').toLowerCase();
     if (norm.contains('overtime')) {
       statusText = 'Present + Overtime';
-      statusTextColor = const Color(0xFF16A34A);
-      statusBgColor = const Color(0xFFDCFCE7);
+      statusTextColor = Color(0xFF16A34A);
+      statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7)));
       statusBorderColor = const Color(0xFFA7F3D0);
     } else if (norm.contains('present') && !norm.contains('absent')) {
       statusText = 'Present';
-      statusTextColor = const Color(0xFF16A34A);
-      statusBgColor = const Color(0xFFDCFCE7);
+      statusTextColor = Color(0xFF16A34A);
+      statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7)));
       statusBorderColor = const Color(0xFFA7F3D0);
     } else if (norm.contains('half')) {
       statusText = 'Half Day';
@@ -647,8 +647,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       statusBorderColor = const Color(0xFFFDE68A);
     } else if (norm.contains('leave') || norm.contains('wfh')) {
       statusText = norm.contains('wfh') ? 'WFH' : 'On Leave';
-      statusTextColor = const Color(0xFF2563EB);
-      statusBgColor = const Color(0xFFEFF6FF);
+      statusTextColor = Color(0xFF2563EB);
+      statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFEFF6FF)));
       statusBorderColor = const Color(0xFFBFDBFE);
     } else if (norm == 'checked in' || (today['inTime'] != null && (today['outTime'] == null || today['outTime'].toString().isEmpty))) {
       statusText = 'Checked In';
@@ -658,22 +658,22 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     } else if (norm.contains('absent') || (today['inTime'] != null && today['outTime'] != null && workingHours < 4.0)) {
       // Under 4 hours is treated as Absent per company policy & web dashboard
       statusText = 'Absent';
-      statusTextColor = const Color(0xFFDC2626);
-      statusBgColor = const Color(0xFFFEF2F2);
+      statusTextColor = Color(0xFFDC2626);
+      statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2)));
       statusBorderColor = const Color(0xFFFECACA);
     } else {
       statusText = serverStatus != null && serverStatus.isNotEmpty ? serverStatus : 'Not Marked';
-      statusTextColor = const Color(0xFF64748B);
-      statusBgColor = const Color(0xFFF1F5F9);
-      statusBorderColor = const Color(0xFFE2E8F0);
+      statusTextColor = Color(0xFF64748B);
+      statusBgColor = AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)));
+      statusBorderColor = AppColors.tint(AppColors.tint(Color(0xFFE2E8F0)));
     }
 
     return Container(
       padding: EdgeInsets.all(context.w(16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(context.r(20)),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        border: Border.all(color: AppColors.tint(AppColors.tint(const Color(0xFFF1F5F9))), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -744,7 +744,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             style: TextStyle(
               fontSize: context.sp(12.5),
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: Color(0xFF64748B),
             ),
           ),
           SizedBox(height: context.h(14)),
@@ -757,9 +757,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.tint(AppColors.tint(Color(0xFFF8FAFC))),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: const Color(0xFFF1F5F9)),
+                    border: Border.all(color: AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)))),
                   ),
                   child: Row(
                     children: [
@@ -767,7 +767,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         width: context.r(34),
                         height: context.r(34),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
+                          color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
                           borderRadius: BorderRadius.circular(context.r(9)),
                         ),
                         child: Center(
@@ -797,7 +797,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                                 style: TextStyle(
                                   fontSize: context.sp(14),
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A),
+                                  color: Color(0xFF0F172A),
                                 ),
                               ),
                             ),
@@ -810,16 +810,16 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: context.w(4)),
-                child: Container(width: 1, height: context.h(36), color: const Color(0xFFE2E8F0)),
+                child: Container(width: 1, height: context.h(36), color: AppColors.tint(AppColors.tint(Color(0xFFE2E8F0)))),
               ),
               // Check Out Box
               Expanded(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.tint(AppColors.tint(Color(0xFFF8FAFC))),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: const Color(0xFFF1F5F9)),
+                    border: Border.all(color: AppColors.tint(AppColors.tint(Color(0xFFF1F5F9)))),
                   ),
                   child: Row(
                     children: [
@@ -827,7 +827,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         width: context.r(34),
                         height: context.r(34),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
+                          color: AppColors.tint(AppColors.tint(const Color(0xFFFEE2E2))),
                           borderRadius: BorderRadius.circular(context.r(9)),
                         ),
                         child: Center(
@@ -857,7 +857,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                                 style: TextStyle(
                                   fontSize: context.sp(14),
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A),
+                                  color: Color(0xFF0F172A),
                                 ),
                               ),
                             ),
@@ -881,7 +881,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       height: context.r(62),
                       child: CircularProgressIndicator(
                         value: displayGaugeProgress,
-                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundColor: AppColors.tint(AppColors.tint(const Color(0xFFE2E8F0))),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                         strokeWidth: context.r(6),
                         strokeCap: StrokeCap.round,
@@ -998,25 +998,25 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AnnouncementsScreen()),
+            MaterialPageRoute(builder: (_) => AnnouncementsScreen()),
           );
         },
         borderRadius: BorderRadius.circular(context.r(16)),
         child: Container(
           padding: EdgeInsets.all(context.w(14)),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFF0FDF4), Colors.white],
+              colors: [AppColors.tint(AppColors.tint(Color(0xFFF0FDF4))), AppColors.tint(Colors.white)],
             ),
             borderRadius: BorderRadius.circular(context.r(16)),
-            border: Border.all(color: const Color(0xFFDCFCE7), width: 1.2),
+            border: Border.all(color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))), width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 8,
-                offset: const Offset(0, 2),
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -1031,7 +1031,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                     width: context.r(44),
                     height: context.r(44),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
                       borderRadius: BorderRadius.circular(context.r(12)),
                     ),
                     child: Center(
@@ -1106,7 +1106,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 ],
               ),
               SizedBox(height: context.h(12)),
-              const Divider(height: 1, color: Color(0xFFDCFCE7)),
+              Divider(height: 1, color: AppColors.tint(const Color(0xFFDCFCE7))),
               SizedBox(height: context.h(10)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1120,7 +1120,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         style: TextStyle(
                           fontSize: context.sp(11),
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF94A3B8),
+                          color: Color(0xFF94A3B8),
                         ),
                       ),
                     ],
@@ -1132,11 +1132,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         style: TextStyle(
                           fontSize: context.sp(12),
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF16A34A),
+                          color: Color(0xFF16A34A),
                         ),
                       ),
                       SizedBox(width: context.w(2)),
-                      Icon(Icons.chevron_right_rounded, size: context.r(16), color: const Color(0xFF16A34A)),
+                      Icon(Icons.chevron_right_rounded, size: context.r(16), color: Color(0xFF16A34A)),
                     ],
                   ),
                 ],
@@ -1210,7 +1210,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   }
 
   Widget _buildPolicyGuidance() {
-    const policies = [
+    final policies = [
       _PolicyItem(
         index: 1,
         title: 'Daily Attendance',
@@ -1224,7 +1224,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         title: 'Working Hours',
         description: 'A minimum of eight (8) working hours is mandatory to be considered a full working day.',
         icon: Icons.access_time,
-        iconBg: Color(0xFFDBEAFE),
+        iconBg: AppColors.tint(const Color(0xFFDBEAFE)),
         iconColor: Color(0xFF2563EB),
       ),
       _PolicyItem(
@@ -1232,7 +1232,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         title: 'Partial Attendance',
         description: 'Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.',
         icon: Icons.warning_amber_rounded,
-        iconBg: Color(0xFFFFEDD5),
+        iconBg: AppColors.tint(const Color(0xFFFFEDD5)),
         iconColor: Color(0xFFEA580C),
       ),
       _PolicyItem(
@@ -1240,7 +1240,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         title: 'Break Time Recording',
         description: 'It is mandatory to record break time on a daily basis.',
         icon: Icons.coffee_outlined,
-        iconBg: Color(0xFFF3E8FF),
+        iconBg: AppColors.tint(const Color(0xFFF3E8FF)),
         iconColor: Color(0xFF9333EA),
       ),
       _PolicyItem(
@@ -1274,7 +1274,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             width: context.r(36),
             height: context.r(36),
             decoration: BoxDecoration(
-              color: policy.iconBg,
+              color: AppColors.tint(policy.iconBg),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(policy.icon, color: policy.iconColor, size: context.r(20)),

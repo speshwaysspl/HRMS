@@ -130,7 +130,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(t['name']?.toString() ?? '',
-                                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                         SizedBox(height: context.h(2)),
                                         Text('Lead: ${lead['name'] ?? '—'}  ·  $memberCount members',
                                             style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
@@ -225,7 +225,7 @@ class _CreateTeamSheetState extends State<_CreateTeamSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),

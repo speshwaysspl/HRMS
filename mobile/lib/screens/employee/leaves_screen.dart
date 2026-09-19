@@ -140,7 +140,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
                                   Container(
                                     width: context.r(36),
                                     height: context.r(36),
-                                    decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                                    decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
                                     child: Icon(Icons.calendar_month_rounded, size: context.r(18), color: AppColors.brand600),
                                   ),
                                   SizedBox(width: context.w(10)),
@@ -148,7 +148,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('${l['leaveType']}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                        Text('${l['leaveType']}', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                                         SizedBox(height: context.h(4)),
                                         Text(_dateRange(l), style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                         if ((l['reason'] ?? '').toString().isNotEmpty) ...[
@@ -272,7 +272,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
@@ -288,7 +288,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
                   Container(
                     width: context.r(34),
                     height: context.r(34),
-                    decoration: const BoxDecoration(color: AppColors.accent100, shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: AppColors.accent100, shape: BoxShape.circle),
                     child: Icon(Icons.event_note_rounded, size: context.r(18), color: AppColors.accent700),
                   ),
                   SizedBox(width: context.w(10)),

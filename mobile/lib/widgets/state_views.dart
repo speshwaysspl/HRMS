@@ -196,12 +196,12 @@ class _IllustratedBadge extends StatelessWidget {
           Container(
             width: context.r(120),
             height: context.r(120),
-            decoration: BoxDecoration(color: bg.withValues(alpha: 0.5), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.tint(bg).withValues(alpha: 0.5), shape: BoxShape.circle),
           ),
           Container(
             width: context.r(92),
             height: context.r(92),
-            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.tint(bg), shape: BoxShape.circle),
           ),
           Container(
             width: context.r(64),

@@ -224,7 +224,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.inkFaint),
+          Icon(Icons.chevron_right, color: AppColors.inkFaint),
         ],
       );
 }

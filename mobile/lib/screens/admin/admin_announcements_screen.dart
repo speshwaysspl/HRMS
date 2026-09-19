@@ -119,7 +119,7 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
                                     children: [
                                       Expanded(
                                         child: Text(a['title']?.toString() ?? '',
-                                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: AppColors.danger),
@@ -207,7 +207,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),

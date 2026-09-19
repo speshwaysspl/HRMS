@@ -116,7 +116,7 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(t['name']?.toString() ?? '',
-                                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                         SizedBox(height: context.h(3)),
                                         Text(
                                           '${t['monthlyQuota'] ?? ((t['annualQuota'] != null && t['annualQuota'] > 0) ? (t['annualQuota'] / 12).round() : 1)} days/month'
@@ -217,7 +217,7 @@ class _TypeSheetState extends State<_TypeSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),

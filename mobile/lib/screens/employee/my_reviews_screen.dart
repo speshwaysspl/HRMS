@@ -87,12 +87,12 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                                       Container(
                                         width: context.r(34),
                                         height: context.r(34),
-                                        decoration: const BoxDecoration(color: Color(0xFFF3E8FF), shape: BoxShape.circle),
+                                        decoration: BoxDecoration(color: AppColors.tint(const Color(0xFFF3E8FF)), shape: BoxShape.circle),
                                         child: Icon(Icons.rate_review_rounded, size: context.r(17), color: const Color(0xFF9333EA)),
                                       ),
                                       SizedBox(width: context.w(10)),
                                       Expanded(
-                                        child: Text('${r['cycle'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                        child: Text('${r['cycle'] ?? ''}', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                       ),
                                       SizedBox(width: context.w(8)),
                                       StatusPill(label: r['status']?.toString() ?? 'Submitted'),

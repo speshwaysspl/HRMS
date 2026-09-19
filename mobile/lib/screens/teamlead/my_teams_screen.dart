@@ -79,7 +79,7 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(t['name']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                          Text(t['name']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                           SizedBox(height: context.h(2)),
                                           Text('${(t['members'] as List?)?.length ?? 0} members', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                         ],
@@ -157,7 +157,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(user['name']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                Text(user['name']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                                 Text('${m['role'] ?? ''}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                               ],
                             ),

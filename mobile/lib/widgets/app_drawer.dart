@@ -323,7 +323,7 @@ class _Item extends StatelessWidget {
       leading: Container(
         width: context.r(32),
         height: context.r(32),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(9)),
+        decoration: BoxDecoration(color: AppColors.tint(bg), borderRadius: BorderRadius.circular(9)),
         child: Icon(icon, size: context.r(17), color: tint),
       ),
       title: Text(label, style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w500, color: color ?? AppColors.ink)),

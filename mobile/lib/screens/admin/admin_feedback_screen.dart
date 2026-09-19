@@ -124,7 +124,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
             children: [
               Expanded(
                 child: Text(f['title']?.toString() ?? '',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
               ),
               SizedBox(width: context.w(8)),
               StatusPill(label: f['status']?.toString() ?? 'Pending'),
@@ -206,7 +206,7 @@ class _RespondSheetState extends State<_RespondSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),

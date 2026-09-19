@@ -50,10 +50,10 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
             return LinearGradient(
               begin: Alignment(-1.0 - t * 2, 0),
               end: Alignment(1.0 - t * 2, 0),
-              colors: const [
-                Color(0xFFEEF0F6),
-                Color(0xFFF9FAFC),
-                Color(0xFFEEF0F6),
+              colors: [
+                AppColors.tint(Color(0xFFEEF0F6)),
+                AppColors.tint(Color(0xFFF9FAFC)),
+                AppColors.tint(const Color(0xFFEEF0F6)),
               ],
               stops: const [0.35, 0.5, 0.65],
             ).createShader(bounds);

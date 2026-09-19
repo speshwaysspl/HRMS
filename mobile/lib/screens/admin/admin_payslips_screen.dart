@@ -135,7 +135,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${p['name'] ?? 'Employee'}  ·  ${p['employeeId'] ?? ''}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                 SizedBox(height: context.h(3)),
                 Text(
                   '${p['monthName'] ?? ''} ${p['year'] ?? ''}   ·   Net ${_inr.format(net)}'

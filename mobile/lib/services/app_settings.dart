@@ -12,10 +12,13 @@ class AppSettings {
 
   static const _kAppLock = 'app_lock_enabled';
   static const _kNotifications = 'notifications_enabled';
+  static const _kDarkMode = 'dark_mode_enabled';
 
   static final ValueNotifier<bool> appLockEnabled = ValueNotifier<bool>(false);
   static final ValueNotifier<bool> notificationsEnabled =
       ValueNotifier<bool>(true);
+
+  static final ValueNotifier<bool> darkMode = ValueNotifier<bool>(false);
 
   static SharedPreferences? _prefs;
 
@@ -24,6 +27,7 @@ class AppSettings {
       _prefs = await SharedPreferences.getInstance();
       appLockEnabled.value = _prefs?.getBool(_kAppLock) ?? false;
       notificationsEnabled.value = _prefs?.getBool(_kNotifications) ?? true;
+      darkMode.value = _prefs?.getBool(_kDarkMode) ?? false;
     } catch (e) {
       debugPrint('AppSettings.init failed: $e');
     }
@@ -37,5 +41,10 @@ class AppSettings {
   static Future<void> setNotifications(bool value) async {
     notificationsEnabled.value = value;
     await _prefs?.setBool(_kNotifications, value);
+  }
+
+  static Future<void> setDarkMode(bool value) async {
+    darkMode.value = value;
+    await _prefs?.setBool(_kDarkMode, value);
   }
 }

@@ -139,7 +139,7 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                Text(name, style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                 SizedBox(height: context.h(2)),
                 Text(
                   [

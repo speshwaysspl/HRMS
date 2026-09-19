@@ -21,7 +21,7 @@ class AttendanceScreen extends StatefulWidget {
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
-class _AttendanceScreenState extends State<AttendanceScreen> {
+class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBindingObserver {
   final _service = AttendanceService();
   Map<String, dynamic>? _today;
   bool _loading = true;
@@ -41,6 +41,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final cache = AppCaches.of(context).attendanceToday;
     if (cache.hasData) {
       // Show last-known data immediately, then quietly refresh.
@@ -52,6 +53,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       _load();
     }
     _fetchLocation();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Coming back from system Settings after enabling location: fetch it
+  // automatically — no manual retry needed.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _location == null && !_locationLoading) {
+      _fetchLocation();
+    }
   }
 
   Future<void> _fetchLocation() async {
@@ -281,8 +297,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Expanded(
                 child: _timeBlock(
                   Icons.logout_rounded,
-                  const Color(0xFFDC2626),
-                  const Color(0xFFFEF2F2),
+                  Color(0xFFDC2626),
+                  AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2))),
                   'Check Out',
                   _timeOrDash('outTime'),
                 ),
@@ -407,7 +423,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.free_breakfast_outlined, size: 16, color: AppColors.brand600),
+              Icon(Icons.free_breakfast_outlined, size: 16, color: AppColors.brand600),
               SizedBox(width: context.w(6)),
               Text('Break Times', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
             ],
@@ -475,7 +491,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: AppColors.brand600),
+              Icon(Icons.location_on_outlined, size: 16, color: AppColors.brand600),
               SizedBox(width: context.w(6)),
               Text('Current Location', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
             ],
@@ -549,20 +565,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   style: TextStyle(color: AppColors.danger, fontSize: context.sp(12.5)),
                 ),
                 SizedBox(height: context.h(8)),
-                Wrap(
-                  spacing: context.w(8),
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _fetchLocation,
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('Retry Location'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: LocationService.openSettings,
-                      icon: const Icon(Icons.settings_outlined, size: 16),
-                      label: const Text('Open Settings'),
-                    ),
-                  ],
+                OutlinedButton.icon(
+                  onPressed: LocationService.openSettings,
+                  icon: const Icon(Icons.settings_outlined, size: 16),
+                  label: const Text('Open Settings'),
                 ),
               ],
             ),
@@ -640,19 +646,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.fact_check_outlined, size: 16, color: AppColors.brand600),
+              Icon(Icons.fact_check_outlined, size: 16, color: AppColors.brand600),
               SizedBox(width: context.w(6)),
               Text("Today's Summary", style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
             ],
           ),
           SizedBox(height: context.h(12)),
           _summaryRow(Icons.login_rounded, AppColors.accent600, AppColors.accent50, 'Check In', _timeOrDash('inTime')),
-          _summaryRow(Icons.logout_rounded, const Color(0xFFDC2626), const Color(0xFFFEF2F2), 'Check Out', _timeOrDash('outTime')),
-          _summaryRow(Icons.access_time_rounded, const Color(0xFF2563EB), const Color(0xFFDBEAFE), 'Working Hours', _formatDuration(_workingMinutes)),
-          _summaryRow(Icons.free_breakfast_outlined, const Color(0xFFEA580C), const Color(0xFFFFEDD5), 'Break Time', '${_totalBreakMinutes}m'),
+          _summaryRow(Icons.logout_rounded, Color(0xFFDC2626), AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2))), 'Check Out', _timeOrDash('outTime')),
+          _summaryRow(Icons.access_time_rounded, Color(0xFF2563EB), AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))), 'Working Hours', _formatDuration(_workingMinutes)),
+          _summaryRow(Icons.free_breakfast_outlined, Color(0xFFEA580C), AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))), 'Break Time', '${_totalBreakMinutes}m'),
           _summaryRow(Icons.badge_outlined, AppColors.brand600, AppColors.brand50, 'Status', _todayStatus),
           if (_workMode != null)
-            _summaryRow(Icons.apartment_rounded, const Color(0xFF9333EA), const Color(0xFFF3E8FF), 'Work Mode', _workMode == 'home' ? 'Home' : 'Office'),
+            _summaryRow(Icons.apartment_rounded, Color(0xFF9333EA), AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))), 'Work Mode', _workMode == 'home' ? 'Home' : 'Office'),
           if (checkInLocation != null)
             _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), const Color(0xFFCCFBF1), 'Check-in Location', checkInLocation, wrap: true),
           if (checkOutLocation != null)
@@ -666,7 +672,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final iconChip = Container(
       width: context.r(22),
       height: context.r(22),
-      decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: AppColors.tint(iconBg), shape: BoxShape.circle),
       child: Icon(icon, size: context.r(12), color: iconColor),
     );
     return Padding(
@@ -716,7 +722,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Container(
                 width: context.r(28),
                 height: context.r(28),
-                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.tint(iconBg), shape: BoxShape.circle),
                 child: Icon(icon, size: context.r(15), color: iconColor),
               ),
               SizedBox(width: context.w(8)),

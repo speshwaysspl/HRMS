@@ -115,7 +115,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(user['name']?.toString() ?? '',
-                                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                                       if (m['role'] != null)
                                         Text('${m['role']}',
                                             style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
@@ -183,7 +183,7 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
     return Container(
       height: context.hf(0.8),
       padding: EdgeInsets.all(context.w(16)),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
       ),

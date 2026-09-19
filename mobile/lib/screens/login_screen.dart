@@ -108,8 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
               constraints: BoxConstraints(maxWidth: context.isTablet ? 440 : double.infinity),
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             TextSpan(
                               text: 'Terms of Service',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.inkMuted,
                                 decoration: TextDecoration.underline,
                               ),
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.inkMuted,
                                 decoration: TextDecoration.underline,
                               ),
@@ -182,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Image.asset('assets/logo.png', width: 56, height: 56),
@@ -213,17 +213,17 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-            const Text(
+            Text(
               'Welcome back',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Sign in to your Speshway HRMS account',
               style: TextStyle(color: AppColors.inkMuted, fontSize: 13),
             ),
             const SizedBox(height: 24),
-            const Text('Email', style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
+            Text('Email', style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
             const SizedBox(height: 6),
             TextFormField(
               controller: _emailController,
@@ -241,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
             const SizedBox(height: 18),
-            const Text('Password', style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
+            Text('Password', style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
             const SizedBox(height: 6),
             TextFormField(
               controller: _passwordController,

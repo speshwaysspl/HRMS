@@ -312,7 +312,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                 child: _logStat(Icons.logout_rounded, AppColors.danger, AppColors.dangerBg, 'Out Time', outTime),
               ),
               Expanded(
-                child: _logStat(Icons.access_time_filled_rounded, const Color(0xFF2563EB), const Color(0xFFDBEAFE), 'Worked', duration),
+                child: _logStat(Icons.access_time_filled_rounded, Color(0xFF2563EB), AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))), 'Worked', duration),
               ),
             ],
           ),
@@ -351,7 +351,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
         Container(
           width: context.r(26),
           height: context.r(26),
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: AppColors.tint(bg), shape: BoxShape.circle),
           child: Icon(icon, size: context.r(14), color: color),
         ),
         SizedBox(height: context.h(6)),

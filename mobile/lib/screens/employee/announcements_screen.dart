@@ -127,18 +127,18 @@ class _AnnouncementCard extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(context.w(14)),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFF0FDF4), Colors.white],
+              colors: [AppColors.tint(const Color(0xFFF0FDF4)), Colors.white],
             ),
             borderRadius: BorderRadius.circular(context.r(16)),
-            border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
+            border: Border.all(color: AppColors.tint(const Color(0xFFBBF7D0)), width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF16A34A).withValues(alpha: 0.08),
                 blurRadius: 12,
-                offset: const Offset(0, 4),
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -152,7 +152,7 @@ class _AnnouncementCard extends StatelessWidget {
                     width: context.r(44),
                     height: context.r(44),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
                       borderRadius: BorderRadius.circular(context.r(12)),
                     ),
                     child: Icon(Icons.campaign_rounded, color: const Color(0xFF16A34A), size: context.r(22)),
@@ -216,7 +216,7 @@ class _AnnouncementCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: context.h(12)),
-              const Divider(height: 1, color: Color(0xFFDCFCE7)),
+              Divider(height: 1, color: AppColors.tint(const Color(0xFFDCFCE7))),
               SizedBox(height: context.h(10)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

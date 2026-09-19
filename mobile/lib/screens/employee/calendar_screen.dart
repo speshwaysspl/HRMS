@@ -287,7 +287,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(e['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                      Text(e['title']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                                       SizedBox(height: context.h(2)),
                                       Text(date, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
                                     ],

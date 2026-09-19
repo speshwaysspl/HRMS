@@ -30,7 +30,7 @@ class PlaceholderScreen extends StatelessWidget {
               Container(
                 width: box,
                 height: box,
-                decoration: const BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
                 child: Icon(icon, size: context.r(32), color: AppColors.brand500),
               ),
               SizedBox(height: context.h(16)),

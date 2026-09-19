@@ -25,7 +25,7 @@ const MobileBottomNav = () => {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-surface-subtle rounded-t-2xl shadow-panel"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-900 rounded-t-2xl shadow-panel"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex items-stretch justify-around px-1 pt-1.5 pb-1.5">
@@ -41,19 +41,19 @@ const MobileBottomNav = () => {
                 <>
                   <span
                     className={`flex items-center justify-center w-11 h-11 rounded-full transition-colors ${
-                      isActive ? "bg-accent-600 text-white shadow-card" : "bg-surface-muted text-ink-muted"
+                      isActive ? "bg-white text-brand-900 shadow-card" : "bg-white/10 text-white/70"
                     }`}
                   >
                     <Icon size={18} />
                   </span>
-                  <span className={`text-[11px] font-medium ${isActive ? "text-accent-700" : "text-ink-faint"}`}>
+                  <span className={`text-[11px] font-medium ${isActive ? "text-white" : "text-white/60"}`}>
                     {label}
                   </span>
                 </>
               ) : (
                 <>
-                  <Icon size={18} className={isActive ? "text-accent-600" : "text-ink-faint"} />
-                  <span className={`text-[11px] font-medium ${isActive ? "text-accent-700" : "text-ink-faint"}`}>
+                  <Icon size={18} className={isActive ? "text-white" : "text-white/60"} />
+                  <span className={`text-[11px] font-medium ${isActive ? "text-white" : "text-white/60"}`}>
                     {label}
                   </span>
                 </>

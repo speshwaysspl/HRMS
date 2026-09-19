@@ -165,7 +165,7 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(r['name']?.toString() ?? '—',
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
                 SizedBox(height: context.h(3)),
                 Text(
                   'In: ${r['inTime'] ?? '—'}   Out: ${r['outTime'] ?? '—'}'

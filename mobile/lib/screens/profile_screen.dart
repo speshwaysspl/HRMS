@@ -237,8 +237,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSectionCard(
                 title: 'Personal Information',
                 icon: Icons.person_outline,
-                iconColor: const Color(0xFF2563EB),
-                iconBg: const Color(0xFFDBEAFE),
+                iconColor: Color(0xFF2563EB),
+                iconBg: AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
                 items: [
                   _InfoRow('Email Address', email, isCopyable: true),
                   _InfoRow('Mobile Number', emp['mobilenumber']?.toString() ?? '--', isCopyable: true),
@@ -252,8 +252,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSectionCard(
                 title: 'Employment Information',
                 icon: Icons.work_outline_rounded,
-                iconColor: const Color(0xFF9333EA),
-                iconBg: const Color(0xFFF3E8FF),
+                iconColor: Color(0xFF9333EA),
+                iconBg: AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
                 items: [
                   _InfoRow('Department', dept?.toString() ?? '--'),
                   _InfoRow('Designation', emp['designation']?.toString() ?? '--'),
@@ -277,8 +277,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String title,
     required IconData icon,
     required List<_InfoRow> items,
-    Color iconColor = AppColors.brand600,
-    Color iconBg = AppColors.brand50,
+    Color? iconColor,
+    Color? iconBg,
     Widget? trailing,
   }) {
     return Container(
@@ -296,8 +296,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 width: context.r(30),
                 height: context.r(30),
-                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                child: Icon(icon, size: context.r(16), color: iconColor),
+                decoration: BoxDecoration(color: AppColors.tint(iconBg ?? AppColors.brand50), shape: BoxShape.circle),
+                child: Icon(icon, size: context.r(16), color: iconColor ?? AppColors.brand600),
               ),
               SizedBox(width: context.w(10)),
               Text(
@@ -377,8 +377,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 width: context.r(30),
                 height: context.r(30),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFEE2E2),
+                decoration: BoxDecoration(
+                  color: AppColors.tint(const Color(0xFFFEE2E2)),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.shield_outlined, size: context.r(16), color: AppColors.danger),
@@ -439,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (submitted) {
             return Container(
               padding: EdgeInsets.fromLTRB(context.w(20), context.h(24), context.w(20), context.h(24)),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
               ),
@@ -460,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
             child: Container(
               padding: EdgeInsets.all(context.w(20)),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
               ),
@@ -473,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(color: Color(0xFFFEE2E2), shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppColors.tint(const Color(0xFFFEE2E2)), shape: BoxShape.circle),
                           child: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20),
                         ),
                         SizedBox(width: context.w(10)),

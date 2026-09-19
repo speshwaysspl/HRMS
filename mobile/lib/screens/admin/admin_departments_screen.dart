@@ -115,7 +115,7 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(d['dep_name']?.toString() ?? '',
-                                              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                                              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
                                           if ((d['description'] ?? '').toString().isNotEmpty) ...[
                                             SizedBox(height: context.h(3)),
                                             Text(d['description'].toString(),
@@ -194,7 +194,7 @@ class _DeptSheetState extends State<_DeptSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
         ),
