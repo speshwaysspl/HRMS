@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../services/api_client.dart';
 import '../../services/employee_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import 'admin_employee_detail_screen.dart';
 import 'admin_employee_form_screen.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminEmployeesScreen extends StatefulWidget {
   const AdminEmployeesScreen({super.key});
@@ -21,7 +23,7 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
   final _service = EmployeeService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   String _query = '';
 
   @override
@@ -45,7 +47,7 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -67,7 +69,7 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Employees')),
+      appBar: HrmsAppBar(title: const Text('Employees')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final saved = await Navigator.of(context).push<bool>(
@@ -92,20 +94,27 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+                    padding: EdgeInsets.all(context.w(16)),
+                    children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+                  )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
                         child: _visible.isEmpty
                             ? ListView(children: const [
                                 SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.groups_outlined, message: 'No employees found.'),
+                                EmptyStateView(icon: Icons.groups_outlined, title: 'No employees found'),
                               ])
-                            : ListView(
-                                padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map(_row).toList(),
-                              ),
+                            : Builder(builder: (context) {
+                                final rows = _visible;
+                                return ListView.builder(
+                                  padding: EdgeInsets.all(context.w(16)),
+                                  itemCount: rows.length,
+                                  itemBuilder: (_, i) => _row(rows[i]),
+                                );
+                              }),
                       ),
           ),
         ],

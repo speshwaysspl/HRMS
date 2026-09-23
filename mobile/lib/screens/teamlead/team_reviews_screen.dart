@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 
 class TeamReviewsScreen extends StatefulWidget {
   const TeamReviewsScreen({super.key});
@@ -17,7 +19,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
   final _service = ReviewService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -40,7 +42,7 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -49,15 +51,18 @@ class _TeamReviewsScreenState extends State<TeamReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Team Reviews')),
+      appBar: HrmsAppBar(title: const Text('Team Reviews')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
-                      ? ListView(children: [
+                      ? ListView(children: const [
                           SizedBox(height: 100),
                           CenteredMessage(
                             icon: Icons.rate_review_outlined,

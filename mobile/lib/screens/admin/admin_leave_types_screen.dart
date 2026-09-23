@@ -4,8 +4,11 @@ import '../../services/api_client.dart';
 import '../../services/leave_type_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminLeaveTypesScreen extends StatefulWidget {
   const AdminLeaveTypesScreen({super.key});
@@ -18,7 +21,7 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
   final _service = LeaveTypeService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -41,7 +44,7 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -86,26 +89,31 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Leave Types')),
+      appBar: HrmsAppBar(title: const Text('Leave Types')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.beach_access_outlined, message: 'No leave types configured.'),
+                          EmptyStateView(icon: Icons.beach_access_outlined, title: 'No leave types configured', subtitle: 'Tap Add to create one.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((t) {
+                          itemCount: _items.length,
+                          itemBuilder: (_, i) {
+                            final t = _items[i];
                             final active = t['isActive'] != false;
                             return SimpleCard(
                               onTap: () => _edit(t),
@@ -135,7 +143,7 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

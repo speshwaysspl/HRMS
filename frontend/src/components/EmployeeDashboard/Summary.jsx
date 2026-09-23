@@ -27,6 +27,18 @@ import useMeta from '../../utils/useMeta'
 import NotificationBell from '../notifications/NotificationBell'
 import ErrorState from '../common/ErrorState'
 
+// Same category labels/colors as the Announcements list page — kept in
+// sync intentionally (see AnnouncementDetails.jsx / EmployeeAnnouncements.jsx).
+const ANNOUNCEMENT_CATEGORY_STYLE = {
+  important: { label: 'Important', className: 'text-brand-600' },
+  festival: { label: 'Festival', className: 'text-accent-600' },
+  event: { label: 'Event', className: 'text-accent-600' },
+  achievement: { label: 'Achievement', className: 'text-accent-600' },
+  quote: { label: 'Daily Quote', className: 'text-ink-faint' },
+}
+const announcementCategoryStyle = (category) =>
+  ANNOUNCEMENT_CATEGORY_STYLE[category] || { label: 'Announcement', className: 'text-ink-faint' }
+
 // Same 5-color palette + status vocabulary as the Flutter mobile app's
 // employee home screen — kept in sync intentionally, see MEMORY.md.
 const STATUS_STYLES = {
@@ -476,42 +488,38 @@ const Summary = () => {
           Recent Announcements
         </h2>
         {(() => {
-          const isNew = latestAnnouncement?.createdAt
-            ? Date.now() - new Date(latestAnnouncement.createdAt).getTime() < 24 * 60 * 60 * 1000
-            : false
+          const { label, className } = announcementCategoryStyle(latestAnnouncement?.category)
           return (
             <button
               onClick={() => navigate('/employee-dashboard/announcements')}
-              className="w-full text-left rounded-2xl p-4 border bg-gradient-to-b from-[#F0FDF4] to-white shadow-card hover:shadow-panel transition-shadow"
-              style={{ borderColor: '#DCFCE7' }}
+              className="w-full text-left rounded-2xl p-4 border border-surface-subtle bg-surface hover:shadow-panel transition-shadow"
             >
               <div className="flex items-start gap-3">
-                <span className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center flex-shrink-0">
-                  <FaBullhorn size={18} />
-                </span>
+                {latestAnnouncement?.imageUrl && (
+                  <img
+                    src={latestAnnouncement.imageUrl}
+                    alt=""
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
+                )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-extrabold text-ink text-sm leading-snug line-clamp-2">
-                      {latestAnnouncement?.title?.trim() || 'New Holiday List Released'}
-                    </div>
-                    {isNew && (
-                      <span className="flex-shrink-0 text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-[#16A34A] text-white">
-                        NEW
-                      </span>
-                    )}
+                  <span className={`text-[10.5px] font-bold uppercase tracking-wide ${className}`}>{label}</span>
+                  <div className="font-bold text-ink text-sm leading-snug line-clamp-2 mt-0.5">
+                    {latestAnnouncement?.title?.trim() || 'New Holiday List Released'}
                   </div>
-                  <div className="text-ink-muted text-xs leading-relaxed line-clamp-2 mt-1">
+                  <div className="text-ink-muted text-xs leading-relaxed line-clamp-2 mt-1.5">
                     {latestAnnouncement?.description?.trim() || 'Please check the updated holiday calendar.'}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#DCFCE7]">
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-faint">
-                  <FaClock size={10} />
+              <div className="flex items-center justify-between mt-3">
+                <span className="inline-flex items-center gap-1.5 text-xs text-ink-faint">
+                  <FaClock size={11} />
                   {latestAnnouncement?.createdAt ? getAnnouncementTime(latestAnnouncement.createdAt) : 'Just now'}
                 </span>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-[#16A34A]">
+                <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-500">
                   View all
                   <FaChevronRight size={10} />
                 </span>

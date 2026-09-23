@@ -6,6 +6,8 @@ import '../../services/department_service.dart';
 import '../../services/employee_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/skeleton_loader.dart';
 
 const _roleOptions = ['employee', 'team_lead', 'hr', 'admin'];
 
@@ -39,6 +41,7 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
 
   List<Map<String, dynamic>> _departments = [];
   bool _loadingDepts = true;
+  bool _deptError = false;
   bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
@@ -83,6 +86,10 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
   }
 
   Future<void> _loadDepartments() async {
+    setState(() {
+      _loadingDepts = true;
+      _deptError = false;
+    });
     try {
       final d = await _departmentService.getDepartments();
       if (!mounted) return;
@@ -91,7 +98,12 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
         _loadingDepts = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _loadingDepts = false);
+      if (mounted) {
+        setState(() {
+          _loadingDepts = false;
+          _deptError = true;
+        });
+      }
     }
   }
 
@@ -163,7 +175,7 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit Employee' : 'Add Employee')),
+      appBar: HrmsAppBar(title: Text(_isEdit ? 'Edit Employee' : 'Add Employee')),
       body: ListView(
         padding: EdgeInsets.all(context.w(16)),
         children: [
@@ -191,8 +203,15 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
                 ),
                 SizedBox(height: context.h(12)),
                 _loadingDepts
-                    ? const LinearProgressIndicator()
-                    : DropdownButtonFormField<String>(
+                    ? const SkeletonBox(height: 56, borderRadius: BorderRadius.all(Radius.circular(12)))
+                    : _deptError
+                        ? ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.wifi_off_rounded, color: AppColors.warning),
+                            title: const Text('Could not load departments'),
+                            trailing: TextButton(onPressed: _loadDepartments, child: const Text('Retry')),
+                          )
+                        : DropdownButtonFormField<String>(
                         initialValue: _departmentId,
                         decoration: const InputDecoration(labelText: 'Department'),
                         items: _departments

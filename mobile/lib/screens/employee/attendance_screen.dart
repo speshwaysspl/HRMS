@@ -12,6 +12,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -245,7 +246,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Attendance')),
+      appBar: HrmsAppBar(title: const Text('Attendance')),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

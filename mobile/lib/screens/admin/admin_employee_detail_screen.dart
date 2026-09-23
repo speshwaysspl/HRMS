@@ -5,10 +5,12 @@ import '../../services/api_client.dart';
 import '../../services/employee_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../employee/payslips_screen.dart';
 import 'admin_employee_form_screen.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminEmployeeDetailScreen extends StatefulWidget {
   final String id;
@@ -23,7 +25,7 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
   Map<String, dynamic>? _emp;
   bool _loading = true;
   bool _busy = false;
-  String? _error;
+  Object? _error;
   bool _changed = false;
 
   @override
@@ -47,7 +49,7 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -130,7 +132,7 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
         if (!didPop) Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: HrmsAppBar(
           title: const Text('Employee'),
           actions: [
             if (!_loading && _error == null)
@@ -138,10 +140,16 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
           ],
         ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? ListView(
+                padding: EdgeInsets.all(context.w(16)),
+                children: const [SkeletonCard(height: 90), SkeletonCard(height: 220)],
+              )
             : _error != null
-                ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
-                : ListView(
+                ? buildErrorState(_error!, _load)
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.all(context.w(16)),
                     children: [
                       Row(
@@ -205,6 +213,7 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
                         label: const Text('Delete employee', style: TextStyle(color: AppColors.danger)),
                       ),
                     ],
+                  ),
                   ),
       ),
     );

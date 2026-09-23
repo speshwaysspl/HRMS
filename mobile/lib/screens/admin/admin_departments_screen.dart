@@ -5,6 +5,9 @@ import '../../services/department_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminDepartmentsScreen extends StatefulWidget {
   const AdminDepartmentsScreen({super.key});
@@ -17,7 +20,7 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
   final _service = DepartmentService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -40,7 +43,7 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -87,26 +90,32 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Departments')),
+      appBar: HrmsAppBar(title: const Text('Departments')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.apartment_outlined, message: 'No departments yet.'),
+                          EmptyStateView(icon: Icons.apartment_outlined, title: 'No departments yet', subtitle: 'Departments you add will show up here.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((d) => SimpleCard(
+                          itemCount: _items.length,
+                          itemBuilder: (context, idx) {
+                            final d = _items[idx];
+                            return SimpleCard(
                                 onTap: () => _edit(d),
                                 child: Row(
                                   children: [
@@ -132,7 +141,8 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
                                     ),
                                   ],
                                 ),
-                              )).toList(),
+                            );
+                          },
                         ),
                 ),
     );

@@ -10,6 +10,7 @@ import '../services/push_service.dart';
 import '../services/settings_api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
+import '../widgets/hrms_app_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -113,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: HrmsAppBar(title: const Text('Settings')),
       body: ListView(
         padding: EdgeInsets.all(context.w(16)),
         children: [
@@ -231,14 +232,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: Icon(Icons.description_outlined, color: AppColors.inkMuted, size: context.r(22)),
                   title: Text('Terms of Service', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
                   trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
-                  onTap: () => _openUrl('https://www.speshway.com/terms-of-service'),
+                  onTap: () => _openUrl('https://speshwayhrms.com/terms-and-conditions'),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: Icon(Icons.privacy_tip_outlined, color: AppColors.inkMuted, size: context.r(22)),
                   title: Text('Privacy Policy', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
                   trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
-                  onTap: () => _openUrl('https://www.speshway.com/privacy-policy'),
+                  onTap: () => _openUrl('https://speshwayhrms.com/privacy-policy'),
                 ),
               ],
             ),

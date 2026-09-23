@@ -5,6 +5,7 @@ import '../../services/api_client.dart';
 import '../../services/payslip_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 const _months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -161,7 +162,7 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generate Payslip')),
+      appBar: HrmsAppBar(title: const Text('Generate Payslip')),
       body: ListView(
         padding: EdgeInsets.all(context.w(16)),
         children: [

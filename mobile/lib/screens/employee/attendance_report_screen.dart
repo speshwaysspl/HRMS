@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/summary_card.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AttendanceReportScreen extends StatefulWidget {
   const AttendanceReportScreen({super.key});
@@ -136,7 +137,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     final cardH = context.r(44) + context.h(40);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: HrmsAppBar(
         title: const Text('Attendance Report'),
       ),
       body: RefreshIndicator(

@@ -13,6 +13,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class LeavesScreen extends StatefulWidget {
   const LeavesScreen({super.key});
@@ -94,7 +95,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Leaves')),
+      appBar: HrmsAppBar(title: const Text('Leaves')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openApplySheet,
         icon: const Icon(Icons.add),

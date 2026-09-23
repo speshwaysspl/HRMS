@@ -7,6 +7,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 const _categories = [
   'General', 'Work Environment', 'Management', 'Benefits', 'Training', 'Technology', 'Suggestion', 'Complaint', 'Other'
@@ -67,7 +68,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Feedback')),
+      appBar: HrmsAppBar(title: const Text('Feedback')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openSubmitSheet,
         icon: const Icon(Icons.add),

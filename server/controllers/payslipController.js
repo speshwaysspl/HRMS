@@ -8,6 +8,7 @@ import Candidate from "../models/Candidate.js";
 import Offer from "../models/Offer.js";
 import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
+import { createPayslipNotification } from "./notificationController.js";
 
 const num = (v) => {
   const n = parseFloat(v);
@@ -224,6 +225,16 @@ export const generatePayslip = async (req, res) => {
       await Employee.findByIdAndUpdate(payload.employeeObjectId || payload.employeeId, employeeUpdate);
     }
 
+    // Notify the employee that their payslip is ready
+    try {
+      const notifiedEmployee = await Employee.findById(payload.employeeObjectId || payload.employeeId).select('userId');
+      if (notifiedEmployee?.userId) {
+        await createPayslipNotification(newSalary, notifiedEmployee.userId, req.user?._id, req.io);
+      }
+    } catch (notificationError) {
+      console.error('Error sending payslip notification:', notificationError);
+    }
+
     return res.status(200).json({
       success: true,
       salary: newSalary,
@@ -414,13 +425,22 @@ export const autoGenerateMonthlyPayslips = async (req, res) => {
         });
         
         await newSalary.save();
+
+        try {
+          if (employee.userId?._id) {
+            await createPayslipNotification(newSalary, employee.userId._id, req.user?._id, req.io);
+          }
+        } catch (notificationError) {
+          console.error('Error sending payslip notification:', notificationError);
+        }
+
         results.push({
           employeeId: template.employeeId.employeeId,
           name: employee.userId.name,
           netSalary: netSalary,
           status: "Generated successfully"
         });
-        
+
       } catch (error) {
         errors.push({
           employeeId: template.employeeId.employeeId,
@@ -428,9 +448,9 @@ export const autoGenerateMonthlyPayslips = async (req, res) => {
         });
       }
     }
-    
-    return res.status(200).json({ 
-      success: true, 
+
+    return res.status(200).json({
+      success: true,
       generated: results.length,
       results,
       errors
@@ -573,14 +593,22 @@ export const autoGenerateSelectedPayslips = async (req, res) => {
         });
         
         await newSalary.save();
-        
+
+        try {
+          if (employee.userId?._id) {
+            await createPayslipNotification(newSalary, employee.userId._id, req.user?._id, req.io);
+          }
+        } catch (notificationError) {
+          console.error('Error sending payslip notification:', notificationError);
+        }
+
         results.push({
           employeeId: template.employeeId.employeeId,
           name: employee.userId.name,
           netSalary,
           status: 'Generated successfully'
         });
-        
+
       } catch (error) {
         console.error(`Error generating payslip for employee ${template.employeeId.employeeId}:`, error);
         errors.push({

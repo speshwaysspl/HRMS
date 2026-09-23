@@ -5,8 +5,11 @@ import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import 'admin_team_detail_screen.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminTeamsScreen extends StatefulWidget {
   const AdminTeamsScreen({super.key});
@@ -19,7 +22,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
   final _service = TeamService();
   List<Map<String, dynamic>> _teams = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -42,7 +45,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -87,26 +90,31 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Teams')),
+      appBar: HrmsAppBar(title: const Text('Teams')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add),
         label: const Text('New team'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _teams.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.groups_outlined, message: 'No teams yet.'),
+                          EmptyStateView(icon: Icons.groups_outlined, title: 'No teams yet', subtitle: 'Tap New team to create one.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _teams.map((t) {
+                          itemCount: _teams.length,
+                          itemBuilder: (_, i) {
+                            final t = _teams[i];
                             final lead = (t['leadId'] as Map?) ?? {};
                             final memberCount = (t['members'] as List?)?.length ?? 0;
                             return SimpleCard(
@@ -144,7 +152,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

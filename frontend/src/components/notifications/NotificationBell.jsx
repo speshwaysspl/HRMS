@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
@@ -9,10 +10,23 @@ import { getDashboardBasePath } from '../../utils/roleRoutes';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
+  // Below md the panel is a bottom sheet (slides up from the screen edge);
+  // at md and up it's a small dropdown anchored under the bell (fades in
+  // place) — tracked so the two use different, sensible entry motions.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  );
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications();
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -127,11 +141,37 @@ const NotificationBell = () => {
         )}
       </button>
 
-      {/* Notification Dropdown */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-[20rem] sm:w-80 bg-white rounded-xl shadow-panel border border-surface-subtle z-50 max-h-96 overflow-hidden">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-surface-subtle flex items-center justify-between gap-2 flex-wrap">
+      {/* Notification panel — a bottom sheet below md (mirrors the mobile
+          app), a dropdown anchored under the bell at md and up. */}
+      <AnimatePresence>
+        {isOpen && (
+          <React.Fragment>
+            {/* Backdrop: mobile only, desktop still closes via the outside-click listener above */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/40 z-40 md:hidden"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              key="panel"
+              initial={isDesktop ? { opacity: 0, y: -6 } : { y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={isDesktop ? { opacity: 0, y: -6 } : { y: '100%' }}
+              transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: isDesktop ? 0.16 : 0.28 }}
+              className="fixed inset-x-0 bottom-0 z-50 flex flex-col max-h-[80vh] rounded-t-2xl
+                md:absolute md:inset-x-auto md:right-0 md:bottom-auto md:mt-2 md:w-80 md:max-w-[20rem] md:max-h-96 md:rounded-xl
+                bg-white shadow-panel border border-surface-subtle overflow-hidden"
+            >
+              {/* Drag handle — mobile bottom-sheet affordance only */}
+              <div className="md:hidden flex justify-center pt-2.5 pb-1 flex-shrink-0">
+                <div className="w-10 h-1.5 rounded-full bg-surface-subtle" />
+              </div>
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-surface-subtle flex items-center justify-between gap-2 flex-wrap flex-shrink-0">
             <h3 className="text-base font-semibold text-ink">Notifications</h3>
             <div className="flex items-center gap-3 flex-wrap">
               {unreadCount > 0 && (
@@ -164,7 +204,7 @@ const NotificationBell = () => {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto md:max-h-80 md:flex-none">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-ink-muted">
                 <Bell size={32} className="mx-auto mb-2 text-ink-faint" />
@@ -218,7 +258,10 @@ const NotificationBell = () => {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-surface-subtle text-center">
+          <div
+            className="px-4 py-3 border-t border-surface-subtle text-center flex-shrink-0"
+            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          >
             <button
               onClick={() => {
                 setIsOpen(false);
@@ -229,8 +272,10 @@ const NotificationBell = () => {
               View all notifications
             </button>
           </div>
-        </div>
-      )}
+            </motion.div>
+          </React.Fragment>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

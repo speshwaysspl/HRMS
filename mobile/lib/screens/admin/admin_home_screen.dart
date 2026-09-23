@@ -3,7 +3,6 @@ import '../../services/app_events.dart';
 import '../../services/notification_service.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/api_client.dart';
 import '../../services/auth_provider.dart';
 import '../../services/dashboard_service.dart';
 import '../../theme/app_theme.dart';
@@ -12,6 +11,8 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/summary_card.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../employee/notifications_screen.dart';
 import '../teamlead/approvals_screen.dart';
 import 'admin_announcements_screen.dart';
@@ -27,7 +28,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   final _service = DashboardService();
   Map<String, dynamic>? _summary;
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -122,13 +123,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonCard(height: 80), SkeletonCard(height: 80), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(
-                  icon: Icons.cloud_off,
-                  message: _error!,
-                  action: OutlinedButton(onPressed: _load, child: const Text('Retry')),
-                )
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(onRefresh: _load, child: _content(name)),
     );
   }

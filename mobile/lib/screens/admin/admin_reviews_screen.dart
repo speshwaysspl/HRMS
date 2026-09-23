@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../services/api_client.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminReviewsScreen extends StatefulWidget {
   const AdminReviewsScreen({super.key});
@@ -18,7 +20,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   final _service = ReviewService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -41,7 +43,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -50,21 +52,26 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Performance Reviews')),
+      appBar: HrmsAppBar(title: const Text('Performance Reviews')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.rate_review_outlined, message: 'No reviews yet.'),
+                          EmptyStateView(icon: Icons.rate_review_outlined, title: 'No reviews yet', subtitle: 'Performance reviews will show up here.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((r) {
+                          itemCount: _items.length,
+                          itemBuilder: (_, i) {
+                            final r = _items[i];
                             final emp = (r['employeeId'] as Map?) ?? {};
                             final empUser = (emp['userId'] as Map?) ?? {};
                             final reviewer = (r['reviewerId'] as Map?) ?? {};
@@ -101,7 +108,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

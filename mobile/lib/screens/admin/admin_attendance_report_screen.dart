@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../services/api_client.dart';
 import '../../services/attendance_admin_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminAttendanceReportScreen extends StatefulWidget {
   const AdminAttendanceReportScreen({super.key});
@@ -20,7 +22,7 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
   DateTime _date = DateTime.now();
   List<Map<String, dynamic>> _rows = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   String _query = '';
 
   @override
@@ -46,7 +48,7 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -76,7 +78,7 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Attendance Report')),
+      appBar: HrmsAppBar(title: const Text('Attendance Report')),
       body: Column(
         children: [
           Padding(
@@ -116,20 +118,27 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+                    padding: EdgeInsets.all(context.w(16)),
+                    children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+                  )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
                         child: _visible.isEmpty
                             ? ListView(children: const [
                                 SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.event_busy, message: 'No records for this day.'),
+                                EmptyStateView(icon: Icons.event_busy, title: 'No records for this day'),
                               ])
-                            : ListView(
-                                padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map(_row).toList(),
-                              ),
+                            : Builder(builder: (context) {
+                                final rows = _visible;
+                                return ListView.builder(
+                                  padding: EdgeInsets.all(context.w(16)),
+                                  itemCount: rows.length,
+                                  itemBuilder: (_, i) => _row(rows[i]),
+                                );
+                              }),
                       ),
           ),
         ],

@@ -6,6 +6,9 @@ import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminAnnouncementsScreen extends StatefulWidget {
   const AdminAnnouncementsScreen({super.key});
@@ -18,7 +21,7 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
   final _service = AnnouncementService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -41,7 +44,7 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -86,26 +89,31 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Announcements')),
+      appBar: HrmsAppBar(title: const Text('Announcements')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openComposer,
         icon: const Icon(Icons.add),
         label: const Text('Post'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.campaign_outlined, message: 'No announcements yet.'),
+                          EmptyStateView(icon: Icons.campaign_outlined, title: 'No announcements yet', subtitle: 'Posted announcements will show up here.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((a) {
+                          itemCount: _items.length,
+                          itemBuilder: (context, i) {
+                            final a = _items[i];
                             String date = '';
                             try {
                               date = DateFormat('d MMM, yyyy').format(DateTime.parse(a['createdAt'].toString()));
@@ -137,7 +145,7 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

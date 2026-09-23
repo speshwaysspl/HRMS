@@ -5,8 +5,11 @@ import '../../services/api_client.dart';
 import '../../services/payroll_template_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminPayrollTemplatesScreen extends StatefulWidget {
   const AdminPayrollTemplatesScreen({super.key});
@@ -20,7 +23,7 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
   final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   String _query = '';
 
   @override
@@ -44,7 +47,7 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -115,8 +118,9 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
     return Scaffold(
-      appBar: AppBar(title: const Text('Payroll Templates')),
+      appBar: HrmsAppBar(title: const Text('Payroll Templates')),
       body: Column(
         children: [
           Padding(
@@ -131,19 +135,28 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
-                        child: _visible.isEmpty
-                            ? ListView(children: const [
-                                SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.tune, message: 'No payroll templates.'),
+                        child: visible.isEmpty
+                            ? ListView(children: [
+                                const SizedBox(height: 100),
+                                EmptyStateView(
+                                    icon: Icons.tune,
+                                    title: _all.isEmpty ? 'No payroll templates' : 'No matching templates',
+                                    subtitle: _all.isEmpty ? 'Templates will show up here.' : 'Try a different search.'),
                               ])
-                            : ListView(
+                            : ListView.builder(
                                 padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map((t) => SimpleCard(
+                                itemCount: visible.length,
+                                itemBuilder: (_, i) {
+                                  final t = visible[i];
+                                  return SimpleCard(
                                       onTap: () => _openDetail(t),
                                       child: Row(
                                         children: [
@@ -167,7 +180,8 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
                                           ],
                                         ],
                                       ),
-                                    )).toList(),
+                                    );
+                                },
                               ),
                       ),
           ),

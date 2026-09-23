@@ -6,9 +6,12 @@ import '../../services/leave_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 import 'admin_leave_detail_screen.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminLeavesScreen extends StatefulWidget {
   const AdminLeavesScreen({super.key});
@@ -21,7 +24,7 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
   final _service = LeaveService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   final Set<String> _busy = {};
   String _filter = 'Pending';
 
@@ -48,7 +51,7 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -85,9 +88,10 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Leave Requests')),
+      appBar: HrmsAppBar(title: const Text('Leave Requests')),
       body: Column(
         children: [
           SizedBox(
@@ -110,19 +114,23 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
-                        child: _visible.isEmpty
+                        child: visible.isEmpty
                             ? ListView(children: [
                                 const SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.beach_access_outlined, message: 'No $_filter requests.'),
+                                EmptyStateView(icon: Icons.beach_access_outlined, title: 'No $_filter requests', subtitle: 'Leave requests will show up here.'),
                               ])
-                            : ListView(
+                            : ListView.builder(
                                 padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map(_card).toList(),
+                                itemCount: visible.length,
+                                itemBuilder: (_, i) => _card(visible[i]),
                               ),
                       ),
           ),

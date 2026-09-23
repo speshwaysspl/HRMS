@@ -6,7 +6,9 @@ import '../../services/api_client.dart';
 import '../../services/daily_quote_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminDailyQuoteScreen extends StatefulWidget {
   const AdminDailyQuoteScreen({super.key});
@@ -20,7 +22,7 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   bool _uploading = false;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -43,7 +45,7 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -109,7 +111,7 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily Quote')),
+      appBar: HrmsAppBar(title: const Text('Daily Quote')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _uploading ? null : _add,
         icon: _uploading
@@ -118,21 +120,24 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
         label: const Text('Publish'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.format_quote_outlined, message: 'No quotes yet.'),
+                          EmptyStateView(icon: Icons.format_quote_outlined, title: 'No quotes yet', subtitle: 'Published daily quotes will show up here.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.asMap().entries.map((entry) {
-                            final i = entry.key;
-                            final q = entry.value;
+                          itemCount: _items.length,
+                          itemBuilder: (context, i) {
+                            final q = _items[i];
                             final isCurrent = i == 0;
                             String date = '';
                             try {
@@ -178,7 +183,7 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

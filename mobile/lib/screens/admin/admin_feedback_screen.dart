@@ -6,6 +6,9 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 const _statuses = ['Pending', 'In Review', 'Resolved', 'Closed'];
 
@@ -20,7 +23,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
   final _service = FeedbackService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   String _filter = 'All';
 
   @override
@@ -44,7 +47,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -67,8 +70,9 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
     return Scaffold(
-      appBar: AppBar(title: const Text('Feedback')),
+      appBar: HrmsAppBar(title: const Text('Feedback')),
       body: Column(
         children: [
           SizedBox(
@@ -90,19 +94,26 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+                    padding: EdgeInsets.all(context.w(16)),
+                    children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+                  )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
-                        child: _visible.isEmpty
+                        child: visible.isEmpty
                             ? ListView(children: [
                                 const SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.chat_bubble_outline, message: 'No $_filter feedback.'),
+                                EmptyStateView(
+                                    icon: Icons.chat_bubble_outline,
+                                    title: _filter == 'All' ? 'No feedback yet' : 'No $_filter feedback',
+                                    subtitle: 'Employee feedback will show up here.'),
                               ])
-                            : ListView(
+                            : ListView.builder(
                                 padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map(_card).toList(),
+                                itemCount: visible.length,
+                                itemBuilder: (_, i) => _card(visible[i]),
                               ),
                       ),
           ),

@@ -267,6 +267,25 @@ const createTaskSubmissionNotification = async (taskData, employeeUserId, io) =>
   }
 };
 
+// Create notification for a newly generated payslip (Admin/HR -> Employee)
+const createPayslipNotification = async (salary, employeeUserId, adminId, io) => {
+  try {
+    if (!employeeUserId) return;
+    const data = {
+      type: 'payslip_generated',
+      title: 'Payslip Ready',
+      message: `Your payslip for ${salary.month} ${salary.year} is now available`,
+      recipientId: employeeUserId,
+      senderId: adminId,
+      relatedId: salary._id
+    };
+    return await createNotification(data, io);
+  } catch (error) {
+    console.error('Error creating payslip notification:', error);
+    throw error;
+  }
+};
+
 // Get notifications for a user with pagination
 const getUserNotifications = async (req, res) => {
   try {
@@ -424,4 +443,4 @@ const removeFcmToken = async (req, res) => {
   }
 };
 
-export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, deleteNotification, sendCustomNotification, saveFcmToken, removeFcmToken };
+export { createNotification, createLeaveRequestNotification, createLeaveStatusNotification, createAnnouncementNotification, createHolidayNotification, createEventNotification, createTaskAssignmentNotification, createTaskUpdateNotification, createTaskSubmissionNotification, createPayslipNotification, getUserNotifications, markAsRead, markAllAsRead, clearAllNotifications, deleteNotification, sendCustomNotification, saveFcmToken, removeFcmToken };

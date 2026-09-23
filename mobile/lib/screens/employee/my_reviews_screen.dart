@@ -7,6 +7,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class MyReviewsScreen extends StatefulWidget {
   const MyReviewsScreen({super.key});
@@ -53,7 +54,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Reviews')),
+      appBar: HrmsAppBar(title: const Text('My Reviews')),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

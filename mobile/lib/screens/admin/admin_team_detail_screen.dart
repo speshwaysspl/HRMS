@@ -5,7 +5,10 @@ import '../../services/employee_service.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminTeamDetailScreen extends StatefulWidget {
   final String id;
@@ -20,7 +23,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
   final _service = TeamService();
   Map<String, dynamic>? _detail;
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -43,7 +46,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -74,16 +77,19 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
         [];
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
+      appBar: HrmsAppBar(title: Text(widget.name)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addMembers,
         icon: const Icon(Icons.person_add_alt),
         label: const Text('Add members'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
@@ -93,7 +99,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
                           style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
                       SizedBox(height: context.h(10)),
                       if (memberStats.isEmpty)
-                        const CenteredMessage(icon: Icons.person_outline, message: 'No members yet.')
+                        const EmptyStateView(icon: Icons.person_outline, title: 'No members yet', subtitle: 'Tap Add members to build this team.')
                       else
                         ...memberStats.map((m) {
                           final member = (m['member'] as Map?) ?? m;
@@ -148,6 +154,7 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
   List<Map<String, dynamic>> _employees = [];
   final Set<String> _selected = {};
   bool _loading = true;
+  Object? _loadError;
   String _query = '';
 
   @override
@@ -157,6 +164,10 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
     try {
       final data = await _service.getEmployees();
       if (!mounted) return;
@@ -164,8 +175,13 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
         _employees = data;
         _loading = false;
       });
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadError = e;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -180,6 +196,7 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
     return Container(
       height: context.hf(0.8),
       padding: EdgeInsets.all(context.w(16)),
@@ -199,21 +216,27 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
           SizedBox(height: context.h(8)),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView(
-                    children: _visible.map((e) {
-                      final id = e['_id'].toString();
-                      final name = ((e['userId'] as Map?)?['name'] ?? 'Employee').toString();
-                      return CheckboxListTile(
-                        dense: true,
-                        value: _selected.contains(id),
-                        onChanged: (v) => setState(() => v == true ? _selected.add(id) : _selected.remove(id)),
-                        title: Text(name, style: TextStyle(fontSize: context.sp(14))),
-                        subtitle: Text('${e['employeeId'] ?? ''} · ${e['designation'] ?? ''}',
-                            style: TextStyle(fontSize: context.sp(11))),
-                      );
-                    }).toList(),
-                  ),
+                ? ListView(children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()])
+                : _loadError != null
+                    ? buildErrorState(_loadError!, _load)
+                    : visible.isEmpty
+                        ? const EmptyStateView(icon: Icons.person_search_outlined, title: 'No employees found')
+                        : ListView.builder(
+                            itemCount: visible.length,
+                            itemBuilder: (_, i) {
+                              final e = visible[i];
+                              final id = e['_id'].toString();
+                              final name = ((e['userId'] as Map?)?['name'] ?? 'Employee').toString();
+                              return CheckboxListTile(
+                                dense: true,
+                                value: _selected.contains(id),
+                                onChanged: (v) => setState(() => v == true ? _selected.add(id) : _selected.remove(id)),
+                                title: Text(name, style: TextStyle(fontSize: context.sp(14))),
+                                subtitle: Text('${e['employeeId'] ?? ''} · ${e['designation'] ?? ''}',
+                                    style: TextStyle(fontSize: context.sp(11))),
+                              );
+                            },
+                          ),
           ),
           SizedBox(
             width: double.infinity,

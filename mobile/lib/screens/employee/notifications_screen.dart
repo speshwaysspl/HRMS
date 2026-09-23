@@ -176,14 +176,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    // 2. Announcements / Greetings / Festivals / Events / Holidays
+    // 2. Announcements / Greetings / Festivals / Events / Holidays / Birthdays
     if (type.contains('announcement') ||
         type.contains('holiday') ||
         type.contains('event') ||
         type.contains('meeting') ||
+        type.contains('birthday') ||
         title.contains('announcement') ||
         title.contains('greeting') ||
         title.contains('festival') ||
+        title.contains('birthday') ||
         message.contains('announcement')) {
       Navigator.of(context).push(
         MaterialPageRoute(

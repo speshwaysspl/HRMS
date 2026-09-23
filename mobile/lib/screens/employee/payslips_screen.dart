@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class PayslipsScreen extends StatefulWidget {
   final String employeeCode;
@@ -107,7 +108,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surfaceMuted,
-      appBar: AppBar(title: const Text('Payslips')),
+      appBar: HrmsAppBar(title: const Text('Payslips')),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

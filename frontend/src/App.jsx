@@ -51,7 +51,6 @@ const AnnouncementView = lazy(() => import("./components/announcements/Announcem
 const AnnouncementAdd = lazy(() => import("./components/announcements/AnnouncementAdd"));
 const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
-const RegularizationApprovals = lazy(() => import("./components/attendance/RegularizationApprovals"));
 const TeamReviews = lazy(() => import("./components/performance/TeamReviews"));
 const MyReviews = lazy(() => import("./components/performance/MyReviews"));
 const ReportSettings = lazy(() => import("./components/dashboard/ReportSettings"));
@@ -234,7 +233,6 @@ function App() {
           <Route path="team/teams" element={<TeamList />} />
           <Route path="team/:id" element={<TeamDetail />} />
           <Route path="team/reviews" element={<TeamReviews />} />
-          <Route path="team/approvals" element={<RegularizationApprovals />} />
         </Route>
 
         {/* HR Dashboard */}

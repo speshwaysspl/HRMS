@@ -20,7 +20,6 @@ import '../screens/employee/tasks_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
-import '../screens/teamlead/approvals_screen.dart';
 import '../screens/teamlead/my_teams_screen.dart';
 import '../screens/teamlead/team_reviews_screen.dart';
 import '../screens/admin/admin_announcements_screen.dart';
@@ -130,8 +129,6 @@ class AppDrawer extends StatelessWidget {
             children: [
               _Item(Icons.diversity_3_rounded, 'My Teams', color: _indigo, iconBg: _indigoBg,
                   onTap: () => _go(context, (_) => const MyTeamsScreen())),
-              _Item(Icons.fact_check_rounded, 'Attendance Approvals', color: _blue, iconBg: _blueBg,
-                  onTap: () => _go(context, (_) => const ApprovalsScreen())),
               _Item(Icons.military_tech_rounded, 'Team Reviews', color: _pink, iconBg: _pinkBg,
                   onTap: () => _go(context, (_) => const TeamReviewsScreen())),
             ],

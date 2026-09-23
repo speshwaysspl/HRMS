@@ -5,8 +5,10 @@ import '../../services/api_client.dart';
 import '../../services/leave_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminLeaveDetailScreen extends StatefulWidget {
   final String id;
@@ -22,7 +24,7 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
   bool _loading = true;
   bool _busy = false;
   bool _changed = false;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -45,7 +47,7 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -89,11 +91,14 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
         if (!didPop) Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Leave Request')),
+        appBar: HrmsAppBar(title: const Text('Leave Request')),
         body: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? ListView(
+                padding: EdgeInsets.all(context.w(16)),
+                children: const [SkeletonCard(height: 70), SkeletonCard(height: 200)],
+              )
             : _error != null
-                ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                ? buildErrorState(_error!, _load)
                 : ListView(
                     padding: EdgeInsets.all(context.w(16)),
                     children: [

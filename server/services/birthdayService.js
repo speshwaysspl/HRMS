@@ -2,12 +2,15 @@ import { getTodaysBirthdays, getBirthdayMessage, getBirthdayEmailTemplate } from
 import Announcement from '../models/Announcement.js';
 import User from '../models/User.js';
 import { enqueueEmail } from '../utils/emailQueue.js';
+import { createNotification } from '../controllers/notificationController.js';
 
 /**
  * Process birthday wishes for all employees with birthdays today
  * Creates announcements and sends emails
+ * @param {Object} [io] - Socket.IO server, for real-time delivery of the
+ * personal birthday notification (push still sends without it).
  */
-export const processBirthdayWishes = async () => {
+export const processBirthdayWishes = async (io) => {
   try {
     console.log('🎂 Starting birthday wishes process...');
     
@@ -57,7 +60,24 @@ export const processBirthdayWishes = async () => {
         } else {
           console.log(`⚠️ No email address found for ${employeeName}`);
         }
-        
+
+        // Send a personal in-app + push notification to the birthday employee
+        if (employee.userId?._id) {
+          try {
+            await createNotification({
+              type: 'birthday',
+              title: `🎉 Happy Birthday, ${employeeName}!`,
+              message: 'Wishing you a fantastic day and a great year ahead from all of us at Speshway!',
+              recipientId: employee.userId._id,
+              senderId: systemAdmin._id,
+              relatedId: announcementResult.announcementId
+            }, io);
+            console.log(`🔔 Birthday notification sent to ${employeeName}`);
+          } catch (notificationError) {
+            console.error(`❌ Error sending birthday notification to ${employeeName}:`, notificationError.message);
+          }
+        }
+
         successCount++;
         
       } catch (error) {

@@ -54,6 +54,12 @@ const toLabel = (segment) => {
     .join(" ");
 };
 
+// Title of the current page (last URL segment) — used by the mobile app bar.
+export const getPageTitle = (pathname) => {
+  const segments = pathname.split("/").filter(Boolean);
+  return segments.length ? toLabel(segments[segments.length - 1]) : "";
+};
+
 const Breadcrumbs = () => {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);

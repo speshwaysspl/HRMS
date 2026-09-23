@@ -990,47 +990,26 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     final desc = (latest?['description']?.toString().trim().isNotEmpty ?? false)
         ? latest!['description'].toString().trim()
         : 'Please check the updated holiday calendar.';
+    final imageUrl = latest?['imageUrl']?.toString();
     final timeStr = _getAnnouncementTime(latest?['createdAt']?.toString());
+    final (categoryLabel, categoryColor) = categoryStyle(latest?['category']?.toString());
 
-    // "NEW" badge when the latest announcement is under 24h old.
-    var isNew = false;
-    final createdRaw = latest?['createdAt']?.toString();
-    if (createdRaw != null && createdRaw.isNotEmpty) {
-      final created = DateTime.tryParse(createdRaw);
-      if (created != null) {
-        isNew = DateTime.now().difference(created) < const Duration(hours: 24);
-      }
-    }
-
-    // Same design as the web Home's Recent Announcements card (Summary.jsx):
-    // soft green gradient tile, icon chip + title (+ NEW pill) + description,
-    // then a divider and a footer row with the time and "View all".
+    final radius = BorderRadius.circular(context.r(16));
     return Material(
-      color: Colors.transparent,
+      color: AppColors.surface,
+      borderRadius: radius,
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => AnnouncementsScreen()),
           );
         },
-        borderRadius: BorderRadius.circular(context.r(16)),
+        borderRadius: radius,
         child: Container(
-          padding: EdgeInsets.all(context.w(14)),
+          padding: EdgeInsets.all(context.w(16)),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.tint(AppColors.tint(Color(0xFFF0FDF4))), AppColors.tint(Colors.white)],
-            ),
-            borderRadius: BorderRadius.circular(context.r(16)),
-            border: Border.all(color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+            borderRadius: radius,
+            border: Border.all(color: AppColors.surfaceSubtle),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1039,77 +1018,54 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: context.r(44),
-                    height: context.r(44),
-                    decoration: BoxDecoration(
-                      color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
-                      borderRadius: BorderRadius.circular(context.r(12)),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.campaign_rounded,
-                        color: const Color(0xFF16A34A),
-                        size: context.r(22),
+                  if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(context.r(10)),
+                      child: Image.network(
+                        imageUrl,
+                        width: context.r(52),
+                        height: context.r(52),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
-                  ),
-                  SizedBox(width: context.w(12)),
+                    SizedBox(width: context.w(12)),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: context.sp(13.5),
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.ink,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ),
-                            if (isNew) ...[
-                              SizedBox(width: context.w(8)),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: context.w(8),
-                                  vertical: context.h(2),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF16A34A),
-                                  borderRadius: BorderRadius.circular(context.r(20)),
-                                ),
-                                child: Text(
-                                  'NEW',
-                                  style: TextStyle(
-                                    fontSize: context.sp(10),
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          categoryLabel,
+                          style: TextStyle(
+                            fontSize: context.sp(10.5),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                            color: categoryColor,
+                          ),
                         ),
                         SizedBox(height: context.h(4)),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: context.sp(14),
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
+                            height: 1.3,
+                          ),
+                        ),
+                        SizedBox(height: context.h(5)),
                         Text(
                           desc,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: context.sp(11.5),
-                            fontWeight: FontWeight.w400,
+                            fontSize: context.sp(12.5),
                             color: AppColors.inkMuted,
-                            height: 1.4,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -1118,22 +1074,16 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 ],
               ),
               SizedBox(height: context.h(12)),
-              Divider(height: 1, color: AppColors.tint(const Color(0xFFDCFCE7))),
-              SizedBox(height: context.h(10)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Icon(Icons.access_time_rounded, size: context.r(13), color: AppColors.inkFaint),
-                      SizedBox(width: context.w(5)),
+                      SizedBox(width: context.w(6)),
                       Text(
                         timeStr,
-                        style: TextStyle(
-                          fontSize: context.sp(11),
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.inkFaint,
-                        ),
+                        style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w500, color: AppColors.inkFaint),
                       ),
                     ],
                   ),
@@ -1141,14 +1091,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                     children: [
                       Text(
                         'View all',
-                        style: TextStyle(
-                          fontSize: context.sp(12),
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF16A34A),
-                        ),
+                        style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600, color: AppColors.brand500),
                       ),
-                      SizedBox(width: context.w(2)),
-                      Icon(Icons.chevron_right_rounded, size: context.r(16), color: Color(0xFF16A34A)),
+                      Icon(Icons.chevron_right_rounded, size: context.r(18), color: AppColors.brand500),
                     ],
                   ),
                 ],

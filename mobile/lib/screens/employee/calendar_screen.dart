@@ -8,6 +8,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -233,7 +234,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar & Holidays')),
+      appBar: HrmsAppBar(title: const Text('Calendar & Holidays')),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

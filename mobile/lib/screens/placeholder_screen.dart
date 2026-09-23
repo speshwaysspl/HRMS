@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
+import '../widgets/hrms_app_bar.dart';
 
 /// Used for modules that exist on the web app but haven't been ported to
 /// mobile yet, so every role has a fully navigable shell from day one.
@@ -20,7 +21,7 @@ class PlaceholderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final box = context.r(72);
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: HrmsAppBar(title: Text(title)),
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(context.w(32)),

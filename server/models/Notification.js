@@ -14,6 +14,8 @@ const notificationSchema = new mongoose.Schema({
       'task_assigned',
       'task_updated',
       'task_submitted',
+      'payslip_generated',
+      'birthday',
       'holiday',
       'meeting',
       'event',

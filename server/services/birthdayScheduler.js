@@ -5,16 +5,16 @@ import { processBirthdayWishes } from './birthdayService.js';
  * Initialize the birthday wishes scheduler
  * Runs daily at 9:00 AM to check for birthdays and send wishes
  */
-export const initializeBirthdayScheduler = () => {
+export const initializeBirthdayScheduler = (io) => {
   console.log('🎂 Initializing birthday wishes scheduler...');
-  
+
   // Schedule to run daily at 12:00 AM IST (6:30 PM UTC)
   // Cron format: '0 0 * * *' = At 12:00 AM every day
   const task = cron.schedule('0 0 * * *', async () => {
     console.log('🎂 Running daily birthday wishes check at 12:00 AM IST...');
-    
+
     try {
-      const result = await processBirthdayWishes();
+      const result = await processBirthdayWishes(io);
       
       if (result.success) {
         console.log(`✅ Scheduled birthday wishes completed: ${result.message}`);

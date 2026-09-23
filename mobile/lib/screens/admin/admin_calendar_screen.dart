@@ -6,6 +6,9 @@ import '../../services/event_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 const _eventTypes = ['holiday', 'meeting', 'event'];
 
@@ -20,7 +23,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
   final _service = EventService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -44,7 +47,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -100,26 +103,31 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar & Events')),
+      appBar: HrmsAppBar(title: const Text('Calendar & Events')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.event_busy, message: 'No events scheduled.'),
+                          EmptyStateView(icon: Icons.event_busy, title: 'No events scheduled', subtitle: 'Holidays and events you add will show up here.'),
                         ])
-                      : ListView(
+                      : ListView.builder(
                           padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((e) {
+                          itemCount: _items.length,
+                          itemBuilder: (context, idx) {
+                            final e = _items[idx];
                             String date = '';
                             try {
                               date = DateFormat('EEE, d MMM yyyy').format(DateTime.parse(e['date'].toString()));
@@ -155,7 +163,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                 ),
     );

@@ -6,6 +6,11 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-09-19 — Announcements redesign (Flutter + web synced) + splash/login logo fix
+- **Flutter**: `announcements_screen.dart` and Home `_buildRecentAnnouncementCard` — removed NEW badge and all green/gradient; flat themed surface card with brand-blue icon chip and link, follows light/dark automatically. `flutter analyze` clean.
+- **Web (parity)**: `Summary.jsx` Recent Announcements card and `EmployeeAnnouncements.jsx` list rebuilt identically with `brand`/`surface`/`ink` tokens; responsive (`md:` padding/type on the list). ESLint 0 errors.
+- **Flutter only**: `splash_screen.dart` / `login_screen.dart` logo tile pinned to white in dark mode — web has no dark mode, so nothing to mirror.
+
 ## 2026-09-19 06:51 IST — Web: employee page redesigns (Profile, Leaves, Notifications) + Salary Preview button
 - **Salary cards/table now show the payslip month (e.g. "September 2026") instead of a date** (`View.jsx`; desktop column renamed "Payslip Month"). Flutter `payslips_screen.dart` already showed `monthName year` on the card and preview sheet — parity confirmed, no Flutter change. A transient `FiEye is not defined` console error was a stale HMR snapshot between two edits; the import is in place and the build is clean.
 - **Salary (`components/salary/View.jsx`)**: added a **Preview** button (opens the existing payslip detail modal) next to **Download** on each mobile card — matching the Flutter `payslips_screen.dart` Preview/Download pair — and a preview (eye) icon beside the download icon in the desktop table. Flutter already had both; no Flutter change needed.

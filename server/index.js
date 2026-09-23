@@ -165,7 +165,7 @@ app.use("/api/account", accountDeletionRouter);
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  initializeBirthdayScheduler();
+  initializeBirthdayScheduler(io);
   initializeHolidayReminderScheduler(io);
   initializeDocumentExpiryScheduler(io);
   initializeWeeklyReportScheduler();

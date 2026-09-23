@@ -9,6 +9,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 const _statuses = ['Assigned', 'In Progress', 'Review', 'Completed'];
 
@@ -99,7 +100,7 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tasks')),
+      appBar: HrmsAppBar(title: const Text('Tasks')),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

@@ -98,7 +98,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             icon: <FaUserTie />,
             links: [
               { to: "/employee-dashboard/team/teams", label: "My Teams", icon: <FaUsers /> },
-              { to: "/employee-dashboard/team/approvals", label: "Attendance Approvals", icon: <FaCalendarAlt /> },
               { to: "/employee-dashboard/team/reviews", label: "Team Reviews", icon: <FaClipboardList /> },
             ],
           },

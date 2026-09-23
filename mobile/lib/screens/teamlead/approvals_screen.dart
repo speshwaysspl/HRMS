@@ -4,6 +4,9 @@ import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
+import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
@@ -16,7 +19,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
   final _service = RegularizationService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   final Set<String> _processing = {};
 
   @override
@@ -40,7 +43,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -63,17 +66,20 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Attendance Approvals')),
+      appBar: HrmsAppBar(title: const Text('Attendance Approvals')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView(
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+            )
           : _error != null
-              ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+              ? buildErrorState(_error!, _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(children: const [
                           SizedBox(height: 100),
-                          CenteredMessage(icon: Icons.fact_check_outlined, message: 'No pending correction requests.'),
+                          EmptyStateView(icon: Icons.fact_check_outlined, title: 'No pending correction requests.'),
                         ])
                       : ListView(
                           padding: EdgeInsets.all(context.w(16)),

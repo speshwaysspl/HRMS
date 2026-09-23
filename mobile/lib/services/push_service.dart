@@ -5,10 +5,19 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:provider/provider.dart';
 
 import '../firebase_options.dart';
+import '../screens/admin/admin_feedback_screen.dart';
+import '../screens/admin/admin_leaves_screen.dart';
+import '../screens/employee/announcements_screen.dart';
+import '../screens/employee/feedback_screen.dart';
+import '../screens/employee/leaves_screen.dart';
 import '../screens/employee/notifications_screen.dart';
+import '../screens/employee/payslips_screen.dart';
+import '../screens/employee/tasks_screen.dart';
 import 'app_settings.dart';
+import 'auth_provider.dart';
 import 'notification_service.dart';
 
 /// Channel id must match the one the backend puts in every FCM data payload
@@ -54,8 +63,16 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
             'HRMS alerts — leave, tasks, announcements, documents',
         importance: Importance.high,
         priority: Priority.high,
+        // Importance.high + priority.high = pop-up/heads-up while the phone
+        // is unlocked; visibility.public = full title/body on the lock
+        // screen too (default is `private`, which redacts the content).
+        visibility: NotificationVisibility.public,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     ),
     payload: jsonEncode(data),
   );
@@ -177,11 +194,43 @@ class PushService {
     }
   }
 
+  /// Routes a tapped notification to the screen it's about, mirroring the
+  /// in-list tap logic in notifications_screen.dart's _onTapItem so a push
+  /// and a list tap land on the same place. Falls back to the notifications
+  /// list when the type can't be matched or the app isn't ready yet.
   void _handleOpen(Map<String, dynamic> data) {
     final nav = appNavigatorKey.currentState;
-    if (nav == null) return;
-    nav.push(
-      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-    );
+    final context = appNavigatorKey.currentContext;
+    if (nav == null || context == null) return;
+
+    final type = (data['type'] ?? '').toString().toLowerCase();
+    final title = (data['title'] ?? '').toString().toLowerCase();
+    final isAdmin = context.read<AuthProvider>().user?.isAdmin == true;
+
+    Widget target;
+    if (type.contains('leave') || title.contains('leave')) {
+      target = isAdmin ? const AdminLeavesScreen() : const LeavesScreen();
+    } else if (type.contains('announcement') ||
+        type.contains('holiday') ||
+        type.contains('event') ||
+        type.contains('meeting') ||
+        type.contains('birthday') ||
+        title.contains('announcement') ||
+        title.contains('greeting') ||
+        title.contains('festival') ||
+        title.contains('birthday')) {
+      target = const AnnouncementsScreen();
+    } else if (type.contains('task') || title.contains('task')) {
+      target = const TasksScreen();
+    } else if (type.contains('feedback') || title.contains('feedback')) {
+      target = isAdmin ? const AdminFeedbackScreen() : const FeedbackScreen();
+    } else if (type.contains('payslip') || title.contains('payslip') || title.contains('salary')) {
+      final code = context.read<AuthProvider>().user?.id ?? '';
+      target = PayslipsScreen(employeeCode: code);
+    } else {
+      target = const NotificationsScreen();
+    }
+
+    nav.push(MaterialPageRoute(builder: (_) => target));
   }
 }

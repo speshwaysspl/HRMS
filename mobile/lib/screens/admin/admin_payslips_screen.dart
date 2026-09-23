@@ -6,8 +6,11 @@ import '../../services/api_client.dart';
 import '../../services/payslip_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import 'admin_payslip_generator_screen.dart';
+import '../../widgets/hrms_app_bar.dart';
 
 class AdminPayslipsScreen extends StatefulWidget {
   const AdminPayslipsScreen({super.key});
@@ -20,7 +23,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
   final _service = PayslipService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
   String _query = '';
   final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
@@ -45,7 +48,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = extractErrorMessage(e);
+        _error = e;
         _loading = false;
       });
     }
@@ -73,8 +76,9 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
     return Scaffold(
-      appBar: AppBar(title: const Text('Payslips')),
+      appBar: HrmsAppBar(title: const Text('Payslips')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final made = await Navigator.of(context).push<bool>(
@@ -99,19 +103,26 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView(
+ padding: EdgeInsets.all(context.w(16)),
+ children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+ )
                 : _error != null
-                    ? CenteredMessage(icon: Icons.cloud_off, message: _error!)
+                    ? buildErrorState(_error!, _load)
                     : RefreshIndicator(
                         onRefresh: _load,
-                        child: _visible.isEmpty
-                            ? ListView(children: const [
-                                SizedBox(height: 100),
-                                CenteredMessage(icon: Icons.receipt_long_outlined, message: 'No payslips generated yet.'),
+                        child: visible.isEmpty
+                            ? ListView(children: [
+                                const SizedBox(height: 100),
+                                EmptyStateView(
+                                    icon: Icons.receipt_long_outlined,
+                                    title: _all.isEmpty ? 'No payslips generated yet' : 'No matching payslips',
+                                    subtitle: _all.isEmpty ? 'Tap Generate to create one.' : 'Try a different search.'),
                               ])
-                            : ListView(
+                            : ListView.builder(
                                 padding: EdgeInsets.all(context.w(16)),
-                                children: _visible.map(_row).toList(),
+                                itemCount: visible.length,
+                                itemBuilder: (_, i) => _row(visible[i]),
                               ),
                       ),
           ),
