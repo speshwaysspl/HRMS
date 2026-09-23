@@ -173,5 +173,10 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 - Added `mobile/lib/services/data_cache.dart` — a generic `DataCache<T>` + `DataCaches` registry (attendanceToday, attendanceMonthly, leavesList, tasksList, payslipHistory, employeeProfile, events), wired into `main.dart` via `MultiProvider`. Rolled stale-while-revalidate caching into Attendance, Attendance Report, Leaves, Tasks, Payslips, Profile, and Calendar screens so revisiting them from Home doesn't re-show a full loading spinner every time.
 
 ## 2026-09-17 (earlier) IST — Attendance/payroll/mobile parity work
-See `MEMORY.md` §4/§5 for the settled engineering decisions from this phase (attendance status thresholds, lazy `isPastDate()` half-day resolution, mandatory Work Mode, removed self-service Attendance Corrections, payslip LOP-via-earnings-proration approach, mobile location tracking + break tracking, mobile login/home/payslips redesigns).
-
+## 2026-09-23 IST — Mobile: notification audit & release APK build
+- Performed end-to-end audit of notification architecture across Flutter mobile app (`PushService`, `NotificationService`, `AppEvents.unreadNotifications`, `NotificationsScreen`) and Node backend (`fcmService.js`, `notificationController.js`, models, and controllers). Verified that all Firebase project references match `new-hrms-d8eaf` (project `800902168034`) across `google-services.json`, `firebase_options.dart`, `GoogleService-Info.plist`, and `service-account.json`.
+- Fixed a minor flow control lint in `mobile/lib/screens/login_screen.dart` (enclosed if block in braces for `curly_braces_in_flow_control_structures`).
+- Ran `flutter test` (17 unit tests passed).
+- Built release-signed APK (`mobile/build/app/outputs/flutter-apk/app-release.apk`, 60.4 MB) for local testing.
+- Bumped app version to `1.0.2+3` in `mobile/pubspec.yaml` (versionCode 3, versionName 1.0.2) to satisfy Google Play requirement after versionCode 2 had already been used.
+- Built release-signed Android App Bundle via `flutter build appbundle --release` -> generated `mobile/build/app/outputs/bundle/release/app-release.aab` (59.0 MB) ready for upload to Google Play Console.

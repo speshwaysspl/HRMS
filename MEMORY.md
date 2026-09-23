@@ -72,7 +72,7 @@ MERN stack + Flutter mobile app.
 - **Mobile splash + login logo tile is hard-coded `Colors.white`** (not `AppColors.surface`) so it doesn't turn navy in dark mode. Web has no theme switching, so no web counterpart needed.
 
 ## 12. Last Updated
-2026-09-19 (announcement redesign, web+Flutter synced)
+2026-09-23 (notification audit complete, release APK built)
 
 
 ## Update 2026-09-19
@@ -85,4 +85,4 @@ MERN stack + Flutter mobile app.
 - Team Lead: "Attendance Approvals" removed from mobile drawer + web sidebar/route (ApprovalsScreen kept, admin home uses it). Mobile teamlead/team_detail_screen.dart mirrors web TeamDetail.jsx: Task List (assign/update w/ work-proof/view/View Doc/date filter/PDF via `pdf` pkg) + Team Members (stats, tap -> tasks + documents). Web delete-task handler is unused in UI, so not ported.
 - Login (mobile): always light theme (forces AppColors.isDark=false, restores on dispose). Terms/Privacy URLs: https://speshwayhrms.com/terms-and-conditions and /privacy-policy (mobile + web routes). Account deletion URL: https://speshwayhrms.com/delete-account. Web has no dark mode.
 - Async screen states: every data screen (employee, admin, teamlead) uses SkeletonListTile/SkeletonCard while loading, buildErrorState(err, retry) for no-internet/error, EmptyStateView for empty, RefreshIndicator; store the caught exception as `Object? _error`. Don't use CircularProgressIndicator for page loads. Long lists use ListView.builder.
-- Play Store: release AAB built (1.0.0+1, com.speshway.hrms, targetSdk 36, upload keystore via android/key.properties, gitignored). Bump build number after every upload. Reviewer login seeded by server/verificationSeed.js (verification@gmail.com). server/.env MONGODB_URL points at cluster0.x3dpbvo (live backend env must match).
+- Play Store: release AAB built (1.0.2+3, com.speshway.hrms, targetSdk 36, upload keystore via android/key.properties, gitignored). Bump build number after every upload. Reviewer login seeded by server/verificationSeed.js (verification@gmail.com). server/.env MONGODB_URL points at cluster0.x3dpbvo (live backend env must match).

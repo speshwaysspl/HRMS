@@ -263,8 +263,9 @@ class _LoginScreenState extends State<LoginScreen> {
               prefixIcon: Icon(Icons.mail_outline, size: 20),
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'Please enter your email';
+              }
               if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim())) {
                 return 'Please enter a valid email address';
               }
