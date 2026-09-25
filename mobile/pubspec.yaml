@@ -1,7 +1,7 @@
 name: speshway
 description: "Speshway HRMS — mobile companion to the Speshway HR platform."
 publish_to: "none"
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ^3.11.4
