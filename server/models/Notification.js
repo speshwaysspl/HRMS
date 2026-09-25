@@ -26,6 +26,11 @@ const notificationSchema = new mongoose.Schema({
       'document_rejected',
       'document_expiring',
       'verification_completed',
+      'checkout_reminder',
+      'regularization_request',
+      'regularization_approved',
+      'regularization_rejected',
+      'birthday_wish',
       'other'
     ]
   },

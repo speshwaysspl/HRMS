@@ -25,6 +25,8 @@ import {
   FiLock,
 } from "react-icons/fi";
 
+const OFFLINE_PUNCH_KEY = "offlinePunch";
+
 const QUOTES = [
   "Small steps of consistency lead to big results.",
   "Discipline is the bridge between goals and accomplishment.",
@@ -386,6 +388,46 @@ const Attendance = () => {
     fetchToday();
   }, []);
 
+  // Send a punch saved while offline as soon as the connection is back.
+  useEffect(() => {
+    const flush = async () => {
+      const raw = localStorage.getItem(OFFLINE_PUNCH_KEY);
+      const token = sessionStorage.getItem("token");
+      if (!raw || !token || !navigator.onLine) return;
+      try {
+        await axios.post(`${API_BASE}/api/attendance`, JSON.parse(raw), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        localStorage.removeItem(OFFLINE_PUNCH_KEY);
+        setBanner({ type: "success", message: "Offline punch synced." });
+      } catch (err) {
+        if (!err.response) return; // still offline — try again later
+        // Rejected (e.g. queued on an earlier day): drop it and tell the user.
+        localStorage.removeItem(OFFLINE_PUNCH_KEY);
+        setBanner({ type: "error", message: err.response.data?.message || "Offline punch couldn't be saved." });
+      }
+    };
+    flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, []);
+
+  // A page left open past midnight (IST) still holds yesterday's check-in and
+  // would offer "Check Out". Reload once the day rolls over so it starts fresh
+  // on "Check In" — yesterday's open check-in is closed as Half-Day server-side.
+  useEffect(() => {
+    const loadedOn = toISTDateString(new Date());
+    const checkRollover = () => {
+      if (toISTDateString(new Date()) !== loadedOn) window.location.reload();
+    };
+    const id = setInterval(checkRollover, 60000);
+    document.addEventListener("visibilitychange", checkRollover);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", checkRollover);
+    };
+  }, []);
+
   // Re-render every minute while checked in (not yet out) so "Working
   // Hours" keeps counting up live.
   useEffect(() => {
@@ -474,9 +516,25 @@ const Attendance = () => {
           : null,
       };
 
-      await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        // No response = no connection. Keep the punch (with the time it was
+        // made) and send it once the browser is back online.
+        if (err.response) throw err;
+        localStorage.setItem(
+          OFFLINE_PUNCH_KEY,
+          JSON.stringify({ ...attendanceData, offlineDate: today, offlineTime: now })
+        );
+        setTodayRecord(attendanceData);
+        setBanner({
+          type: "success",
+          message: `You're offline — ${type === "inTime" ? "check-in" : "check-out"} saved at ${now} and will sync automatically.`,
+        });
+        return;
+      }
 
       setTodayRecord(attendanceData);
       setBanner({

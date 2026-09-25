@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_lock_gate.dart';
 import 'login_screen.dart';
 import 'shell/app_shell.dart';
 
@@ -29,7 +30,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
-    _controller.forward();
     _bootstrap();
   }
 
@@ -47,10 +47,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _bootstrap() async {
     final auth = context.read<AuthProvider>();
+    // Splash first: play the animation while the session restores…
+    _controller.forward();
     await Future.wait([
       auth.restoreSession(),
-      Future.delayed(const Duration(milliseconds: 2000)),
+      Future.delayed(const Duration(milliseconds: 1600)),
     ]);
+    if (!mounted) return;
+    // …then, for a signed-in user with App Lock on, ask for device auth
+    // before revealing Home.
+    if (auth.status == AuthStatus.authenticated) {
+      await AppLockGate.unlockAfterSplash();
+    }
     if (!mounted) return;
     final destination = auth.status == AuthStatus.authenticated ? const AppShell() : const LoginScreen();
     Navigator.of(context).pushReplacement(

@@ -27,7 +27,10 @@ class AppSettings {
     try {
       _prefs = await SharedPreferences.getInstance();
       appLockEnabled.value = _prefs?.getBool(_kAppLock) ?? false;
-      notificationsEnabled.value = _prefs?.getBool(_kNotifications) ?? true;
+      // Push is always on now (the Settings toggle was removed); drop any
+      // old "off" choice so this device registers its token again.
+      notificationsEnabled.value = true;
+      await _prefs?.remove(_kNotifications);
       themeMode.value = switch (_prefs?.getString(_kThemeMode)) {
         'light' => ThemeMode.light,
         'dark' => ThemeMode.dark,

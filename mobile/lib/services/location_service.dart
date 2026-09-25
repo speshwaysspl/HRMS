@@ -1,3 +1,4 @@
+import 'package:location/location.dart' as loc;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geocoding/geocoding.dart';
@@ -43,18 +44,38 @@ class LocationService {
     }
   }
 
+  /// On app reopen: asks the location permission if it isn't granted, and if
+  /// the phone's location (GPS) is off, shows the system's own "Turn on
+  /// location?" prompt in-app (no trip to Settings). Never throws; no-op on web.
+  static Future<void> promptIfUnavailable() async {
+    if (kIsWeb) return;
+    try {
+      var p = await Geolocator.checkPermission();
+      if (p == LocationPermission.denied) p = await Geolocator.requestPermission();
+      if (p != LocationPermission.whileInUse && p != LocationPermission.always) return;
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        await loc.Location().requestService();
+      }
+    } catch (_) {}
+  }
+
   static Future<void> openSettings() async {
     await Geolocator.openAppSettings();
     await Geolocator.openLocationSettings();
   }
 
   Future<void> _ensurePermission() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      throw LocationPermissionDenied('Location services are turned off. Please enable them and try again.');
-    }
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+    }
+    // Phone location (GPS) off: show Android's in-app "Turn on location?"
+    // prompt instead of sending the user to Settings.
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      final turnedOn = await loc.Location().requestService();
+      if (!turnedOn) {
+        throw LocationPermissionDenied("Your phone's location is off. Tap 'Turn on location' to continue.");
+      }
     }
     if (permission == LocationPermission.denied) {
       throw LocationPermissionDenied('Location access denied. Please allow location permission.');

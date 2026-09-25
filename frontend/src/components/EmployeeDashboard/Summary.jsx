@@ -26,6 +26,7 @@ import { fetchAnnouncements } from '../../utils/AnnouncementHelper'
 import useMeta from '../../utils/useMeta'
 import NotificationBell from '../notifications/NotificationBell'
 import ErrorState from '../common/ErrorState'
+import CelebrationsAndHoliday from './CelebrationsAndHoliday'
 
 // Same category labels/colors as the Announcements list page — kept in
 // sync intentionally (see AnnouncementDetails.jsx / EmployeeAnnouncements.jsx).
@@ -479,6 +480,10 @@ const Summary = () => {
             <FaChevronRight size={12} />
           </button>
         </div>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <CelebrationsAndHoliday />
       </motion.div>
 
       {/* Recent Announcements — new, matches the mobile app's home-screen card */}

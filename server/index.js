@@ -25,6 +25,7 @@ import birthdayRouter from "./routes/birthdayRoutes.js";
 import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import { initializeHolidayReminderScheduler } from "./services/holidayScheduler.js";
 import { initializeDocumentExpiryScheduler } from "./services/documentExpiryScheduler.js";
+import { initializeCheckoutReminderScheduler } from "./services/checkoutReminderScheduler.js";
 import cron from "node-cron";
 import Leave from "./models/Leave.js";
 import Feedback from "./models/Feedback.js";
@@ -168,6 +169,7 @@ httpServer.listen(PORT, () => {
   initializeBirthdayScheduler(io);
   initializeHolidayReminderScheduler(io);
   initializeDocumentExpiryScheduler(io);
+  initializeCheckoutReminderScheduler(io);
   initializeWeeklyReportScheduler();
   cron.schedule("59 23 * * *", async () => {
     try {

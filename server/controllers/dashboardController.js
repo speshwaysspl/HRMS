@@ -4,6 +4,7 @@ import Leave from "../models/Leave.js";
 import Attendance from "../models/Attendance.js";
 import Salary from "../models/Salary.js";
 import Notification from "../models/Notification.js";
+import { toISTDateString } from "../utils/dateTimeUtils.js";
 
 const getSummary = async (req, res) => {
     try {
@@ -81,7 +82,7 @@ const getEmployeeDashboardStats = async (req, res) => {
             return res.status(404).json({ success: false, error: "Employee profile not found" });
         }
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = toISTDateString(new Date());
         const currentMonth = new Date().toISOString().substring(0, 7);
 
         // 1. Today's Attendance Status

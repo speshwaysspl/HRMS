@@ -13,14 +13,26 @@ class StatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: StatusColors.bg(label),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: StatusColors.fg(label).withValues(alpha: 0.35)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: StatusColors.fg(label),
-          fontSize: context.sp(12),
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: context.r(6),
+            height: context.r(6),
+            decoration: BoxDecoration(color: StatusColors.fg(label), shape: BoxShape.circle),
+          ),
+          SizedBox(width: context.w(6)),
+          Text(
+            label,
+            style: TextStyle(
+              color: StatusColors.fg(label),
+              fontSize: context.sp(12),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

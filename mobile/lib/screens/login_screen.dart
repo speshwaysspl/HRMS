@@ -8,6 +8,7 @@ import '../services/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 import '../widgets/state_views.dart';
+import 'forgot_password_screen.dart';
 import 'shell/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -221,10 +222,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'The complete HR platform for growing teams',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+        // Always one line: scales down on narrow phones instead of wrapping.
+        const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'The complete HR platform for growing teams',
+            maxLines: 1,
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
         ),
       ],
     );
@@ -298,7 +303,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 (v == null || v.isEmpty) ? 'Please enter your password' : null,
             onFieldSubmitted: (_) => _submit(),
           ),
-          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ForgotPasswordScreen(initialEmail: _emailController.text.trim())),
+              ),
+              child: const Text('Forgot password?'),
+            ),
+          ),
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

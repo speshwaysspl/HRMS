@@ -72,7 +72,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   IconData _iconFor(String type) {
     switch (type) {
       case 'holiday':
-        return Icons.beach_access;
+        return Icons.celebration_outlined;
       case 'meeting':
         return Icons.groups_outlined;
       default:
@@ -83,7 +83,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Color _colorFor(String type) {
     switch (type) {
       case 'holiday':
-        return const Color(0xFFDC2626);
+        return AppColors.brand600;
       case 'meeting':
         return const Color(0xFF2563EB);
       default:
@@ -188,7 +188,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       shape: BoxShape.circle,
                       color: isSelected
                           ? AppColors.brand600
-                          : (hasHoliday ? AppColors.dangerBg : (isToday ? AppColors.accent50 : null)),
+                          : (hasHoliday ? AppColors.brand50 : (isToday ? AppColors.accent50 : null)),
                       border: isToday && !isSelected ? Border.all(color: AppColors.accent500, width: 1.4) : null,
                     ),
                     alignment: Alignment.center,
@@ -202,7 +202,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
                                 ? Colors.white
-                                : (hasHoliday ? AppColors.danger : AppColors.ink),
+                                : (hasHoliday ? AppColors.brand600 : AppColors.ink),
                           ),
                         ),
                         if (dotColor != null)
@@ -298,9 +298,97 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                           );
                         }),
+                      ..._upcomingHolidays(),
                     ],
                   ),
                 ),
     );
+  }
+
+  /// Next few holidays (from today), tap to jump to that day. Mirrors the
+  /// web EmployeeCalendar "Upcoming holidays" list.
+  String _daysAway(DateTime d) {
+    final now = DateTime.now();
+    final n = DateTime(d.year, d.month, d.day).difference(DateTime(now.year, now.month, now.day)).inDays;
+    return n == 0 ? 'Today' : (n == 1 ? 'Tomorrow' : 'In $n days');
+  }
+
+  List<Widget> _upcomingHolidays() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final upcoming = _events.where((e) {
+      final d = _dateOf(e);
+      return e['type'] == 'holiday' && d != null && !DateTime(d.year, d.month, d.day).isBefore(today);
+    }).take(6).toList();
+    if (upcoming.isEmpty) return const [];
+    return [
+      SizedBox(height: context.h(22)),
+      Text('Upcoming holidays',
+          style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+      SizedBox(height: context.h(10)),
+      for (final e in upcoming)
+        Builder(builder: (context) {
+          final d = _dateOf(e)!;
+          return Padding(
+            padding: EdgeInsets.only(bottom: context.h(8)),
+            child: Material(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                onTap: () => setState(() {
+                  _visibleMonth = DateTime(d.year, d.month, 1);
+                  _selectedDay = DateTime(d.year, d.month, d.day);
+                }),
+                child: Container(
+                  padding: EdgeInsets.all(context.w(12)),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    border: Border.all(color: AppColors.surfaceSubtle),
+                  ),
+                  child: Row(
+                    children: [
+                      // Month/day tile — same as the home "Next Holiday" card.
+                      Container(
+                        width: context.r(48),
+                        height: context.r(48),
+                        decoration: BoxDecoration(color: AppColors.brand50, borderRadius: BorderRadius.circular(context.r(10))),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(DateFormat('MMM').format(d).toUpperCase(),
+                                style: TextStyle(fontSize: context.sp(10), fontWeight: FontWeight.w700, color: AppColors.brand600, height: 1.1)),
+                            Text('${d.day}',
+                                style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w800, color: AppColors.ink, height: 1.1)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: context.w(12)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e['title']?.toString() ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                            SizedBox(height: context.h(2)),
+                            Text(DateFormat('EEEE').format(d),
+                                style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12.5))),
+                          ],
+                        ),
+                      ),
+                      Text(_daysAway(d),
+                          style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w600, color: AppColors.inkMuted)),
+                      SizedBox(width: context.w(2)),
+                      Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+    ];
   }
 }

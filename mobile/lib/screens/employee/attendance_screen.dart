@@ -6,6 +6,7 @@ import '../../main.dart';
 import '../../services/api_client.dart';
 import '../../services/app_events.dart';
 import '../../services/attendance_service.dart';
+import '../../services/offline_punch_service.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
@@ -34,6 +35,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
   final _locationService = LocationService();
   LocationFix? _location;
+  DateTime? _locationAt; // when _location was captured
   bool _locationLoading = false;
   String? _locationError;
   bool _breakBusy = false;
@@ -43,7 +45,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final cache = AppCaches.of(context).attendanceToday;
-    if (cache.hasData) {
+    // Ignore a cached record from a previous day (app kept open past
+    // midnight) so a new day always starts on Check In, never Check Out.
+    if (cache.hasData && cache.data?['date']?.toString() == _todayDate) {
       // Show last-known data immediately, then quietly refresh.
       _today = cache.data;
       _workMode = _today?['workMode']?.toString();
@@ -53,6 +57,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       _load();
     }
     _fetchLocation();
+    _syncOffline();
   }
 
   @override
@@ -65,7 +70,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
   // automatically — no manual retry needed.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _location == null && !_locationLoading) {
+    if (state != AppLifecycleState.resumed) return;
+    // The day may have rolled over while backgrounded — refresh today's record.
+    _syncOffline().then((_) => _load(silent: true));
+    if (_location == null && !_locationLoading) {
       _fetchLocation();
     }
   }
@@ -81,6 +89,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       if (!mounted) return;
       setState(() {
         _location = quick;
+        _locationAt = DateTime.now();
         _locationLoading = false;
       });
       final area = await _locationService.resolveArea(quick.latitude, quick.longitude);
@@ -125,6 +134,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     } finally {
       if (mounted) setState(() => _breakBusy = false);
     }
+  }
+
+  /// No connection: keep the punch with the time it was made, show it on
+  /// screen right away, and let [_syncOffline] send it later.
+  Future<void> _saveOffline(Map<String, dynamic> payload, String time, Map<String, dynamic> localUpdate) async {
+    await OfflinePunchService.save(payload, date: _todayDate, time: time);
+    if (!mounted) return;
+    setState(() => _today = {...?_today, 'date': _todayDate, ...localUpdate});
+    _toast("You're offline — saved at $time. It will sync automatically.");
+  }
+
+  Future<void> _syncOffline() async {
+    final result = await OfflinePunchService.flush();
+    if (result == null || !mounted) return;
+    if (result == 'synced') {
+      _toast('Offline punch synced.');
+      AppEvents.bumpAttendance();
+    } else {
+      _toast(result, isError: true);
+    }
+    await _load(silent: true);
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -172,18 +202,40 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
   String get _todayDate => DateFormat('yyyy-MM-dd').format(DateTime.now());
   String get _nowTime => DateFormat('HH:mm').format(DateTime.now());
 
-  /// Fresh fix right before check-in/out so we never submit a stale, missing
-  /// or "Unknown Area" location captured minutes earlier. Falls back to the
-  /// last known fix if a new one can't be obtained; returns null only when
-  /// there is no usable location at all.
-  Future<LocationFix?> _freshLocation() async {
+  /// Location for a punch, without making the user wait. Reuses the fix
+  /// already on screen when it's under 2 minutes old (the common case);
+  /// otherwise takes a quick fix and gives the address lookup at most 3 s.
+  /// Returns null only when there is no usable location at all.
+  Future<LocationFix?> _punchLocation() async {
+    final cur = _location;
+    final fresh = _locationAt != null && DateTime.now().difference(_locationAt!) < const Duration(minutes: 2);
+    if (cur != null && fresh && !cur.area.startsWith('Locating')) return cur;
     try {
-      final fix = await _locationService.getCurrentFix();
-      if (mounted) setState(() => _location = fix);
+      final quick = await _locationService.getQuickFix();
+      final area = await _locationService
+          .resolveArea(quick.latitude, quick.longitude)
+          .timeout(const Duration(seconds: 3), onTimeout: () => cur?.area ?? 'Unknown Area');
+      final fix = LocationFix(latitude: quick.latitude, longitude: quick.longitude, area: area);
+      if (mounted) {
+        setState(() {
+          _location = fix;
+          _locationAt = DateTime.now();
+        });
+      }
       return fix;
     } catch (_) {
-      return _location;
+      return cur;
     }
+  }
+
+  /// Show the saved record straight from the POST response — no extra GET.
+  void _applySaved(Map<String, dynamic> saved) {
+    if (!mounted) return;
+    AppCaches.of(context).attendanceToday.set(saved);
+    setState(() {
+      _today = saved;
+      _workMode = saved['workMode']?.toString() ?? _workMode;
+    });
   }
 
   Future<void> _checkIn() async {
@@ -193,15 +245,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     }
     setState(() => _submitting = true);
     try {
-      final loc = await _freshLocation();
+      final loc = await _punchLocation();
       if (loc == null) {
         _toast('Could not get your location. Turn on location/GPS, allow permission and try again.', isError: true);
         return;
       }
-      await _service.checkIn(date: _todayDate, inTime: _nowTime, workMode: _workMode!, location: loc);
-      await _load();
+      final time = _nowTime;
+      final Map<String, dynamic> saved;
+      try {
+        saved = await _service.checkIn(date: _todayDate, inTime: time, workMode: _workMode!, location: loc);
+      } catch (e) {
+        if (!OfflinePunchService.isOfflineError(e)) rethrow;
+        await _saveOffline({
+          'inTime': time,
+          'workMode': _workMode,
+          'breaks': [],
+          'inLocation': loc.toJson(),
+        }, time, {'inTime': time, 'workMode': _workMode, 'outTime': ''});
+        return;
+      }
+      _applySaved(saved);
       AppEvents.bumpAttendance();
-      if (mounted) _toast('Checked in at $_nowTime');
+      if (mounted) _toast('Checked in at ${saved['inTime'] ?? time}');
     } catch (e) {
       if (mounted) _toast(extractErrorMessage(e), isError: true);
     } finally {
@@ -218,13 +283,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
         final open = b['end'] == null || b['end'] == '';
         return open ? {...b, 'end': _nowTime} : b;
       }).toList();
-      final loc = await _freshLocation();
-      await _service.checkOut(date: _todayDate, outTime: _nowTime, breaks: closedBreaks, location: loc);
-      await _load();
+      final loc = await _punchLocation();
+      final time = _nowTime;
+      final Map<String, dynamic> saved;
+      try {
+        saved = await _service.checkOut(date: _todayDate, outTime: time, breaks: closedBreaks, location: loc);
+      } catch (e) {
+        if (!OfflinePunchService.isOfflineError(e)) rethrow;
+        await _saveOffline({
+          'outTime': time,
+          'breaks': closedBreaks,
+          if (loc != null) 'outLocation': loc.toJson(),
+        }, time, {'outTime': time, 'breaks': closedBreaks});
+        return;
+      }
+      _applySaved(saved);
       AppEvents.bumpAttendance();
-      if (mounted) _toast('Checked out at $_nowTime');
+      if (mounted) _toast('Checked out at ${saved['outTime'] ?? time}');
     } catch (e) {
       if (mounted) _toast(extractErrorMessage(e), isError: true);
+      // e.g. "A new day has started" — reload so the screen shows Check In.
+      await _load(silent: true);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -386,21 +465,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: context.h(10)),
                     decoration: BoxDecoration(
-                      color: selected ? AppColors.accent50 : AppColors.surface,
+                      // Solid fill when selected so it reads in both themes;
+                      // unselected keeps a visible outline on the card.
+                      color: selected ? AppColors.accent500 : AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: selected ? AppColors.accent500 : AppColors.surfaceSubtle, width: selected ? 1.5 : 1),
+                      border: Border.all(color: selected ? AppColors.accent500 : AppColors.inkFaint, width: 1.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(mode['icon'] as IconData, size: context.sp(16), color: selected ? AppColors.accent500 : AppColors.inkMuted),
+                        Icon(selected ? Icons.check_circle_rounded : mode['icon'] as IconData, size: context.sp(16), color: selected ? Colors.white : AppColors.ink),
                         SizedBox(width: context.w(6)),
                         Text(
                           mode['label'] as String,
                           style: TextStyle(
                             fontSize: context.sp(13),
-                            fontWeight: FontWeight.w600,
-                            color: selected ? AppColors.accent500 : AppColors.inkMuted,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            color: selected ? Colors.white : AppColors.ink,
                           ),
                         ),
                       ],
@@ -564,11 +645,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   style: TextStyle(color: AppColors.danger, fontSize: context.sp(12.5)),
                 ),
                 SizedBox(height: context.h(8)),
-                OutlinedButton.icon(
-                  onPressed: LocationService.openSettings,
-                  icon: const Icon(Icons.settings_outlined, size: 16),
-                  label: const Text('Open Settings'),
-                ),
+                // Only a permanently denied permission needs app settings;
+                // otherwise retry, which shows the in-app prompts.
+                if ((_locationError ?? '').contains('permanently denied'))
+                  OutlinedButton.icon(
+                    onPressed: LocationService.openSettings,
+                    icon: const Icon(Icons.settings_outlined, size: 16),
+                    label: const Text('Allow in app settings'),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: _locationLoading ? null : _fetchLocation,
+                    icon: const Icon(Icons.my_location_rounded, size: 16),
+                    label: const Text('Turn on location'),
+                  ),
               ],
             ),
         ],

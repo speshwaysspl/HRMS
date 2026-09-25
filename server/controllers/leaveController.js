@@ -182,4 +182,26 @@ const getEmployeeLeavesByDate = async (req, res) => {
     }
 }
 
-export {addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, deleteLeave, getEmployeeLeavesByDate}
+// Employee withdraws their own leave request — only while it's still Pending.
+const cancelMyLeave = async (req, res) => {
+    try {
+        const employee = await Employee.findOne({ userId: req.user._id })
+        if (!employee) {
+            return res.status(404).json({ success: false, error: "Employee profile not found" })
+        }
+        const leave = await Leave.findOne({ _id: req.params.id, employeeId: employee._id })
+        if (!leave) {
+            return res.status(404).json({ success: false, error: "Leave not found" })
+        }
+        if (leave.status !== "Pending") {
+            return res.status(409).json({ success: false, error: `Only pending leaves can be cancelled (this one is ${leave.status})` })
+        }
+        await leave.deleteOne()
+        return res.status(200).json({ success: true })
+    } catch (error) {
+        console.log(error.message)
+        return res.status(500).json({ success: false, error: "Failed to cancel leave" })
+    }
+}
+
+export {cancelMyLeave, addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, deleteLeave, getEmployeeLeavesByDate}

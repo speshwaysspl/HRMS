@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'services/app_settings.dart';
 import 'services/auth_provider.dart';
 import 'services/data_cache.dart';
+import 'services/location_service.dart';
 import 'services/push_service.dart';
 import 'services/quick_actions_service.dart';
+import 'services/update_service.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/responsive.dart';
@@ -49,6 +51,8 @@ class _SpeshwayAppState extends State<SpeshwayApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     AppSettings.themeMode.addListener(rebuildEntireApp);
+    // Once the first screen is up, ask Play Store whether a newer version exists.
+    WidgetsBinding.instance.addPostFrameCallback((_) => UpdateService.checkForUpdate());
   }
 
   @override
@@ -56,6 +60,32 @@ class _SpeshwayAppState extends State<SpeshwayApp> with WidgetsBindingObserver {
     AppSettings.themeMode.removeListener(rebuildEntireApp);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  bool _wasBackgrounded = false;
+  bool _checkingLocation = false;
+
+  // Reopening the app (from background) re-checks location: asks for the
+  // permission if missing, or shows the system prompt to turn location on. Only
+  // after a real background trip, so the permission dialog's own
+  // inactive→resumed doesn't re-trigger it.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _wasBackgrounded = true;
+    } else if (state == AppLifecycleState.resumed && _wasBackgrounded) {
+      _wasBackgrounded = false;
+      _checkLocation();
+    }
+  }
+
+  Future<void> _checkLocation() async {
+    if (_checkingLocation) return;
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || ctx.read<AuthProvider>().user == null) return;
+    _checkingLocation = true;
+    await LocationService.promptIfUnavailable();
+    _checkingLocation = false;
   }
 
   // Phone switched between light/dark while "System" is selected.

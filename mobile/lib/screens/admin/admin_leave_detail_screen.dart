@@ -61,7 +61,9 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
       await _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -95,79 +97,127 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
         body: _loading
             ? ListView(
                 padding: EdgeInsets.all(context.w(16)),
-                children: const [SkeletonCard(height: 70), SkeletonCard(height: 200)],
+                children: const [
+                  SkeletonCard(height: 70),
+                  SkeletonCard(height: 200),
+                ],
               )
             : _error != null
-                ? buildErrorState(_error!, _load)
-                : ListView(
-                    padding: EdgeInsets.all(context.w(16)),
-                    children: [
+            ? buildErrorState(_error!, _load)
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(context.w(16)),
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            user['name']?.toString() ?? 'Employee',
+                            style: TextStyle(
+                              fontSize: context.sp(18),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        StatusPill(label: status),
+                      ],
+                    ),
+                    SizedBox(height: context.h(20)),
+                    _row('Type', l['leaveType']?.toString() ?? '—'),
+                    _row('Department', dept['dep_name']?.toString() ?? '—'),
+                    _row('From', _fmt(l['startDate'])),
+                    _row('To', _fmt(l['endDate'])),
+                    _row('Applied', _fmt(l['appliedAt'] ?? l['createdAt'])),
+                    SizedBox(height: context.h(12)),
+                    Text(
+                      'Reason',
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(13),
+                      ),
+                    ),
+                    SizedBox(height: context.h(4)),
+                    Text(
+                      l['reason']?.toString() ?? '—',
+                      style: TextStyle(
+                        color: AppColors.ink,
+                        fontSize: context.sp(14),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (status == 'Pending') ...[
+                      SizedBox(height: context.h(24)),
                       Row(
                         children: [
                           Expanded(
-                            child: Text(user['name']?.toString() ?? 'Employee',
-                                style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                            child: OutlinedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _decide('Rejected'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.danger,
+                                side: const BorderSide(color: AppColors.danger),
+                              ),
+                              child: const Text('Reject'),
+                            ),
                           ),
-                          StatusPill(label: status),
+                          SizedBox(width: context.w(10)),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _decide('Approved'),
+                              child: _busy
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('Approve'),
+                            ),
+                          ),
                         ],
                       ),
-                      SizedBox(height: context.h(20)),
-                      _row('Type', l['leaveType']?.toString() ?? '—'),
-                      _row('Department', dept['dep_name']?.toString() ?? '—'),
-                      _row('From', _fmt(l['startDate'])),
-                      _row('To', _fmt(l['endDate'])),
-                      _row('Applied', _fmt(l['appliedAt'] ?? l['createdAt'])),
-                      SizedBox(height: context.h(12)),
-                      Text('Reason', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
-                      SizedBox(height: context.h(4)),
-                      Text(l['reason']?.toString() ?? '—',
-                          style: TextStyle(color: AppColors.ink, fontSize: context.sp(14), height: 1.4)),
-                      if (status == 'Pending') ...[
-                        SizedBox(height: context.h(24)),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _busy ? null : () => _decide('Rejected'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.danger,
-                                  side: const BorderSide(color: AppColors.danger),
-                                ),
-                                child: const Text('Reject'),
-                              ),
-                            ),
-                            SizedBox(width: context.w(10)),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: _busy ? null : () => _decide('Approved'),
-                                child: _busy
-                                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                    : const Text('Approve'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
+                ),
+              ),
       ),
     );
   }
 
   Widget _row(String label, String value) => Padding(
-        padding: EdgeInsets.symmetric(vertical: context.h(7)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: context.w(110),
-              child: Text(label, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+    padding: EdgeInsets.symmetric(vertical: context.h(7)),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: context.w(110),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(13),
             ),
-            Expanded(
-              child: Text(value,
-                  style: TextStyle(color: AppColors.ink, fontSize: context.sp(13), fontWeight: FontWeight.w500)),
-            ),
-          ],
+          ),
         ),
-      );
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: AppColors.ink,
+              fontSize: context.sp(13),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

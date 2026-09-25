@@ -12,7 +12,10 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../admin/admin_feedback_screen.dart';
 import '../admin/admin_leaves_screen.dart';
+import '../teamlead/approvals_screen.dart';
 import 'announcements_screen.dart';
+import 'attendance_report_screen.dart';
+import 'attendance_screen.dart';
 import 'feedback_screen.dart';
 import 'leaves_screen.dart';
 import 'payslips_screen.dart';
@@ -165,6 +168,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final type = (n['type'] ?? '').toString().toLowerCase();
     final title = (n['title'] ?? '').toString().toLowerCase();
     final message = (n['message'] ?? '').toString().toLowerCase();
+
+    // Attendance: check-out reminder, correction requests / decisions.
+    // A birthday wish is a personal note — the list item itself is enough.
+    if (type == 'birthday_wish') return;
+    final attendanceTarget = type == 'checkout_reminder'
+        ? const AttendanceScreen()
+        : type == 'regularization_request'
+            ? const ApprovalsScreen()
+            : type.startsWith('regularization_')
+                ? const AttendanceReportScreen()
+                : null;
+    if (attendanceTarget != null) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => attendanceTarget));
+      return;
+    }
 
     // 1. Leave notifications
     if (type.contains('leave') || title.contains('leave') || message.contains('leave')) {

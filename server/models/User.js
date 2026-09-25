@@ -10,6 +10,11 @@ const userSchema = new mongoose.Schema({
    
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  // Forgot-password OTP (hashed; see authController sendResetOtp/verifyResetOtp)
+  resetOtpHash: String,
+  resetOtpExpire: Date,
+  resetOtpSentAt: Date,
+  resetOtpAttempts: { type: Number, default: 0 },
   fcmTokens: { type: [String], default: [] }
 })
  

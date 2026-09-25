@@ -208,11 +208,12 @@ class StatusColors {
       case 'sent':
       case 'half day':
       case 'half-day':
-        return const Color(0xFFB45309);
+        // Dark amber/red disappear on the dark tinted pill — use light shades there.
+        return AppColors.isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309);
       case 'rejected':
       case 'inactive':
       case 'absent':
-        return const Color(0xFFB91C1C);
+        return AppColors.isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C);
       default:
         return AppColors.inkMuted;
     }

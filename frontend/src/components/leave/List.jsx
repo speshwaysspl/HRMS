@@ -50,6 +50,30 @@ const List = () => {
     }
   };
 
+  const [cancelling, setCancelling] = useState(null);
+  const isEmployee = Array.isArray(user.role) ? user.role.includes("employee") : user.role === "employee";
+
+  // Withdraw an own leave request while it's still Pending.
+  const cancelLeave = async (leave) => {
+    if (!window.confirm(`Cancel your ${leave.leaveType} request (${formatDMY(leave.startDate)} – ${formatDMY(leave.endDate)})?`)) return;
+    setCancelling(leave._id);
+    try {
+      const headers = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+      try {
+        await axios.delete(`${API_BASE}/api/leave/mine/${leave._id}`, { headers });
+      } catch (err) {
+        // Older server without /mine/:id — use the original delete route.
+        if (err.response?.status !== 404) throw err;
+        await axios.delete(`${API_BASE}/api/leave/${leave._id}`, { headers });
+      }
+      setLeaves((prev) => prev.filter((l) => l._id !== leave._id));
+    } catch (error) {
+      alert(error.response?.data?.error || "Couldn't cancel this leave.");
+    } finally {
+      setCancelling(null);
+    }
+  };
+
   useEffect(() => {
     fetchLeaves();
   }, []);
@@ -60,10 +84,24 @@ const List = () => {
 
   const statusBadgeClass = (status) =>
     status === "Approved"
-      ? "bg-accent-100 text-accent-700"
+      ? "bg-accent-100 text-accent-700 border-accent-700/30"
       : status === "Rejected"
-      ? "bg-red-100 text-red-700"
-      : "bg-amber-100 text-amber-700";
+      ? "bg-red-100 text-red-700 border-red-700/30"
+      : "bg-amber-100 text-amber-700 border-amber-700/30";
+
+  // Status pill: dot + label, same shape as the mobile StatusPill.
+  const StatusBadge = ({ status }) => (
+    <span className={`inline-flex items-center gap-1.5 flex-shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${statusBadgeClass(status)}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
+      {status}
+    </span>
+  );
+
+  // Inclusive day count, e.g. "2 days".
+  const dayCount = (leave) => {
+    const n = Math.round((new Date(leave.endDate) - new Date(leave.startDate)) / 86400000) + 1;
+    return Number.isFinite(n) && n >= 1 ? (n === 1 ? "1 day" : `${n} days`) : null;
+  };
 
   return (
     <motion.div
@@ -106,27 +144,30 @@ const List = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-extrabold text-ink text-[15px] leading-snug">{leave.leaveType}</span>
-                      <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusBadgeClass(leave.status)}`}>
-                        {leave.status}
-                      </span>
-                    </div>
-                    <div className="text-[13px] text-ink-muted mt-1">
-                      {formatDMY(leave.startDate)} – {formatDMY(leave.endDate)}
-                    </div>
-                    {leave.reason && (
-                      <div className="text-xs text-ink-faint mt-1 line-clamp-2">{leave.reason}</div>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-ink text-[15px] leading-snug truncate">{leave.leaveType}</span>
+                  <StatusBadge status={leave.status} />
                 </div>
+                <div className="flex items-center gap-1.5 mt-2.5 text-[13px] text-ink">
+                  <svg className="w-4 h-4 text-ink-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="flex-1">{formatDMY(leave.startDate)} – {formatDMY(leave.endDate)}</span>
+                  {dayCount(leave) && <span className="text-xs font-semibold text-ink-muted">{dayCount(leave)}</span>}
+                </div>
+                {leave.reason && (
+                  <div className="mt-2.5 pt-2.5 border-t border-surface-subtle text-[13px] text-ink-muted line-clamp-2">{leave.reason}</div>
+                )}
+                {isEmployee && leave.status === "Pending" && (
+                  <button
+                    type="button"
+                    onClick={() => cancelLeave(leave)}
+                    disabled={cancelling === leave._id}
+                    className="mt-3 w-full min-h-[44px] rounded-lg border border-red-200 text-red-700 text-sm font-semibold hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {cancelling === leave._id ? "Cancelling…" : "Cancel request"}
+                  </button>
+                )}
               </motion.div>
             ))}
           </div>
@@ -148,6 +189,7 @@ const List = () => {
                     <th className="px-6 py-3">To</th>
                     <th className="px-6 py-3">Description</th>
                     <th className="px-6 py-3">Status</th>
+                    {isEmployee && <th className="px-6 py-3"><span className="sr-only">Actions</span></th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-subtle">
@@ -168,10 +210,22 @@ const List = () => {
                       </td>
                       <td className="px-6 py-3">{leave.reason}</td>
                       <td className="px-6 py-3">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(leave.status)}`}>
-                          {leave.status}
-                        </span>
+                        <StatusBadge status={leave.status} />
                       </td>
+                      {isEmployee && (
+                        <td className="px-6 py-3 text-right">
+                          {leave.status === "Pending" && (
+                            <button
+                              type="button"
+                              onClick={() => cancelLeave(leave)}
+                              disabled={cancelling === leave._id}
+                              className="px-3 py-1.5 rounded-lg text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-60"
+                            >
+                              {cancelling === leave._id ? "Cancelling…" : "Cancel"}
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

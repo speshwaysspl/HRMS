@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../main.dart';
 import '../../services/api_client.dart';
@@ -20,7 +21,11 @@ class PayslipsScreen extends StatefulWidget {
 
 class _PayslipsScreenState extends State<PayslipsScreen> {
   final _service = PayslipService();
-  final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+  final _inr = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 0,
+  );
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _error;
@@ -79,11 +84,41 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
         final msg = result.type == ResultType.noAppToOpen
             ? 'No PDF viewer found. Install a PDF app (e.g. Google Drive PDF Viewer) to open payslips.'
             : 'Could not open the payslip: ${result.message}';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _downloadingId = null);
+    }
+  }
+
+  /// Downloads the PDF, then opens the phone's share sheet (WhatsApp,
+  /// Gmail, Drive…). Mirrors the web payslip "Share" button.
+  Future<void> _share(Map<String, dynamic> p) async {
+    final id = p['_id'].toString();
+    setState(() => _downloadingId = id);
+    try {
+      final file = await _service.downloadPayslip(id);
+      final label = '${p['monthName']} ${p['year']}';
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: 'Payslip — $label',
+          text: 'Payslip for $label',
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _downloadingId = null);
@@ -100,6 +135,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
         formatCurrency: _inr,
         downloading: _downloadingId == p['_id'].toString(),
         onDownload: () => _download(p),
+        onShare: () => _share(p),
       ),
     );
   }
@@ -121,28 +157,38 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.receipt_long_outlined, title: 'No payslips generated yet', subtitle: 'Your monthly payslips will appear here once issued.'),
-                        ])
-                      : ListView.separated(
-                          padding: EdgeInsets.all(context.w(16)),
-                          itemCount: _items.length,
-                          separatorBuilder: (_, _) => SizedBox(height: context.h(10)),
-                          itemBuilder: (_, i) => _PayslipCard(
-                            payslip: _items[i],
-                            index: i,
-                            formatCurrency: _inr,
-                            downloading: _downloadingId == _items[i]['_id'].toString(),
-                            onTap: () => _openPreview(_items[i]),
-                            onDownload: () => _download(_items[i]),
-                          ),
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.receipt_long_outlined,
+                          title: 'No payslips generated yet',
+                          subtitle:
+                              'Your monthly payslips will appear here once issued.',
                         ),
-                ),
+                      ],
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.all(context.w(16)),
+                      itemCount: _items.length,
+                      separatorBuilder: (_, _) =>
+                          SizedBox(height: context.h(10)),
+                      itemBuilder: (_, i) => _PayslipCard(
+                        payslip: _items[i],
+                        index: i,
+                        formatCurrency: _inr,
+                        downloading:
+                            _downloadingId == _items[i]['_id'].toString(),
+                        onTap: () => _openPreview(_items[i]),
+                        onDownload: () => _download(_items[i]),
+                        onShare: () => _share(_items[i]),
+                      ),
+                    ),
+            ),
     );
   }
 }
@@ -154,6 +200,7 @@ class _PayslipCard extends StatelessWidget {
   final bool downloading;
   final VoidCallback onTap;
   final VoidCallback onDownload;
+  final VoidCallback onShare;
 
   const _PayslipCard({
     required this.payslip,
@@ -162,6 +209,7 @@ class _PayslipCard extends StatelessWidget {
     required this.downloading,
     required this.onTap,
     required this.onDownload,
+    required this.onShare,
   });
 
   @override
@@ -170,23 +218,46 @@ class _PayslipCard extends StatelessWidget {
     final basic = num.tryParse(payslip['basicSalary']?.toString() ?? '') ?? 0;
     final ded = num.tryParse(payslip['deductions']?.toString() ?? '') ?? 0;
     final emp = payslip['employeeId'];
-    final empId = emp is Map ? (emp['employeeId']?.toString() ?? 'N/A') : (emp?.toString() ?? 'N/A');
+    final empId = emp is Map
+        ? (emp['employeeId']?.toString() ?? 'N/A')
+        : (emp?.toString() ?? 'N/A');
     Widget stat(String label, String value) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: context.sp(12), color: AppColors.inkFaint)),
-              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w500, color: AppColors.ink)),
-            ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: context.sp(12),
+              color: AppColors.inkFaint,
+            ),
           ),
-        );
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: context.sp(12),
+              fontWeight: FontWeight.w500,
+              color: AppColors.ink,
+            ),
+          ),
+        ],
+      ),
+    );
     return Container(
       padding: EdgeInsets.all(context.w(16)),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(context.r(12)),
         border: Border.all(color: AppColors.surfaceSubtle),
-        boxShadow: [BoxShadow(color: AppColors.brand500.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brand500.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,33 +268,77 @@ class _PayslipCard extends StatelessWidget {
                 width: context.r(24),
                 height: context.r(24),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
-                child: Text('${index + 1}', style: TextStyle(fontSize: context.sp(11), fontWeight: FontWeight.w600, color: AppColors.brand700)),
+                decoration: BoxDecoration(
+                  color: AppColors.brand50,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    fontSize: context.sp(11),
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.brand700,
+                  ),
+                ),
               ),
               SizedBox(width: context.w(8)),
               Expanded(
-                child: Text('${payslip['monthName']} ${payslip['year']}',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: context.sp(14), color: AppColors.ink)),
+                child: Text(
+                  '${payslip['monthName']} ${payslip['year']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: context.sp(14),
+                    color: AppColors.ink,
+                  ),
+                ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(2)),
-                decoration: BoxDecoration(color: AppColors.accent50, borderRadius: BorderRadius.circular(context.r(20))),
-                child: Text('Payslip', style: TextStyle(color: AppColors.accent700, fontWeight: FontWeight.w700, fontSize: context.sp(11))),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.w(8),
+                  vertical: context.h(2),
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent50,
+                  borderRadius: BorderRadius.circular(context.r(20)),
+                ),
+                child: Text(
+                  'Payslip',
+                  style: TextStyle(
+                    color: AppColors.accent700,
+                    fontWeight: FontWeight.w700,
+                    fontSize: context.sp(11),
+                  ),
+                ),
               ),
             ],
           ),
           SizedBox(height: context.h(12)),
-          Text('NET SALARY', style: TextStyle(fontSize: context.sp(11), color: AppColors.inkFaint, letterSpacing: 0.5)),
-          Text(formatCurrency.format(net),
-              style: TextStyle(fontSize: context.sp(24), fontWeight: FontWeight.w700, color: AppColors.accent700)),
+          Text(
+            'NET SALARY',
+            style: TextStyle(
+              fontSize: context.sp(11),
+              color: AppColors.inkFaint,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            formatCurrency.format(net),
+            style: TextStyle(
+              fontSize: context.sp(24),
+              fontWeight: FontWeight.w700,
+              color: AppColors.accent700,
+            ),
+          ),
           SizedBox(height: context.h(12)),
           Container(height: 1, color: AppColors.surfaceSubtle),
           SizedBox(height: context.h(12)),
-          Row(children: [
-            stat('Emp ID', empId),
-            stat('Salary', formatCurrency.format(basic)),
-            stat('Deduction', formatCurrency.format(ded)),
-          ]),
+          Row(
+            children: [
+              stat('Emp ID', empId),
+              stat('Salary', formatCurrency.format(basic)),
+              stat('Deduction', formatCurrency.format(ded)),
+            ],
+          ),
           SizedBox(height: context.h(16)),
           Row(
             children: [
@@ -234,10 +349,18 @@ class _PayslipCard extends StatelessWidget {
                     foregroundColor: AppColors.ink,
                     side: BorderSide(color: AppColors.surfaceSubtle),
                     padding: EdgeInsets.symmetric(vertical: context.h(11)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(12))),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(context.r(12)),
+                    ),
                   ),
                   icon: Icon(Icons.visibility_outlined, size: context.r(16)),
-                  label: Text('Preview', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700)),
+                  label: Text(
+                    'Preview',
+                    style: TextStyle(
+                      fontSize: context.sp(14),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(width: context.w(8)),
@@ -249,13 +372,35 @@ class _PayslipCard extends StatelessWidget {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(vertical: context.h(11)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.r(12))),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(context.r(12)),
+                    ),
                   ),
                   icon: downloading
-                      ? SizedBox(width: context.r(15), height: context.r(15), child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? SizedBox(
+                          width: context.r(15),
+                          height: context.r(15),
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Icon(Icons.download_rounded, size: context.r(16)),
-                  label: Text(downloading ? 'Opening…' : 'Download', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700)),
+                  label: Text(
+                    downloading ? 'Opening…' : 'Download',
+                    style: TextStyle(
+                      fontSize: context.sp(14),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
+              ),
+              SizedBox(width: context.w(8)),
+              IconButton.outlined(
+                onPressed: downloading ? null : onShare,
+                tooltip: 'Share payslip',
+                icon: Icon(Icons.share_outlined, size: context.r(18)),
+                style: IconButton.styleFrom(minimumSize: const Size(46, 46)),
               ),
             ],
           ),
@@ -270,12 +415,14 @@ class _PayslipPreviewSheet extends StatelessWidget {
   final NumberFormat formatCurrency;
   final bool downloading;
   final VoidCallback onDownload;
+  final VoidCallback onShare;
 
   const _PayslipPreviewSheet({
     required this.payslip,
     required this.formatCurrency,
     required this.downloading,
     required this.onDownload,
+    required this.onShare,
   });
 
   num _n(dynamic v) => num.tryParse(v?.toString() ?? '') ?? 0;
@@ -323,13 +470,22 @@ class _PayslipPreviewSheet extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(context.w(20), context.h(14), context.w(20), 0),
+              padding: EdgeInsets.fromLTRB(
+                context.w(20),
+                context.h(14),
+                context.w(20),
+                0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '${payslip['monthName']} ${payslip['year']}',
-                    style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w800, color: AppColors.ink),
+                    style: TextStyle(
+                      fontSize: context.sp(18),
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -341,7 +497,12 @@ class _PayslipPreviewSheet extends StatelessWidget {
             Expanded(
               child: ListView(
                 controller: scrollController,
-                padding: EdgeInsets.fromLTRB(context.w(20), 0, context.w(20), context.h(20)),
+                padding: EdgeInsets.fromLTRB(
+                  context.w(20),
+                  0,
+                  context.w(20),
+                  context.h(20),
+                ),
                 children: [
                   Container(
                     padding: EdgeInsets.all(context.w(16)),
@@ -352,11 +513,22 @@ class _PayslipPreviewSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Net Pay', style: TextStyle(color: AppColors.accent700, fontSize: context.sp(12), fontWeight: FontWeight.w600)),
+                        Text(
+                          'Net Pay',
+                          style: TextStyle(
+                            color: AppColors.accent700,
+                            fontSize: context.sp(12),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         SizedBox(height: context.h(4)),
                         Text(
                           formatCurrency.format(netPay),
-                          style: TextStyle(color: AppColors.ink, fontSize: context.sp(26), fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            color: AppColors.ink,
+                            fontSize: context.sp(26),
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -364,30 +536,67 @@ class _PayslipPreviewSheet extends StatelessWidget {
                   SizedBox(height: context.h(20)),
                   _sectionLabel(context, 'Earnings'),
                   ...earnings.entries.map((e) => _row(context, e.key, e.value)),
-                  _totalRow(context, 'Total Earnings', totalEarnings, color: AppColors.accent700),
+                  _totalRow(
+                    context,
+                    'Total Earnings',
+                    totalEarnings,
+                    color: AppColors.accent700,
+                  ),
                   SizedBox(height: context.h(18)),
                   _sectionLabel(context, 'Deductions'),
-                  ...deductions.entries.map((e) => _row(context, e.key, e.value)),
-                  _totalRow(context, 'Total Deductions', totalDeductions, color: AppColors.danger),
+                  ...deductions.entries.map(
+                    (e) => _row(context, e.key, e.value),
+                  ),
+                  _totalRow(
+                    context,
+                    'Total Deductions',
+                    totalDeductions,
+                    color: AppColors.danger,
+                  ),
                 ],
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(context.w(20), 0, context.w(20), context.h(20)),
-              child: SizedBox(
-                width: double.infinity,
-                height: context.h(50),
-                child: ElevatedButton.icon(
-                  onPressed: downloading ? null : onDownload,
-                  icon: downloading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.download_rounded, size: 18),
-                  label: Text(downloading ? 'Opening…' : 'Download PDF'),
-                ),
+              padding: EdgeInsets.fromLTRB(
+                context.w(20),
+                0,
+                context.w(20),
+                context.h(20),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: context.h(50),
+                      child: OutlinedButton.icon(
+                        onPressed: downloading ? null : onShare,
+                        icon: const Icon(Icons.share_outlined, size: 18),
+                        label: const Text('Share'),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: context.w(10)),
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: context.h(50),
+                      child: ElevatedButton.icon(
+                        onPressed: downloading ? null : onDownload,
+                        icon: downloading
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.download_rounded, size: 18),
+                        label: Text(downloading ? 'Opening…' : 'Download PDF'),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -397,32 +606,65 @@ class _PayslipPreviewSheet extends StatelessWidget {
   }
 
   Widget _sectionLabel(BuildContext context, String text) => Padding(
-        padding: EdgeInsets.only(bottom: context.h(8)),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted),
-        ),
-      );
+    padding: EdgeInsets.only(bottom: context.h(8)),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: context.sp(13),
+        fontWeight: FontWeight.w700,
+        color: AppColors.inkMuted,
+      ),
+    ),
+  );
 
   Widget _row(BuildContext context, String label, num value) => Padding(
-        padding: EdgeInsets.symmetric(vertical: context.h(5)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontSize: context.sp(13.5), color: AppColors.ink)),
-            Text(formatCurrency.format(value), style: TextStyle(fontSize: context.sp(13.5), color: AppColors.ink, fontWeight: FontWeight.w600)),
-          ],
+    padding: EdgeInsets.symmetric(vertical: context.h(5)),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: context.sp(13.5), color: AppColors.ink),
         ),
-      );
+        Text(
+          formatCurrency.format(value),
+          style: TextStyle(
+            fontSize: context.sp(13.5),
+            color: AppColors.ink,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
 
-  Widget _totalRow(BuildContext context, String label, num value, {required Color color}) => Padding(
-        padding: EdgeInsets.only(top: context.h(8)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
-            Text(formatCurrency.format(value), style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w800, color: color)),
-          ],
+  Widget _totalRow(
+    BuildContext context,
+    String label,
+    num value, {
+    required Color color,
+  }) => Padding(
+    padding: EdgeInsets.only(top: context.h(8)),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: context.sp(14),
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
         ),
-      );
+        Text(
+          formatCurrency.format(value),
+          style: TextStyle(
+            fontSize: context.sp(14),
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -22,6 +22,16 @@ export const getNotificationTarget = (notification, user) => {
   const isEmployee = userRoles.includes("employee");
 
   switch (notification.type) {
+    case "checkout_reminder":
+      return isEmployee ? "/employee-dashboard/attendance" : null;
+
+    case "regularization_request":
+      return isAdmin ? "/admin-dashboard/attendance-approvals" : null;
+
+    case "regularization_approved":
+    case "regularization_rejected":
+      return isEmployee ? "/employee-dashboard/attendance-report" : null;
+
     case "leave_request":
     case "leave_approved":
     case "leave_rejected":

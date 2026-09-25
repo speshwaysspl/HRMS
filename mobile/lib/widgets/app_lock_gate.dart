@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../services/app_lock_service.dart';
@@ -10,6 +12,16 @@ import '../theme/app_theme.dart';
 class AppLockGate extends StatefulWidget {
   final Widget child;
   const AppLockGate({super.key, required this.child});
+
+  /// True while the lock screen covers the app. The splash waits on this so
+  /// its animation plays after unlock instead of hidden behind the lock.
+  static final ValueNotifier<bool> isLocked = ValueNotifier<bool>(false);
+
+  static _AppLockGateState? _state;
+
+  /// Called by the splash after its animation: if App Lock is on, shows the
+  /// lock screen + device auth and completes once the user has unlocked.
+  static Future<void> unlockAfterSplash() => _state?._lockAndWait() ?? Future.value();
 
   @override
   State<AppLockGate> createState() => _AppLockGateState();
@@ -24,17 +36,33 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _locked = AppSettings.appLockEnabled.value;
+    // Cold start: don't lock yet — the splash plays first and then calls
+    // [AppLockGate.unlockAfterSplash], which shows the lock + device auth.
+    _locked = false;
+    AppLockGate.isLocked.value = false;
+    AppLockGate._state = this;
     AppSettings.appLockEnabled.addListener(_onSettingChanged);
-    if (_locked) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _promptUnlock());
+  }
+
+  /// Locks and prompts for device auth; completes once unlocked.
+  Future<void> _lockAndWait() async {
+    if (!AppSettings.appLockEnabled.value) return;
+    setState(() => _locked = true);
+    final done = Completer<void>();
+    void listener() {
+      if (!AppLockGate.isLocked.value && !done.isCompleted) done.complete();
     }
+    AppLockGate.isLocked.addListener(listener);
+    _promptUnlock();
+    await done.future;
+    AppLockGate.isLocked.removeListener(listener);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     AppSettings.appLockEnabled.removeListener(_onSettingChanged);
+    if (AppLockGate._state == this) AppLockGate._state = null;
     super.dispose();
   }
 
@@ -75,6 +103,12 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     _authInProgress = false;
     if (!mounted) return;
     if (ok) setState(() => _locked = false);
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    AppLockGate.isLocked.value = _locked;
   }
 
   @override

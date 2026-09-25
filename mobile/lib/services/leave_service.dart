@@ -55,4 +55,16 @@ class LeaveService {
       'reason': reason,
     });
   }
+
+  /// Withdraws the employee's own leave request (only while Pending).
+  Future<void> cancelLeave(String leaveId) async {
+    try {
+      await _dio.delete('/api/leave/mine/$leaveId');
+    } on DioException catch (e) {
+      // Older server without /mine/:id — fall back to the original delete
+      // route. The UI only offers this on the user's own Pending leaves.
+      if (e.response?.statusCode != 404) rethrow;
+      await _dio.delete('/api/leave/$leaveId');
+    }
+  }
 }

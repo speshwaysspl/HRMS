@@ -26,6 +26,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
   final _service = LeaveService();
   List<Map<String, dynamic>> _leaves = [];
   List<Map<String, dynamic>> _leaveTypes = [];
+  String? _cancelling;
   bool _loading = true;
   String? _error;
   Object? _lastError;
@@ -74,6 +75,37 @@ class _LeavesScreenState extends State<LeavesScreen> {
         _lastError = e;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _cancel(Map<String, dynamic> l) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel leave request?'),
+        content: Text('${l['leaveType']} · ${_dateRange(l)}'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Cancel request'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final id = l['_id'].toString();
+    setState(() => _cancelling = id);
+    try {
+      await _service.cancelLeave(id);
+      AppEvents.bumpLeave();
+      await _load(silent: true);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Leave request cancelled')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _cancelling = null);
     }
   }
 
@@ -136,31 +168,66 @@ class _LeavesScreenState extends State<LeavesScreen> {
                         )
                       else
                         ..._leaves.map((l) => SimpleCard(
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: context.r(36),
-                                    height: context.r(36),
-                                    decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
-                                    child: Icon(Icons.calendar_month_rounded, size: context.r(18), color: AppColors.brand600),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text('${l['leaveType']}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: context.sp(15), color: AppColors.ink)),
+                                      ),
+                                      SizedBox(width: context.w(8)),
+                                      StatusPill(label: (l['status'] ?? 'Pending').toString()),
+                                    ],
                                   ),
-                                  SizedBox(width: context.w(10)),
-                                  Expanded(
-                                    child: Column(
+                                  SizedBox(height: context.h(10)),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.calendar_month_outlined, size: context.r(15), color: AppColors.inkMuted),
+                                      SizedBox(width: context.w(6)),
+                                      Expanded(
+                                        child: Text(_dateRange(l), style: TextStyle(color: AppColors.ink, fontSize: context.sp(13))),
+                                      ),
+                                      if (_days(l) != null)
+                                        Text(_days(l)!, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12), fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                  if ((l['reason'] ?? '').toString().trim().isNotEmpty) ...[
+                                    SizedBox(height: context.h(10)),
+                                    Divider(height: 1, color: AppColors.surfaceSubtle),
+                                    SizedBox(height: context.h(10)),
+                                    Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('${l['leaveType']}', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                        SizedBox(height: context.h(4)),
-                                        Text(_dateRange(l), style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                        if ((l['reason'] ?? '').toString().isNotEmpty) ...[
-                                          SizedBox(height: context.h(4)),
-                                          Text('${l['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12)), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                        ],
+                                        Icon(Icons.notes_rounded, size: context.r(15), color: AppColors.inkMuted),
+                                        SizedBox(width: context.w(6)),
+                                        Expanded(
+                                          child: Text('${l['reason']}',
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+                                        ),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(width: context.w(8)),
-                                  StatusPill(label: (l['status'] ?? 'Pending').toString()),
+                                  ],
+                                  if ((l['status'] ?? 'Pending').toString() == 'Pending') ...[
+                                    SizedBox(height: context.h(12)),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton(
+                                        onPressed: _cancelling == l['_id'].toString() ? null : () => _cancel(l),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.danger,
+                                          side: BorderSide(color: AppColors.danger.withValues(alpha: 0.4)),
+                                          minimumSize: const Size.fromHeight(44),
+                                        ),
+                                        child: Text(_cancelling == l['_id'].toString() ? 'Cancelling…' : 'Cancel request'),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             )),
@@ -168,6 +235,20 @@ class _LeavesScreenState extends State<LeavesScreen> {
                   ),
                 ),
     );
+  }
+
+  /// "1 day" / "2 days" (inclusive), or null if dates can't be parsed.
+  String? _days(Map<String, dynamic> l) {
+    try {
+      final n = DateTime.parse(l['endDate'].toString())
+              .difference(DateTime.parse(l['startDate'].toString()))
+              .inDays +
+          1;
+      if (n < 1) return null;
+      return n == 1 ? '1 day' : '$n days';
+    } catch (_) {
+      return null;
+    }
   }
 
   String _dateRange(Map<String, dynamic> l) {

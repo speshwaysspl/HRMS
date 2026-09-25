@@ -33,6 +33,9 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   quick_actions: ^1.1.1
+  location: ^10.0.2
+  in_app_update: ^5.0.0
+  share_plus: ^12.0.2
 
 dev_dependencies:
   flutter_test:

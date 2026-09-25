@@ -11,6 +11,9 @@ import '../firebase_options.dart';
 import '../screens/admin/admin_feedback_screen.dart';
 import '../screens/admin/admin_leaves_screen.dart';
 import '../screens/employee/announcements_screen.dart';
+import '../screens/employee/attendance_report_screen.dart';
+import '../screens/employee/attendance_screen.dart';
+import '../screens/teamlead/approvals_screen.dart';
 import '../screens/employee/feedback_screen.dart';
 import '../screens/employee/leaves_screen.dart';
 import '../screens/employee/notifications_screen.dart';
@@ -40,7 +43,16 @@ final FlutterLocalNotificationsPlugin _localNotifications =
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
   if (kIsWeb) return;
+  // Messages carrying a `notification` block are already shown by the OS
+  // while the app is in the background — showing again would duplicate it.
+  if (message.notification != null) return;
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // This isolate has its own plugin instance; it must be initialised here
+  // or show() fails silently.
+  await _localNotifications.initialize(const InitializationSettings(
+    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    iOS: DarwinInitializationSettings(),
+  ));
   await _showLocalNotification(message);
 }
 
@@ -139,10 +151,12 @@ class PushService {
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(alert: true, badge: true, sound: true);
+      // Foreground messages are shown by onMessage -> _showLocalNotification;
+      // letting iOS also present them would show every alert twice.
       await messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false,
         badge: true,
-        sound: true,
+        sound: false,
       );
 
       final token = await messaging.getToken();
@@ -208,7 +222,15 @@ class PushService {
     final isAdmin = context.read<AuthProvider>().user?.isAdmin == true;
 
     Widget target;
-    if (type.contains('leave') || title.contains('leave')) {
+    if (type == 'checkout_reminder') {
+      target = const AttendanceScreen();
+    } else if (type == 'regularization_request') {
+      target = const ApprovalsScreen();
+    } else if (type.startsWith('regularization_')) {
+      target = const AttendanceReportScreen();
+    } else if (type == 'birthday_wish') {
+      target = const NotificationsScreen();
+    } else if (type.contains('leave') || title.contains('leave')) {
       target = isAdmin ? const AdminLeavesScreen() : const LeavesScreen();
     } else if (type.contains('announcement') ||
         type.contains('holiday') ||

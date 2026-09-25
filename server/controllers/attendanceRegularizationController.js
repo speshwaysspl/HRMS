@@ -1,6 +1,11 @@
 import AttendanceRegularization from "../models/AttendanceRegularization.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
+import User from "../models/User.js";
+import { createNotification } from "./notificationController.js";
+import { toISTDateString } from "../utils/dateTimeUtils.js";
+
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const requestRegularization = async (req, res) => {
   try {
@@ -9,9 +14,25 @@ const requestRegularization = async (req, res) => {
       return res.status(400).json({ success: false, error: "date and reason are required" });
     }
 
-    const employee = await Employee.findOne({ userId: req.user._id });
+    // "Forgot to check out" style requests are for a past day only.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date >= toISTDateString(new Date())) {
+      return res.status(400).json({ success: false, error: "Pick a past date" });
+    }
+    if (!requestedInTime && !requestedOutTime) {
+      return res.status(400).json({ success: false, error: "Enter a check-in or check-out time" });
+    }
+    if ((requestedInTime && !TIME_RE.test(requestedInTime)) || (requestedOutTime && !TIME_RE.test(requestedOutTime))) {
+      return res.status(400).json({ success: false, error: "Times must be HH:MM" });
+    }
+
+    const employee = await Employee.findOne({ userId: req.user._id }).populate("userId", "name");
     if (!employee) {
       return res.status(404).json({ success: false, error: "Employee profile not found" });
+    }
+
+    const duplicate = await AttendanceRegularization.findOne({ employeeId: employee._id, date, status: "Pending" });
+    if (duplicate) {
+      return res.status(409).json({ success: false, error: "You already have a pending request for this date" });
     }
 
     const regularization = new AttendanceRegularization({
@@ -22,6 +43,31 @@ const requestRegularization = async (req, res) => {
       reason,
     });
     await regularization.save();
+
+    // Notify approvers: admins/HR plus the employee's reporting manager.
+    try {
+      const io = req.app.get("io");
+      const approverIds = new Set(
+        (await User.find({ role: { $in: ["admin", "hr"] } }).select("_id")).map((u) => u._id.toString())
+      );
+      if (employee.reportsTo) {
+        const manager = await Employee.findById(employee.reportsTo).select("userId");
+        if (manager?.userId) approverIds.add(manager.userId.toString());
+      }
+      const times = [requestedInTime && `in ${requestedInTime}`, requestedOutTime && `out ${requestedOutTime}`].filter(Boolean).join(", ");
+      for (const recipientId of approverIds) {
+        await createNotification({
+          type: "regularization_request",
+          title: "Attendance correction request",
+          message: `${employee.userId?.name || "An employee"} requested a correction for ${date} (${times}).`,
+          recipientId,
+          senderId: req.user._id,
+          relatedId: regularization._id,
+        }, io);
+      }
+    } catch (e) {
+      console.error("Regularization request notification failed:", e.message);
+    }
 
     return res.status(200).json({ success: true, regularization });
   } catch (error) {
@@ -83,6 +129,9 @@ const decideRegularization = async (req, res) => {
     if (!regularization) {
       return res.status(404).json({ success: false, error: "Regularization request not found" });
     }
+    if (regularization.status !== "Pending") {
+      return res.status(409).json({ success: false, error: `Request already ${regularization.status.toLowerCase()}` });
+    }
 
     regularization.status = status;
     regularization.approvedBy = req.user._id;
@@ -98,6 +147,22 @@ const decideRegularization = async (req, res) => {
         { $set: update, $setOnInsert: { userId: regularization.employeeId, date: regularization.date } },
         { upsert: true, new: true }
       );
+    }
+
+    try {
+      const emp = await Employee.findById(regularization.employeeId).select("userId");
+      if (emp?.userId) {
+        await createNotification({
+          type: status === "Approved" ? "regularization_approved" : "regularization_rejected",
+          title: `Attendance correction ${status.toLowerCase()}`,
+          message: `Your correction request for ${regularization.date} was ${status.toLowerCase()}.`,
+          recipientId: emp.userId,
+          senderId: req.user._id,
+          relatedId: regularization._id,
+        }, req.app.get("io"));
+      }
+    } catch (e) {
+      console.error("Regularization decision notification failed:", e.message);
     }
 
     return res.status(200).json({ success: true, regularization });

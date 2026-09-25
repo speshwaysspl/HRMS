@@ -40,6 +40,43 @@ const BENEFITS = [
   "Onboard candidates faster with a structured recruitment-to-hire pipeline",
 ];
 
+const PLAY_STORE_URL = "https://play.google.com/store/search?q=speshway%20hrms&c=apps&hl=en_IN";
+
+const APP_HIGHLIGHTS = [
+  { icon: FiClock, text: "One-tap check-in with live location" },
+  { icon: FiCalendar, text: "Apply for leave and track your balance" },
+  { icon: FiDollarSign, text: "Download and share payslips instantly" },
+  { icon: FiZap, text: "Push alerts for approvals, tasks and reminders" },
+];
+
+// Google Play "play" mark, drawn inline so no external image is needed.
+const PlayMark = () => (
+  <svg viewBox="0 0 24 24" className="h-7 w-7 flex-shrink-0" aria-hidden="true">
+    <path fill="#34A853" d="M3.6 1.8 13.3 11.5 3.6 21.2c-.4-.2-.6-.6-.6-1.1V2.9c0-.5.2-.9.6-1.1Z" />
+    <path fill="#FBBC04" d="m16.6 8.2-3.3 3.3 3.3 3.3 3.8-2.2c1.1-.6 1.1-1.6 0-2.2l-3.8-2.2Z" />
+    <path fill="#4285F4" d="M3.6 1.8c.3-.1.7-.1 1.1.1l11.9 6.3-3.3 3.3L3.6 1.8Z" />
+    <path fill="#EA4335" d="m13.3 11.5 3.3 3.3-11.9 6.3c-.4.2-.8.2-1.1.1l9.7-9.7Z" />
+  </svg>
+);
+
+const PlayStoreButton = ({ light = false }) => (
+  <a
+    href={PLAY_STORE_URL}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Get Speshway HRMS on Google Play"
+    className={`inline-flex items-center gap-3 rounded-xl px-5 py-3 transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 ${
+      light ? "bg-white text-ink" : "bg-black text-white ring-1 ring-white/20"
+    }`}
+  >
+    <PlayMark />
+    <span className="text-left leading-tight">
+      <span className={`block text-[10px] uppercase tracking-wide ${light ? "text-ink-muted" : "text-white/75"}`}>Get it on</span>
+      <span className="block text-lg font-semibold">Google Play</span>
+    </span>
+  </a>
+);
+
 const STEPS = [
   { icon: FiUserPlus, title: "Set up your team", description: "Add departments, roles and employees — or import them in minutes." },
   { icon: FiZap, title: "Automate the routine", description: "Attendance, leave and payroll run themselves with built-in workflows." },
@@ -215,6 +252,75 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Mobile app */}
+      <section className="container mx-auto px-4 pt-20 md:pt-28" data-reveal-group>
+        <div className="relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] bg-brand-900 px-6 py-14 sm:px-12 md:py-16 lg:px-16">
+          <div className="pointer-events-none absolute -top-40 -left-24 h-96 w-96 rounded-full bg-accent-500/20 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-48 right-0 h-[28rem] w-[28rem] rounded-full bg-brand-500/30 blur-3xl" aria-hidden="true" />
+
+          <div className="relative grid lg:grid-cols-[1.1fr_1fr] gap-14 items-center">
+            <div data-reveal>
+              <span className="inline-flex items-center gap-2 rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-300 ring-1 ring-accent-400/30">
+                <FiSmartphone size={13} /> Now on Google Play
+              </span>
+              <h2 className="mt-5 text-3xl md:text-5xl font-semibold text-white leading-[1.1] tracking-tight">
+                Your HR, <span className="text-accent-400">in your pocket.</span>
+              </h2>
+              <p className="mt-5 text-white/70 text-base md:text-lg leading-relaxed max-w-lg">
+                Check in, apply for leave, grab your payslip and never miss an approval —
+                the Speshway HRMS app keeps every employee connected, wherever they work.
+              </p>
+
+              <ul className="mt-9 grid sm:grid-cols-2 gap-3">
+                {APP_HIGHLIGHTS.map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-start gap-3 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-500/20 text-accent-300">
+                      <Icon size={17} />
+                    </span>
+                    <span className="text-sm text-white/85 leading-snug pt-1">{text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-10 flex flex-col sm:flex-row sm:items-center gap-5">
+                <PlayStoreButton light />
+                <div className="text-sm text-white/55 leading-snug">
+                  Free for every Speshway HRMS user
+                  <br />
+                  Sign in with your company account
+                </div>
+              </div>
+            </div>
+
+            {/* Two phones with real app screenshots */}
+            <div data-reveal className="relative mx-auto h-[440px] w-full max-w-[400px] sm:h-[480px]">
+              <div className="absolute left-0 top-10 w-[200px] sm:w-[215px] -rotate-6 rounded-[2.3rem] bg-brand-950 p-2.5 shadow-2xl ring-1 ring-white/10">
+                <img
+                  src="/images/app-login-screen.png"
+                  alt="Speshway HRMS app sign-in screen"
+                  width="166"
+                  height="296"
+                  loading="lazy"
+                  className="block w-full h-auto rounded-[1.9rem]"
+                />
+              </div>
+
+              <div className="absolute right-0 top-0 w-[200px] sm:w-[215px] rotate-3 rounded-[2.3rem] bg-brand-950 p-2.5 shadow-2xl ring-1 ring-white/10">
+                <img
+                  src="/images/app-screen-2.png"
+                  alt="Speshway HRMS mobile app screen"
+                  width="166"
+                  height="296"
+                  loading="lazy"
+                  className="block w-full h-auto rounded-[1.9rem]"
+                />
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="container mx-auto px-4 py-24" data-reveal-group>
         <div data-reveal className="text-center mb-14 max-w-2xl mx-auto">
@@ -327,6 +433,9 @@ const Home = () => {
               Talk to Sales
               <FiArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
+          </div>
+          <div data-reveal className="mt-6 flex justify-center">
+            <PlayStoreButton />
           </div>
         </div>
       </section>

@@ -15,15 +15,30 @@ const manualHolidays = [
   { title: "Diwali", date: "2025-10-20", type: "holiday", description: "Festival of Lights" },
   { title: "Christmas", date: "2025-12-25", type: "holiday", description: "Christian Holiday" },
 
-  // 2026
+  // 2026 — Government of India gazetted (central) holidays, plus Sankranti
+  // and Ganesh Chaturthi (state holidays in Telangana / Andhra Pradesh).
+  // Dates of lunar festivals follow the official 2026 list; Id/Muharram/
+  // Milad-un-Nabi can shift by a day with the moon sighting.
   { title: "New Year's Day", date: "2026-01-01", type: "holiday", description: "First day of the year" },
+  { title: "Makar Sankranti / Pongal", date: "2026-01-14", type: "holiday", description: "Harvest festival (state holiday)" },
   { title: "Republic Day", date: "2026-01-26", type: "holiday", description: "National Holiday" },
   { title: "Holi", date: "2026-03-04", type: "holiday", description: "Festival of Colors" },
+  { title: "Id-ul-Fitr", date: "2026-03-21", type: "holiday", description: "End of Ramadan (subject to moon sighting)" },
+  { title: "Ram Navami", date: "2026-03-26", type: "holiday", description: "Birth of Lord Rama" },
+  { title: "Mahavir Jayanti", date: "2026-03-31", type: "holiday", description: "Birth of Lord Mahavira" },
   { title: "Good Friday", date: "2026-04-03", type: "holiday", description: "Christian Holiday" },
+  { title: "Buddha Purnima", date: "2026-05-01", type: "holiday", description: "Birth of Gautama Buddha" },
   { title: "Labor Day", date: "2026-05-01", type: "holiday", description: "International Workers' Day" },
+  { title: "Id-ul-Zuha (Bakrid)", date: "2026-05-27", type: "holiday", description: "Festival of Sacrifice (subject to moon sighting)" },
+  { title: "Muharram", date: "2026-06-26", type: "holiday", description: "Islamic New Year (subject to moon sighting)" },
   { title: "Independence Day", date: "2026-08-15", type: "holiday", description: "National Holiday" },
+  { title: "Milad-un-Nabi", date: "2026-08-26", type: "holiday", description: "Birth of Prophet Muhammad (subject to moon sighting)" },
+  { title: "Janmashtami", date: "2026-09-04", type: "holiday", description: "Birth of Lord Krishna" },
+  { title: "Ganesh Chaturthi", date: "2026-09-14", type: "holiday", description: "Hindu festival (state holiday)" },
   { title: "Gandhi Jayanti", date: "2026-10-02", type: "holiday", description: "Birthday of Mahatma Gandhi" },
+  { title: "Dussehra", date: "2026-10-20", type: "holiday", description: "Vijayadashami" },
   { title: "Diwali", date: "2026-11-08", type: "holiday", description: "Festival of Lights" },
+  { title: "Guru Nanak Jayanti", date: "2026-11-24", type: "holiday", description: "Birth of Guru Nanak Dev" },
   { title: "Christmas", date: "2026-12-25", type: "holiday", description: "Christian Holiday" }
 ];
 

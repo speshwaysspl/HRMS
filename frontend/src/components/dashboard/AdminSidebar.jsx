@@ -42,6 +42,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         { to: "/admin-dashboard/leave-types", label: "Leave Types", icon: <FaCalendarAlt /> },
         { to: "/admin-dashboard/calendar", label: "Calendar", icon: <FaCalendarAlt /> },
         { to: "/admin-dashboard/attendance-report", label: "Attendance Report", icon: <FaCalendarAlt /> },
+        { to: "/admin-dashboard/attendance-approvals", label: "Attendance Approvals", icon: <FaCalendarAlt /> },
       ],
     },
     {

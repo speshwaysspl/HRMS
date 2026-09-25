@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../utils/greeting_utils.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/celebrations_card.dart';
 import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
@@ -53,7 +54,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   void _refreshUnread() =>
       NotificationService().refreshUnread(context.read<AuthProvider>().user?.id ?? '');
 
+  int _refreshCount = 0;
+
   Future<void> _load() async {
+    _refreshCount++;
     _refreshUnread();
     setState(() {
       _loading = true;
@@ -384,6 +388,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
           // 2. Today's Attendance Section
           _buildTodayAttendanceCard(today),
           SizedBox(height: gap),
+
+          // Next holiday countdown + today's birthdays / anniversaries.
+          // Keyed on the refresh count so pull-to-refresh reloads it too.
+          CelebrationsCard(key: ValueKey(_refreshCount)),
 
           // 3. Recent Announcements Section (Fetched directly from DB, No "View All")
           _buildRecentAnnouncementsHeader(),

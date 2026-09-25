@@ -18,7 +18,27 @@ export const saveAttendance = async (req, res) => {
     const employee = await Employee.findOne({ userId: req.user._id });
     if (!employee) return res.status(404).json({ message: "Employee profile not found" });
 
-    const { inTime, outTime, workMode, breaks, inLocation, outLocation, date } = req.body;
+    const { inTime, outTime, workMode, breaks, inLocation, outLocation } = req.body;
+    // The day is decided by the server (IST), never the client. A screen left
+    // open overnight would otherwise carry yesterday's check-in into today and
+    // "check out" against it the next morning (e.g. 10:35 → 07:22 = 20h47m).
+    const date = toISTDateString(new Date());
+    const nowTime = toISTTimeString(new Date());
+
+    // A punch queued while offline carries the time it was actually made.
+    // Accept it only for today and never in the future; a punch queued on an
+    // earlier day is dropped (that day is already closed as Half-Day).
+    const { offlineDate, offlineTime } = req.body;
+    let stamp = nowTime;
+    if (offlineDate || offlineTime) {
+      if (offlineDate !== date || !/^([01]\d|2[0-3]):[0-5]\d$/.test(offlineTime || "") || offlineTime > nowTime) {
+        return res.status(409).json({
+          code: "STALE_OFFLINE",
+          message: "An offline punch from an earlier day couldn't be saved. Please check in for today.",
+        });
+      }
+      stamp = offlineTime;
+    }
     let attendance = await Attendance.findOne({ userId: employee._id, date });
 
     // Validate breaks: only one ongoing break (without end) allowed
@@ -30,13 +50,18 @@ export const saveAttendance = async (req, res) => {
     }
 
     if (!attendance) {
-      if (!inTime) return res.status(400).json({ message: "In Time is required for first entry" });
+      // A new day always starts with a check-in. Yesterday's open check-in is
+      // closed as Half-Day by isPastDate(); it can't be checked out today.
+      if (!inTime || outTime) {
+        return res.status(409).json({
+          code: "NEW_DAY",
+          message: "A new day has started. Please check in for today.",
+        });
+      }
       attendance = new Attendance({
         userId: employee._id,
-
-               
         date,
-        inTime,
+        inTime: stamp,
         workMode,
         breaks: breaks || [],
         inLocation,
@@ -47,7 +72,8 @@ export const saveAttendance = async (req, res) => {
       // Update existing record
       if (outTime) {
         if (attendance.outTime) return res.status(400).json({ message: "Out Time already set" });
-        attendance.outTime = outTime;
+        if (stamp < attendance.inTime) return res.status(400).json({ message: "Check-out can't be before check-in" });
+        attendance.outTime = stamp;
         attendance.outLocation = outLocation;
       }
       // Update breaks if provided

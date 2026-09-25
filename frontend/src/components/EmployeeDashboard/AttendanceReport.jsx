@@ -9,6 +9,7 @@ import { FixedSizeList as List } from "react-window";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import AttendanceCalendar from "../attendance/AttendanceCalendar";
 import { FiCalendar, FiClock, FiLogIn, FiLogOut, FiMapPin, FiCoffee, FiSun, FiMoon } from "react-icons/fi";
 
 // Single source of truth for status → badge color, instead of repeating the
@@ -443,6 +444,8 @@ const AttendanceReport = () => {
                     <div className="text-sm text-ink-muted mt-0.5">Work from Home</div>
                   </div>
                 </div>
+
+                <AttendanceCalendar month={selectedMonth} days={monthlyData} onChanged={fetchMonthlyAttendance} />
 
                 {/* Monthly Data Virtualized List */}
                 <div className="overflow-x-auto px-6 pb-6">

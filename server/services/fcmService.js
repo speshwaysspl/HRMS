@@ -53,7 +53,7 @@ const sendNotification = async (registrationToken, title, body, data = {}) => {
   }, {});
 
   const message = {
-    // Data-only message
+    notification: { title: String(title), body: String(body) },
     data: {
       ...stringData,
       title: String(title),
@@ -62,7 +62,14 @@ const sendNotification = async (registrationToken, title, body, data = {}) => {
     },
     android: {
       priority: 'high',
+      notification: {
+        channelId: 'general_channel_v4',
+        priority: 'high',
+        visibility: 'public',
+        sound: 'default',
+      },
     },
+    apns: { payload: { aps: { sound: 'default' } } },
     token: registrationToken,
   };
 
@@ -96,7 +103,10 @@ const sendMulticastNotification = async (registrationTokens, title, body, data =
   }, {});
 
   const message = {
-    // Data-only message for reliable background handling
+    // Notification + data: Android shows the notification itself when the app
+    // is backgrounded/killed. Data-only messages were dropped when the app was
+    // swiped away or battery-optimised (Xiaomi/Oppo/Vivo etc.), so nothing showed.
+    notification: { title: String(title), body: String(body) },
     data: {
       ...stringData,
       title: String(title),
@@ -105,7 +115,14 @@ const sendMulticastNotification = async (registrationTokens, title, body, data =
     },
     android: {
       priority: 'high',
+      notification: {
+        channelId: 'general_channel_v4',
+        priority: 'high',
+        visibility: 'public',
+        sound: 'default',
+      },
     },
+    apns: { payload: { aps: { sound: 'default' } } },
     tokens: registrationTokens,
   };
 

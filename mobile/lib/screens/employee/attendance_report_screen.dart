@@ -5,6 +5,7 @@ import '../../services/api_client.dart';
 import '../../services/attendance_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../widgets/attendance_calendar.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
@@ -236,6 +237,13 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                     iconBg: AppColors.brand50,
                   ),
                 ],
+              ),
+              SizedBox(height: context.h(20)),
+              AttendanceCalendar(
+                key: ValueKey(_monthKey),
+                month: _currentMonth,
+                days: _monthlyLogs,
+                onChanged: () => _load(silent: true),
               ),
               SizedBox(height: context.h(20)),
 

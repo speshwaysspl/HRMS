@@ -6,7 +6,6 @@ import '../services/api_client.dart';
 import '../services/app_lock_service.dart';
 import '../services/app_settings.dart';
 import '../services/auth_provider.dart';
-import '../services/push_service.dart';
 import '../services/settings_api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
@@ -22,34 +21,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _api = SettingsApiService();
   bool _busyLock = false;
-  bool _busyNotif = false;
-  bool? _weekly;
-  bool _busyWeekly = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadWeekly();
-  }
-
-  Future<void> _loadWeekly() async {
-    try {
-      final v = await _api.getWeeklySummary();
-      if (mounted) setState(() => _weekly = v);
-    } catch (_) {/* section stays hidden */}
-  }
-
-  Future<void> _toggleWeekly(bool value) async {
-    setState(() => _busyWeekly = true);
-    try {
-      await _api.setWeeklySummary(value);
-      setState(() => _weekly = value);
-    } catch (e) {
-      _snack(extractErrorMessage(e));
-    } finally {
-      if (mounted) setState(() => _busyWeekly = false);
-    }
-  }
 
   Future<void> _changePassword() async {
     final userId = context.read<AuthProvider>().user?.id;
@@ -61,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (_) => _ChangePasswordSheet(api: _api, userId: userId),
     );
   }
-
 
   Future<void> _toggleAppLock(bool value) async {
     if (_busyLock) return;
@@ -87,20 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _toggleNotifications(bool value) async {
-    if (_busyNotif) return;
-    setState(() => _busyNotif = true);
-    try {
-      await AppSettings.setNotifications(value);
-      await PushService.instance.applyNotificationPreference();
-      _snack(value
-          ? 'Push notifications turned on.'
-          : 'Push notifications turned off for this device.');
-    } finally {
-      if (mounted) setState(() => _busyNotif = false);
-    }
-  }
-
   void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -113,133 +69,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('Settings')),
       body: ListView(
-        padding: EdgeInsets.all(context.w(16)),
+        padding: EdgeInsets.fromLTRB(context.w(16), context.h(16), context.w(16), context.h(32)),
         children: [
+          if (user != null) ...[
+            _ProfileHeader(name: user.name, email: user.email),
+            SizedBox(height: context.h(24)),
+          ],
           _sectionLabel(context, 'Appearance'),
           _Card(
-            child: ValueListenableBuilder<ThemeMode>(
-              valueListenable: AppSettings.themeMode,
-              builder: (_, mode, _) => Padding(
-                padding: EdgeInsets.all(context.w(14)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: EdgeInsets.all(context.w(12)),
+              child: ValueListenableBuilder<ThemeMode>(
+                valueListenable: AppSettings.themeMode,
+                builder: (_, mode, _) => Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.brightness_6_outlined, color: AppColors.inkMuted, size: context.r(22)),
-                        SizedBox(width: context.w(14)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Theme', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                              Text("System follows your phone's light/dark setting",
-                                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
-                            ],
+                    for (final opt in const [
+                      (ThemeMode.system, 'System', Icons.smartphone_outlined),
+                      (ThemeMode.light, 'Light', Icons.light_mode_outlined),
+                      (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
+                    ])
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: context.w(4)),
+                          child: _ThemeOption(
+                            label: opt.$2,
+                            icon: opt.$3,
+                            selected: mode == opt.$1,
+                            onTap: () => AppSettings.setThemeMode(opt.$1),
                           ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: context.h(12)),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<ThemeMode>(
-                        showSelectedIcon: false,
-                        segments: const [
-                          ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.phone_android, size: 16)),
-                          ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode_outlined, size: 16)),
-                          ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined, size: 16)),
-                        ],
-                        selected: {mode},
-                        onSelectionChanged: (s) => AppSettings.setThemeMode(s.first),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
           ),
-          SizedBox(height: context.h(20)),
+          SizedBox(height: context.h(24)),
           _sectionLabel(context, 'Security'),
-          _Card(
-            child: ValueListenableBuilder<bool>(
-              valueListenable: AppSettings.appLockEnabled,
-              builder: (_, enabled, _) => SwitchListTile(
-                value: enabled,
-                onChanged: _busyLock ? null : _toggleAppLock,
-                secondary: Icon(Icons.lock_outline, color: AppColors.inkMuted, size: context.r(22)),
-                title: Text('App Lock', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                subtitle: Text(
-                  'Require your phone\'s biometrics, PIN or passcode to open the app',
-                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
-                ),
-                activeThumbColor: AppColors.accent600,
-              ),
-            ),
-          ),
-          SizedBox(height: context.h(20)),
-          _sectionLabel(context, 'Notifications'),
-          _Card(
-            child: ValueListenableBuilder<bool>(
-              valueListenable: AppSettings.notificationsEnabled,
-              builder: (_, enabled, _) => SwitchListTile(
-                value: enabled,
-                onChanged: _busyNotif ? null : _toggleNotifications,
-                secondary: Icon(Icons.notifications_none, color: AppColors.inkMuted, size: context.r(22)),
-                title: Text('Push Notifications', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                subtitle: Text(
-                  'Get alerts for leave, tasks, announcements and documents',
-                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
-                ),
-                activeThumbColor: AppColors.accent600,
-              ),
-            ),
-          ),
-          SizedBox(height: context.h(20)),
-          _sectionLabel(context, 'Account'),
-          _Card(
-            child: ListTile(
-              leading: Icon(Icons.password_outlined, color: AppColors.inkMuted, size: context.r(22)),
-              title: Text('Change password', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-              trailing: Icon(Icons.chevron_right, size: 18, color: AppColors.inkFaint),
-              onTap: _changePassword,
-            ),
-          ),
-          if (_weekly != null) ...[
-            SizedBox(height: context.h(20)),
-            _sectionLabel(context, 'Reports'),
-            _Card(
-              child: SwitchListTile(
-                value: _weekly!,
-                onChanged: _busyWeekly ? null : _toggleWeekly,
-                secondary: Icon(Icons.summarize_outlined, color: AppColors.inkMuted, size: context.r(22)),
-                title: Text('Weekly summary email', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                subtitle: Text('A digest of org activity every Monday',
-                    style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
-                activeThumbColor: AppColors.accent600,
-              ),
-            ),
-          ],
-          SizedBox(height: context.h(20)),
-          _sectionLabel(context, 'Legal'),
           _Card(
             child: Column(
               children: [
-                ListTile(
-                  leading: Icon(Icons.description_outlined, color: AppColors.inkMuted, size: context.r(22)),
-                  title: Text('Terms of Service', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-                  trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
-                  onTap: () => _openUrl('https://speshwayhrms.com/terms-and-conditions'),
+                ValueListenableBuilder<bool>(
+                  valueListenable: AppSettings.appLockEnabled,
+                  builder: (_, enabled, _) => _Row(
+                    icon: Icons.fingerprint_rounded,
+                    title: 'App Lock',
+                    subtitle: 'Unlock with fingerprint, face or PIN',
+                    onTap: _busyLock ? null : () => _toggleAppLock(!enabled),
+                    trailing: Switch(
+                      value: enabled,
+                      onChanged: _busyLock ? null : _toggleAppLock,
+                      activeThumbColor: AppColors.accent600,
+                    ),
+                  ),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.privacy_tip_outlined, color: AppColors.inkMuted, size: context.r(22)),
-                  title: Text('Privacy Policy', style: TextStyle(fontSize: context.sp(14), color: AppColors.ink)),
-                  trailing: Icon(Icons.open_in_new, size: 16, color: AppColors.inkFaint),
+                _divider(context),
+                _Row(
+                  icon: Icons.key_outlined,
+                  title: 'Change password',
+                  onTap: _changePassword,
+                  trailing: Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: context.h(24)),
+          _sectionLabel(context, 'About'),
+          _Card(
+            child: Column(
+              children: [
+                _Row(
+                  icon: Icons.description_outlined,
+                  title: 'Terms of Service',
+                  onTap: () => _openUrl('https://speshwayhrms.com/terms-and-conditions'),
+                  trailing: Icon(Icons.open_in_new_rounded, size: context.r(18), color: AppColors.inkFaint),
+                ),
+                _divider(context),
+                _Row(
+                  icon: Icons.shield_outlined,
+                  title: 'Privacy Policy',
                   onTap: () => _openUrl('https://speshwayhrms.com/privacy-policy'),
+                  trailing: Icon(Icons.open_in_new_rounded, size: context.r(18), color: AppColors.inkFaint),
                 ),
               ],
             ),
@@ -249,15 +163,145 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _divider(BuildContext context) =>
+      Divider(height: 1, indent: context.w(60), color: AppColors.surfaceSubtle);
+
   Widget _sectionLabel(BuildContext context, String text) => Padding(
         padding: EdgeInsets.only(left: context.w(4), bottom: context.h(8)),
         child: Text(text,
-            style: TextStyle(
-                fontSize: context.sp(12),
-                fontWeight: FontWeight.w700,
-                color: AppColors.inkMuted,
-                letterSpacing: 0.4)),
+            style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted)),
       );
+}
+
+class _ProfileHeader extends StatelessWidget {
+  final String name;
+  final String email;
+  const _ProfileHeader({required this.name, required this.email});
+
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    return (parts.first[0] + (parts.length > 1 ? parts.last[0] : '')).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Padding(
+        padding: EdgeInsets.all(context.w(16)),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: context.r(26),
+              backgroundColor: AppColors.brand600,
+              child: Text(_initials,
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: context.sp(17))),
+            ),
+            SizedBox(width: context.w(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                  SizedBox(height: context.h(2)),
+                  Text(email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemeOption({required this.label, required this.icon, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? Colors.white : AppColors.ink;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$label theme',
+      child: Material(
+        color: selected ? AppColors.brand600 : AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: context.h(14)),
+            child: Column(
+              children: [
+                Icon(icon, color: fg, size: context.r(22)),
+                SizedBox(height: context.h(6)),
+                Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: context.sp(13))),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget trailing;
+  final VoidCallback? onTap;
+  const _Row({required this.icon, required this.title, this.subtitle, required this.trailing, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: context.w(14), vertical: context.h(10)),
+          child: Row(
+            children: [
+              Container(
+                width: context.r(34),
+                height: context.r(34),
+                decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, size: context.r(18), color: AppColors.ink),
+              ),
+              SizedBox(width: context.w(12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontSize: context.sp(15), fontWeight: FontWeight.w600, color: AppColors.ink)),
+                    if (subtitle != null) ...[
+                      SizedBox(height: context.h(2)),
+                      Text(subtitle!, style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted)),
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(width: context.w(8)),
+              trailing,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ChangePasswordSheet extends StatefulWidget {

@@ -8,7 +8,7 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
-import { FiDownload, FiEye } from "react-icons/fi";
+import { FiDownload, FiEye, FiShare2 } from "react-icons/fi";
 
 const View = () => {
   const [salaries, setSalaries] = useState([]);
@@ -292,20 +292,43 @@ const View = () => {
     );
   };
 
-  // Fix the downloadPDF function (around line 299)
-  const downloadPDF = async (salaryId, empCode, payDate) => {
+  const fetchPayslipBlob = async (salaryId) => {
+    const token = sessionStorage.getItem("token");
+    const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+    return new Blob([response.data], { type: "application/pdf" });
+  };
+
+  const payslipFileName = (empCode, payDate) =>
+    `Payslip_${empCode}_${new Date(payDate).toISOString().split("T")[0]}.pdf`;
+
+  // Share the PDF through the device's share sheet (WhatsApp, Gmail, …).
+  // Browsers that can't share files (most desktops) download it instead.
+  // Mirrors the mobile payslip "Share" button.
+  const sharePDF = async (salaryId, empCode, payDate) => {
     try {
-      const token = sessionStorage.getItem("token");
-      const response = await axios.get(`${API_BASE}/api/salary/pdf/${salaryId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
-      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blob = await fetchPayslipBlob(salaryId);
+      const file = new File([blob], payslipFileName(empCode, payDate), { type: "application/pdf" });
+      if (navigator.canShare?.({ files: [file] })) {
+        const month = new Date(payDate).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+        await navigator.share({ files: [file], title: `Payslip — ${month}`, text: `Payslip for ${month}` });
+        return;
+      }
+      downloadPDF(salaryId, empCode, payDate, blob);
+    } catch (error) {
+      if (error?.name !== "AbortError") alert("Failed to share payslip");
+    }
+  };
+
+  const downloadPDF = async (salaryId, empCode, payDate, existingBlob) => {
+    try {
+      const blob = existingBlob || (await fetchPayslipBlob(salaryId));
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const datePart = new Date(payDate).toISOString().split("T")[0];
       link.href = url;
-      link.download = `Payslip_${empCode}_${datePart}.pdf`;
+      link.download = payslipFileName(empCode, payDate);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -414,6 +437,14 @@ const View = () => {
                           downloadPDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
                         }
                       />
+                      <ActionIconButton
+                        icon={FiShare2}
+                        label="Share payslip"
+                        color="brand"
+                        onClick={() =>
+                          sharePDF(salary._id, salary?.employeeId?.employeeId || salary?.employeeId, salary.payDate)
+                        }
+                      />
                     </div>
                   </td>
                 </tr>
@@ -472,7 +503,7 @@ const View = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
                     <button
                       type="button"
                       onClick={() => setSelectedSalary(salary)}
@@ -486,6 +517,14 @@ const View = () => {
                       className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-sm font-bold transition-colors"
                     >
                       <FiDownload size={15} /> Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => sharePDF(salary._id, empId, salary.payDate)}
+                      aria-label="Share payslip"
+                      className="flex items-center justify-center w-11 rounded-xl border border-surface-subtle bg-white text-ink hover:bg-surface-muted transition-colors"
+                    >
+                      <FiShare2 size={16} />
                     </button>
                   </div>
                 </div>
