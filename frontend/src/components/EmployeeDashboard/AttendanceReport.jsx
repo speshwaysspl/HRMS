@@ -73,7 +73,9 @@ const AttendanceReport = () => {
   // Memoized monthly summary counts to avoid repeated filtering
   const monthlySummary = useMemo(() => {
     const present = monthlyData.filter(d => d.status === "Present" || d.status === "Present + Overtime").length;
-    const absent = monthlyData.filter(d => d.status === "Absent" || d.status === "Leave").length;
+    // Weekends with no punch are days off, not absences.
+    const offDay = (d) => [0, 6].includes(new Date(`${d.date}T00:00:00Z`).getUTCDay()) && (!d.inTime || d.inTime === "Not Marked");
+    const absent = monthlyData.filter(d => (d.status === "Absent" && !offDay(d)) || d.status === "Leave").length;
     const halfDay = monthlyData.filter(d => d.status === "Half-Day").length;
     const wfh = monthlyData.filter(d => d.status?.startsWith("Work from Home")).length;
     return { present, absent, halfDay, wfh };

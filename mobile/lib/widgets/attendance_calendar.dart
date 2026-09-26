@@ -20,11 +20,25 @@ class AttendanceCalendar extends StatefulWidget {
   State<AttendanceCalendar> createState() => _AttendanceCalendarState();
 }
 
-enum _Cat { present, half, absent, leave, holiday, none }
+enum _Cat { present, half, absent, leave, holiday, weekend, none }
 
-_Cat _category(String status, bool holiday) {
+bool _isWeekend(String key) {
+  final wd = DateTime.parse(key).weekday;
+  return wd == DateTime.saturday || wd == DateTime.sunday;
+}
+
+bool _punched(Map<String, dynamic>? rec) {
+  final v = rec?['inTime']?.toString() ?? '';
+  return v.isNotEmpty && v != 'Not Marked';
+}
+
+/// Status → calendar category. A weekend with no punch is a day off, not an
+/// absence (the server marks every unrecorded past day "Absent").
+_Cat _category(String key, Map<String, dynamic>? rec, bool holiday) {
+  final status = (rec?['status'] ?? '').toString();
   if (holiday) return _Cat.holiday;
   if (status == 'Leave') return _Cat.leave;
+  if (_isWeekend(key) && !_punched(rec)) return _Cat.weekend;
   if (status.contains('Half')) return _Cat.half;
   if (status.contains('Present') || status.contains('Overtime')) return _Cat.present;
   if (status == 'Absent') return _Cat.absent;
@@ -33,20 +47,25 @@ _Cat _category(String status, bool holiday) {
 
 const _labels = {
   _Cat.present: 'Present',
-  _Cat.half: 'Half-Day',
+  _Cat.half: 'Half-day',
   _Cat.absent: 'Absent',
   _Cat.leave: 'Leave',
   _Cat.holiday: 'Holiday',
 };
 
-Color _catColor(_Cat c) => switch (c) {
-      _Cat.present => AppColors.accent500,
-      _Cat.half => const Color(0xFFF59E0B),
-      _Cat.absent => AppColors.danger,
-      _Cat.leave => AppColors.brand500,
-      _Cat.holiday => const Color(0xFF9333EA),
-      _Cat.none => AppColors.inkFaint,
-    };
+/// Status colours tuned per theme: softer, lighter tones on dark surfaces so
+/// they read as markers rather than blocks of colour.
+Color _catColor(_Cat c) {
+  final dark = AppColors.isDark;
+  return switch (c) {
+    _Cat.present => dark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
+    _Cat.half => dark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+    _Cat.absent => dark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+    _Cat.leave => dark ? const Color(0xFF93A5E0) : AppColors.brand500,
+    _Cat.holiday => dark ? const Color(0xFFC4B5FD) : const Color(0xFF7C3AED),
+    _Cat.weekend || _Cat.none => AppColors.inkFaint,
+  };
+}
 
 class _AttendanceCalendarState extends State<AttendanceCalendar> {
   final _attendance = AttendanceService();
@@ -90,12 +109,14 @@ class _AttendanceCalendarState extends State<AttendanceCalendar> {
 
     final counts = {for (final c in _labels.keys) c: 0};
     for (var d = 1; d <= daysInMonth; d++) {
-      final c = _category((byDate[_key(d)]?['status'] ?? '').toString(), _holidays.containsKey(_key(d)));
+      final k = _key(d);
+      if (k.compareTo(today) > 0) break;
+      final c = _category(k, byDate[k], _holidays.containsKey(k));
       if (counts.containsKey(c)) counts[c] = counts[c]! + 1;
     }
 
     return Container(
-      padding: EdgeInsets.all(context.w(12)),
+      padding: EdgeInsets.fromLTRB(context.w(14), context.h(16), context.w(14), context.h(14)),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -104,19 +125,34 @@ class _AttendanceCalendarState extends State<AttendanceCalendar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: context.w(12),
-            runSpacing: context.h(6),
+          // Month totals: one compact row of number + label, coloured dot only.
+          Row(
             children: [
               for (final e in _labels.entries)
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Container(
-                      width: 9, height: 9, decoration: BoxDecoration(color: _catColor(e.key), shape: BoxShape.circle)),
-                  SizedBox(width: context.w(5)),
-                  Text('${e.value} ${counts[e.key]}', style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
-                ]),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('${counts[e.key]}',
+                          style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w800, color: AppColors.ink)),
+                      SizedBox(height: context.h(3)),
+                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Container(
+                            width: 7, height: 7, decoration: BoxDecoration(color: _catColor(e.key), shape: BoxShape.circle)),
+                        SizedBox(width: context.w(4)),
+                        Flexible(
+                          child: Text(e.value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted)),
+                        ),
+                      ]),
+                    ],
+                  ),
+                ),
             ],
           ),
+          SizedBox(height: context.h(14)),
+          Divider(height: 1, color: AppColors.surfaceSubtle),
           SizedBox(height: context.h(12)),
           Row(
             children: [
@@ -134,8 +170,8 @@ class _AttendanceCalendarState extends State<AttendanceCalendar> {
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 5,
-            crossAxisSpacing: 5,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
             children: [
               for (var i = 0; i < lead; i++) const SizedBox.shrink(),
               for (var d = 1; d <= daysInMonth; d++) _dayCell(context, d, byDate[_key(d)], today),
@@ -146,41 +182,61 @@ class _AttendanceCalendarState extends State<AttendanceCalendar> {
     );
   }
 
+  /// Neutral cell with the day number and a small status dot underneath —
+  /// calm in both themes. Today gets an outline; days off are dimmed.
   Widget _dayCell(BuildContext context, int day, Map<String, dynamic>? rec, String today) {
     final key = _key(day);
     final future = key.compareTo(today) > 0;
-    final cat = _category((rec?['status'] ?? '').toString(), _holidays.containsKey(key));
-    final color = _catColor(cat);
-    final filled = !future && cat != _Cat.none;
+    final isToday = key == today;
+    final cat = _category(key, rec, _holidays.containsKey(key));
+    final showDot = !future && _labels.containsKey(cat);
+    final dimmed = future || cat == _Cat.weekend;
     final pending = _requests[key]?['status'] == 'Pending';
     return Semantics(
       button: !future,
-      label: '$day ${_labels[cat] ?? 'no record'}',
+      label: '$day ${_labels[cat] ?? (cat == _Cat.weekend ? 'weekend' : 'no record')}',
       child: Material(
-        color: filled ? color.withValues(alpha: AppColors.isDark ? 0.35 : 0.18) : AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(8),
+        color: isToday ? AppColors.accent50 : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           onTap: future ? null : () => _openDay(key, rec),
           child: Container(
-            decoration: key == today
-                ? BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.ink, width: 1.5))
+            decoration: isToday
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.accent500, width: 1.5),
+                  )
                 : null,
             child: Stack(
               children: [
                 Center(
-                  child: Text('$day',
-                      style: TextStyle(
-                        fontSize: context.sp(13),
-                        fontWeight: FontWeight.w700,
-                        color: future ? AppColors.inkFaint : AppColors.ink,
-                      )),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$day',
+                          style: TextStyle(
+                            fontSize: context.sp(14),
+                            fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                            color: dimmed ? AppColors.inkFaint : AppColors.ink,
+                          )),
+                      SizedBox(height: context.h(4)),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: showDot ? _catColor(cat) : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 if (pending)
-                  const Positioned(
-                    top: 4,
-                    right: 4,
-                    child: CircleAvatar(radius: 3, backgroundColor: Color(0xFFF59E0B)),
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: Icon(Icons.schedule_rounded, size: 11, color: _catColor(_Cat.half)),
                   ),
               ],
             ),

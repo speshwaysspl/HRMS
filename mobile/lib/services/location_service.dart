@@ -1,7 +1,7 @@
 import 'package:location/location.dart' as loc;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/services.dart' show MethodChannel, MissingPluginException, PlatformException;
 import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -43,6 +43,8 @@ class LocationService {
     return _serviceRequest ??= _doRequestService().whenComplete(() => _serviceRequest = null);
   }
 
+  static const _nativeLocation = MethodChannel('com.speshway.hrms/location');
+
   static Future<bool> _doRequestService() async {
     if (await Geolocator.isLocationServiceEnabled()) return true;
     for (var attempt = 0; attempt < 5; attempt++) {
@@ -53,14 +55,22 @@ class LocationService {
       }
       await WidgetsBinding.instance.endOfFrame;
       try {
+        // Native Google "Turn on device location" dialog (MainActivity.kt);
+        // always shown, even after an earlier "No thanks".
+        final ok = await _nativeLocation.invokeMethod<bool>('enableLocation') ?? false;
+        if (ok) return true;
+        return await Geolocator.isLocationServiceEnabled();
+      } on MissingPluginException {
         return await loc.Location().requestService();
       } on PlatformException catch (e) {
+        if (e.code == 'BUSY') return false;
         if (e.code != 'NO_ACTIVITY') rethrow;
         await Future.delayed(Duration(milliseconds: 300 * (attempt + 1)));
       }
     }
     return Geolocator.isLocationServiceEnabled();
   }
+
 
   /// Asks for location permission up front (no GPS fix). Returns true when
   /// granted. Safe to call repeatedly — it only prompts while still undecided.

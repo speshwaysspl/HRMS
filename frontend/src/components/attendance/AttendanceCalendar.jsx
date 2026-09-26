@@ -11,24 +11,37 @@ import { FiX, FiEdit3 } from "react-icons/fi";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// Collapse the many server statuses into five calendar categories.
-export const dayCategory = (status = "", isHoliday = false) => {
+const isWeekend = (key) => {
+  const d = new Date(`${key}T00:00:00Z`).getUTCDay();
+  return d === 0 || d === 6;
+};
+const punched = (rec) => !!rec?.inTime && rec.inTime !== "Not Marked";
+
+// Collapse the many server statuses into calendar categories. A weekend with
+// no punch is a day off, not an absence (the server marks every unrecorded
+// past day "Absent").
+export const dayCategory = (key, rec, isHoliday = false) => {
+  const status = rec?.status || "";
   if (isHoliday) return "holiday";
   if (status === "Leave") return "leave";
+  if (isWeekend(key) && !punched(rec)) return "weekend";
   if (status.includes("Half")) return "half";
   if (status.includes("Present") || status.includes("Overtime")) return "present";
   if (status === "Absent") return "absent";
   return "none";
 };
 
+// Neutral cells + a small status dot (mirrors the mobile calendar).
 const CATEGORY = {
-  present: { label: "Present", cell: "bg-accent-100 text-accent-800", dot: "bg-accent-600" },
-  half: { label: "Half-Day", cell: "bg-amber-100 text-amber-800", dot: "bg-amber-500" },
-  absent: { label: "Absent", cell: "bg-red-100 text-red-800", dot: "bg-red-500" },
-  leave: { label: "Leave", cell: "bg-brand-100 text-brand-800", dot: "bg-brand-600" },
-  holiday: { label: "Holiday", cell: "bg-purple-100 text-purple-800", dot: "bg-purple-500" },
-  none: { label: "", cell: "bg-surface-muted text-ink-muted", dot: "" },
+  present: { label: "Present", dot: "bg-green-600" },
+  half: { label: "Half-day", dot: "bg-amber-500" },
+  absent: { label: "Absent", dot: "bg-red-500" },
+  leave: { label: "Leave", dot: "bg-brand-500" },
+  holiday: { label: "Holiday", dot: "bg-violet-500" },
+  weekend: { label: "Weekend", dot: "" },
+  none: { label: "", dot: "" },
 };
+const LEGEND = ["present", "half", "absent", "leave", "holiday"];
 
 const authHeaders = () => ({ Authorization: `Bearer ${sessionStorage.getItem("token")}` });
 
@@ -74,24 +87,28 @@ const AttendanceCalendar = ({ month, days, onChanged }) => {
     const c = { present: 0, half: 0, absent: 0, leave: 0, holiday: 0 };
     for (let d = 1; d <= daysInMonth; d++) {
       const key = `${month}-${String(d).padStart(2, "0")}`;
-      const cat = dayCategory(byDate[key]?.status, !!holidays[key]);
+      if (key > today) break;
+      const cat = dayCategory(key, byDate[key], !!holidays[key]);
       if (c[cat] !== undefined) c[cat] += 1;
     }
     return c;
-  }, [byDate, holidays, month, daysInMonth]);
+  }, [byDate, holidays, month, daysInMonth, today]);
 
   return (
     <div className="px-4 sm:px-6 pb-6">
-      <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-xs text-ink-muted">
-        {["present", "half", "absent", "leave", "holiday"].map((k) => (
-          <span key={k} className="inline-flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${CATEGORY[k].dot}`} aria-hidden="true" />
-            {CATEGORY[k].label} <span className="font-semibold text-ink tabular-nums">{counts[k]}</span>
-          </span>
+      <div className="grid grid-cols-5 mb-4 pb-4 border-b border-surface-subtle text-center">
+        {LEGEND.map((k) => (
+          <div key={k}>
+            <p className="text-lg font-extrabold text-ink tabular-nums">{counts[k]}</p>
+            <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink-muted">
+              <span className={`w-2 h-2 rounded-full ${CATEGORY[k].dot}`} aria-hidden="true" />
+              {CATEGORY[k].label}
+            </p>
+          </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 text-center" role="grid" aria-label={`Attendance for ${month}`}>
+      <div className="grid grid-cols-7 gap-1 text-center" role="grid" aria-label={`Attendance for ${month}`}>
         {WEEKDAYS.map((w) => (
           <div key={w} className="text-[11px] font-semibold text-ink-faint uppercase py-1">
             {w}
@@ -103,8 +120,10 @@ const AttendanceCalendar = ({ month, days, onChanged }) => {
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const key = `${month}-${String(i + 1).padStart(2, "0")}`;
           const rec = byDate[key];
-          const cat = dayCategory(rec?.status, !!holidays[key]);
+          const cat = dayCategory(key, rec, !!holidays[key]);
           const future = key > today;
+          const isToday = key === today;
+          const dimmed = future || cat === "weekend";
           return (
             <button
               key={key}
@@ -112,12 +131,14 @@ const AttendanceCalendar = ({ month, days, onChanged }) => {
               disabled={future}
               onClick={() => setSelected(key)}
               aria-label={`${formatDMY(key)} ${CATEGORY[cat].label || "no record"}`}
-              className={`relative aspect-square min-h-[40px] rounded-lg text-sm font-semibold tabular-nums transition-colors
+              className={`relative min-h-[48px] rounded-xl flex flex-col items-center justify-center gap-1 text-sm tabular-nums transition-colors
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
-                ${future ? "bg-transparent text-ink-faint cursor-default" : `${CATEGORY[cat].cell} hover:brightness-95`}
-                ${key === today ? "ring-2 ring-ink" : ""}`}
+                ${future ? "cursor-default" : "hover:bg-surface-muted"}
+                ${isToday ? "bg-accent-50 ring-[1.5px] ring-accent-500 font-extrabold" : "font-semibold"}
+                ${dimmed ? "text-ink-faint" : "text-ink"}`}
             >
               {i + 1}
+              <span className={`w-1.5 h-1.5 rounded-full ${!future && CATEGORY[cat].dot ? CATEGORY[cat].dot : "bg-transparent"}`} aria-hidden="true" />
               {requestByDate[key]?.status === "Pending" && (
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500" title="Correction pending" />
               )}

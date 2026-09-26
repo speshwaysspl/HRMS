@@ -51,8 +51,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     super.dispose();
   }
 
-  void _refreshUnread() =>
-      NotificationService().refreshUnread(context.read<AuthProvider>().user?.id ?? '');
+  void _refreshUnread() => NotificationService().refreshUnread(
+    context.read<AuthProvider>().user?.id ?? '',
+  );
 
   int _refreshCount = 0;
 
@@ -66,7 +67,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     try {
       final results = await Future.wait([
         _service.getEmployeeStats(),
-        _announcementService.getAnnouncements().catchError((_) => <Map<String, dynamic>>[]),
+        _announcementService.getAnnouncements().catchError(
+          (_) => <Map<String, dynamic>>[],
+        ),
       ]);
 
       if (!mounted) return;
@@ -88,7 +91,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   void _openPayslips(String? employeeCode) {
     if (employeeCode != null && employeeCode.isNotEmpty) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PayslipsScreen(employeeCode: employeeCode)),
+        MaterialPageRoute(
+          builder: (_) => PayslipsScreen(employeeCode: employeeCode),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,10 +128,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.asset(
-                  'assets/appbar_bg.png',
-                  fit: BoxFit.cover,
-                ),
+                Image.asset('assets/appbar_bg.png', fit: BoxFit.cover),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -158,12 +160,22 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               children: [
                 IconButton(
                   tooltip: 'Notifications',
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: () {
                     final userId = context.read<AuthProvider>().user?.id ?? '';
                     Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))
-                        .then((_) => NotificationService().refreshUnread(userId));
+                        .push(
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationsScreen(),
+                          ),
+                        )
+                        .then(
+                          (_) => NotificationService().refreshUnread(userId),
+                        );
                   },
                 ),
                 // Red dot only while there is something unread.
@@ -204,8 +216,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         child: _loading
             ? _buildSkeleton()
             : _error != null
-                ? buildErrorState(_lastError ?? _error!, _load)
-                : _buildContent(),
+            ? buildErrorState(_lastError ?? _error!, _load)
+            : _buildContent(),
       ),
     );
   }
@@ -240,11 +252,18 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         : 'Senior Java Developer · Engineering';
 
     final todayFormatted = DateFormat('EEE, d MMM yyyy').format(DateTime.now());
-    const textShadow = [Shadow(color: Colors.black45, blurRadius: 6, offset: Offset(0, 1))];
+    const textShadow = [
+      Shadow(color: Colors.black45, blurRadius: 6, offset: Offset(0, 1)),
+    ];
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(context.w(16), 0, context.w(16), context.h(12)),
+      padding: EdgeInsets.fromLTRB(
+        context.w(16),
+        0,
+        context.w(16),
+        context.h(12),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,10 +306,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                           ),
                         ),
                         SizedBox(width: context.w(6)),
-                        Text(
-                          '👋',
-                          style: TextStyle(fontSize: context.sp(15)),
-                        ),
+                        Text('👋', style: TextStyle(fontSize: context.sp(15))),
                       ],
                     ),
                     SizedBox(height: context.h(2)),
@@ -402,7 +418,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
           // 4. Attendance & Work Policy Section
           Row(
             children: [
-              Icon(Icons.assignment_outlined, color: AppColors.brand600, size: context.r(20)),
+              Icon(
+                Icons.assignment_outlined,
+                color: AppColors.brand600,
+                size: context.r(20),
+              ),
               SizedBox(width: context.w(6)),
               Text(
                 'Attendance & Work Policy',
@@ -417,7 +437,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
           SizedBox(height: context.h(4)),
           Text(
             'Important guidelines for smooth operations',
-            style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
+            style: TextStyle(
+              fontSize: context.sp(12),
+              color: AppColors.inkMuted,
+            ),
           ),
           SizedBox(height: context.h(10)),
           _buildPolicyGuidance(),
@@ -460,8 +483,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               icon: Icons.calendar_month_rounded,
               iconColor: Color(0xFF16A34A),
               iconBg: AppColors.tint(AppColors.tint(Color(0xFFDCFCE7))),
-              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFF0FDF4))), Colors.white],
-              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
+              gradientColors: [
+                AppColors.tint(AppColors.tint(Color(0xFFF0FDF4))),
+                Colors.white,
+              ],
+              borderColor: AppColors.tint(
+                AppColors.tint(const Color(0xFFDCFCE7)),
+              ),
               onTap: () => AppEvents.switchToTab(0),
             ),
             SizedBox(width: context.w(10)),
@@ -471,8 +499,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               icon: Icons.article_rounded,
               iconColor: Color(0xFF2563EB),
               iconBg: AppColors.tint(AppColors.tint(Color(0xFFDBEAFE))),
-              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFEFF6FF))), Colors.white],
-              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
+              gradientColors: [
+                AppColors.tint(AppColors.tint(Color(0xFFEFF6FF))),
+                Colors.white,
+              ],
+              borderColor: AppColors.tint(
+                AppColors.tint(const Color(0xFFDBEAFE)),
+              ),
               onTap: () => _openPayslips(employee['employeeId']?.toString()),
             ),
           ],
@@ -486,8 +519,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               icon: Icons.access_time_filled_rounded,
               iconColor: Color(0xFFEA580C),
               iconBg: AppColors.tint(AppColors.tint(Color(0xFFFFEDD5))),
-              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFFFF7ED))), Colors.white],
-              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))),
+              gradientColors: [
+                AppColors.tint(AppColors.tint(Color(0xFFFFF7ED))),
+                Colors.white,
+              ],
+              borderColor: AppColors.tint(
+                AppColors.tint(const Color(0xFFFFEDD5)),
+              ),
               onTap: () => AppEvents.switchToTab(1),
             ),
             SizedBox(width: context.w(10)),
@@ -497,8 +535,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               icon: Icons.person_rounded,
               iconColor: Color(0xFF9333EA),
               iconBg: AppColors.tint(AppColors.tint(Color(0xFFF3E8FF))),
-              gradientColors: [AppColors.tint(AppColors.tint(Color(0xFFFAF5FF))), Colors.white],
-              borderColor: AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
+              gradientColors: [
+                AppColors.tint(AppColors.tint(Color(0xFFFAF5FF))),
+                Colors.white,
+              ],
+              borderColor: AppColors.tint(
+                AppColors.tint(const Color(0xFFF3E8FF)),
+              ),
               onTap: () => AppEvents.switchToTab(4),
             ),
           ],
@@ -532,7 +575,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 colors: gradientColors.map(AppColors.tint).toList(),
               ),
               borderRadius: BorderRadius.circular(context.r(16)),
-              border: Border.all(color: AppColors.tint(borderColor), width: 1.2),
+              border: Border.all(
+                color: AppColors.tint(borderColor),
+                width: 1.2,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -557,7 +603,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         borderRadius: BorderRadius.circular(context.r(9)),
                       ),
                       child: Center(
-                        child: Icon(icon, color: iconColor, size: context.r(18)),
+                        child: Icon(
+                          icon,
+                          color: iconColor,
+                          size: context.r(18),
+                        ),
                       ),
                     ),
                     Container(
@@ -619,11 +669,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Widget _buildTodayAttendanceCard(Map<String, dynamic> today) {
     // Working hours computation from inTime and outTime span (matches web AttendanceReport)
     double workingHours = 0.0;
-    if (today['inTime'] != null && today['inTime'].toString().trim().isNotEmpty) {
+    if (today['inTime'] != null &&
+        today['inTime'].toString().trim().isNotEmpty) {
       try {
         final inTime = _parseTime(today['inTime'].toString());
         if (inTime != null) {
-          final outTime = (today['outTime'] != null && today['outTime'].toString().trim().isNotEmpty)
+          final outTime =
+              (today['outTime'] != null &&
+                  today['outTime'].toString().trim().isNotEmpty)
               ? _parseTime(today['outTime'].toString())
               : DateTime.now();
           if (outTime != null) {
@@ -639,7 +692,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     }
 
     final double workedProgress = (workingHours / 8.0).clamp(0.0, 1.0);
-    final double displayGaugeProgress = workingHours > 0 && workedProgress < 0.08 ? 0.08 : workedProgress;
+    final double displayGaugeProgress =
+        workingHours > 0 && workedProgress < 0.08 ? 0.08 : workedProgress;
     final String workedDurationText = _formatWorkedHours(workingHours);
 
     // Determine status exactly matching web AttendanceReport
@@ -670,19 +724,27 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       statusTextColor = Color(0xFF2563EB);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFEFF6FF)));
       statusBorderColor = AppColors.tint(const Color(0xFFBFDBFE));
-    } else if (norm == 'checked in' || (today['inTime'] != null && (today['outTime'] == null || today['outTime'].toString().isEmpty))) {
+    } else if (norm == 'checked in' ||
+        (today['inTime'] != null &&
+            (today['outTime'] == null ||
+                today['outTime'].toString().isEmpty))) {
       statusText = 'Checked In';
       statusTextColor = const Color(0xFF0D9488);
       statusBgColor = AppColors.tint(const Color(0xFFCCFBF1));
       statusBorderColor = const Color(0xFF99F6E4);
-    } else if (norm.contains('absent') || (today['inTime'] != null && today['outTime'] != null && workingHours < 4.0)) {
+    } else if (norm.contains('absent') ||
+        (today['inTime'] != null &&
+            today['outTime'] != null &&
+            workingHours < 4.0)) {
       // Under 4 hours is treated as Absent per company policy & web dashboard
       statusText = 'Absent';
       statusTextColor = Color(0xFFDC2626);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2)));
       statusBorderColor = AppColors.tint(const Color(0xFFFECACA));
     } else {
-      statusText = serverStatus != null && serverStatus.isNotEmpty ? serverStatus : 'Not Marked';
+      statusText = serverStatus != null && serverStatus.isNotEmpty
+          ? serverStatus
+          : 'Not Marked';
       statusTextColor = AppColors.inkMuted;
       statusBgColor = AppColors.tint(AppColors.surfaceSubtle);
       statusBorderColor = AppColors.tint(AppColors.surfaceSubtle);
@@ -693,7 +755,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(context.r(20)),
-        border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle), width: 1.2),
+        border: Border.all(
+          color: AppColors.tint(AppColors.surfaceSubtle),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -707,31 +772,41 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         children: [
           // Header row with title & status pill
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.calendar_today_rounded, color: AppColors.ink, size: context.r(19)),
-                  SizedBox(width: context.w(8)),
-                  Text(
-                    "Today's Attendance",
-                    style: TextStyle(
-                      fontSize: context.sp(16.5),
-                      fontWeight: FontWeight.w800,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
                       color: AppColors.ink,
+                      size: context.r(19),
                     ),
-                  ),
-                ],
+                    SizedBox(width: context.w(8)),
+                    Flexible(
+                      child: Text(
+                        "Today's Attendance",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: context.sp(16.5),
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: context.w(8)),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: context.w(10), vertical: context.h(4)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.w(10),
+                  vertical: context.h(4),
+                ),
                 decoration: BoxDecoration(
                   color: statusBgColor,
                   borderRadius: BorderRadius.circular(context.r(20)),
-                  border: Border.all(
-                    color: statusBorderColor,
-                    width: 1,
-                  ),
+                  border: Border.all(color: statusBorderColor, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -775,11 +850,16 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               // Check In Box
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.w(8),
+                    vertical: context.h(8),
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.tint(AppColors.surfaceMuted),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle)),
+                    border: Border.all(
+                      color: AppColors.tint(AppColors.surfaceSubtle),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -787,11 +867,17 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         width: context.r(34),
                         height: context.r(34),
                         decoration: BoxDecoration(
-                          color: AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7))),
+                          color: AppColors.tint(
+                            AppColors.tint(const Color(0xFFDCFCE7)),
+                          ),
                           borderRadius: BorderRadius.circular(context.r(9)),
                         ),
                         child: Center(
-                          child: Icon(Icons.login_rounded, color: const Color(0xFF16A34A), size: context.r(18)),
+                          child: Icon(
+                            Icons.login_rounded,
+                            color: const Color(0xFF16A34A),
+                            size: context.r(18),
+                          ),
                         ),
                       ),
                       SizedBox(width: context.w(8)),
@@ -830,16 +916,25 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: context.w(4)),
-                child: Container(width: 1, height: context.h(36), color: AppColors.tint(AppColors.surfaceSubtle)),
+                child: Container(
+                  width: 1,
+                  height: context.h(36),
+                  color: AppColors.tint(AppColors.surfaceSubtle),
+                ),
               ),
               // Check Out Box
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: context.w(8), vertical: context.h(8)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.w(8),
+                    vertical: context.h(8),
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.tint(AppColors.surfaceMuted),
                     borderRadius: BorderRadius.circular(context.r(12)),
-                    border: Border.all(color: AppColors.tint(AppColors.surfaceSubtle)),
+                    border: Border.all(
+                      color: AppColors.tint(AppColors.surfaceSubtle),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -847,11 +942,17 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         width: context.r(34),
                         height: context.r(34),
                         decoration: BoxDecoration(
-                          color: AppColors.tint(AppColors.tint(const Color(0xFFFEE2E2))),
+                          color: AppColors.tint(
+                            AppColors.tint(const Color(0xFFFEE2E2)),
+                          ),
                           borderRadius: BorderRadius.circular(context.r(9)),
                         ),
                         child: Center(
-                          child: Icon(Icons.logout_rounded, color: const Color(0xFFEF4444), size: context.r(18)),
+                          child: Icon(
+                            Icons.logout_rounded,
+                            color: const Color(0xFFEF4444),
+                            size: context.r(18),
+                          ),
                         ),
                       ),
                       SizedBox(width: context.w(8)),
@@ -901,8 +1002,12 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       height: context.r(62),
                       child: CircularProgressIndicator(
                         value: displayGaugeProgress,
-                        backgroundColor: AppColors.tint(AppColors.surfaceSubtle),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
+                        backgroundColor: AppColors.tint(
+                          AppColors.surfaceSubtle,
+                        ),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF0D9488),
+                        ),
                         strokeWidth: context.r(6),
                         strokeCap: StrokeCap.round,
                       ),
@@ -947,7 +1052,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                 padding: EdgeInsets.symmetric(horizontal: context.w(16)),
                 child: Row(
                   children: [
-                    Icon(Icons.bar_chart_rounded, color: Colors.white, size: context.r(20)),
+                    Icon(
+                      Icons.bar_chart_rounded,
+                      color: Colors.white,
+                      size: context.r(20),
+                    ),
                     SizedBox(width: context.w(8)),
                     Expanded(
                       child: Center(
@@ -961,7 +1070,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded, color: Colors.white, size: context.r(20)),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white,
+                      size: context.r(20),
+                    ),
                   ],
                 ),
               ),
@@ -1000,7 +1113,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         : 'Please check the updated holiday calendar.';
     final imageUrl = latest?['imageUrl']?.toString();
     final timeStr = _getAnnouncementTime(latest?['createdAt']?.toString());
-    final (categoryLabel, categoryColor) = categoryStyle(latest?['category']?.toString());
+    final (categoryLabel, categoryColor) = categoryStyle(
+      latest?['category']?.toString(),
+    );
 
     final radius = BorderRadius.circular(context.r(16));
     return Material(
@@ -1008,9 +1123,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       borderRadius: radius,
       child: InkWell(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => AnnouncementsScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => AnnouncementsScreen()));
         },
         borderRadius: radius,
         child: Container(
@@ -1083,25 +1198,49 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
               SizedBox(height: context.h(12)),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.access_time_rounded, size: context.r(13), color: AppColors.inkFaint),
-                      SizedBox(width: context.w(6)),
-                      Text(
-                        timeStr,
-                        style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w500, color: AppColors.inkFaint),
-                      ),
-                    ],
+                  // Left side shrinks (ellipsis) so large font sizes never overflow.
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: context.r(13),
+                          color: AppColors.inkFaint,
+                        ),
+                        SizedBox(width: context.w(6)),
+                        Flexible(
+                          child: Text(
+                            timeStr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: context.sp(12),
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.inkFaint,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  SizedBox(width: context.w(8)),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'View all',
-                        style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600, color: AppColors.brand500),
+                        style: TextStyle(
+                          fontSize: context.sp(13),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brand500,
+                        ),
                       ),
-                      Icon(Icons.chevron_right_rounded, size: context.r(18), color: AppColors.brand500),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: context.r(18),
+                        color: AppColors.brand500,
+                      ),
                     ],
                   ),
                 ],
@@ -1144,7 +1283,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       final clean = s.trim().toUpperCase();
       final isPm = clean.contains('PM');
       final isAm = clean.contains('AM');
-      final parts = clean.replaceAll('AM', '').replaceAll('PM', '').trim().split(':');
+      final parts = clean
+          .replaceAll('AM', '')
+          .replaceAll('PM', '')
+          .trim()
+          .split(':');
       int h = int.parse(parts[0]);
       int m = int.parse(parts[1]);
       if (isPm && h < 12) h += 12;
@@ -1187,7 +1330,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       _PolicyItem(
         index: 2,
         title: 'Working Hours',
-        description: 'A minimum of eight (8) working hours is mandatory to be considered a full working day.',
+        description:
+            'A minimum of eight (8) working hours is mandatory to be considered a full working day.',
         icon: Icons.access_time,
         iconBg: AppColors.tint(const Color(0xFFDBEAFE)),
         iconColor: Color(0xFF2563EB),
@@ -1195,7 +1339,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       _PolicyItem(
         index: 3,
         title: 'Partial Attendance',
-        description: 'Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.',
+        description:
+            'Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.',
         icon: Icons.warning_amber_rounded,
         iconBg: AppColors.tint(const Color(0xFFFFEDD5)),
         iconColor: Color(0xFFEA580C),
@@ -1211,16 +1356,15 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       _PolicyItem(
         index: 5,
         title: 'Leave & WFH Requests',
-        description: 'Leave and Work From Home (WFH) requests must be submitted at least one day in advance.',
+        description:
+            'Leave and Work From Home (WFH) requests must be submitted at least one day in advance.',
         icon: Icons.beach_access_outlined,
         iconBg: AppColors.brand50,
         iconColor: AppColors.brand600,
       ),
     ];
 
-    return Column(
-      children: policies.map((p) => _buildPolicyCard(p)).toList(),
-    );
+    return Column(children: policies.map((p) => _buildPolicyCard(p)).toList());
   }
 
   Widget _buildPolicyCard(_PolicyItem policy) {
@@ -1242,7 +1386,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               color: AppColors.tint(policy.iconBg),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(policy.icon, color: policy.iconColor, size: context.r(20)),
+            child: Icon(
+              policy.icon,
+              color: policy.iconColor,
+              size: context.r(20),
+            ),
           ),
           SizedBox(width: context.w(12)),
           Expanded(

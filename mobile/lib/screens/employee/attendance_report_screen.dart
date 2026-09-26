@@ -115,9 +115,17 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
       return s.contains('present');
     }).length;
 
+    // A weekend with no punch is a day off, not an absence (the server
+    // marks every unrecorded past day "Absent").
+    bool offDay(Map<String, dynamic> l) {
+      final d = DateTime.tryParse((l['date'] ?? '').toString());
+      final punched = (l['inTime'] ?? '').toString().isNotEmpty && l['inTime'] != 'Not Marked';
+      return d != null && d.weekday >= DateTime.saturday && !punched;
+    }
+
     final absentCount = _monthlyLogs.where((l) {
       final s = (l['status'] ?? '').toString().toLowerCase();
-      return s.contains('absent') || s == 'leave';
+      return (s.contains('absent') && !offDay(l)) || s == 'leave';
     }).length;
 
     final halfDayCount = _monthlyLogs.where((l) {
