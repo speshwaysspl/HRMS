@@ -1,6 +1,8 @@
 import 'package:location/location.dart' as loc;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -31,6 +33,35 @@ class LocationPermissionDenied implements Exception {
 }
 
 class LocationService {
+  static Future<bool>? _serviceRequest;
+
+  /// Shows Android's "Turn on location?" prompt. Safe to call from several
+  /// places at once (they share one prompt) and right after the app resumes:
+  /// it waits until the app is in the foreground and retries while the
+  /// plugin reports NO_ACTIVITY (Android hasn't re-attached it yet).
+  static Future<bool> requestServiceSafely() {
+    return _serviceRequest ??= _doRequestService().whenComplete(() => _serviceRequest = null);
+  }
+
+  static Future<bool> _doRequestService() async {
+    if (await Geolocator.isLocationServiceEnabled()) return true;
+    for (var attempt = 0; attempt < 5; attempt++) {
+      // Wait for the app to be visible and a frame to be drawn.
+      if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        continue;
+      }
+      await WidgetsBinding.instance.endOfFrame;
+      try {
+        return await loc.Location().requestService();
+      } on PlatformException catch (e) {
+        if (e.code != 'NO_ACTIVITY') rethrow;
+        await Future.delayed(Duration(milliseconds: 300 * (attempt + 1)));
+      }
+    }
+    return Geolocator.isLocationServiceEnabled();
+  }
+
   /// Asks for location permission up front (no GPS fix). Returns true when
   /// granted. Safe to call repeatedly — it only prompts while still undecided.
   static Future<bool> requestPermissionOnLaunch() async {
@@ -54,7 +85,7 @@ class LocationService {
       if (p == LocationPermission.denied) p = await Geolocator.requestPermission();
       if (p != LocationPermission.whileInUse && p != LocationPermission.always) return;
       if (!await Geolocator.isLocationServiceEnabled()) {
-        await loc.Location().requestService();
+        await requestServiceSafely();
       }
     } catch (_) {}
   }
@@ -72,7 +103,12 @@ class LocationService {
     // Phone location (GPS) off: show Android's in-app "Turn on location?"
     // prompt instead of sending the user to Settings.
     if (!await Geolocator.isLocationServiceEnabled()) {
-      final turnedOn = await loc.Location().requestService();
+      bool turnedOn;
+      try {
+        turnedOn = await requestServiceSafely();
+      } catch (_) {
+        turnedOn = false;
+      }
       if (!turnedOn) {
         throw LocationPermissionDenied("Your phone's location is off. Tap 'Turn on location' to continue.");
       }

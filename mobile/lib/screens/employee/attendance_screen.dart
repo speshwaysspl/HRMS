@@ -73,7 +73,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     if (state != AppLifecycleState.resumed) return;
     // The day may have rolled over while backgrounded — refresh today's record.
     _syncOffline().then((_) => _load(silent: true));
-    if (_location == null && !_locationLoading) {
+    if ((_location == null || _locationError != null) && !_locationLoading) {
       _fetchLocation();
     }
   }
@@ -98,7 +98,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _locationError = e.toString();
+        // Our own messages are user-facing; anything else (plugin/platform
+        // errors) gets a plain message instead of raw exception text.
+        _locationError = e is LocationPermissionDenied
+            ? e.toString()
+            : "Couldn't get your location. Make sure location is on, then tap 'Turn on location'.";
         _locationLoading = false;
       });
     }
