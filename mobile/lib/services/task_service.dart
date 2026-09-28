@@ -40,4 +40,27 @@ class TaskService {
     });
     await _dio.put('/api/task/$taskId', data: form);
   }
+
+  /// Team lead/admin: edit title, description, priority and dates (YYYY-MM-DD).
+  Future<void> editTask(
+    String taskId, {
+    required String title,
+    required String description,
+    required String priority,
+    String? startDate,
+    String? deadline,
+  }) async {
+    await _dio.put('/api/task/$taskId/details', data: {
+      'title': title,
+      'description': description,
+      'priority': priority,
+      'startDate': startDate ?? '',
+      'deadline': deadline ?? '',
+    });
+  }
+
+  /// Team lead/admin: soft-deletes the task.
+  Future<void> deleteTask(String taskId) async {
+    await _dio.delete('/api/task/$taskId');
+  }
 }

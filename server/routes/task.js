@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddlware.js";
-import { assignTask, updateTaskStatus, getTasks, deleteTask } from "../controllers/taskController.js";
+import { assignTask, updateTaskStatus, getTasks, deleteTask, editTask } from "../controllers/taskController.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -15,6 +15,7 @@ const upload = multer({
 const router = express.Router();
 
 router.post("/assign", authMiddleware, assignTask);
+router.put("/:id/details", authMiddleware, editTask);
 router.put("/:id", authMiddleware, upload.single("file"), updateTaskStatus);
 router.get("/", authMiddleware, getTasks);
 router.delete("/:id", authMiddleware, deleteTask);

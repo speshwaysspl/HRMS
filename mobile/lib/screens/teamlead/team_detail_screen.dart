@@ -46,10 +46,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   String _filterType = 'startDate';
   DateTime? _filterFrom;
   DateTime? _filterTo;
+  String? _statusFilter;
 
   @override
   void initState() {
     super.initState();
+    // Rebuild on tab change so Add Task only shows on the task list.
+    _tabs.addListener(() {
+      if (!_tabs.indexIsChanging) setState(() {});
+    });
     _load();
   }
 
@@ -187,31 +192,35 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     }
   }
 
+  String _assignee(Map t) =>
+      ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']?.toString() ??
+      'Unassigned';
+
+  bool _hasProof(Map t) => (t['workProof']?.toString() ?? '').isNotEmpty;
+
   Future<void> _openMember(Map stat) async {
     final member = stat['member'] as Map? ?? {};
-    final name = (member['userId'] as Map?)?['name']?.toString() ?? 'Employee';
-    final memberTasks = _taskList
+    // Like the web modal, the member view also lists deleted tasks (flagged).
+    final memberTasks = ((_detail?['tasks'] as List?) ?? [])
+        .whereType<Map>()
         .where((t) => (t['assignedTo'] as Map?)?['_id'] == member['_id'])
         .toList();
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => _MemberSheet(
-        name: name,
-        employeeMongoId: member['_id'].toString(),
+        stat: stat,
         tasks: memberTasks,
         date: _date,
         openDoc: _openDoc,
+        onUpdate: (t) {
+          Navigator.of(context).pop();
+          _updateTask(t);
+        },
       ),
     );
   }
-
-  Color _statusColor(String s) => switch (s) {
-    'Completed' => AppColors.accent600,
-    'In Progress' => AppColors.warning,
-    'Overdue' => AppColors.danger,
-    _ => AppColors.brand600,
-  };
 
   Future<void> _addTask() async {
     final members = ((_detail?['memberStats'] as List?) ?? [])
@@ -247,38 +256,149 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     }
   }
 
+  Future<void> _editTask(Map task) async {
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _EditTaskSheet(task: task, service: _tasks),
+    );
+    if (ok == true) {
+      _toast('Task saved');
+      _load();
+    }
+  }
+
+  Future<void> _deleteTask(Map task) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete task?'),
+        content: Text(
+          '"${task['title'] ?? ''}" assigned to ${_assignee(task)} will be removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _tasks.deleteTask(task['_id'].toString());
+      _toast('Task deleted');
+      _load();
+    } catch (e) {
+      _toast(extractErrorMessage(e));
+    }
+  }
+
+  void _onTaskAction(String action, Map task) {
+    switch (action) {
+      case 'update':
+        _updateTask(task);
+      case 'edit':
+        _editTask(task);
+      case 'delete':
+        _deleteTask(task);
+    }
+  }
+
   void _viewTask(Map task) {
-    final assignee =
-        ((task['assignedTo'] as Map?)?['userId'] as Map?)?['name']
-            ?.toString() ??
-        'Unassigned';
     final remark = task['description']?.toString() ?? '';
+    final comment = task['comments']?.toString() ?? '';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.all(context.w(20)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      useSafeArea: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: EdgeInsets.all(context.w(20)),
           children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    task['title']?.toString() ?? '',
+                    style: TextStyle(
+                      fontSize: context.sp(18),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                _StatusPill(task['status']?.toString() ?? ''),
+              ],
+            ),
+            SizedBox(height: context.h(16)),
+            _kv('Assigned to', _assignee(task)),
+            _kv('Priority', task['priority']?.toString() ?? 'Medium'),
+            _kv('Start date', _date(task['startDate'])),
+            _kv('Due date', _date(task['deadline'])),
+            _kv('Remark', remark.isEmpty ? '-' : remark),
+            SizedBox(height: context.h(8)),
             Text(
-              'Task Details',
+              'Employee submission',
               style: TextStyle(
-                fontSize: context.sp(16),
                 fontWeight: FontWeight.w700,
                 color: AppColors.ink,
               ),
             ),
-            SizedBox(height: context.h(12)),
-            _kv('Title', task['title']?.toString() ?? '-'),
-            _kv('Assigned to', assignee),
-            _kv('Status', task['status']?.toString() ?? '-'),
-            _kv('Priority', task['priority']?.toString() ?? '-'),
-            _kv('Start', _date(task['startDate'])),
-            _kv('Due', _date(task['deadline'])),
-            _kv('Remark', remark.isEmpty ? '-' : remark),
             SizedBox(height: context.h(8)),
+            _SubmissionCard(
+              comment: comment,
+              proof: task['workProof']?.toString() ?? '',
+              onOpen: _openDoc,
+            ),
+            SizedBox(height: context.h(20)),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _updateTask(task);
+                    },
+                    icon: const Icon(Icons.sync_alt, size: 18),
+                    label: const Text('Status'),
+                  ),
+                ),
+                SizedBox(width: context.w(8)),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _editTask(task);
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Edit'),
+                  ),
+                ),
+                SizedBox(width: context.w(8)),
+                IconButton.outlined(
+                  tooltip: 'Delete task',
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _deleteTask(task);
+                  },
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.danger,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -286,12 +406,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   }
 
   Widget _kv(String k, String v) => Padding(
-    padding: EdgeInsets.only(bottom: context.h(8)),
+    padding: EdgeInsets.only(bottom: context.h(10)),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: context.w(96),
+          width: context.w(100),
           child: Text(
             k,
             style: TextStyle(
@@ -314,165 +434,298 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     ),
   );
 
-  Widget _taskTab() {
-    final tasks = _taskList;
-    final f = DateFormat('d MMM');
-    final bar = Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.w(16),
-        context.h(4),
-        context.w(16),
-        context.h(4),
-      ),
-      child: Wrap(
-        spacing: context.w(8),
-        runSpacing: context.h(4),
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          DropdownButton<String>(
-            value: _filterType,
-            underline: const SizedBox.shrink(),
-            items: const [
-              DropdownMenuItem(value: 'startDate', child: Text('Start Date')),
-              DropdownMenuItem(value: 'deadline', child: Text('Due Date')),
-            ],
-            onChanged: (v) => setState(() => _filterType = v ?? _filterType),
-          ),
-          OutlinedButton(
-            onPressed: () => _pickFilter(true),
-            child: Text(_filterFrom == null ? 'From' : f.format(_filterFrom!)),
-          ),
-          OutlinedButton(
-            onPressed: () => _pickFilter(false),
-            child: Text(_filterTo == null ? 'To' : f.format(_filterTo!)),
-          ),
-          ElevatedButton.icon(
-            onPressed: _downloadPdf,
-            icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-            label: const Text('Download PDF'),
-          ),
-        ],
-      ),
-    );
-    final body = RefreshIndicator(
-      onRefresh: _load,
-      child: tasks.isEmpty
-          ? ListView(
-              children: const [
-                SizedBox(height: 100),
-                EmptyStateView(icon: Icons.task_alt, title: 'No tasks found'),
-              ],
-            )
-          : ListView(
-              padding: EdgeInsets.fromLTRB(
-                context.w(16),
-                context.h(8),
-                context.w(16),
-                context.h(90),
-              ),
-              children: tasks.map((t) {
-                final status = t['status']?.toString() ?? '';
-                final assignee =
-                    ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']
-                        ?.toString() ??
-                    'Unassigned';
-                final color = _statusColor(status);
-                final remark = t['description']?.toString() ?? '';
-                return SimpleCard(
-                  onTap: () => _viewTask(t),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+  Future<void> _openPdfSheet() async {
+    final f = DateFormat('d MMM yyyy');
+    await showModalBottomSheet(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          Future<void> pick(bool from) async {
+            await _pickFilter(from);
+            setSheet(() {});
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(context.w(20)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Download task list (PDF)',
+                    style: TextStyle(
+                      fontSize: context.sp(16),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  SizedBox(height: context.h(12)),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(
+                        value: 'startDate',
+                        label: Text('Start date'),
+                      ),
+                      ButtonSegment(value: 'deadline', label: Text('Due date')),
+                    ],
+                    selected: {_filterType},
+                    onSelectionChanged: (v) {
+                      setState(() => _filterType = v.first);
+                      setSheet(() {});
+                    },
+                  ),
+                  SizedBox(height: context.h(12)),
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              t['title']?.toString() ?? '',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: context.w(10),
-                              vertical: context.h(3),
-                            ),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              status,
-                              style: TextStyle(
-                                color: color,
-                                fontSize: context.sp(11),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: context.h(6)),
-                      Text(
-                        'Assigned to: $assignee',
-                        style: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: context.sp(12),
-                        ),
-                      ),
-                      Text(
-                        'Start: ${_date(t['startDate'])}   Due: ${_date(t['deadline'])}',
-                        style: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: context.sp(12),
-                        ),
-                      ),
-                      if (remark.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: context.h(4)),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => pick(true),
                           child: Text(
-                            remark,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: AppColors.inkMuted,
-                              fontSize: context.sp(12),
-                            ),
+                            _filterFrom == null
+                                ? 'From'
+                                : f.format(_filterFrom!),
                           ),
                         ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if ((t['workProof']?.toString() ?? '').isNotEmpty)
-                            TextButton.icon(
-                              onPressed: () =>
-                                  _openDoc(t['workProof'].toString()),
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('View Doc'),
-                            ),
-                          TextButton.icon(
-                            onPressed: () => _updateTask(t),
-                            icon: const Icon(Icons.edit_outlined, size: 18),
-                            label: const Text('Update'),
+                      ),
+                      SizedBox(width: context.w(10)),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => pick(false),
+                          child: Text(
+                            _filterTo == null ? 'To' : f.format(_filterTo!),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                );
-              }).toList(),
+                  if (_filterFrom != null || _filterTo != null)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _filterFrom = null;
+                          _filterTo = null;
+                        });
+                        setSheet(() {});
+                      },
+                      child: const Text('Clear dates (all tasks)'),
+                    ),
+                  SizedBox(height: context.h(8)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _downloadPdf();
+                      },
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      label: const Text('Download PDF'),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          );
+        },
+      ),
     );
+  }
+
+  Widget _taskTab() {
+    final all = _taskList;
+    final tasks = _statusFilter == null
+        ? all
+        : all.where((t) => t['status'] == _statusFilter).toList();
+    int count(String s) => all.where((t) => t['status'] == s).length;
+
+    final chips = SizedBox(
+      height: context.h(52),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+          horizontal: context.w(16),
+          vertical: context.h(8),
+        ),
+        children: [
+          ChoiceChip(
+            label: Text('All ${all.length}'),
+            selected: _statusFilter == null,
+            onSelected: (_) => setState(() => _statusFilter = null),
+          ),
+          for (final s in _statuses)
+            Padding(
+              padding: EdgeInsets.only(left: context.w(8)),
+              child: ChoiceChip(
+                label: Text('$s ${count(s)}'),
+                selected: _statusFilter == s,
+                onSelected: (_) => setState(
+                  () => _statusFilter = _statusFilter == s ? null : s,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
     return Column(
       children: [
-        bar,
-        Expanded(child: body),
+        chips,
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: tasks.isEmpty
+                ? ListView(
+                    children: [
+                      const SizedBox(height: 80),
+                      EmptyStateView(
+                        icon: Icons.task_alt,
+                        title: all.isEmpty
+                            ? 'No tasks yet'
+                            : 'No $_statusFilter tasks',
+                        subtitle: all.isEmpty
+                            ? 'Tap Add Task to assign work to your team.'
+                            : null,
+                      ),
+                    ],
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.fromLTRB(
+                      context.w(16),
+                      context.h(4),
+                      context.w(16),
+                      context.h(96),
+                    ),
+                    itemCount: tasks.length,
+                    itemBuilder: (_, i) => _taskCard(tasks[i]),
+                  ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _taskCard(Map t) {
+    final name = _assignee(t);
+    final comment = t['comments']?.toString() ?? '';
+    final muted = TextStyle(
+      color: AppColors.inkMuted,
+      fontSize: context.sp(12),
+    );
+    return SimpleCard(
+      onTap: () => _viewTask(t),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: context.h(4)),
+                  child: Text(
+                    t['title']?.toString() ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: context.sp(15),
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+              _StatusPill(t['status']?.toString() ?? ''),
+              PopupMenuButton<String>(
+                tooltip: 'Task actions',
+                onSelected: (a) => _onTaskAction(a, t),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'update',
+                    child: ListTile(
+                      leading: Icon(Icons.sync_alt),
+                      title: Text('Update status'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Edit task'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: AppColors.danger,
+                      ),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(color: AppColors.danger),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: context.r(11),
+                backgroundColor: AppColors.brand100,
+                child: Text(
+                  (name.isNotEmpty ? name[0] : '?').toUpperCase(),
+                  style: TextStyle(
+                    color: AppColors.brand700,
+                    fontSize: context.sp(11),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: Text(
+                  name,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.ink,
+                    fontSize: context.sp(13),
+                  ),
+                ),
+              ),
+              _PriorityTag(t['priority']?.toString() ?? 'Medium'),
+            ],
+          ),
+          SizedBox(height: context.h(8)),
+          Row(
+            children: [
+              Icon(
+                Icons.event_outlined,
+                size: context.r(14),
+                color: AppColors.inkFaint,
+              ),
+              SizedBox(width: context.w(4)),
+              Text(
+                '${_date(t['startDate'])}  →  ${_date(t['deadline'])}',
+                style: muted,
+              ),
+            ],
+          ),
+          if (comment.isNotEmpty) ...[
+            SizedBox(height: context.h(8)),
+            Text(
+              '“$comment”',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: muted.copyWith(fontStyle: FontStyle.italic),
+            ),
+          ],
+          if (_hasProof(t)) ...[
+            SizedBox(height: context.h(10)),
+            _ProofButton(onTap: () => _openDoc(t['workProof'].toString())),
+          ],
+        ],
+      ),
     );
   }
 
@@ -486,7 +739,10 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         child: ListView(
           children: const [
             SizedBox(height: 100),
-            EmptyStateView(icon: Icons.person_outline, title: 'No members in this team yet'),
+            EmptyStateView(
+              icon: Icons.person_outline,
+              title: 'No members in this team yet',
+            ),
           ],
         ),
       );
@@ -612,19 +868,27 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     return Scaffold(
       appBar: HrmsAppBar(
         title: Text(widget.name),
+        actions: [
+          if (!_loading && _error == null && _tabs.index == 0)
+            IconButton(
+              tooltip: 'Download task list PDF',
+              onPressed: _openPdfSheet,
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+            ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: 'Task List'),
-            Tab(text: 'Team Members'),
+            Tab(text: 'Tasks'),
+            Tab(text: 'Members'),
             Tab(text: 'Attendance'),
           ],
         ),
       ),
-      floatingActionButton: _loading || _error != null
+      floatingActionButton: _loading || _error != null || _tabs.index != 0
           ? null
           : FloatingActionButton.extended(
               onPressed: _addTask,
@@ -634,7 +898,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
-              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
             )
           : _error != null
           ? buildErrorState(_error!, () {
@@ -1038,49 +1307,251 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
   }
 }
 
-class _MemberSheet extends StatefulWidget {
-  final String name;
-  final String employeeMongoId;
-  final List<Map> tasks;
-  final String Function(dynamic) date;
-  final Future<void> Function(String) openDoc;
-  const _MemberSheet({
-    required this.name,
-    required this.employeeMongoId,
-    required this.tasks,
-    required this.date,
-    required this.openDoc,
+class _StatusPill extends StatelessWidget {
+  final String status;
+  const _StatusPill(this.status);
+
+  static Color colorFor(String s) => switch (s) {
+    'Completed' => AppColors.accent600,
+    'In Progress' => AppColors.warning,
+    'Review' => const Color(0xFF7C3AED),
+    'Overdue' => AppColors.danger,
+    _ => AppColors.brand600,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = colorFor(status);
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.w(10),
+        vertical: context.h(4),
+      ),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: c,
+          fontSize: context.sp(11),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _PriorityTag extends StatelessWidget {
+  final String priority;
+  const _PriorityTag(this.priority);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = switch (priority) {
+      'High' => AppColors.danger,
+      'Low' => AppColors.accent600,
+      _ => const Color(0xFFEA580C),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.flag_rounded, size: context.r(14), color: c),
+        SizedBox(width: context.w(3)),
+        Text(
+          priority,
+          style: TextStyle(
+            color: c,
+            fontSize: context.sp(12),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Prominent "employee sent a file" row so leads don't miss submissions.
+class _ProofButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ProofButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.accent50,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(12),
+            vertical: context.h(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.description_outlined,
+                size: context.r(18),
+                color: AppColors.accent600,
+              ),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: Text(
+                  'Work proof submitted',
+                  style: TextStyle(
+                    color: AppColors.accent600,
+                    fontWeight: FontWeight.w600,
+                    fontSize: context.sp(13),
+                  ),
+                ),
+              ),
+              Text(
+                'View',
+                style: TextStyle(
+                  color: AppColors.accent600,
+                  fontWeight: FontWeight.w700,
+                  fontSize: context.sp(13),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: context.r(18),
+                color: AppColors.accent600,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SubmissionCard extends StatelessWidget {
+  final String comment;
+  final String proof;
+  final Future<void> Function(String) onOpen;
+  const _SubmissionCard({
+    required this.comment,
+    required this.proof,
+    required this.onOpen,
   });
 
   @override
-  State<_MemberSheet> createState() => _MemberSheetState();
+  Widget build(BuildContext context) {
+    if (comment.isEmpty && proof.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(context.w(14)),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSubtle,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Nothing submitted yet.',
+          style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (comment.isNotEmpty)
+          Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(bottom: context.h(8)),
+            padding: EdgeInsets.all(context.w(14)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSubtle,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              comment,
+              style: TextStyle(color: AppColors.ink, fontSize: context.sp(13)),
+            ),
+          ),
+        if (proof.isNotEmpty) _ProofButton(onTap: () => onOpen(proof)),
+      ],
+    );
+  }
 }
 
-class _MemberSheetState extends State<_MemberSheet> {
-  List<Map>? _docs;
+class _EditTaskSheet extends StatefulWidget {
+  final Map task;
+  final TaskService service;
+  const _EditTaskSheet({required this.task, required this.service});
+
+  @override
+  State<_EditTaskSheet> createState() => _EditTaskSheetState();
+}
+
+class _EditTaskSheetState extends State<_EditTaskSheet> {
+  late final _title = TextEditingController(
+    text: widget.task['title']?.toString() ?? '',
+  );
+  late final _desc = TextEditingController(
+    text: widget.task['description']?.toString() ?? '',
+  );
+  late String _priority =
+      const ['Low', 'Medium', 'High'].contains(widget.task['priority'])
+      ? widget.task['priority'].toString()
+      : 'Medium';
+  late DateTime? _start = DateTime.tryParse(
+    widget.task['startDate']?.toString() ?? '',
+  )?.toLocal();
+  late DateTime? _due = DateTime.tryParse(
+    widget.task['deadline']?.toString() ?? '',
+  )?.toLocal();
+  bool _busy = false;
   String? _err;
 
   @override
-  void initState() {
-    super.initState();
-    _loadDocs();
+  void dispose() {
+    _title.dispose();
+    _desc.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadDocs() async {
+  Future<void> _pick(bool start) async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: (start ? _start : _due) ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+    );
+    if (d != null) setState(() => start ? _start = d : _due = d);
+  }
+
+  Future<void> _submit() async {
+    if (_title.text.trim().isEmpty) {
+      setState(() => _err = 'Enter a task title');
+      return;
+    }
+    if (_start != null && _due != null && _due!.isBefore(_start!)) {
+      setState(() => _err = 'Due date must be on or after the start date');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _err = null;
+    });
     try {
-      final res = await ApiClient.instance.dio.get('/api/document');
-      final all = ((res.data as Map)['documents'] as List? ?? [])
-          .whereType<Map>();
-      final mine = all.where((d) {
-        final e = d['employeeId'];
-        final id = e is Map ? e['_id'] : e;
-        return id.toString() == widget.employeeMongoId;
-      }).toList();
-      if (mounted) setState(() => _docs = mine);
+      final f = DateFormat('yyyy-MM-dd');
+      await widget.service.editTask(
+        widget.task['_id'].toString(),
+        title: _title.text.trim(),
+        description: _desc.text.trim(),
+        priority: _priority,
+        startDate: _start == null ? null : f.format(_start!),
+        deadline: _due == null ? null : f.format(_due!),
+      );
+      if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
         setState(() {
-          _docs = [];
+          _busy = false;
           _err = extractErrorMessage(e);
         });
       }
@@ -1089,72 +1560,373 @@ class _MemberSheetState extends State<_MemberSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final f = DateFormat('d MMM yyyy');
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.w(20),
+        context.h(20),
+        context.w(20),
+        MediaQuery.of(context).viewInsets.bottom + context.h(20),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Edit Task',
+              style: TextStyle(
+                fontSize: context.sp(16),
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
+            SizedBox(height: context.h(12)),
+            TextField(
+              controller: _title,
+              enabled: !_busy,
+              decoration: const InputDecoration(labelText: 'Task title'),
+            ),
+            SizedBox(height: context.h(10)),
+            TextField(
+              controller: _desc,
+              enabled: !_busy,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Description / remark',
+              ),
+            ),
+            SizedBox(height: context.h(10)),
+            DropdownButtonFormField<String>(
+              initialValue: _priority,
+              decoration: const InputDecoration(labelText: 'Priority'),
+              items: const [
+                'Low',
+                'Medium',
+                'High',
+              ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+              onChanged: _busy
+                  ? null
+                  : (v) => setState(() => _priority = v ?? 'Medium'),
+            ),
+            SizedBox(height: context.h(10)),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => _pick(true),
+                    child: Text(
+                      _start == null ? 'Start date' : f.format(_start!),
+                    ),
+                  ),
+                ),
+                SizedBox(width: context.w(10)),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => _pick(false),
+                    child: Text(_due == null ? 'Due date' : f.format(_due!)),
+                  ),
+                ),
+              ],
+            ),
+            if (_err != null)
+              Padding(
+                padding: EdgeInsets.only(top: context.h(8)),
+                child: Text(
+                  _err!,
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ),
+            SizedBox(height: context.h(14)),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _busy ? null : _submit,
+                child: _busy
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save Changes'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Mirrors the web "Name - Details" modal: employee info, task statistics,
+/// and the employee's tasks (with work proof).
+class _MemberSheet extends StatelessWidget {
+  final Map stat;
+  final List<Map> tasks;
+  final String Function(dynamic) date;
+  final Future<void> Function(String) openDoc;
+  final void Function(Map task) onUpdate;
+  const _MemberSheet({
+    required this.stat,
+    required this.tasks,
+    required this.date,
+    required this.openDoc,
+    required this.onUpdate,
+  });
+
+  Widget _section(BuildContext context, String title) => Padding(
+    padding: EdgeInsets.only(top: context.h(18), bottom: context.h(10)),
+    child: Text(
+      title,
+      style: TextStyle(
+        fontSize: context.sp(15),
+        fontWeight: FontWeight.w700,
+        color: AppColors.ink,
+      ),
+    ),
+  );
+
+  Widget _statTile(
+    BuildContext context,
+    String label,
+    Object? value,
+    Color color,
+  ) => Container(
+    padding: EdgeInsets.symmetric(vertical: context.h(12)),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.surfaceSubtle),
+    ),
+    child: Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
+        ),
+        SizedBox(height: context.h(4)),
+        Text(
+          '${value ?? 0}',
+          style: TextStyle(
+            color: color,
+            fontSize: context.sp(22),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final member = stat['member'] as Map? ?? {};
+    final user = member['userId'] as Map? ?? {};
+    final name = user['name']?.toString() ?? 'Employee';
+    final muted = TextStyle(
+      color: AppColors.inkMuted,
+      fontSize: context.sp(13),
+    );
+    final strong = TextStyle(
+      color: AppColors.ink,
+      fontSize: context.sp(13),
+      fontWeight: FontWeight.w600,
+    );
+
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.7,
+      initialChildSize: 0.85,
       maxChildSize: 0.95,
       builder: (_, controller) => ListView(
         controller: controller,
-        padding: EdgeInsets.all(context.w(20)),
+        padding: EdgeInsets.fromLTRB(
+          context.w(20),
+          context.h(8),
+          context.w(20),
+          context.h(24),
+        ),
         children: [
-          Text(
-            '${widget.name} - Details',
-            style: TextStyle(
-              fontSize: context.sp(16),
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-            ),
-          ),
-          SizedBox(height: context.h(14)),
-          Text(
-            'Tasks',
-            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
-          ),
-          SizedBox(height: context.h(6)),
-          if (widget.tasks.isEmpty)
-            Text(
-              'No tasks assigned.',
-              style: TextStyle(color: AppColors.inkMuted),
-            )
-          else
-            ...widget.tasks.map(
-              (t) => ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: Text(t['title']?.toString() ?? ''),
-                subtitle: Text('Due ${widget.date(t['deadline'])}'),
-                trailing: Text(
-                  t['status']?.toString() ?? '',
-                  style: TextStyle(color: AppColors.inkMuted),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: context.r(22),
+                backgroundColor: AppColors.brand100,
+                child: Text(
+                  (name.isNotEmpty ? name[0] : '?').toUpperCase(),
+                  style: TextStyle(
+                    color: AppColors.brand700,
+                    fontWeight: FontWeight.w700,
+                    fontSize: context.sp(16),
+                  ),
                 ),
               ),
-            ),
-          SizedBox(height: context.h(14)),
-          Text(
-            'Documents',
-            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+              SizedBox(width: context.w(12)),
+              Expanded(
+                child: Text(
+                  '$name - Details',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Close',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
-          SizedBox(height: context.h(6)),
-          if (_docs == null)
-            const Column(children: [SkeletonListTile(), SkeletonListTile()])
-          else if (_docs!.isEmpty)
-            Text(
-              _err ?? 'No documents found.',
-              style: TextStyle(color: AppColors.inkMuted),
+          _section(context, 'Employee Info'),
+          Container(
+            padding: EdgeInsets.all(context.w(14)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSubtle,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('ID', style: muted),
+                    Text(
+                      member['employeeId']?.toString() ?? '-',
+                      style: strong,
+                    ),
+                  ],
+                ),
+                Divider(height: context.h(20)),
+                Row(
+                  children: [
+                    Text('Email', style: muted),
+                    SizedBox(width: context.w(12)),
+                    Expanded(
+                      child: Text(
+                        user['email']?.toString() ?? '-',
+                        style: strong,
+                        textAlign: TextAlign.end,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _section(context, 'Task Statistics'),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: context.h(10),
+            crossAxisSpacing: context.w(10),
+            childAspectRatio: 2.1,
+            children: [
+              _statTile(context, 'Total', stat['totalTasks'], AppColors.ink),
+              _statTile(
+                context,
+                'Completed',
+                stat['completed'],
+                AppColors.accent600,
+              ),
+              _statTile(context, 'Pending', stat['pending'], AppColors.warning),
+              _statTile(context, 'Overdue', stat['overdue'], AppColors.danger),
+            ],
+          ),
+          _section(context, 'Employee Tasks'),
+          if (tasks.isEmpty)
+            Container(
+              padding: EdgeInsets.all(context.w(16)),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'No tasks assigned to this employee.',
+                style: muted,
+                textAlign: TextAlign.center,
+              ),
             )
           else
-            ..._docs!.map(
-              (d) => ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: Text(d['originalName']?.toString() ?? 'Document'),
-                subtitle: Text(
-                  '${widget.date(d['createdAt'])}  -  ${d['status'] ?? 'Pending'}',
+            ...tasks.map((t) {
+              final deleted = t['isDeleted'] == true;
+              final proof = t['workProof']?.toString() ?? '';
+              return Container(
+                margin: EdgeInsets.only(bottom: context.h(10)),
+                padding: EdgeInsets.all(context.w(14)),
+                decoration: BoxDecoration(
+                  color: deleted ? AppColors.dangerBg : AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.surfaceSubtle),
                 ),
-                trailing: const Icon(Icons.open_in_new, size: 18),
-                onTap: () => widget.openDoc(d['fileUrl']?.toString() ?? ''),
-              ),
-            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: t['title']?.toString() ?? ''),
+                                if (deleted)
+                                  const TextSpan(
+                                    text: '  (Deleted)',
+                                    style: TextStyle(
+                                      color: AppColors.danger,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: deleted ? null : () => onUpdate(t),
+                          child: _StatusPill(t['status']?.toString() ?? ''),
+                        ),
+                      ],
+                    ),
+                    if ((t['description']?.toString() ?? '').isNotEmpty) ...[
+                      SizedBox(height: context.h(4)),
+                      Text(
+                        t['description'].toString(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: context.sp(12),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: context.h(8)),
+                    Row(
+                      children: [
+                        _PriorityTag(t['priority']?.toString() ?? 'Medium'),
+                        const Spacer(),
+                        Text(
+                          '${date(t['startDate'])}  →  ${date(t['deadline'])}',
+                          style: TextStyle(
+                            color: AppColors.inkMuted,
+                            fontSize: context.sp(12),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (proof.isNotEmpty) ...[
+                      SizedBox(height: context.h(10)),
+                      _ProofButton(onTap: () => openDoc(proof)),
+                    ],
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

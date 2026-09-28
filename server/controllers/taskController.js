@@ -167,7 +167,8 @@ export const deleteTask = async (req, res) => {
         }
 
         // Check Authorization: Admin or Team Lead of the team the task belongs to
-        if (req.user.role !== "admin") {
+        const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+        if (!roles.includes("admin")) {
             // Check if user is the team lead of the task's team
             if (!task.teamId || task.teamId.leadId.toString() !== req.user._id.toString()) {
                 return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
@@ -177,6 +178,42 @@ export const deleteTask = async (req, res) => {
         // Soft delete: Mark as deleted instead of removing from DB
         await Task.findByIdAndUpdate(id, { isDeleted: true });
         res.status(200).json({ success: true, message: "Task deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Edit task details (title/description/priority/dates): admin or lead of the task's team.
+export const editTask = async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id).populate("teamId", "leadId");
+        if (!task || task.isDeleted) {
+            return res.status(404).json({ success: false, error: "Task not found" });
+        }
+        const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+        const isLead = task.teamId && task.teamId.leadId?.toString() === req.user._id.toString();
+        if (!roles.includes("admin") && !isLead) {
+            return res.status(403).json({ success: false, error: "Not authorized to edit this task" });
+        }
+
+        const { title, description, priority, startDate, deadline } = req.body;
+        if (title !== undefined) {
+            if (!String(title).trim()) return res.status(400).json({ success: false, error: "Title is required" });
+            task.title = String(title).trim();
+        }
+        if (description !== undefined) task.description = description;
+        if (priority !== undefined) {
+            if (!["Low", "Medium", "High"].includes(priority)) {
+                return res.status(400).json({ success: false, error: "Invalid priority" });
+            }
+            task.priority = priority;
+        }
+        if (startDate !== undefined) task.startDate = startDate || undefined;
+        if (deadline !== undefined) task.deadline = deadline || undefined;
+        task.updatedAt = Date.now();
+        await task.save();
+
+        res.status(200).json({ success: true, task });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

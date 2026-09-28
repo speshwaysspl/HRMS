@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
-import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit } from "react-icons/fa";
+import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit, FaPen, FaTrash } from "react-icons/fa";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +37,8 @@ const TeamDetail = () => {
   const [selectedMember, setSelectedMember] = useState(null); // For detail modal
   const [editingTask, setEditingTask] = useState(null); // For status update
   const [viewTask, setViewTask] = useState(null); // For viewing task details
+  const [editDetails, setEditDetails] = useState(null); // For editing title/priority/dates
+  const [savingDetails, setSavingDetails] = useState(false);
   const [newTaskStatus, setNewTaskStatus] = useState("");
   const [newTaskRemark, setNewTaskRemark] = useState("");
   const [workProofFile, setWorkProofFile] = useState(null);
@@ -98,6 +100,39 @@ const TeamDetail = () => {
       }
     } catch (error) {
         alert("Failed to delete task");
+    }
+  };
+
+  const toDateInput = (v) => (v ? new Date(v).toISOString().slice(0, 10) : "");
+
+  const openEditDetails = (task) =>
+    setEditDetails({
+      _id: task._id,
+      title: task.title || "",
+      description: task.description || "",
+      priority: task.priority || "Medium",
+      startDate: toDateInput(task.startDate),
+      deadline: toDateInput(task.deadline),
+    });
+
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    if (!editDetails.title.trim()) return alert("Title is required");
+    if (editDetails.startDate && editDetails.deadline && editDetails.deadline < editDetails.startDate) {
+      return alert("Due date must be on or after the start date");
+    }
+    setSavingDetails(true);
+    try {
+      const { _id, ...body } = editDetails;
+      await axios.put(`${API_BASE}/api/task/${_id}/details`, body, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      });
+      setEditDetails(null);
+      fetchTeamDetail();
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to save task");
+    } finally {
+      setSavingDetails(false);
     }
   };
 
@@ -507,7 +542,7 @@ const TeamDetail = () => {
                                 <th className="p-3 text-left font-semibold text-ink w-28">
                                     Documents
                                 </th>
-                                <th className="p-3 text-left font-semibold text-ink w-32">
+                                <th className="p-3 text-left font-semibold text-ink w-52">
                                     Actions
                                 </th>
 
@@ -609,6 +644,22 @@ const TeamDetail = () => {
                                                 >
                                                     <FaEye />
                                                 </button>
+                                                <button
+                                                    onClick={() => openEditDetails(task)}
+                                                    className="p-2 bg-surface-muted text-ink-muted rounded-lg hover:bg-surface-subtle transition-colors"
+                                                    title="Edit Task"
+                                                    aria-label="Edit task"
+                                                >
+                                                    <FaPen />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteTask(task._id)}
+                                                    className="p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
+                                                    title="Delete Task"
+                                                    aria-label="Delete task"
+                                                >
+                                                    <FaTrash />
+                                                </button>
                                             </div>
                                         </td>
 
@@ -688,6 +739,18 @@ const TeamDetail = () => {
                                         className="text-ink-muted text-sm font-medium flex items-center gap-1 bg-surface-muted px-3 py-1.5 rounded-lg"
                                     >
                                         <FaEye /> View
+                                    </button>
+                                    <button
+                                        onClick={() => openEditDetails(task)}
+                                        className="text-ink-muted text-sm font-medium flex items-center gap-1 bg-surface-muted px-3 py-1.5 rounded-lg"
+                                    >
+                                        <FaPen /> Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteTask(task._id)}
+                                        className="text-red-700 text-sm font-medium flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg"
+                                    >
+                                        <FaTrash /> Delete
                                     </button>
                                 </div>
                             </div>
@@ -1232,6 +1295,93 @@ const TeamDetail = () => {
                             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isAssigning ? 'bg-accent-300 text-white cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'}`}
                         >
                             {isAssigning ? 'Assigning...' : 'Assign'}
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* Edit Task Details Modal */}
+      <AnimatePresence>
+      {editDetails && (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-brand-950/60 flex justify-center items-center z-[60] p-4"
+        >
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white p-6 rounded-xl shadow-panel w-full max-w-md max-h-[90vh] overflow-y-auto"
+            >
+                <h3 className="text-lg font-semibold mb-4 text-ink">Edit Task</h3>
+                <form onSubmit={handleSaveDetails} className="space-y-4">
+                    <div>
+                        <label htmlFor="edit-title" className="block text-sm font-medium mb-1 text-ink">Title</label>
+                        <input
+                            id="edit-title"
+                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                            value={editDetails.title}
+                            onChange={(e) => setEditDetails({ ...editDetails, title: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="edit-desc" className="block text-sm font-medium mb-1 text-ink">Description / Remark</label>
+                        <textarea
+                            id="edit-desc"
+                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink h-20 focus:ring-2 focus:ring-accent-500 outline-none"
+                            value={editDetails.description}
+                            onChange={(e) => setEditDetails({ ...editDetails, description: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="edit-priority" className="block text-sm font-medium mb-1 text-ink">Priority</label>
+                        <select
+                            id="edit-priority"
+                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                            value={editDetails.priority}
+                            onChange={(e) => setEditDetails({ ...editDetails, priority: e.target.value })}
+                        >
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="edit-start" className="text-xs font-medium block mb-1 text-ink-muted uppercase">Start Date</label>
+                            <input
+                                id="edit-start"
+                                type="date"
+                                className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                                value={editDetails.startDate}
+                                onChange={(e) => setEditDetails({ ...editDetails, startDate: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="edit-deadline" className="text-xs font-medium block mb-1 text-ink-muted uppercase">Deadline</label>
+                            <input
+                                id="edit-deadline"
+                                type="date"
+                                className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                                value={editDetails.deadline}
+                                onChange={(e) => setEditDetails({ ...editDetails, deadline: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button type="button" onClick={() => setEditDetails(null)} className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium transition-colors">Cancel</button>
+                        <button
+                            type="submit"
+                            disabled={savingDetails}
+                            className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                        >
+                            {savingDetails ? "Saving..." : "Save Changes"}
                         </button>
                     </div>
                 </form>

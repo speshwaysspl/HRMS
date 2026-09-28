@@ -11,6 +11,7 @@ import '../employee/attendance_screen.dart';
 import '../employee/employee_home_screen.dart';
 import '../employee/leaves_screen.dart';
 import '../employee/tasks_screen.dart';
+import '../teamlead/my_teams_screen.dart';
 import '../placeholder_screen.dart';
 import '../profile_screen.dart';
 
@@ -69,7 +70,7 @@ class _AppShellState extends State<AppShell> {
     final user = context.watch<AuthProvider>().user;
     final role = user?.primaryRole ?? 'employee';
 
-    final tabs = _tabsForRole(role);
+    final tabs = _tabsForRole(role, isTeamLead: user?.isTeamLead ?? false);
     if (_index >= tabs.length) _index = 0;
 
     final homeIndex = _homeIndexFor(role);
@@ -235,7 +236,7 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  List<_TabSpec> _tabsForRole(String role) {
+  List<_TabSpec> _tabsForRole(String role, {bool isTeamLead = false}) {
     switch (role) {
       case 'admin':
         return [
@@ -297,12 +298,21 @@ class _AppShellState extends State<AppShell> {
             activeIcon: Icons.home_rounded,
             isCenter: true,
           ),
-          _TabSpec(
-            'Tasks',
-            Icons.assignment_turned_in_outlined,
-            const TasksScreen(),
-            activeIcon: Icons.assignment_turned_in_outlined,
-          ),
+          // Team leads manage their teams here; their own tasks stay in the drawer.
+          if (isTeamLead)
+            _TabSpec(
+              'My Team',
+              Icons.groups_outlined,
+              const MyTeamsScreen(),
+              activeIcon: Icons.groups_rounded,
+            )
+          else
+            _TabSpec(
+              'Tasks',
+              Icons.assignment_turned_in_outlined,
+              const TasksScreen(),
+              activeIcon: Icons.assignment_turned_in_outlined,
+            ),
           _TabSpec(
             'Profile',
             Icons.person_outline_rounded,
