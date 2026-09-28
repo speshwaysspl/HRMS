@@ -14,6 +14,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/star_rating.dart';
 import '../../widgets/state_views.dart';
 import 'team_attendance_tab.dart';
 
@@ -145,16 +146,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         })
         .map(
           (t) => [
-            t['title']?.toString() ?? '',
             ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']
                     ?.toString() ??
                 'Unassigned',
             t['status']?.toString() ?? '',
             _date(t['startDate']),
             _date(t['deadline']),
-            (t['description']?.toString().isNotEmpty ?? false)
-                ? t['description'].toString()
+            (t['remark']?.toString().isNotEmpty ?? false)
+                ? t['remark'].toString()
                 : '-',
+            t['rating'] == null ? '-' : '${t['rating']}/5',
           ],
         )
         .toList();
@@ -170,12 +171,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
             pw.SizedBox(height: 10),
             pw.TableHelper.fromTextArray(
               headers: const [
-                'Task',
-                'Assigned To',
+                'Employee Name',
                 'Status',
                 'Start Date',
                 'Due Date',
                 'Remark',
+                'Rating',
               ],
               data: rows,
               cellStyle: const pw.TextStyle(fontSize: 9),
@@ -200,9 +201,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
 
   Future<void> _openMember(Map stat) async {
     final member = stat['member'] as Map? ?? {};
-    // Like the web modal, the member view also lists deleted tasks (flagged).
-    final memberTasks = ((_detail?['tasks'] as List?) ?? [])
-        .whereType<Map>()
+    final memberTasks = _taskList
         .where((t) => (t['assignedTo'] as Map?)?['_id'] == member['_id'])
         .toList();
     await showModalBottomSheet(
@@ -311,7 +310,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   }
 
   void _viewTask(Map task) {
-    final remark = task['description']?.toString() ?? '';
+    final description = task['description']?.toString() ?? '';
+    final remark = task['remark']?.toString() ?? '';
+    final rating = (task['rating'] as num?)?.toInt() ?? 0;
     final comment = task['comments']?.toString() ?? '';
     showModalBottomSheet(
       context: context,
@@ -343,10 +344,37 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
             ),
             SizedBox(height: context.h(16)),
             _kv('Assigned to', _assignee(task)),
-            _kv('Priority', task['priority']?.toString() ?? 'Medium'),
             _kv('Start date', _date(task['startDate'])),
             _kv('Due date', _date(task['deadline'])),
+            _kv('Description', description.isEmpty ? '-' : description),
             _kv('Remark', remark.isEmpty ? '-' : remark),
+            Padding(
+              padding: EdgeInsets.only(bottom: context.h(10)),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: context.w(100),
+                    child: Text(
+                      'Rating',
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(13),
+                      ),
+                    ),
+                  ),
+                  rating > 0
+                      ? StarRating(value: rating, size: context.r(18))
+                      : Text(
+                          'Not rated yet',
+                          style: TextStyle(
+                            color: AppColors.ink,
+                            fontSize: context.sp(13),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ],
+              ),
+            ),
             SizedBox(height: context.h(8)),
             Text(
               'Employee submission',
@@ -538,31 +566,71 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         : all.where((t) => t['status'] == _statusFilter).toList();
     int count(String s) => all.where((t) => t['status'] == s).length;
 
-    final chips = SizedBox(
-      height: context.h(52),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(
-          horizontal: context.w(16),
-          vertical: context.h(8),
-        ),
+    // Single status filter (menu) instead of a row of chips.
+    final chips = Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.w(16),
+        context.h(4),
+        context.w(8),
+        context.h(4),
+      ),
+      child: Row(
         children: [
-          ChoiceChip(
-            label: Text('All ${all.length}'),
-            selected: _statusFilter == null,
-            onSelected: (_) => setState(() => _statusFilter = null),
-          ),
-          for (final s in _statuses)
-            Padding(
-              padding: EdgeInsets.only(left: context.w(8)),
-              child: ChoiceChip(
-                label: Text('$s ${count(s)}'),
-                selected: _statusFilter == s,
-                onSelected: (_) => setState(
-                  () => _statusFilter = _statusFilter == s ? null : s,
-                ),
+          Expanded(
+            child: Text(
+              '${_statusFilter ?? 'All tasks'} · ${tasks.length}',
+              style: TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: context.sp(13),
+                fontWeight: FontWeight.w600,
               ),
             ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Filter by status',
+            initialValue: _statusFilter ?? '',
+            onSelected: (v) =>
+                setState(() => _statusFilter = v.isEmpty ? null : v),
+            itemBuilder: (_) => [
+              CheckedPopupMenuItem(
+                value: '',
+                checked: _statusFilter == null,
+                child: Text('All (${all.length})'),
+              ),
+              for (final s in _statuses)
+                CheckedPopupMenuItem(
+                  value: s,
+                  checked: _statusFilter == s,
+                  child: Text('$s (${count(s)})'),
+                ),
+            ],
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(8),
+                vertical: context.h(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _statusFilter == null
+                        ? Icons.filter_list
+                        : Icons.filter_list_alt,
+                    size: context.r(20),
+                    color: AppColors.brand600,
+                  ),
+                  SizedBox(width: context.w(4)),
+                  Text(
+                    'Filter',
+                    style: TextStyle(
+                      color: AppColors.brand600,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -693,7 +761,6 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                   ),
                 ),
               ),
-              _PriorityTag(t['priority']?.toString() ?? 'Medium'),
             ],
           ),
           SizedBox(height: context.h(8)),
@@ -711,6 +778,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
               ),
             ],
           ),
+          if (t['rating'] != null) ...[
+            SizedBox(height: context.h(6)),
+            StarRating(
+              value: (t['rating'] as num).toInt(),
+              size: context.r(16),
+            ),
+          ],
           if (comment.isNotEmpty) ...[
             SizedBox(height: context.h(8)),
             Text(
@@ -970,7 +1044,6 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
   final _title = TextEditingController();
   final _desc = TextEditingController();
   final _selected = <String>{};
-  String _priority = 'Medium';
   DateTime? _start;
   DateTime? _due;
   bool _busy = false;
@@ -1012,7 +1085,6 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
         teamId: widget.teamId,
         title: _title.text.trim(),
         description: _desc.text.trim(),
-        priority: _priority,
         assignedTo: _selected.toList(),
         startDate: _start == null ? null : f.format(_start!),
         deadline: _due == null ? null : f.format(_due!),
@@ -1061,17 +1133,6 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
               controller: _desc,
               maxLines: 2,
               decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            SizedBox(height: context.h(10)),
-            DropdownButtonFormField<String>(
-              initialValue: _priority,
-              decoration: const InputDecoration(labelText: 'Priority'),
-              items: const [
-                'Low',
-                'Medium',
-                'High',
-              ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-              onChanged: (v) => setState(() => _priority = v ?? 'Medium'),
             ),
             SizedBox(height: context.h(10)),
             Row(
@@ -1182,8 +1243,9 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
       ? widget.task['status'].toString()
       : widget.statuses.first;
   late final _remark = TextEditingController(
-    text: widget.task['description']?.toString() ?? '',
+    text: widget.task['remark']?.toString() ?? '',
   );
+  late int _rating = (widget.task['rating'] as num?)?.toInt() ?? 0;
   bool _busy = false;
   String? _err;
   String? _filePath;
@@ -1216,6 +1278,7 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
         widget.task['_id'].toString(),
         _status,
         remark: _remark.text.trim(),
+        rating: _rating,
         filePath: _filePath,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -1265,6 +1328,16 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
             onChanged: (v) => setState(() => _status = v ?? _status),
           ),
           SizedBox(height: context.h(10)),
+          Text(
+            'Rating',
+            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+          ),
+          StarRating(
+            value: _rating,
+            size: context.r(28),
+            onChanged: _busy ? null : (v) => setState(() => _rating = v),
+          ),
+          SizedBox(height: context.h(6)),
           TextField(
             controller: _remark,
             maxLines: 3,
@@ -1321,14 +1394,16 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = colorFor(status);
+    final base = colorFor(status);
+    // Lighten the text on dark backgrounds; the raw status colours are too dim there.
+    final c = AppColors.isDark ? Color.lerp(base, Colors.white, 0.45)! : base;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: context.w(10),
         vertical: context.h(4),
       ),
       decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.12),
+        color: base.withValues(alpha: AppColors.isDark ? 0.28 : 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1343,35 +1418,6 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _PriorityTag extends StatelessWidget {
-  final String priority;
-  const _PriorityTag(this.priority);
-
-  @override
-  Widget build(BuildContext context) {
-    final c = switch (priority) {
-      'High' => AppColors.danger,
-      'Low' => AppColors.accent600,
-      _ => const Color(0xFFEA580C),
-    };
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.flag_rounded, size: context.r(14), color: c),
-        SizedBox(width: context.w(3)),
-        Text(
-          priority,
-          style: TextStyle(
-            color: c,
-            fontSize: context.sp(12),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Prominent "employee sent a file" row so leads don't miss submissions.
 class _ProofButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -1379,6 +1425,7 @@ class _ProofButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fg = AppColors.isDark ? AppColors.accent300 : AppColors.accent600;
     return Material(
       color: AppColors.accent50,
       borderRadius: BorderRadius.circular(10),
@@ -1392,17 +1439,13 @@ class _ProofButton extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.description_outlined,
-                size: context.r(18),
-                color: AppColors.accent600,
-              ),
+              Icon(Icons.description_outlined, size: context.r(18), color: fg),
               SizedBox(width: context.w(8)),
               Expanded(
                 child: Text(
                   'Work proof submitted',
                   style: TextStyle(
-                    color: AppColors.accent600,
+                    color: fg,
                     fontWeight: FontWeight.w600,
                     fontSize: context.sp(13),
                   ),
@@ -1411,16 +1454,12 @@ class _ProofButton extends StatelessWidget {
               Text(
                 'View',
                 style: TextStyle(
-                  color: AppColors.accent600,
+                  color: fg,
                   fontWeight: FontWeight.w700,
                   fontSize: context.sp(13),
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: context.r(18),
-                color: AppColors.accent600,
-              ),
+              Icon(Icons.chevron_right, size: context.r(18), color: fg),
             ],
           ),
         ),
@@ -1494,10 +1533,6 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
   late final _desc = TextEditingController(
     text: widget.task['description']?.toString() ?? '',
   );
-  late String _priority =
-      const ['Low', 'Medium', 'High'].contains(widget.task['priority'])
-      ? widget.task['priority'].toString()
-      : 'Medium';
   late DateTime? _start = DateTime.tryParse(
     widget.task['startDate']?.toString() ?? '',
   )?.toLocal();
@@ -1543,7 +1578,6 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
         widget.task['_id'].toString(),
         title: _title.text.trim(),
         description: _desc.text.trim(),
-        priority: _priority,
         startDate: _start == null ? null : f.format(_start!),
         deadline: _due == null ? null : f.format(_due!),
       );
@@ -1592,22 +1626,7 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
               controller: _desc,
               enabled: !_busy,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description / remark',
-              ),
-            ),
-            SizedBox(height: context.h(10)),
-            DropdownButtonFormField<String>(
-              initialValue: _priority,
-              decoration: const InputDecoration(labelText: 'Priority'),
-              items: const [
-                'Low',
-                'Medium',
-                'High',
-              ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-              onChanged: _busy
-                  ? null
-                  : (v) => setState(() => _priority = v ?? 'Medium'),
+              decoration: const InputDecoration(labelText: 'Description'),
             ),
             SizedBox(height: context.h(10)),
             Row(
@@ -1708,7 +1727,10 @@ class _MemberSheet extends StatelessWidget {
         Text(
           '${value ?? 0}',
           style: TextStyle(
-            color: color,
+            // Status colours are too dim on the dark surface; lighten them there.
+            color: AppColors.isDark
+                ? Color.lerp(color, Colors.white, 0.4)
+                : color,
             fontSize: context.sp(22),
             fontWeight: FontWeight.w700,
           ),
@@ -1908,8 +1930,6 @@ class _MemberSheet extends StatelessWidget {
                     SizedBox(height: context.h(8)),
                     Row(
                       children: [
-                        _PriorityTag(t['priority']?.toString() ?? 'Medium'),
-                        const Spacer(),
                         Text(
                           '${date(t['startDate'])}  →  ${date(t['deadline'])}',
                           style: TextStyle(

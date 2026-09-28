@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from "framer-motion";
 import TeamAttendance from "./TeamAttendance";
+import StarRating from "../task/StarRating";
 
 const getRandomColor = (name) => {
     const colors = [
@@ -37,10 +38,11 @@ const TeamDetail = () => {
   const [selectedMember, setSelectedMember] = useState(null); // For detail modal
   const [editingTask, setEditingTask] = useState(null); // For status update
   const [viewTask, setViewTask] = useState(null); // For viewing task details
-  const [editDetails, setEditDetails] = useState(null); // For editing title/priority/dates
+  const [editDetails, setEditDetails] = useState(null); // For editing title/description/dates
   const [savingDetails, setSavingDetails] = useState(false);
   const [newTaskStatus, setNewTaskStatus] = useState("");
   const [newTaskRemark, setNewTaskRemark] = useState("");
+  const [newTaskRating, setNewTaskRating] = useState(0);
   const [workProofFile, setWorkProofFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -51,7 +53,6 @@ const TeamDetail = () => {
   const [taskData, setTaskData] = useState({
     title: "",
     description: "",
-    priority: "Medium",
     startDate: "",
     deadline: "",
     assignedTo: [],
@@ -110,7 +111,6 @@ const TeamDetail = () => {
       _id: task._id,
       title: task.title || "",
       description: task.description || "",
-      priority: task.priority || "Medium",
       startDate: toDateInput(task.startDate),
       deadline: toDateInput(task.deadline),
     });
@@ -256,7 +256,7 @@ const TeamDetail = () => {
         alert("Task assigned successfully");
         setShowTaskModal(false);
         fetchTeamDetail(); // Refresh stats
-        setTaskData({ title: "", description: "", priority: "Medium", startDate: "", deadline: "", assignedTo: [] });
+        setTaskData({ title: "", description: "", startDate: "", deadline: "", assignedTo: [] });
       }
     } catch (error) {
       alert(error.response?.data?.error || "Failed to assign task");
@@ -270,7 +270,8 @@ const TeamDetail = () => {
     try {
       const formData = new FormData();
       formData.append("status", newTaskStatus);
-      formData.append("description", newTaskRemark);
+      formData.append("remark", newTaskRemark);
+      formData.append("rating", String(newTaskRating));
       if (workProofFile) {
         formData.append("file", workProofFile);
       }
@@ -287,7 +288,7 @@ const TeamDetail = () => {
       if (response.data.success) {
         // Update local state immediately
         setTasks(prev => prev.map(t => 
-            t._id === editingTask._id ? { ...t, status: newTaskStatus, description: newTaskRemark, workProof: workProofFile ? response.data.task.workProof : t.workProof } : t
+            t._id === editingTask._id ? { ...t, status: newTaskStatus, remark: newTaskRemark, rating: newTaskRating || undefined, workProof: workProofFile ? response.data.task.workProof : t.workProof } : t
         ));
 
         // Also update member stats (completed/pending counts) locally if needed, 
@@ -338,7 +339,7 @@ const TeamDetail = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.text("Task List", 15, 15);
     
-    const tableColumn = ["Task", "Assigned To", "Status", "Start Date", "Due Date", "Remark"];
+    const tableColumn = ["Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"];
     const tableRows = [];
 
     const filteredTasks = tasks.filter(task => {
@@ -363,12 +364,12 @@ const TeamDetail = () => {
 
     filteredTasks.forEach(task => {
         const taskData = [
-            task.title,
             task.assignedTo?.userId?.name || "Unassigned",
             task.status,
             task.startDate ? new Date(task.startDate).toLocaleDateString() : '-',
             task.deadline ? new Date(task.deadline).toLocaleDateString() : '-',
-            task.description || "-"
+            task.remark || "-",
+            task.rating ? `${task.rating}/5` : "-"
         ];
         tableRows.push(taskData);
     });
@@ -384,7 +385,7 @@ const TeamDetail = () => {
 
   // Derive member tasks from main tasks list to avoid duplication in state/backend
   const memberTasks = selectedMember?.member?._id
-    ? tasks.filter(t => t.assignedTo && t.assignedTo._id === selectedMember.member._id)
+    ? tasks.filter(t => !t.isDeleted && t.assignedTo && t.assignedTo._id === selectedMember.member._id)
     : [];
 
   if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
@@ -464,7 +465,7 @@ const TeamDetail = () => {
                                 <button
                                     className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
                                     onClick={() => {
-                                        setTaskData({ title: "", description: "", priority: "Medium", deadline: "", assignedTo: [] });
+                                        setTaskData({ title: "", description: "", deadline: "", assignedTo: [] });
                                         setShowTaskModal(true);
                                     }}
                                 >
@@ -590,7 +591,8 @@ const TeamDetail = () => {
                                                 onClick={() => {
                                                     setEditingTask(task);
                                                     setNewTaskStatus(task.status);
-                                                    setNewTaskRemark(task.description || "");
+                                                    setNewTaskRemark(task.remark || "");
+                                                    setNewTaskRating(task.rating || 0);
                                                     setWorkProofFile(null);
                                                 }}
                                                 className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor} hover:opacity-80 transition-opacity cursor-pointer`}
@@ -604,8 +606,9 @@ const TeamDetail = () => {
                                         <td className="p-3 border-r border-surface-subtle text-ink-muted">
                                             {task.deadline ? new Date(task.deadline).toLocaleDateString() : '-'}
                                         </td>
-                                        <td className="p-3 text-ink-muted truncate max-w-[200px]">
-                                            {task.description || "-"}
+                                        <td className="p-3 text-ink-muted max-w-[200px]">
+                                            <div className="truncate">{task.remark || "-"}</div>
+                                            {task.rating ? <StarRating value={task.rating} size={12} /> : null}
                                         </td>
 
                                         <td className="p-3">
@@ -629,7 +632,8 @@ const TeamDetail = () => {
                                                     onClick={() => {
                                                         setEditingTask(task);
                                                         setNewTaskStatus(task.status);
-                                                        setNewTaskRemark(task.description || "");
+                                                        setNewTaskRemark(task.remark || "");
+                                                        setNewTaskRating(task.rating || 0);
                                                         setWorkProofFile(null);
                                                     }}
                                                     className="p-2 bg-brand-100 text-brand-700 rounded-lg hover:bg-brand-200 transition-colors"
@@ -692,7 +696,8 @@ const TeamDetail = () => {
                                         onClick={() => {
                                             setEditingTask(task);
                                             setNewTaskStatus(task.status);
-                                            setNewTaskRemark(task.description || "");
+                                            setNewTaskRemark(task.remark || "");
+                                            setNewTaskRating(task.rating || 0);
                                             setWorkProofFile(null);
                                         }}
                                         className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
@@ -727,7 +732,8 @@ const TeamDetail = () => {
                                         onClick={() => {
                                             setEditingTask(task);
                                             setNewTaskStatus(task.status);
-                                            setNewTaskRemark(task.description || "");
+                                            setNewTaskRemark(task.remark || "");
+                                            setNewTaskRating(task.rating || 0);
                                             setWorkProofFile(null);
                                         }}
                                         className="text-brand-700 text-sm font-medium flex items-center gap-1 bg-brand-100 px-3 py-1.5 rounded-lg"
@@ -1039,7 +1045,6 @@ const TeamDetail = () => {
                                 <thead className="bg-surface-muted">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase">Task Title</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase">Priority</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase">Start Date</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase">Deadline</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase">Status</th>
@@ -1055,14 +1060,6 @@ const TeamDetail = () => {
                                                 </div>
                                                 <div className="text-xs text-ink-muted truncate max-w-[200px] mt-1">{task.description}</div>
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs text-white font-medium ${
-                                                    task.priority === 'High' ? 'bg-red-500' :
-                                                    task.priority === 'Medium' ? 'bg-amber-500' : 'bg-accent-500'
-                                                }`}>
-                                                    {task.priority}
-                                                </span>
-                                            </td>
                                             <td className="px-4 py-3 text-sm text-ink-muted">
                                                 {task.startDate ? new Date(task.startDate).toLocaleDateString() : 'N/A'}
                                             </td>
@@ -1074,7 +1071,8 @@ const TeamDetail = () => {
                                                     onClick={() => {
                                                         setEditingTask(task);
                                                         setNewTaskStatus(task.status);
-                                                        setNewTaskRemark(task.description || "");
+                                                        setNewTaskRemark(task.remark || "");
+                                                        setNewTaskRating(task.rating || 0);
                                                         setWorkProofFile(null);
                                                     }}
                                                     className="hover:underline focus:outline-none"
@@ -1166,6 +1164,10 @@ const TeamDetail = () => {
                             <option value="Overdue">Overdue</option>
                         </select>
                     </div>
+                    <div className="mb-4">
+                        <span className="block text-sm font-medium mb-1 text-ink">Rating</span>
+                        <StarRating value={newTaskRating} onChange={setNewTaskRating} size={22} />
+                    </div>
                     <div className="mb-6">
                         <label className="block text-sm font-medium mb-2 text-ink">Remark</label>
                         <textarea
@@ -1208,17 +1210,9 @@ const TeamDetail = () => {
                         value={taskData.title} onChange={(e) => setTaskData({...taskData, title: e.target.value})} required
                     />
                     <textarea
-                        placeholder="Remark" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
+                        placeholder="Description" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
                         value={taskData.description} onChange={(e) => setTaskData({...taskData, description: e.target.value})}
                     />
-                    <select
-                        className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                        value={taskData.priority} onChange={(e) => setTaskData({...taskData, priority: e.target.value})}
-                    >
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
                     <div className="relative">
                         <button
                             type="button"
@@ -1331,26 +1325,13 @@ const TeamDetail = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="edit-desc" className="block text-sm font-medium mb-1 text-ink">Description / Remark</label>
+                        <label htmlFor="edit-desc" className="block text-sm font-medium mb-1 text-ink">Description</label>
                         <textarea
                             id="edit-desc"
                             className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink h-20 focus:ring-2 focus:ring-accent-500 outline-none"
                             value={editDetails.description}
                             onChange={(e) => setEditDetails({ ...editDetails, description: e.target.value })}
                         />
-                    </div>
-                    <div>
-                        <label htmlFor="edit-priority" className="block text-sm font-medium mb-1 text-ink">Priority</label>
-                        <select
-                            id="edit-priority"
-                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
-                            value={editDetails.priority}
-                            onChange={(e) => setEditDetails({ ...editDetails, priority: e.target.value })}
-                        >
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                        </select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -1428,15 +1409,6 @@ const TeamDetail = () => {
                                 {viewTask.status}
                             </span>
                         </div>
-                        <div>
-                            <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Priority</label>
-                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
-                                viewTask.priority === 'High' ? 'bg-red-500' :
-                                viewTask.priority === 'Medium' ? 'bg-amber-500' : 'bg-accent-500'
-                            }`}>
-                                {viewTask.priority || 'Medium'}
-                            </span>
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -1456,10 +1428,22 @@ const TeamDetail = () => {
                     </div>
 
                     <div>
-                        <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Description / Remark</label>
+                        <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Description</label>
                         <p className="text-ink bg-surface-muted p-3 rounded-lg border border-surface-subtle min-h-[3rem] text-sm">
                             {viewTask.description || "No description provided."}
                         </p>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Remark</label>
+                        <p className="text-ink bg-surface-muted p-3 rounded-lg border border-surface-subtle min-h-[3rem] text-sm">
+                            {viewTask.remark || "No remark yet."}
+                        </p>
+                    </div>
+
+                    <div>
+                        <span className="text-xs font-medium text-ink-muted uppercase block mb-1">Rating</span>
+                        {viewTask.rating ? <StarRating value={viewTask.rating} /> : <p className="text-sm text-ink-muted">Not rated yet</p>}
                     </div>
 
                     {viewTask.workProof && (

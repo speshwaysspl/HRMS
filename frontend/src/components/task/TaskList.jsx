@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
+import StarRating from "./StarRating";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -175,13 +176,6 @@ const TaskList = () => {
       </motion.div>
       <div className="sm:hidden space-y-3">
         {tasks.map((task) => {
-          const pri = (task.priority || "Medium").toLowerCase();
-          const priStyle =
-            pri === "high"
-              ? { color: "#DC2626", bg: "#FEE2E2" }
-              : pri === "low"
-              ? { color: "#16A34A", bg: "#DCFCE7" }
-              : { color: "#EA580C", bg: "#FFEDD5" };
           const st = (task.status || "").toLowerCase();
           const statusStyle = st.includes("complete")
             ? { color: "#16A34A", bg: "#DCFCE7", icon: "✓" }
@@ -223,12 +217,6 @@ const TaskList = () => {
               </div>
             </div>
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-surface-subtle text-xs text-ink-muted flex-wrap">
-              <span
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold"
-                style={{ backgroundColor: priStyle.bg, color: priStyle.color }}
-              >
-                ⚑ {task.priority || "Medium"}
-              </span>
               <span className="inline-flex items-center gap-1">
                 Start: {task.startDate ? new Date(task.startDate).toLocaleDateString() : "N/A"}
               </span>
@@ -273,10 +261,14 @@ const TaskList = () => {
                   <h4 className="font-semibold text-lg mb-3 text-ink">Task Details</h4>
                   <div className="text-sm space-y-2">
                     <p><span className="font-medium text-ink-muted">Description:</span> {selectedTask.description}</p>
-                    <p><span className="font-medium text-ink-muted">Priority:</span> {selectedTask.priority}</p>
                     <p><span className="font-medium text-ink-muted">Start Date:</span> {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleDateString() : "N/A"}</p>
                     <p><span className="font-medium text-ink-muted">Deadline:</span> {formatDateOrNA(selectedTask.deadline)}</p>
                     <p><span className="font-medium text-ink-muted">Assigned By:</span> {selectedTask.assignedBy?.name || "Team Lead"}</p>
+                    <p><span className="font-medium text-ink-muted">Remark:</span> {selectedTask.remark || "-"}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-ink-muted">Rating:</span>
+                      {selectedTask.rating ? <StarRating value={selectedTask.rating} size={14} /> : <span className="text-ink">Not rated yet</span>}
+                    </div>
                     {selectedTask.workProof && (
                       <p>
                         <span className="font-medium text-ink">Work Proof:</span>{" "}

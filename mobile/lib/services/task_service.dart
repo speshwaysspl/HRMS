@@ -16,47 +16,57 @@ class TaskService {
     required String title,
     required List<String> assignedTo,
     String description = '',
-    String priority = 'Medium',
     String? startDate,
     String? deadline,
   }) async {
-    await _dio.post('/api/task/assign', data: {
-      'teamId': teamId,
-      'title': title,
-      'description': description,
-      'priority': priority,
-      'assignedTo': assignedTo,
-      'startDate': ?startDate,
-      'deadline': ?deadline,
-    });
+    await _dio.post(
+      '/api/task/assign',
+      data: {
+        'teamId': teamId,
+        'title': title,
+        'description': description,
+        'assignedTo': assignedTo,
+        'startDate': ?startDate,
+        'deadline': ?deadline,
+      },
+    );
   }
 
-  Future<void> updateStatus(String taskId, String status, {String? comments, String? remark, String? filePath}) async {
+  Future<void> updateStatus(
+    String taskId,
+    String status, {
+    String? comments,
+    String? remark,
+    int? rating,
+    String? filePath,
+  }) async {
     final form = FormData.fromMap({
       'status': status,
       'comments': ?comments,
-      'description': ?remark,
+      'remark': ?remark,
+      'rating': ?rating,
       if (filePath != null) 'file': await MultipartFile.fromFile(filePath),
     });
     await _dio.put('/api/task/$taskId', data: form);
   }
 
-  /// Team lead/admin: edit title, description, priority and dates (YYYY-MM-DD).
+  /// Team lead/admin: edit title, description and dates (YYYY-MM-DD).
   Future<void> editTask(
     String taskId, {
     required String title,
     required String description,
-    required String priority,
     String? startDate,
     String? deadline,
   }) async {
-    await _dio.put('/api/task/$taskId/details', data: {
-      'title': title,
-      'description': description,
-      'priority': priority,
-      'startDate': startDate ?? '',
-      'deadline': deadline ?? '',
-    });
+    await _dio.put(
+      '/api/task/$taskId/details',
+      data: {
+        'title': title,
+        'description': description,
+        'startDate': startDate ?? '',
+        'deadline': deadline ?? '',
+      },
+    );
   }
 
   /// Team lead/admin: soft-deletes the task.

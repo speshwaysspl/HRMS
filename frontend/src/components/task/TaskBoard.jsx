@@ -18,12 +18,6 @@ import { FiClipboard } from "react-icons/fi";
 
 const COLUMNS = ["Assigned", "In Progress", "Review", "Completed"];
 
-const PRIORITY_STYLES = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-amber-100 text-amber-700",
-  Low: "bg-accent-100 text-accent-700",
-};
-
 const TaskCard = ({ task }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task._id,
@@ -47,9 +41,6 @@ const TaskCard = ({ task }) => {
       <p className="text-sm font-semibold text-ink">{task.title}</p>
       <p className="text-xs text-ink-muted mt-1 line-clamp-2">{task.description}</p>
       <div className="flex items-center justify-between mt-2">
-        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.Medium}`}>
-          {task.priority}
-        </span>
         {task.deadline && (
           <span className="text-[11px] text-ink-faint">
             {new Date(task.deadline).toLocaleDateString()}

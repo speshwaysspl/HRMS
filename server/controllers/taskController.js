@@ -90,8 +90,18 @@ export const updateTaskStatus = async (req, res) => {
 
     if (status) task.status = status;
     if (comments) task.comments = comments;
-    if (description) task.description = description; // Allow updating description (Remark)
+    if (description) task.description = description; // Older app builds send the remark here
     if (workProof) task.workProof = workProof;
+    // Remark and rating (1-5) are the reviewer's; "0"/"" clears the rating.
+    const { rating, remark } = req.body;
+    const isReviewer = req.user.role.includes("admin") || req.user.role.includes("team_lead");
+    if (remark !== undefined && isReviewer) task.remark = remark;
+    if (rating !== undefined && isReviewer) {
+      const r = Number(rating);
+      if (!r) task.rating = undefined;
+      else if (Number.isInteger(r) && r >= 1 && r <= 5) task.rating = r;
+      else return res.status(400).json({ success: false, error: "Rating must be 1 to 5" });
+    }
     task.updatedAt = Date.now();
 
     await task.save();
