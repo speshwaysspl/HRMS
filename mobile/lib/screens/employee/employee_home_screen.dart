@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/notification_service.dart';
 import 'package:intl/intl.dart';
@@ -28,6 +29,7 @@ class EmployeeHomeScreen extends StatefulWidget {
 
 class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   final _service = DashboardService();
+  Timer? _tick;
   final _announcementService = AnnouncementService();
 
   Map<String, dynamic>? _stats;
@@ -40,12 +42,17 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   void initState() {
     super.initState();
     _load();
+    // Rebuild every 30s so the "Worked" gauge counts up live while checked in.
+    _tick = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
     AppEvents.attendanceChanged.addListener(_load);
     AppEvents.leaveChanged.addListener(_load);
   }
 
   @override
   void dispose() {
+    _tick?.cancel();
     AppEvents.attendanceChanged.removeListener(_load);
     AppEvents.leaveChanged.removeListener(_load);
     super.dispose();

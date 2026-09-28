@@ -15,6 +15,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
+import 'team_attendance_tab.dart';
 
 /// Team detail for team leads — mirrors web TeamDetail.jsx: a "Task List"
 /// tab (add / update / view tasks) and a "Team Members" tab (per-member stats).
@@ -38,7 +39,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   ];
   final _service = TeamService();
   final _tasks = TaskService();
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final TabController _tabs = TabController(length: 3, vsync: this);
   Map<String, dynamic>? _detail;
   bool _loading = true;
   Object? _error;
@@ -619,6 +620,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
           tabs: const [
             Tab(text: 'Task List'),
             Tab(text: 'Team Members'),
+            Tab(text: 'Attendance'),
           ],
         ),
       ),
@@ -661,7 +663,18 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                 Expanded(
                   child: TabBarView(
                     controller: _tabs,
-                    children: [_taskTab(), _membersTab()],
+                    children: [
+                      _taskTab(),
+                      _membersTab(),
+                      TeamAttendanceTab(
+                        teamId: widget.id,
+                        teamName: widget.name,
+                        members: ((_detail?['memberStats'] as List?) ?? [])
+                            .map((m) => (m as Map)['member'])
+                            .whereType<Map>()
+                            .toList(),
+                      ),
+                    ],
                   ),
                 ),
               ],

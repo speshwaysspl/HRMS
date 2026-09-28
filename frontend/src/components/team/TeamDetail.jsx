@@ -7,6 +7,7 @@ import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStick
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from "framer-motion";
+import TeamAttendance from "./TeamAttendance";
 
 const getRandomColor = (name) => {
     const colors = [
@@ -354,6 +355,10 @@ const TeamDetail = () => {
   if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
   if (!team) return <div className="p-6 text-ink-muted">Team not found</div>;
 
+  const canTakeAttendance =
+    user?.role?.includes("admin") ||
+    String(team.leadId?._id || team.leadId) === String(user?._id || user?.id);
+
   return (
     <motion.div
       className="p-6 bg-surface-muted min-h-screen"
@@ -397,6 +402,14 @@ const TeamDetail = () => {
         >
           Team Members
         </button>
+        {canTakeAttendance && (
+          <button
+            className={`px-6 py-2 font-medium transition-colors duration-300 ${activeTab === 'attendance' ? 'border-b-2 border-accent-600 text-accent-600' : 'text-ink-muted hover:text-ink'}`}
+            onClick={() => setActiveTab('attendance')}
+          >
+            Attendance
+          </button>
+        )}
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -883,6 +896,17 @@ const TeamDetail = () => {
                     </div>
                 ))}
             </div>
+            </motion.div>
+        )}
+        {activeTab === 'attendance' && canTakeAttendance && (
+            <motion.div
+                key="attendance"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+            >
+                <TeamAttendance teamId={id} members={memberStats.map(s => s.member)} />
             </motion.div>
         )}
       </AnimatePresence>

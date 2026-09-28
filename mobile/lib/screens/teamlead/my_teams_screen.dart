@@ -6,6 +6,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
+import 'team_attendance_tab.dart';
 import 'team_detail_screen.dart';
 
 class MyTeamsScreen extends StatefulWidget {
@@ -51,7 +52,16 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HrmsAppBar(title: const Text('My Teams')),
+      appBar: HrmsAppBar(
+        title: const Text('My Teams'),
+        actions: [
+          IconButton(
+            tooltip: 'Download attendance Excel (all teams)',
+            icon: const Icon(Icons.table_view_outlined),
+            onPressed: () => downloadAllTeamsAttendance(context),
+          ),
+        ],
+      ),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

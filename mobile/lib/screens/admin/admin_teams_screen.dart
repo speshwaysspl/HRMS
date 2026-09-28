@@ -9,6 +9,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import 'admin_team_detail_screen.dart';
+import '../teamlead/team_attendance_tab.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 class AdminTeamsScreen extends StatefulWidget {
@@ -90,7 +91,16 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HrmsAppBar(title: const Text('Teams')),
+      appBar: HrmsAppBar(
+        title: const Text('Teams'),
+        actions: [
+          IconButton(
+            tooltip: 'Download attendance Excel (all teams)',
+            icon: const Icon(Icons.table_view_outlined),
+            onPressed: () => downloadAllTeamsAttendance(context),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add),

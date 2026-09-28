@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'api_client.dart';
 
 class TeamService {
@@ -46,6 +48,48 @@ class TeamService {
 
   Future<void> deleteTeam(String id) async {
     await _dio.delete('/api/team/$id');
+  }
+
+  /// Team lead's manual roll-call for [date] (YYYY-MM-DD). Separate from punch-in attendance.
+  Future<({bool marked, Set<String> present})> getTeamAttendance(String teamId, String date) async {
+    final res = await _dio.get('/api/team/$teamId/attendance', queryParameters: {'date': date});
+    final data = res.data as Map;
+    return (
+      marked: data['marked'] == true,
+      present: ((data['present'] as List?) ?? []).map((e) => e.toString()).toSet(),
+    );
+  }
+
+  /// [present] are Employee document ids; every other member is saved as absent.
+  Future<void> saveTeamAttendance(String teamId, String date, Iterable<String> present) async {
+    await _dio.put('/api/team/$teamId/attendance', data: {'date': date, 'present': present.toList()});
+  }
+
+  /// Monthly register for every team the caller can see (admin: all, lead: own).
+  Future<File> exportAllTeamsAttendance(String month) async {
+    final res = await _dio.get<List<int>>(
+      '/api/team/attendance/export',
+      queryParameters: {'month': month},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/all_teams_attendance_$month.xlsx');
+    await file.writeAsBytes(res.data!);
+    return file;
+  }
+
+  /// Monthly register for [month] (YYYY-MM) as an .xlsx file.
+  Future<File> exportTeamAttendance(String teamId, String teamName, String month) async {
+    final res = await _dio.get<List<int>>(
+      '/api/team/$teamId/attendance/export',
+      queryParameters: {'month': month},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final dir = await getTemporaryDirectory();
+    final safe = teamName.replaceAll(RegExp(r'[^\w-]+'), '_');
+    final file = File('${dir.path}/${safe}_attendance_$month.xlsx');
+    await file.writeAsBytes(res.data!);
+    return file;
   }
 }
 

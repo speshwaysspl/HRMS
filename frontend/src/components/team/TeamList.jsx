@@ -4,13 +4,18 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaFileExcel } from "react-icons/fa";
 
 const TeamList = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [month, setMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchTeams();
@@ -47,6 +52,30 @@ const TeamList = () => {
     }
   };
 
+  const canExport = user?.role?.includes("admin") || user?.role?.includes("team_lead");
+
+  // One workbook for every team (admin: all teams, lead: the teams they lead).
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      const res = await axios.get(`${API_BASE}/api/team/attendance/export`, {
+        params: { month },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `all_teams_attendance_${month}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to export attendance");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
 
   return (
@@ -57,7 +86,7 @@ const TeamList = () => {
       transition={{ duration: 0.5 }}
     >
       <motion.div
-        className="flex justify-between items-center mb-6"
+        className="flex flex-wrap justify-between items-center gap-3 mb-6"
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.15 }}
@@ -65,14 +94,36 @@ const TeamList = () => {
         <h2 className="text-2xl font-semibold text-brand-800">
           Teams
         </h2>
-        {user?.role?.includes("admin") && (
-          <Link
-            to="/admin-dashboard/create-team"
-            className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Create Team
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canExport && teams.length > 0 && (
+            <>
+              <label htmlFor="all-teams-month" className="sr-only">Report month</label>
+              <input
+                id="all-teams-month"
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+              />
+              <button
+                onClick={exportAll}
+                disabled={exporting || !month}
+                className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-60 transition-colors"
+              >
+                <FaFileExcel className="text-accent-700" />
+                {exporting ? "Exporting..." : "Download Attendance Excel"}
+              </button>
+            </>
+          )}
+          {user?.role?.includes("admin") && (
+            <Link
+              to="/admin-dashboard/create-team"
+              className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            >
+              Create Team
+            </Link>
+          )}
+        </div>
       </motion.div>
 
       <motion.div

@@ -76,6 +76,18 @@ const formatTimeDisplay = (val) => {
   return `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`
 }
 
+// "08:48", "8:48 AM" -> minutes since midnight; null when unparseable.
+const parseClockMinutes = (val) => {
+  const match = String(val).trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?$/i)
+  if (!match) return null
+  let h = Number(match[1])
+  const m = Number(match[2])
+  const period = match[3]?.toLowerCase()
+  if (period === 'pm' && h < 12) h += 12
+  if (period === 'am' && h === 12) h = 0
+  return h * 60 + m
+}
+
 const formatWorkedHours = (hours) => {
   if (!hours || hours <= 0) return '0h 00m'
   const h = Math.floor(hours)
@@ -183,6 +195,13 @@ const Summary = () => {
 
     if (user) load()
   }, [user])
+
+  // Tick every 30s so the "Worked" gauge counts up live while checked in.
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 30000)
+    return () => clearInterval(id)
+  }, [])
 
   const getGreeting = () => {
     const now = new Date()
@@ -322,7 +341,15 @@ const Summary = () => {
   }
 
   const today = dashboardData?.todayAttendance || {}
-  const workingHours = Number(today.workingHours) || 0
+  const workingHours = (() => {
+    const stored = Number(today.workingHours) || 0
+    if (!today.inTime || today.outTime) return stored
+    const inMin = parseClockMinutes(today.inTime)
+    if (inMin == null) return stored
+    const ist = new Date(new Date(nowTick).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+    const nowMin = ist.getHours() * 60 + ist.getMinutes()
+    return Math.max(stored, (nowMin - inMin) / 60)
+  })()
   const gaugeProgress = Math.min(workingHours / 8, 1)
   const statusStyle = getStatusStyle(today.status, today.inTime, today.outTime)
   const latestAnnouncement = announcements[0]
