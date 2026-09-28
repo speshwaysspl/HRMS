@@ -164,9 +164,21 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       doc.addPage(
         pw.MultiPage(
           build: (_) => [
-            pw.Text(
-              'Task List - ${widget.name}',
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Task List - ${widget.name}',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Text(
+                  'Team Lead: ${((_detail?['team'] as Map?)?['leadId'] as Map?)?['name'] ?? 'N/A'}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+              ],
             ),
             pw.SizedBox(height: 10),
             pw.TableHelper.fromTextArray(

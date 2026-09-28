@@ -338,6 +338,7 @@ const TeamDetail = () => {
   const handleDownloadPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.text("Task List", 15, 15);
+    doc.text(`Team Lead: ${team?.leadId?.name || "N/A"}`, doc.internal.pageSize.getWidth() - 15, 15, { align: "right" });
     
     const tableColumn = ["Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"];
     const tableRows = [];
