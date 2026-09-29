@@ -56,7 +56,9 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       await _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _processing.remove(id));
@@ -70,81 +72,134 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
-              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
             )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.fact_check_outlined, title: 'No pending correction requests.'),
-                        ])
-                      : ListView(
-                          padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((r) {
-                            final id = r['_id'].toString();
-                            final employee = r['employeeId'] as Map? ?? {};
-                            final user = employee['userId'] as Map? ?? {};
-                            final busy = _processing.contains(id);
-                            return SimpleCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+          ? buildErrorState(_error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.fact_check_outlined,
+                          title: 'No pending correction requests.',
+                        ),
+                      ],
+                    )
+                  : ListView(
+                      padding: EdgeInsets.all(context.w(16)),
+                      children: _items.map((r) {
+                        final id = r['_id'].toString();
+                        final employee = r['employeeId'] as Map? ?? {};
+                        final user = employee['userId'] as Map? ?? {};
+                        final busy = _processing.contains(id);
+                        return SimpleCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: context.r(34),
-                                        height: context.r(34),
-                                        decoration: BoxDecoration(color: AppColors.tint(const Color(0xFFFFEDD5)), shape: BoxShape.circle),
-                                        child: Icon(Icons.edit_calendar_rounded, size: context.r(17), color: const Color(0xFFEA580C)),
+                                  Container(
+                                    width: context.r(34),
+                                    height: context.r(34),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.tint(
+                                        const Color(0xFFFFEDD5),
                                       ),
-                                      SizedBox(width: context.w(10)),
-                                      Expanded(
-                                        child: Text(user['name']?.toString() ?? 'Employee', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: context.h(8)),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: context.w(44)),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                        SizedBox(height: context.h(4)),
-                                        Text('Reason: ${r['reason']}', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
-                                      ],
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.edit_calendar_rounded,
+                                      size: context.r(17),
+                                      color: const Color(0xFFEA580C),
                                     ),
                                   ),
-                                  SizedBox(height: context.h(10)),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: OutlinedButton(
-                                          onPressed: busy ? null : () => _decide(id, 'Rejected'),
-                                          style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger)),
-                                          child: const Text('Reject'),
-                                        ),
+                                  SizedBox(width: context.w(10)),
+                                  Expanded(
+                                    child: Text(
+                                      user['name']?.toString() ?? 'Employee',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.ink,
                                       ),
-                                      SizedBox(width: context.w(10)),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: busy ? null : () => _decide(id, 'Approved'),
-                                          child: busy
-                                              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                              : const Text('Approve'),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            );
-                          }).toList(),
-                        ),
-                ),
+                              SizedBox(height: context.h(8)),
+                              Padding(
+                                padding: EdgeInsets.only(left: context.w(44)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${r['date']}  ·  In: ${r['requestedInTime']}  Out: ${r['requestedOutTime']}',
+                                      style: TextStyle(
+                                        color: AppColors.inkMuted,
+                                        fontSize: context.sp(12),
+                                      ),
+                                    ),
+                                    SizedBox(height: context.h(4)),
+                                    Text(
+                                      'Reason: ${r['reason']}',
+                                      style: TextStyle(
+                                        color: AppColors.inkFaint,
+                                        fontSize: context.sp(12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: context.h(10)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: busy
+                                          ? null
+                                          : () => _decide(id, 'Rejected'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.danger,
+                                        side: const BorderSide(
+                                          color: AppColors.danger,
+                                        ),
+                                      ),
+                                      child: const Text('Reject'),
+                                    ),
+                                  ),
+                                  SizedBox(width: context.w(10)),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: busy
+                                          ? null
+                                          : () => _decide(id, 'Approved'),
+                                      child: busy
+                                          ? const SizedBox(
+                                              height: 16,
+                                              width: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text('Approve'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
     );
   }
 }

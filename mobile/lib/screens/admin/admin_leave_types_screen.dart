@@ -65,12 +65,20 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete leave type?'),
-        content: Text('“${t['name']}” will no longer be selectable for new requests.'),
+        content: Text(
+          '“${t['name']}” will no longer be selectable for new requests.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -81,7 +89,9 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     }
   }
@@ -97,55 +107,77 @@ class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
       ),
       body: _loading
           ? ListView(
- padding: EdgeInsets.all(context.w(16)),
- children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
- )
+              padding: EdgeInsets.all(context.w(16)),
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
+            )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.beach_access_outlined, title: 'No leave types configured', subtitle: 'Tap Add to create one.'),
-                        ])
-                      : ListView.builder(
-                          padding: EdgeInsets.all(context.w(16)),
-                          itemCount: _items.length,
-                          itemBuilder: (_, i) {
-                            final t = _items[i];
-                            final active = t['isActive'] != false;
-                            return SimpleCard(
-                              onTap: () => _edit(t),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(t['name']?.toString() ?? '',
-                                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                        SizedBox(height: context.h(3)),
-                                        Text(
-                                          '${t['monthlyQuota'] ?? ((t['annualQuota'] != null && t['annualQuota'] > 0) ? (t['annualQuota'] / 12).round() : 1)} days/month'
-                                          '${t['requiresApproval'] == false ? '  ·  auto-approved' : ''}',
-                                          style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: context.w(8)),
-                                  StatusPill(label: active ? 'Active' : 'Inactive'),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                                    onPressed: () => _delete(t),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+          ? buildErrorState(_error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.beach_access_outlined,
+                          title: 'No leave types configured',
+                          subtitle: 'Tap Add to create one.',
                         ),
-                ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(context.w(16)),
+                      itemCount: _items.length,
+                      itemBuilder: (_, i) {
+                        final t = _items[i];
+                        final active = t['isActive'] != false;
+                        return SimpleCard(
+                          onTap: () => _edit(t),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      t['name']?.toString() ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                    SizedBox(height: context.h(3)),
+                                    Text(
+                                      '${t['monthlyQuota'] ?? ((t['annualQuota'] != null && t['annualQuota'] > 0) ? (t['annualQuota'] / 12).round() : 1)} days/month'
+                                      '${t['requiresApproval'] == false ? '  ·  auto-approved' : ''}',
+                                      style: TextStyle(
+                                        color: AppColors.inkMuted,
+                                        fontSize: context.sp(12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: context.w(8)),
+                              StatusPill(label: active ? 'Active' : 'Inactive'),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: AppColors.danger,
+                                ),
+                                onPressed: () => _delete(t),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }
@@ -172,8 +204,11 @@ class _TypeSheetState extends State<_TypeSheet> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.existing?['name']?.toString() ?? '');
-    final initialQuota = widget.existing?['monthlyQuota'] ??
+    _name = TextEditingController(
+      text: widget.existing?['name']?.toString() ?? '',
+    );
+    final initialQuota =
+        widget.existing?['monthlyQuota'] ??
         ((widget.existing?['annualQuota'] != null)
             ? (widget.existing!['annualQuota'] / 12).round()
             : 1);
@@ -212,7 +247,9 @@ class _TypeSheetState extends State<_TypeSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -222,12 +259,16 @@ class _TypeSheetState extends State<_TypeSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
@@ -236,39 +277,65 @@ class _TypeSheetState extends State<_TypeSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(_isEdit ? 'Edit Leave Type' : 'New Leave Type',
-                    style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  _isEdit ? 'Edit Leave Type' : 'New Leave Type',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(16)),
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(14)),
                 TextFormField(
                   controller: _quota,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Monthly quota (days)'),
-                  validator: (v) => (num.tryParse(v?.trim() ?? '') == null) ? 'Enter a number' : null,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Monthly quota (days)',
+                  ),
+                  validator: (v) => (num.tryParse(v?.trim() ?? '') == null)
+                      ? 'Enter a number'
+                      : null,
                 ),
                 SwitchListTile(
                   value: _requiresApproval,
                   onChanged: (v) => setState(() => _requiresApproval = v),
-                  title: Text('Requires approval', style: TextStyle(fontSize: context.sp(14))),
+                  title: Text(
+                    'Requires approval',
+                    style: TextStyle(fontSize: context.sp(14)),
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
                 if (_isEdit)
                   SwitchListTile(
                     value: _isActive,
                     onChanged: (v) => setState(() => _isActive = v),
-                    title: Text('Active', style: TextStyle(fontSize: context.sp(14))),
+                    title: Text(
+                      'Active',
+                      style: TextStyle(fontSize: context.sp(14)),
+                    ),
                     contentPadding: EdgeInsets.zero,
                   ),
                 SizedBox(height: context.h(10)),
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(_isEdit ? 'Save' : 'Create'),
                 ),
                 SizedBox(height: context.h(8)),

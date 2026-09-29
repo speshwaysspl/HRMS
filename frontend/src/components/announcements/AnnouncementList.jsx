@@ -1,80 +1,32 @@
 // src/components/announcement/AnnouncementList.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import DataTable from "react-data-table-component";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { FaPlus, FaPen, FaTrash, FaClock, FaImage, FaBullhorn } from "react-icons/fa";
 import { fetchAnnouncements } from "../../utils/AnnouncementHelper";
-import AnnouncementButtons from "../../utils/AnnouncementButtons";
-import { motion } from "framer-motion";
+import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import { ANNOUNCEMENT_CATEGORIES, CATEGORY_ICONS } from "./AnnouncementAdd";
 
-const columns = [
-  { name: "S.No", selector: (row) => row.sno, width: "65px" },
-  {
-    name: "Type",
-    cell: (row) => {
-      const catMap = {
-        quote: { label: "Today's Quote", emoji: "✨", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-        festival: { label: "Festival", emoji: "🎉", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-        event: { label: "Event", emoji: "📅", bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200" },
-        achievement: { label: "Achievement", emoji: "🏆", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-        general: { label: "Notice", emoji: "📌", bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200" },
-        important: { label: "Important", emoji: "📢", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
-      };
-      const info = catMap[row.category] || catMap.important;
-      return (
-        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${info.bg} ${info.text} ${info.border} inline-flex items-center gap-1 whitespace-nowrap`}>
-          <span>{info.emoji}</span>
-          <span>{info.label}</span>
-        </span>
-      );
-    },
-    width: "145px",
-  },
-  { name: "Title", selector: (row) => row.title, sortable: true },
-  {
-    name: "Audience",
-    cell: (row) => {
-      let label = "All Employees";
-      if (row.scope === 'team_leads') label = "Team Leads";
-      else if (row.scope === 'team_members') label = "Team Members";
-      else if (row.scope === 'team') label = `Team: ${row.targetTeam?.name || 'Team'}`;
-      else if (row.scope === 'specific') label = "Specific";
-      return (
-        <span className="px-2.5 py-1 bg-surface-muted text-ink-muted text-xs font-medium rounded-full border border-surface-subtle whitespace-nowrap">
-          {label}
-        </span>
-      );
-    },
-    width: "140px",
-  },
-  { name: "Date", selector: (row) => row.date, sortable: true, width: "130px" },
-  {
-    name: "Image",
-    cell: (row) =>
-      row.imageUrl ? (
-        <img
-          src={row.imageUrl}
-          alt={row.title}
-          width={40}
-          style={{ borderRadius: 6 }}
-        />
-      ) : (
-        "No Image"
-      ),
-    width: "110px",
-  },
-  {
-    name: "Action",
-    cell: (row) => <div className="w-full"><AnnouncementButtons Id={row._id} /></div>,
-    width: "200px",
-  },
-];
+const AUDIENCE = {
+  all: "All employees",
+  team_leads: "Team leads",
+  team_members: "Team members",
+  specific: "Specific people",
+};
+const audienceLabel = (a) => (a.scope === "team" ? `Team: ${a.targetTeam?.name || "Team"}` : AUDIENCE[a.scope] || "All employees");
+const isScheduled = (a) => a.published === false;
+const fmtDateTime = (d) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
 
 const AnnouncementList = () => {
-  const [rawAnnouncements, setRawAnnouncements] = useState([]);
-  const [formatted, setFormatted] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all"); // all | published | scheduled
+  const [type, setType] = useState("all");
+  const [deletingId, setDeletingId] = useState(null);
 
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements`, []);
   useMeta({
@@ -86,170 +38,212 @@ const AnnouncementList = () => {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const data = await fetchAnnouncements();
-      setRawAnnouncements(data);
-      setFormatted(formatData(data));
+    (async () => {
+      setItems(await fetchAnnouncements());
       setLoading(false);
-    };
-    fetchData();
+    })();
   }, []);
 
-  const formatData = (data) => {
-    let sno = 1;
-    return data.map((ann) => ({
-      ...ann,
-      sno: sno++,
-      date: formatISTDate(new Date(ann.createdAt)),
-    }));
+  const scheduledCount = items.filter(isScheduled).length;
+  const q = search.trim().toLowerCase();
+  const visible = items
+    .filter((a) => status === "all" || (status === "scheduled" ? isScheduled(a) : !isScheduled(a)))
+    .filter((a) => type === "all" || (a.category || "important") === type)
+    .filter((a) => !q || a.title?.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q))
+    // Scheduled first (soonest on top), then published newest first.
+    .sort((a, b) => {
+      if (isScheduled(a) !== isScheduled(b)) return isScheduled(a) ? -1 : 1;
+      if (isScheduled(a)) return new Date(a.scheduledAt) - new Date(b.scheduledAt);
+      return new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt);
+    });
+  const filtered = !!q || status !== "all" || type !== "all";
+
+  const handleDelete = async (a) => {
+    if (!window.confirm(`Delete "${a.title}"? This can't be undone.`)) return;
+    setDeletingId(a._id);
+    try {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      await axios.delete(`${API_BASE}/api/announcement/${a._id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setItems((prev) => prev.filter((x) => x._id !== a._id));
+    } catch (err) {
+      alert(err.response?.data?.error || "Could not delete announcement");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
-  const handleFilter = (e) => {
-    const keyword = e.target.value.toLowerCase();
-    const filtered = rawAnnouncements.filter((ann) =>
-      ann.title.toLowerCase().includes(keyword)
-    );
-    setFormatted(formatData(filtered));
-  };
+  const statusTabs = [
+    { id: "all", label: "All", count: items.length },
+    { id: "published", label: "Published", count: items.length - scheduledCount },
+    { id: "scheduled", label: "Scheduled", count: scheduledCount },
+  ];
 
   return (
-    <motion.div
-      className="p-3 sm:p-6 bg-surface-muted min-h-screen"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.h3
-        className="text-xl sm:text-2xl md:text-3xl font-semibold text-center mb-4 sm:mb-6 md:mb-8 text-brand-800 px-2"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        Announcements Management
-      </motion.h3>
-
-      {/* Search + Add */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center my-4 sm:my-6 gap-3 sm:gap-4">
-        <motion.input
-          type="text"
-          placeholder="Search by title"
-          className="px-3 sm:px-4 py-2 border border-surface-subtle rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors w-full sm:w-1/3 text-sm sm:text-base text-ink"
-          onChange={handleFilter}
-        />
-        <Link
-          to="/admin-dashboard/announcements/add"
-          className="px-4 sm:px-5 py-2 bg-accent-600 hover:bg-accent-700 rounded-lg text-white font-medium text-sm sm:text-base whitespace-nowrap text-center transition-colors"
-        >
-          + Add New
-        </Link>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="block md:hidden">
-        {formatted.map((announcement, index) => (
-          <motion.div
-            key={announcement._id}
-            className="bg-white rounded-xl shadow-card p-4 mb-4 border border-surface-subtle"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+    <div className="min-h-screen bg-surface-muted px-4 py-5 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-brand-800">Announcements</h1>
+            <p className="mt-1 text-sm text-ink-muted">
+              {scheduledCount > 0 ? `${scheduledCount} scheduled to go out · ` : ""}
+              {items.length - scheduledCount} published
+            </p>
+          </div>
+          <Link
+            to="/admin-dashboard/announcements/add"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 outline-none"
           >
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center gap-2">
-                <span className="bg-brand-100 text-brand-700 text-xs font-semibold px-2 py-1 rounded-full">
-                  #{announcement.sno}
-                </span>
-                {(() => {
-                  const catMap = {
-                    quote: { label: "Quote", emoji: "✨", cls: "bg-purple-50 text-purple-700 border-purple-200" },
-                    festival: { label: "Festival", emoji: "🎉", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-                    event: { label: "Event", emoji: "📅", cls: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-                    achievement: { label: "Win", emoji: "🏆", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-                    general: { label: "Notice", emoji: "📌", cls: "bg-slate-50 text-slate-700 border-slate-200" },
-                    important: { label: "Important", emoji: "📢", cls: "bg-rose-50 text-rose-700 border-rose-200" },
-                  };
-                  const info = catMap[announcement.category] || catMap.important;
-                  return (
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${info.cls} inline-flex items-center gap-1`}>
-                      <span>{info.emoji}</span>
-                      <span>{info.label}</span>
-                    </span>
-                  );
-                })()}
-                <span className="bg-surface-muted text-ink-muted text-xs font-medium px-2 py-0.5 rounded-full border border-surface-subtle">
-                  {announcement.scope === 'team_leads' ? 'Team Leads' : announcement.scope === 'team_members' ? 'Team Members' : announcement.scope === 'team' ? `Team: ${announcement.targetTeam?.name || 'Team'}` : announcement.scope === 'specific' ? 'Specific' : 'All'}
-                </span>
-                <span className="text-xs text-ink-muted">{announcement.date}</span>
-              </div>
-              <div className="flex gap-2">
-                <AnnouncementButtons Id={announcement._id} />
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                {announcement.imageUrl ? (
-                  <img
-                    src={announcement.imageUrl}
-                    alt={announcement.title}
-                    className="w-12 h-12 rounded object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-surface-muted rounded flex items-center justify-center text-xs text-ink-faint">
-                    No Image
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-ink text-sm mb-1">{announcement.title}</h4>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            <FaPlus aria-hidden="true" /> New announcement
+          </Link>
+        </div>
 
-      {/* Desktop Table View */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="hidden md:block overflow-x-auto"
-      >
-        <DataTable
-          columns={columns}
-          data={formatted}
-          pagination
-          highlightOnHover
-          striped
-          responsive
-          customStyles={{
-            headCells: {
-              style: {
-                backgroundColor: "#f6f7fb",
-                fontWeight: "600",
-                fontSize: "12px",
-                color: "#1c2333",
-                padding: "8px",
-                '@media (min-width: 640px)': {
-                  fontSize: "14px",
-                  padding: "12px",
-                },
-              },
-            },
-            cells: {
-              style: {
-                fontSize: "11px",
-                padding: "8px",
-                '@media (min-width: 640px)': {
-                  fontSize: "13px",
-                  padding: "12px",
-                },
-              },
-            },
-          }}
-        />
-      </motion.div>
-    </motion.div>
+        <div className="rounded-xl border border-surface-subtle bg-white shadow-card">
+          {/* Toolbar */}
+          <div className="flex flex-col gap-3 border-b border-surface-subtle p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
+            <div role="tablist" aria-label="Status" className="flex gap-1 overflow-x-auto">
+              {statusTabs.map((t) => {
+                const active = status === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setStatus(t.id)}
+                    className={`shrink-0 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
+                      active ? "bg-accent-50 text-accent-800" : "text-ink-muted hover:bg-surface-muted hover:text-ink"
+                    }`}
+                  >
+                    {t.label}
+                    <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-accent-100" : "bg-surface-subtle"}`}>{t.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <label htmlFor="ann-type" className="sr-only">Type</label>
+              <select
+                id="ann-type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="rounded-lg border border-surface-subtle bg-white px-3 py-2 text-sm text-ink focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 outline-none"
+              >
+                <option value="all">All types</option>
+                {ANNOUNCEMENT_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
+              <input
+                type="search"
+                aria-label="Search announcements"
+                placeholder="Search title or message"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full sm:w-64 rounded-lg border border-surface-subtle px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* List */}
+          {loading ? (
+            <ul aria-busy="true" className="divide-y divide-surface-subtle">
+              {[0, 1, 2, 3].map((i) => (
+                <li key={i} className="flex gap-4 p-4">
+                  <div className="h-14 w-14 shrink-0 animate-pulse rounded-lg bg-surface-subtle" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-surface-subtle" />
+                    <div className="h-3 w-3/4 animate-pulse rounded bg-surface-subtle" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : visible.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-50 text-accent-700">
+                <FaBullhorn aria-hidden="true" />
+              </div>
+              <p className="font-semibold text-ink">{filtered ? "No announcements match" : "No announcements yet"}</p>
+              <p className="mt-1 text-sm text-ink-muted">
+                {filtered ? "Try a different search or filter." : "Create one to share news with your team."}
+              </p>
+              {filtered && (
+                <button
+                  onClick={() => { setSearch(""); setStatus("all"); setType("all"); }}
+                  className="mt-4 text-sm font-medium text-accent-700 hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <ul className="divide-y divide-surface-subtle">
+              {visible.map((a) => {
+                const cat = ANNOUNCEMENT_CATEGORIES.find((c) => c.id === (a.category || "important")) || ANNOUNCEMENT_CATEGORIES[0];
+                const Icon = CATEGORY_ICONS[cat.id] || FaBullhorn;
+                const scheduled = isScheduled(a);
+                return (
+                  <li key={a._id} className="group relative flex gap-3 p-4 sm:gap-4 hover:bg-surface-muted/60 transition-colors">
+                    {a.imageUrl ? (
+                      <img src={a.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover sm:h-16 sm:w-16" />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg sm:h-16 sm:w-16" style={{ backgroundColor: cat.bg, color: cat.color }}>
+                        <Icon aria-hidden="true" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                        <span className="inline-flex items-center gap-1 font-medium" style={{ color: cat.color }}>
+                          <Icon aria-hidden="true" /> {cat.label}
+                        </span>
+                        <span className="text-ink-faint" aria-hidden="true">·</span>
+                        <span className="text-ink-muted">{audienceLabel(a)}</span>
+                        {scheduled && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
+                            <FaClock aria-hidden="true" /> Scheduled
+                          </span>
+                        )}
+                      </div>
+                      {/* Whole-row link; action buttons sit above it */}
+                      <Link
+                        to={`/admin-dashboard/announcements/${a._id}`}
+                        className="mt-1 block font-semibold text-ink after:absolute after:inset-0 after:content-[''] focus-visible:underline outline-none"
+                      >
+                        <span className="line-clamp-1">{a.title}</span>
+                      </Link>
+                      <p className="mt-0.5 line-clamp-2 text-sm text-ink-muted max-w-[70ch]">{a.description}</p>
+                      <p className={`mt-1.5 text-xs tabular-nums ${scheduled ? "font-medium text-amber-700" : "text-ink-muted"}`}>
+                        {scheduled ? `Sends ${fmtDateTime(a.scheduledAt)}` : formatISTDate(new Date(a.publishedAt || a.createdAt))}
+                        {a.imageUrl && !scheduled && <FaImage className="ml-2 inline text-ink-faint" aria-label="Has image" />}
+                      </p>
+                    </div>
+
+                    <div className="relative z-10 flex shrink-0 items-start gap-1">
+                      <button
+                        onClick={() => navigate(`/admin-dashboard/announcements/edit/${a._id}`)}
+                        className="rounded-lg p-2.5 text-ink-muted hover:bg-white hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                        aria-label={`Edit ${a.title}`}
+                        title="Edit"
+                      >
+                        <FaPen aria-hidden="true" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(a)}
+                        disabled={deletingId === a._id}
+                        className="rounded-lg p-2.5 text-ink-muted hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none disabled:opacity-50"
+                        aria-label={`Delete ${a.title}`}
+                        title="Delete"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

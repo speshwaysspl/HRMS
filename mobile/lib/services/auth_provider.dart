@@ -5,6 +5,7 @@ import '../models/user.dart';
 import 'api_client.dart';
 import 'location_service.dart';
 import 'push_service.dart';
+import 'realtime_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -30,6 +31,7 @@ class AuthProvider extends ChangeNotifier {
       try {
         user = AppUser.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
         status = AuthStatus.authenticated;
+        RealtimeService.instance.connect(user!.id);
         unawaited(_askPermissions());
       } catch (_) {
         status = AuthStatus.unauthenticated;
@@ -55,6 +57,7 @@ class AuthProvider extends ChangeNotifier {
         await _api.saveSession(token: token, userJson: jsonEncode(userMap));
         user = AppUser.fromJson(userMap);
         status = AuthStatus.authenticated;
+        RealtimeService.instance.connect(user!.id);
         notifyListeners();
         unawaited(_askPermissions());
         return true;
@@ -69,6 +72,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    RealtimeService.instance.disconnect();
     await PushService.instance.unregisterForUser();
     await _api.clearSession();
     user = null;

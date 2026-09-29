@@ -8,8 +8,18 @@ import '../../theme/responsive.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 const _months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 /// Single-employee payslip generator. Fetch prefills earnings/deductions from
@@ -19,12 +29,18 @@ class AdminPayslipGeneratorScreen extends StatefulWidget {
   const AdminPayslipGeneratorScreen({super.key});
 
   @override
-  State<AdminPayslipGeneratorScreen> createState() => _AdminPayslipGeneratorScreenState();
+  State<AdminPayslipGeneratorScreen> createState() =>
+      _AdminPayslipGeneratorScreenState();
 }
 
-class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScreen> {
+class _AdminPayslipGeneratorScreenState
+    extends State<AdminPayslipGeneratorScreen> {
   final _service = PayslipService();
-  final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+  final _inr = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 0,
+  );
 
   final _empCode = TextEditingController();
   final _name = TextEditingController();
@@ -41,8 +57,15 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
   // earnings + deductions
   final _c = <String, TextEditingController>{
     for (final k in [
-      'basicSalary', 'da', 'hra', 'conveyance', 'medicalallowances', 'specialallowances',
-      'pf', 'proftax', 'deductions',
+      'basicSalary',
+      'da',
+      'hra',
+      'conveyance',
+      'medicalallowances',
+      'specialallowances',
+      'pf',
+      'proftax',
+      'deductions',
     ])
       k: TextEditingController(text: '0'),
   };
@@ -58,8 +81,19 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
   @override
   void dispose() {
     for (final c in [
-      _empCode, _name, _designation, _department, _location, _bankName, _bankAcc,
-      _pan, _uan, _workingDays, _lopDays, _year, ..._c.values,
+      _empCode,
+      _name,
+      _designation,
+      _department,
+      _location,
+      _bankName,
+      _bankAcc,
+      _pan,
+      _uan,
+      _workingDays,
+      _lopDays,
+      _year,
+      ..._c.values,
     ]) {
       c.dispose();
     }
@@ -68,9 +102,14 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
 
   double _n(String? s) => double.tryParse((s ?? '').trim()) ?? 0;
 
-  double get _totalEarnings =>
-      ['basicSalary', 'da', 'hra', 'conveyance', 'medicalallowances', 'specialallowances']
-          .fold(0.0, (sum, k) => sum + _n(_c[k]!.text));
+  double get _totalEarnings => [
+    'basicSalary',
+    'da',
+    'hra',
+    'conveyance',
+    'medicalallowances',
+    'specialallowances',
+  ].fold(0.0, (sum, k) => sum + _n(_c[k]!.text));
 
   double get _lopAmount {
     final wd = _n(_workingDays.text);
@@ -80,9 +119,15 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
   }
 
   double get _totalDeductions =>
-      ['pf', 'proftax', 'deductions'].fold(0.0, (sum, k) => sum + _n(_c[k]!.text)) + _lopAmount;
+      [
+        'pf',
+        'proftax',
+        'deductions',
+      ].fold(0.0, (sum, k) => sum + _n(_c[k]!.text)) +
+      _lopAmount;
 
-  double get _net => (_totalEarnings - _totalDeductions).clamp(0, double.infinity);
+  double get _net =>
+      (_totalEarnings - _totalDeductions).clamp(0, double.infinity);
 
   Future<void> _fetch() async {
     final code = _empCode.text.trim();
@@ -107,7 +152,11 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
           if (v is num) _c[k]!.text = v.toStringAsFixed(0);
         }
       });
-      if (t.isEmpty) _snack('No payroll template for this employee — fill amounts manually.');
+      if (t.isEmpty) {
+        _snack(
+          'No payroll template for this employee — fill amounts manually.',
+        );
+      }
     } catch (e) {
       _snack(extractErrorMessage(e));
     } finally {
@@ -144,7 +193,9 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
     try {
       await _service.generate(payload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip generated')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Payslip generated')));
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -181,7 +232,14 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
                 child: ElevatedButton(
                   onPressed: _fetching ? null : _fetch,
                   child: _fetching
-                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Fetch'),
                 ),
               ),
@@ -189,8 +247,13 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
           ),
           if (_name.text.isNotEmpty) ...[
             SizedBox(height: context.h(6)),
-            Text('${_name.text} · ${_designation.text}',
-                style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+            Text(
+              '${_name.text} · ${_designation.text}',
+              style: TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: context.sp(12),
+              ),
+            ),
           ],
           SizedBox(height: context.h(14)),
           Row(
@@ -200,7 +263,8 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
                   initialValue: _month,
                   decoration: const InputDecoration(labelText: 'Month'),
                   items: [
-                    for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(_months[i - 1])),
+                    for (var i = 1; i <= 12; i++)
+                      DropdownMenuItem(value: i, child: Text(_months[i - 1])),
                   ],
                   onChanged: (v) => setState(() => _month = v ?? _month),
                 ),
@@ -255,7 +319,14 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
           ElevatedButton(
             onPressed: _saving ? null : _generate,
             child: _saving
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Text('Generate payslip'),
           ),
           SizedBox(height: context.h(24)),
@@ -265,41 +336,57 @@ class _AdminPayslipGeneratorScreenState extends State<AdminPayslipGeneratorScree
   }
 
   Widget _sectionLabel(String s) => Padding(
-        padding: EdgeInsets.only(top: context.h(18), bottom: context.h(6)),
-        child: Text(s, style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted)),
-      );
+    padding: EdgeInsets.only(top: context.h(18), bottom: context.h(6)),
+    child: Text(
+      s,
+      style: TextStyle(
+        fontSize: context.sp(13),
+        fontWeight: FontWeight.w700,
+        color: AppColors.inkMuted,
+      ),
+    ),
+  );
 
   Widget _num(TextEditingController c, String label) => Padding(
-        padding: EdgeInsets.only(bottom: context.h(8)),
-        child: TextField(
-          controller: c,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(labelText: label),
-        ),
-      );
+    padding: EdgeInsets.only(bottom: context.h(8)),
+    child: TextField(
+      controller: c,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      onChanged: (_) => setState(() {}),
+      decoration: InputDecoration(labelText: label),
+    ),
+  );
 
   Widget _text(TextEditingController c, String label) => Padding(
-        padding: EdgeInsets.only(bottom: context.h(8)),
-        child: TextField(controller: c, decoration: InputDecoration(labelText: label)),
-      );
+    padding: EdgeInsets.only(bottom: context.h(8)),
+    child: TextField(
+      controller: c,
+      decoration: InputDecoration(labelText: label),
+    ),
+  );
 
   Widget _totalRow(String label, double value, {bool bold = false}) => Padding(
-        padding: EdgeInsets.symmetric(vertical: context.h(3)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: context.sp(bold ? 15 : 13),
-                    fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-                    color: AppColors.ink)),
-            Text(_inr.format(value),
-                style: TextStyle(
-                    fontSize: context.sp(bold ? 15 : 13),
-                    fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-                    color: AppColors.ink)),
-          ],
+    padding: EdgeInsets.symmetric(vertical: context.h(3)),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: context.sp(bold ? 15 : 13),
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+            color: AppColors.ink,
+          ),
         ),
-      );
+        Text(
+          _inr.format(value),
+          style: TextStyle(
+            fontSize: context.sp(bold ? 15 : 13),
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+            color: AppColors.ink,
+          ),
+        ),
+      ],
+    ),
+  );
 }

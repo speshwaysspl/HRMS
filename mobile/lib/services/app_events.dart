@@ -21,6 +21,10 @@ class AppEvents {
   /// Unread notification count - drives the bell's red dot.
   static final ValueNotifier<int> unreadNotifications = ValueNotifier<int>(0);
 
+  /// Last `team:updated` hint from the server ({teamId, kind, at}); team and
+  /// task screens listen and re-fetch. `at` makes every event a new value.
+  static final ValueNotifier<Map<String, dynamic>?> teamChanged = ValueNotifier<Map<String, dynamic>?>(null);
+
   static void bumpAttendance() => attendanceChanged.value++;
   static void bumpLeave() => leaveChanged.value++;
   static void switchToTab(int index) {

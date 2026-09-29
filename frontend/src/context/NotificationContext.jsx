@@ -21,6 +21,8 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
+  // Other screens subscribe to live data events (e.g. "team:updated") through useSocketEvent.
+  const listenersRef = useRef(new Map());
 
   // Initialize socket connection
   useEffect(() => {
@@ -36,6 +38,9 @@ export const NotificationProvider = ({ children }) => {
         });
 
         const socket = socketRef.current;
+        socket.onAny((event, ...args) => {
+          listenersRef.current.get(event)?.forEach((fn) => fn(...args));
+        });
 
         socket.on('connect', () => {
           if (!isMounted) return;
@@ -368,7 +373,15 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  const subscribe = React.useCallback((event, fn) => {
+    const map = listenersRef.current;
+    if (!map.has(event)) map.set(event, new Set());
+    map.get(event).add(fn);
+    return () => map.get(event)?.delete(fn);
+  }, []);
+
   const value = {
+    subscribe,
     notifications,
     unreadCount,
     isConnected,
@@ -384,4 +397,11 @@ export const NotificationProvider = ({ children }) => {
       {children}
     </NotificationContext.Provider>
   );
+};
+// Runs `handler` whenever the server emits `event`. Handler may change between renders.
+export const useSocketEvent = (event, handler) => {
+  const { subscribe } = useNotifications();
+  const ref = useRef(handler);
+  ref.current = handler;
+  useEffect(() => subscribe(event, (...args) => ref.current(...args)), [event, subscribe]);
 };

@@ -40,7 +40,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (value) {
         final supported = await AppLockService.instance.canAuthenticate();
         if (!supported) {
-          _snack('Set up a screen lock (PIN, pattern, or biometrics) on your device first.');
+          _snack(
+            'Set up a screen lock (PIN, pattern, or biometrics) on your device first.',
+          );
           return;
         }
         final ok = await AppLockService.instance.authenticate(
@@ -63,7 +65,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _openUrl(String url) async {
-    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
     if (!ok) _snack('Could not open the link.');
   }
 
@@ -73,7 +78,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('Settings')),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(context.w(16), context.h(16), context.w(16), context.h(32)),
+        padding: EdgeInsets.fromLTRB(
+          context.w(16),
+          context.h(16),
+          context.w(16),
+          context.h(32),
+        ),
         children: [
           if (user != null) ...[
             _ProfileHeader(name: user.name, email: user.email),
@@ -94,7 +104,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ])
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: context.w(4)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.w(4),
+                          ),
                           child: _ThemeOption(
                             label: opt.$2,
                             icon: opt.$3,
@@ -132,7 +144,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.key_outlined,
                   title: 'Change password',
                   onTap: _changePassword,
-                  trailing: Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.inkFaint,
+                  ),
                 ),
               ],
             ),
@@ -145,15 +160,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _Row(
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
-                  onTap: () => _openUrl('https://speshwayhrms.com/terms-and-conditions'),
-                  trailing: Icon(Icons.open_in_new_rounded, size: context.r(18), color: AppColors.inkFaint),
+                  onTap: () =>
+                      _openUrl('https://speshwayhrms.com/terms-and-conditions'),
+                  trailing: Icon(
+                    Icons.open_in_new_rounded,
+                    size: context.r(18),
+                    color: AppColors.inkFaint,
+                  ),
                 ),
                 _divider(context),
                 _Row(
                   icon: Icons.shield_outlined,
                   title: 'Privacy Policy',
-                  onTap: () => _openUrl('https://speshwayhrms.com/privacy-policy'),
-                  trailing: Icon(Icons.open_in_new_rounded, size: context.r(18), color: AppColors.inkFaint),
+                  onTap: () =>
+                      _openUrl('https://speshwayhrms.com/privacy-policy'),
+                  trailing: Icon(
+                    Icons.open_in_new_rounded,
+                    size: context.r(18),
+                    color: AppColors.inkFaint,
+                  ),
                 ),
               ],
             ),
@@ -167,10 +192,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Divider(height: 1, indent: context.w(60), color: AppColors.surfaceSubtle);
 
   Widget _sectionLabel(BuildContext context, String text) => Padding(
-        padding: EdgeInsets.only(left: context.w(4), bottom: context.h(8)),
-        child: Text(text,
-            style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted)),
-      );
+    padding: EdgeInsets.only(left: context.w(4), bottom: context.h(8)),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: context.sp(13),
+        fontWeight: FontWeight.w700,
+        color: AppColors.inkMuted,
+      ),
+    ),
+  );
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -179,9 +210,14 @@ class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.name, required this.email});
 
   String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
-    return (parts.first[0] + (parts.length > 1 ? parts.last[0] : '')).toUpperCase();
+    return (parts.first[0] + (parts.length > 1 ? parts.last[0] : ''))
+        .toUpperCase();
   }
 
   @override
@@ -194,23 +230,40 @@ class _ProfileHeader extends StatelessWidget {
             CircleAvatar(
               radius: context.r(26),
               backgroundColor: AppColors.brand600,
-              child: Text(_initials,
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: context.sp(17))),
+              child: Text(
+                _initials,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: context.sp(17),
+                ),
+              ),
             ),
             SizedBox(width: context.w(14)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: context.sp(16),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
                   SizedBox(height: context.h(2)),
-                  Text(email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted)),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: context.sp(13),
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -226,7 +279,12 @@ class _ThemeOption extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  const _ThemeOption({required this.label, required this.icon, required this.selected, required this.onTap});
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +305,14 @@ class _ThemeOption extends StatelessWidget {
               children: [
                 Icon(icon, color: fg, size: context.r(22)),
                 SizedBox(height: context.h(6)),
-                Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: context.sp(13))),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w600,
+                    fontSize: context.sp(13),
+                  ),
+                ),
               ],
             ),
           ),
@@ -263,7 +328,13 @@ class _Row extends StatelessWidget {
   final String? subtitle;
   final Widget trailing;
   final VoidCallback? onTap;
-  const _Row({required this.icon, required this.title, this.subtitle, required this.trailing, this.onTap});
+  const _Row({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,13 +343,19 @@ class _Row extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: context.w(14), vertical: context.h(10)),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(14),
+            vertical: context.h(10),
+          ),
           child: Row(
             children: [
               Container(
                 width: context.r(34),
                 height: context.r(34),
-                decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSubtle,
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Icon(icon, size: context.r(18), color: AppColors.ink),
               ),
               SizedBox(width: context.w(12)),
@@ -286,10 +363,23 @@ class _Row extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(fontSize: context.sp(15), fontWeight: FontWeight.w600, color: AppColors.ink)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: context.sp(15),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
                     if (subtitle != null) ...[
                       SizedBox(height: context.h(2)),
-                      Text(subtitle!, style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted)),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: context.sp(13),
+                          color: AppColors.inkMuted,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -339,11 +429,15 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       );
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Password updated')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -353,12 +447,16 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
@@ -367,34 +465,55 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Change password',
-                    style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  'Change password',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(16)),
                 TextFormField(
                   controller: _old,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Current password'),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Current password',
+                  ),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(12)),
                 TextFormField(
                   controller: _new,
                   obscureText: true,
                   decoration: const InputDecoration(labelText: 'New password'),
-                  validator: (v) => (v == null || v.length < 6) ? 'At least 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6)
+                      ? 'At least 6 characters'
+                      : null,
                 ),
                 SizedBox(height: context.h(12)),
                 TextFormField(
                   controller: _confirm,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Confirm new password'),
-                  validator: (v) => v != _new.text ? 'Passwords do not match' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm new password',
+                  ),
+                  validator: (v) =>
+                      v != _new.text ? 'Passwords do not match' : null,
                 ),
                 SizedBox(height: context.h(18)),
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Update password'),
                 ),
                 SizedBox(height: context.h(8)),

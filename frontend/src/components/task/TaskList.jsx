@@ -1,20 +1,60 @@
 import React, { useEffect, useState } from "react";
+import { useSocketEvent } from "../../context/NotificationContext";
 import axios from "axios";
-import { Link, useLocation } from "react-router-dom";
+
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
-import StarRating from "./StarRating";
+import { FiCheckCircle, FiClock, FiFlag, FiChevronRight } from "react-icons/fi";
+import WorkProofField from "./WorkProofField";
+import { ReferenceView } from "./TaskReference";
+
+
+// Employee view: tasks grouped under their milestone (open milestones by due
+// date, then closed ones), with tasks outside any milestone last.
+const groupByMilestone = (tasks) => {
+  const groups = new Map();
+  for (const t of tasks) {
+    const m = t.milestoneId && typeof t.milestoneId === "object" ? t.milestoneId : null;
+    const key = m ? m._id : "none";
+    if (!groups.has(key)) groups.set(key, { key, milestone: m, title: m ? m.title : "Other tasks", tasks: [] });
+    groups.get(key).tasks.push(t);
+  }
+  const rank = (g) => (!g.milestone ? 2 : g.milestone.state === "closed" ? 1 : 0);
+  const due = (g) => (g.milestone?.dueDate ? new Date(g.milestone.dueDate).getTime() : Infinity);
+  return [...groups.values()].sort((a, b) => rank(a) - rank(b) || due(a) - due(b));
+};
+
+const statusTone = (status) =>
+  status === "Completed"
+    ? "bg-accent-100 text-accent-700"
+    : status === "Review"
+    ? "bg-brand-100 text-brand-700"
+    : status === "Overdue"
+    ? "bg-red-100 text-red-700"
+    : status === "In Progress"
+    ? "bg-amber-100 text-amber-800"
+    : "bg-surface-subtle text-ink";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const location = useLocation();
-  const boardPath = `${location.pathname.replace(/\/$/, "")}/board`;
   const [selectedTask, setSelectedTask] = useState(null);
-  const [updateData, setUpdateData] = useState({ status: "", comments: "" });
   const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState("");
+  const [proofFile, setProofFile] = useState(null);
+  const [proofRemoved, setProofRemoved] = useState(false);
+  const [openGroups, setOpenGroups] = useState(() => new Set()); // milestones start collapsed
+  const toggleGroup = (key) =>
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  useSocketEvent("team:updated", (e) => {
+    if (e?.kind === "tasks") fetchTasks();
+  });
 
   const userRoles = user?.role ? (Array.isArray(user.role) ? user.role : [user.role]) : [];
 
@@ -57,32 +97,27 @@ const TaskList = () => {
     }
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("status", updateData.status);
-    formData.append("comments", updateData.comments);
-    if (updateData.file) {
-      formData.append("file", updateData.file);
-    }
+  // Employees can't edit tasks; they only tell the team lead the work is done,
+  // which moves the task to Review. The lead then marks it Completed.
+  const handleMarkDone = async () => {
     try {
       setUpdating(true);
+      setUpdateError("");
+      const formData = new FormData();
+      formData.append("status", "Review");
+      if (proofFile) formData.append("file", proofFile);
+      else if (proofRemoved) formData.append("removeWorkProof", "true");
       const response = await axios.put(
         `${API_BASE}/api/task/${selectedTask._id}`,
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}`, "Content-Type": "multipart/form-data" } }
       );
       if (response.data.success) {
         setSelectedTask(null);
         fetchTasks();
       }
-    } catch {
-      // Failed to update task
+    } catch (err) {
+      setUpdateError(err.response?.data?.error || "Couldn't send this to your team lead. Try again.");
     } finally {
       setUpdating(false);
     }
@@ -110,127 +145,89 @@ const TaskList = () => {
         >
           My Tasks
         </motion.h2>
-        <Link
-          to={boardPath}
-          className="text-sm font-medium px-4 py-2 rounded-lg border border-surface-subtle bg-white text-ink hover:bg-surface-muted transition-colors"
-        >
-          Board View
-        </Link>
       </div>
 
-      <motion.div
-        className="bg-white rounded-xl shadow-card overflow-x-auto border border-surface-subtle hidden sm:block"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.25 }}
-      >
-        <table className="min-w-full border-collapse">
-          <thead className="bg-surface-muted">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Title</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Start Date</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Deadline</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Status</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-surface-subtle">
-            <AnimatePresence>
-              {tasks.map((task, index) => (
-                <motion.tr
-                  key={task._id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="hover:bg-surface-muted cursor-pointer transition-colors"
-                  onClick={() => {
-                    setSelectedTask(task);
-                    setUpdateData({ status: task.status, comments: task.comments || "" });
-                  }}
+      {tasks.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-10 text-center">
+          <p className="font-semibold text-ink">No tasks yet</p>
+          <p className="mt-1 text-sm text-ink-muted">Tasks your team lead assigns will appear here, grouped by milestone.</p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {groupByMilestone(tasks).map((g) => {
+            const done = g.tasks.filter((t) => t.status === "Completed").length;
+            const pct = Math.round((done / g.tasks.length) * 100);
+            const expanded = openGroups.has(g.key);
+            return (
+              <section key={g.key} className="bg-white rounded-xl shadow-card border border-surface-subtle" aria-label={g.title}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(g.key)}
+                  aria-expanded={expanded}
+                  aria-controls={`group-${g.key}`}
+                  className={`block w-full px-5 py-4 text-left rounded-xl hover:bg-surface-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500 ${expanded ? "border-b border-surface-subtle rounded-b-none" : ""}`}
                 >
-                  <td className="px-6 py-4 font-medium text-ink">{task.title}</td>
-                  <td className="px-6 py-4 text-sm text-ink-muted">
-                    {task.startDate ? new Date(task.startDate).toLocaleDateString() : "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-ink-muted">
-                    {formatDateOrNA(task.deadline)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-accent-100 text-accent-700">
-                      {task.status}
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+                      <FiChevronRight
+                        className={`shrink-0 text-ink-muted transition-transform duration-200 motion-reduce:transition-none ${expanded ? "rotate-90" : ""}`}
+                        aria-hidden="true"
+                      />
+                      {g.milestone ? <FiFlag className="text-accent-700 shrink-0" aria-hidden="true" /> : null}
+                      {g.title}
+                      {g.milestone?.state === "closed" && (
+                        <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-muted">Closed</span>
+                      )}
+                    </h3>
+                    <span className="text-sm text-ink-muted tabular-nums">
+                      {g.milestone?.dueDate ? `Due ${formatDateOrNA(g.milestone.dueDate)} · ` : ""}
+                      {done} of {g.tasks.length} done
                     </span>
-                  </td>
-
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-            {tasks.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center p-8 text-ink-muted">
-                  No tasks found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </motion.div>
-      <div className="sm:hidden space-y-3">
-        {tasks.map((task) => {
-          const st = (task.status || "").toLowerCase();
-          const statusStyle = st.includes("complete")
-            ? { color: "#16A34A", bg: "#DCFCE7", icon: "✓" }
-            : st.includes("progress")
-            ? { color: "#2563EB", bg: "#DBEAFE", icon: "↻" }
-            : st.includes("review")
-            ? { color: "#9333EA", bg: "#F3E8FF", icon: "★" }
-            : { color: "#2C3968", bg: "#EEF1F8", icon: "☰" };
-          return (
-          <div
-            key={task._id}
-            className="bg-white rounded-2xl border border-surface-subtle p-4 cursor-pointer active:scale-[0.99] transition-transform"
-            style={{ boxShadow: "0 4px 12px rgba(28,35,68,0.08)" }}
-            onClick={() => {
-              setSelectedTask(task);
-              setUpdateData({ status: task.status, comments: task.comments || "" });
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <span
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
-                style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
-              >
-                {statusStyle.icon}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="font-extrabold text-ink text-[15px] leading-snug break-words">{task.title}</div>
-                  <span
-                    className="flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                    style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
-                  >
-                    {task.status}
-                  </span>
-                </div>
-                {task.description && (
-                  <div className="mt-1 text-[13px] text-ink-muted line-clamp-2">{task.description}</div>
+                  </div>
+                  {g.milestone?.description && (
+                    <p className="mt-1 text-sm text-ink-muted max-w-prose line-clamp-2">{g.milestone.description}</p>
+                  )}
+                  {g.milestone && (
+                    <div className="mt-3 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.title}: your progress`}>
+                      <div className="h-full rounded-full bg-accent-600" style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
+                </button>
+                {expanded && (
+                <ul id={`group-${g.key}`} className="divide-y divide-surface-subtle">
+                  {g.tasks.map((task) => (
+                    <li key={task._id}>
+                      <button
+                        className="w-full grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_8rem_8rem_7rem] items-center gap-x-4 gap-y-1 px-5 py-3.5 text-left hover:bg-surface-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500"
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setUpdateError("");
+                          setProofFile(null);
+                          setProofRemoved(false);
+                        }}
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-medium text-ink truncate">{task.title}</span>
+                          {task.description && <span className="block text-sm text-ink-muted truncate">{task.description}</span>}
+                          <span className="block sm:hidden mt-0.5 text-xs text-ink-muted">Due {formatDateOrNA(task.deadline)}</span>
+                        </span>
+                        <span className="hidden sm:block text-sm text-ink-muted tabular-nums">
+                          {task.startDate ? new Date(task.startDate).toLocaleDateString() : "—"}
+                        </span>
+                        <span className="hidden sm:block text-sm text-ink tabular-nums">{formatDateOrNA(task.deadline)}</span>
+                        <span className={`justify-self-end sm:justify-self-start inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusTone(task.status)}`}>
+                          {task.status}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
                 )}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-surface-subtle text-xs text-ink-muted flex-wrap">
-              <span className="inline-flex items-center gap-1">
-                Start: {task.startDate ? new Date(task.startDate).toLocaleDateString() : "N/A"}
-              </span>
-              <span className="inline-flex items-center gap-1 font-medium text-ink">
-                Due: {formatDateOrNA(task.deadline)}
-              </span>
-            </div>
-          </div>
-          );
-        })}
-        {tasks.length === 0 && (
-          <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-6 text-center text-ink-muted">No tasks found.</div>
-        )}
-      </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedTask && (
@@ -264,11 +261,6 @@ const TaskList = () => {
                     <p><span className="font-medium text-ink-muted">Start Date:</span> {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleDateString() : "N/A"}</p>
                     <p><span className="font-medium text-ink-muted">Deadline:</span> {formatDateOrNA(selectedTask.deadline)}</p>
                     <p><span className="font-medium text-ink-muted">Assigned By:</span> {selectedTask.assignedBy?.name || "Team Lead"}</p>
-                    <p><span className="font-medium text-ink-muted">Remark:</span> {selectedTask.remark || "-"}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-ink-muted">Rating:</span>
-                      {selectedTask.rating ? <StarRating value={selectedTask.rating} size={14} /> : <span className="text-ink">Not rated yet</span>}
-                    </div>
                     {selectedTask.workProof && (
                       <p>
                         <span className="font-medium text-ink">Work Proof:</span>{" "}
@@ -296,58 +288,67 @@ const TaskList = () => {
                 </div>
               </div>
 
-              <div className="border-t border-surface-subtle pt-6">
-                <h4 className="font-semibold text-lg mb-4 text-ink">Update Task</h4>
-                <form onSubmit={handleUpdate} className="space-y-4">
-                  {!userRoles.includes("employee") && (
+              {selectedTask.reference && (
+                <div className="mb-6">
+                  <ReferenceView url={selectedTask.reference} name={selectedTask.referenceName} />
+                </div>
+              )}
+
+              <div className="border-t border-surface-subtle pt-5">
+                {selectedTask.status === "Completed" ? (
+                  <div className="space-y-4">
+                    <p className="flex items-center gap-2 text-sm text-ink">
+                      <FiCheckCircle className="text-accent-700 text-lg shrink-0" aria-hidden="true" />
+                      Your team lead marked this task completed.
+                    </p>
+                    {selectedTask.workProof && (
+                      <div>
+                        <p className="block text-sm font-medium text-ink mb-1.5">Your work proof</p>
+                        <WorkProofField existingUrl={selectedTask.workProof} existingName={selectedTask.workProofName} editable={false} />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedTask.status === "Review" ? (
+                      <p className="flex items-center gap-2 text-sm text-ink">
+                        <FiClock className="text-brand-500 text-lg shrink-0" aria-hidden="true" />
+                        Sent to your team lead for review. You can resubmit with new proof.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-ink-muted">
+                        Done with this? Your team lead will review it and mark it completed.
+                      </p>
+                    )}
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-ink">Status</label>
-                      <select
-                        value={updateData.status}
-                        onChange={(e) => setUpdateData({ ...updateData, status: e.target.value })}
-                        className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                      >
-                        <option value="Assigned">Assigned</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Review">Review</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
+                      <p className="block text-sm font-medium text-ink mb-1.5">
+                        Work proof <span className="font-normal text-ink-muted">(optional)</span>
+                      </p>
+                      <WorkProofField
+                        existingUrl={selectedTask.workProof}
+                        existingName={selectedTask.workProofName}
+                        file={proofFile}
+                        onFileChange={setProofFile}
+                        removed={proofRemoved}
+                        onRemovedChange={setProofRemoved}
+                        editable
+                        disabled={updating}
+                      />
                     </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-ink">Attach File (Work Proof)</label>
-                    <input
-                      type="file"
-                      className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                      onChange={(e) => setUpdateData({ ...updateData, file: e.target.files[0] })}
-                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleMarkDone}
+                        disabled={updating}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+                      >
+                        <FiCheckCircle aria-hidden="true" />
+                        {updating ? "Sending..." : selectedTask.status === "Review" ? "Resubmit for review" : "I've completed this task"}
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-ink">Comments</label>
-                    <textarea
-                      value={updateData.comments}
-                      onChange={(e) => setUpdateData({ ...updateData, comments: e.target.value })}
-                      className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink h-24 focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTask(null)}
-                      className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={updating}
-                      className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
-                    >
-                      {updating ? "Updating..." : "Update Task"}
-                    </button>
-                  </div>
-                </form>
+                )}
+                {updateError && <p role="alert" className="mt-3 text-sm text-red-700">{updateError}</p>}
               </div>
             </motion.div>
           </motion.div>

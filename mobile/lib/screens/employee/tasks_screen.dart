@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
+import '../../services/app_events.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../services/api_client.dart';
 import '../../services/task_service.dart';
@@ -8,12 +10,9 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
-import '../../widgets/star_rating.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
-
-const _statuses = ['Assigned', 'In Progress', 'Review', 'Completed'];
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -23,6 +22,10 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
+  /// Milestones start collapsed; tapping one shows its tasks.
+  final Set<String> _openGroups = {};
+  String _groupKey(Map? m) => m?['_id']?.toString() ?? 'none';
+
   final _service = TaskService();
   List<Map<String, dynamic>> _tasks = [];
   bool _loading = true;
@@ -32,6 +35,7 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void initState() {
     super.initState();
+    AppEvents.teamChanged.addListener(_onTeamChanged);
     final cache = AppCaches.of(context).tasksList;
     if (cache.hasData) {
       _tasks = cache.data!;
@@ -40,6 +44,19 @@ class _TasksScreenState extends State<TasksScreen> {
     } else {
       _load();
     }
+  }
+
+  /// Server push: someone changed a team this screen shows.
+  void _onTeamChanged() {
+    final e = AppEvents.teamChanged.value;
+    if (e == null || !mounted) return;
+    if (e['kind'] == 'tasks') _load(silent: true);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.teamChanged.removeListener(_onTeamChanged);
+    super.dispose();
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -112,9 +129,149 @@ class _TasksScreenState extends State<TasksScreen> {
                     )
                   : ListView(
                       padding: EdgeInsets.all(context.w(16)),
-                      children: _tasks.map((t) => _taskCard(t)).toList(),
+                      children: [
+                        for (final g in _groups()) ...[
+                          _groupHeader(g),
+                          if (_openGroups.contains(_groupKey(g.milestone)))
+                            ...g.tasks.map(_taskCard),
+                          SizedBox(height: context.h(12)),
+                        ],
+                      ],
                     ),
             ),
+    );
+  }
+
+  /// Tasks grouped under their milestone: open milestones by due date, then
+  /// closed ones, then tasks outside any milestone.
+  List<({Map? milestone, List<Map<String, dynamic>> tasks})> _groups() {
+    final byKey =
+        <String, ({Map? milestone, List<Map<String, dynamic>> tasks})>{};
+    for (final t in _tasks) {
+      final m = t['milestoneId'] is Map ? t['milestoneId'] as Map : null;
+      final key = m?['_id']?.toString() ?? 'none';
+      byKey.putIfAbsent(
+        key,
+        () => (milestone: m, tasks: <Map<String, dynamic>>[]),
+      );
+      byKey[key]!.tasks.add(t);
+    }
+    int rank(Map? m) => m == null ? 2 : (m['state'] == 'closed' ? 1 : 0);
+    DateTime due(Map? m) =>
+        DateTime.tryParse(m?['dueDate']?.toString() ?? '') ?? DateTime(9999);
+    return byKey.values.toList()..sort((a, b) {
+      final r = rank(a.milestone).compareTo(rank(b.milestone));
+      return r != 0 ? r : due(a.milestone).compareTo(due(b.milestone));
+    });
+  }
+
+  Widget _groupHeader(({Map? milestone, List<Map<String, dynamic>> tasks}) g) {
+    final m = g.milestone;
+    final done = g.tasks.where((t) => t['status'] == 'Completed').length;
+    String dueText = '';
+    final d = DateTime.tryParse(m?['dueDate']?.toString() ?? '');
+    if (d != null) {
+      dueText = 'Due ${DateFormat('d MMM').format(d.toLocal())} · ';
+    }
+    final key = _groupKey(m);
+    final open = _openGroups.contains(key);
+    return Semantics(
+      button: true,
+      expanded: open,
+      child: InkWell(
+        onTap: () => setState(
+          () => open ? _openGroups.remove(key) : _openGroups.add(key),
+        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.w(4),
+            context.h(8),
+            context.w(4),
+            context.h(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AnimatedRotation(
+                    turns: open ? 0.25 : 0,
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.inkMuted,
+                      size: context.r(22),
+                    ),
+                  ),
+                  SizedBox(width: context.w(4)),
+                  if (m != null) ...[
+                    Icon(
+                      Icons.flag_outlined,
+                      size: context.r(18),
+                      color: AppColors.accent700,
+                    ),
+                    SizedBox(width: context.w(6)),
+                  ],
+                  Expanded(
+                    child: Text(
+                      m?['title']?.toString() ?? 'Other tasks',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: context.sp(15),
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                  if (m?['state'] == 'closed')
+                    Text(
+                      'Closed',
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(12),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: context.h(2)),
+              Text(
+                '$dueText$done of ${g.tasks.length} done',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(12),
+                ),
+              ),
+              if ((m?['description'] ?? '').toString().isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: context.h(2)),
+                  child: Text(
+                    m!['description'].toString(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.inkMuted,
+                      fontSize: context.sp(12),
+                    ),
+                  ),
+                ),
+              if (m != null && g.tasks.isNotEmpty) ...[
+                SizedBox(height: context.h(6)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: done / g.tasks.length,
+                    minHeight: 5,
+                    backgroundColor: AppColors.surfaceSubtle,
+                    color: AppColors.accent600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -235,25 +392,20 @@ class _TaskUpdateSheet extends StatefulWidget {
 }
 
 class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
-  late String _status;
-  late final TextEditingController _comments;
+  bool _saving = false;
   String? _filePath;
   String? _fileName;
-  bool _saving = false;
+  bool _removeSaved = false; // saved proof marked for removal on submit
 
-  @override
-  void initState() {
-    super.initState();
-    _status = widget.task['status']?.toString() ?? 'Assigned';
-    _comments = TextEditingController(
-      text: widget.task['comments']?.toString() ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _comments.dispose();
-    super.dispose();
+  Future<void> _pickFile() async {
+    final r = await FilePicker.platform.pickFiles();
+    final f = r?.files.single;
+    if (f?.path == null) return;
+    setState(() {
+      _filePath = f!.path;
+      _fileName = f.name;
+      _removeSaved = false;
+    });
   }
 
   String _fmt(dynamic v) {
@@ -264,24 +416,16 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
     }
   }
 
-  Future<void> _pickFile() async {
-    final r = await FilePicker.platform.pickFiles();
-    final f = r?.files.single;
-    if (f?.path == null) return;
-    setState(() {
-      _filePath = f!.path;
-      _fileName = f.name;
-    });
-  }
-
-  Future<void> _submit() async {
+  // Employees can't edit tasks; they tell the team lead the work is done (moves
+  // it to Review), optionally with work proof, and can resubmit until Completed.
+  Future<void> _markDone() async {
     setState(() => _saving = true);
     try {
       await widget.service.updateStatus(
         widget.task['_id'].toString(),
-        _status,
-        comments: _comments.text.trim(),
+        'Review',
         filePath: _filePath,
+        removeWorkProof: _removeSaved,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -314,30 +458,202 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
     ),
   );
 
+  Future<void> _openUrl(String url) =>
+      launchUrl(Uri.parse(_absUrl(url)), mode: LaunchMode.externalApplication);
+
+  Widget _note(IconData icon, String text, Color color) => Row(
+    children: [
+      Icon(icon, color: color, size: context.r(20)),
+      SizedBox(width: context.w(10)),
+      Expanded(
+        child: Text(
+          text,
+          style: TextStyle(color: AppColors.ink, fontSize: context.sp(14)),
+        ),
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = widget.task;
+    final status = t['status']?.toString() ?? 'Assigned';
     final assignedBy = t['assignedBy'] is Map
         ? (t['assignedBy']['name']?.toString() ?? '-')
         : '-';
-    final existingFile = (t['file'] ?? t['attachment'] ?? '').toString();
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+    final savedUrl = (t['workProof'] ?? '').toString();
+    final savedName = (t['workProofName'] ?? '').toString().isNotEmpty
+        ? t['workProofName'].toString()
+        : savedUrl.split('/').last;
+
+    final Widget action;
+    if (status == 'Completed') {
+      action = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _note(
+            Icons.check_circle_rounded,
+            'Your team lead marked this task completed.',
+            AppColors.accent700,
+          ),
+          if (savedUrl.isNotEmpty) ...[
+            SizedBox(height: context.h(14)),
+            Text(
+              'Your work proof',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
+            ),
+            SizedBox(height: context.h(8)),
+            _FileTile(name: savedName, onOpen: () => _openUrl(savedUrl)),
+          ],
+        ],
+      );
+    } else {
+      final inReview = status == 'Review';
+      action = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (inReview) ...[
+            _note(
+              Icons.hourglass_top_rounded,
+              'Sent to your team lead for review. You can resubmit with new proof.',
+              AppColors.brand500,
+            ),
+            SizedBox(height: context.h(14)),
+          ],
+          Text(
+            'Work proof (optional)',
+            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+          ),
+          SizedBox(height: context.h(8)),
+          if (_filePath != null)
+            // Newly picked file (uploaded on submit)
+            _FileTile(
+              name: _fileName ?? 'New file',
+              caption: savedUrl.isNotEmpty && !_removeSaved
+                  ? 'Replaces your current proof'
+                  : 'New file',
+              actions: [
+                TextButton(
+                  onPressed: _saving ? null : _pickFile,
+                  child: const Text('Change'),
+                ),
+                TextButton(
+                  onPressed: _saving
+                      ? null
+                      : () => setState(() {
+                          _filePath = null;
+                          _fileName = null;
+                        }),
+                  child: const Text('Discard'),
+                ),
+              ],
+            )
+          else if (savedUrl.isNotEmpty && !_removeSaved)
+            // Proof already submitted
+            _FileTile(
+              name: savedName,
+              caption: 'Submitted',
+              onOpen: () => _openUrl(savedUrl),
+              actions: [
+                TextButton(
+                  onPressed: _saving ? null : _pickFile,
+                  child: const Text('Replace'),
+                ),
+                TextButton(
+                  onPressed: _saving
+                      ? null
+                      : () => setState(() => _removeSaved = true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                  ),
+                  child: const Text('Remove'),
+                ),
+              ],
+            )
+          else ...[
+            if (_removeSaved)
+              Padding(
+                padding: EdgeInsets.only(bottom: context.h(8)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$savedName will be removed when you resubmit.',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: context.sp(12),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _removeSaved = false),
+                      child: const Text('Undo'),
+                    ),
+                  ],
+                ),
+              ),
+            OutlinedButton.icon(
+              onPressed: _saving ? null : _pickFile,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Attach work proof'),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: context.h(4)),
+              child: Text(
+                'Image, PDF or document, up to 10 MB',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(12),
+                ),
+              ),
+            ),
+          ],
+          SizedBox(height: context.h(16)),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _saving ? null : _markDone,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.task_alt_rounded),
+              label: Text(
+                inReview ? 'Resubmit for review' : "I've completed this task",
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SafeArea(
       child: SingleChildScrollView(
         padding: EdgeInsets.all(context.w(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              t['title']?.toString() ?? 'Untitled',
-              style: TextStyle(
-                fontSize: context.sp(18),
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    t['title']?.toString() ?? 'Untitled',
+                    style: TextStyle(
+                      fontSize: context.sp(18),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                SizedBox(width: context.w(8)),
+                StatusPill(label: status),
+              ],
             ),
             SizedBox(height: context.h(12)),
             if ((t['description'] ?? '').toString().isNotEmpty)
@@ -345,114 +661,192 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
             _detail('Start Date', _fmt(t['startDate'])),
             _detail('Deadline', _fmt(t['deadline'])),
             _detail('Assigned By', assignedBy),
-            if ((t['remark'] ?? '').toString().isNotEmpty)
-              _detail('Remark', t['remark'].toString()),
-            if (t['rating'] != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: context.h(6)),
-                child: Row(
-                  children: [
-                    Text(
-                      'Rating: ',
-                      style: TextStyle(
-                        color: AppColors.inkMuted,
-                        fontSize: context.sp(13),
-                      ),
-                    ),
-                    StarRating(
-                      value: (t['rating'] as num).toInt(),
-                      size: context.r(16),
-                    ),
-                  ],
-                ),
+            if ((t['reference'] ?? '').toString().isNotEmpty) ...[
+              SizedBox(height: context.h(10)),
+              _ReferenceView(
+                url: t['reference'].toString(),
+                name: t['referenceName']?.toString(),
               ),
-            if (existingFile.isNotEmpty)
-              _detail('Work Proof', existingFile.split('/').last),
+            ],
             const Divider(height: 28),
-            Text(
-              'Status',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-              ),
-            ),
-            SizedBox(height: context.h(8)),
-            Wrap(
-              spacing: context.w(8),
-              runSpacing: context.h(8),
-              children: _statuses
-                  .map(
-                    (s) => ChoiceChip(
-                      label: Text(s),
-                      selected: _status == s,
-                      onSelected: _saving
-                          ? null
-                          : (_) => setState(() => _status = s),
-                    ),
-                  )
-                  .toList(),
-            ),
-            SizedBox(height: context.h(16)),
-            Text(
-              'Attach File (Work Proof)',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-              ),
-            ),
-            SizedBox(height: context.h(8)),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _pickFile,
-              icon: const Icon(Icons.attach_file),
-              label: Text(
-                _fileName ?? 'Choose file',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            SizedBox(height: context.h(16)),
-            Text(
-              'Comments',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-              ),
-            ),
-            SizedBox(height: context.h(8)),
-            TextField(
-              controller: _comments,
-              enabled: !_saving,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: 'Add a comment',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: context.h(20)),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
+            action,
+            if (status != 'Completed' && status != 'Review') ...[
+              SizedBox(height: context.h(8)),
+              Text(
+                'Your team lead will review it and mark it completed.',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(12),
                 ),
-                SizedBox(width: context.w(12)),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _saving ? null : _submit,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Update Task'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The team lead's optional "what to do" attachment: an image preview or a
+/// file button; tapping opens it full size.
+class _ReferenceView extends StatelessWidget {
+  const _ReferenceView({required this.url, this.name});
+  final String url;
+  final String? name;
+
+  static final _image = RegExp(
+    r'\.(png|jpe?g|gif|webp|bmp)(\?|$)',
+    caseSensitive: false,
+  );
+
+  String get _abs {
+    if (url.startsWith('http')) return url;
+    final base = ApiClient.instance.dio.options.baseUrl.replaceAll(
+      RegExp(r'/$'),
+      '',
+    );
+    return '$base/${url.startsWith('/') ? url.substring(1) : url}';
+  }
+
+  Future<void> _open() =>
+      launchUrl(Uri.parse(_abs), mode: LaunchMode.externalApplication);
+
+  @override
+  Widget build(BuildContext context) {
+    final isImage = _image.hasMatch(url) || _image.hasMatch(name ?? '');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reference from your team lead',
+          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+        ),
+        SizedBox(height: context.h(6)),
+        if (isImage)
+          Semantics(
+            button: true,
+            label: 'Open reference image',
+            child: InkWell(
+              onTap: _open,
+              borderRadius: BorderRadius.circular(10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  _abs,
+                  height: context.h(180),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    height: context.h(60),
+                    alignment: Alignment.center,
+                    color: AppColors.surfaceSubtle,
+                    child: Text(
+                      'Tap to open',
+                      style: TextStyle(color: AppColors.inkMuted),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: _open,
+            icon: const Icon(Icons.description_outlined),
+            label: Text(
+              name ?? 'Open attachment',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+String _absUrl(String url) {
+  if (url.startsWith('http')) return url;
+  final base = ApiClient.instance.dio.options.baseUrl.replaceAll(
+    RegExp(r'/$'),
+    '',
+  );
+  return '$base/${url.startsWith('/') ? url.substring(1) : url}';
+}
+
+/// A file row (name + caption) with an optional open action and buttons —
+/// mirrors web WorkProofField.
+class _FileTile extends StatelessWidget {
+  const _FileTile({
+    required this.name,
+    this.caption,
+    this.onOpen,
+    this.actions = const [],
+  });
+  final String name;
+  final String? caption;
+  final VoidCallback? onOpen;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.surfaceSubtle),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        context.w(12),
+        context.h(8),
+        context.w(4),
+        context.h(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onOpen,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.insert_drive_file_outlined,
+                  color: AppColors.inkMuted,
+                  size: context.r(22),
+                ),
+                SizedBox(width: context.w(10)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (caption != null)
+                        Text(
+                          caption!,
+                          style: TextStyle(
+                            color: AppColors.inkMuted,
+                            fontSize: context.sp(12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (onOpen != null)
+                  IconButton(
+                    tooltip: 'Open',
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new),
+                  ),
+              ],
+            ),
+          ),
+          if (actions.isNotEmpty)
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
+        ],
       ),
     );
   }

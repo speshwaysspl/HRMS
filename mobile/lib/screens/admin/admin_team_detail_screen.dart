@@ -1,3 +1,4 @@
+import '../../services/app_events.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_client.dart';
@@ -33,7 +34,21 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
   @override
   void initState() {
     super.initState();
+    AppEvents.teamChanged.addListener(_onTeamChanged);
     _load();
+  }
+
+  /// Server push: someone changed a team this screen shows.
+  void _onTeamChanged() {
+    final e = AppEvents.teamChanged.value;
+    if (e == null || !mounted) return;
+    if (e['teamId'] == widget.id) _load();
+  }
+
+  @override
+  void dispose() {
+    AppEvents.teamChanged.removeListener(_onTeamChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -58,11 +73,22 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
   }
 
   Future<void> _addMembers() async {
+    // Hide people already in the team and the team lead from the picker.
+    final stats = (_detail?['memberStats'] as List?) ?? const [];
+    final memberIds = stats
+        .map((s) => ((s as Map)['member'] as Map?)?['_id']?.toString())
+        .whereType<String>()
+        .toSet();
+    final lead = (_detail?['team'] as Map?)?['leadId'];
+    final leadUserId = (lead is Map ? lead['_id'] : lead)?.toString();
     final picked = await showModalBottomSheet<List<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _MemberPickerSheet(),
+      builder: (_) => _MemberPickerSheet(
+        excludeEmployeeIds: memberIds,
+        excludeUserId: leadUserId,
+      ),
     );
     if (picked == null || picked.isEmpty) return;
     try {
@@ -74,6 +100,38 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
+    }
+  }
+
+  Future<void> _removeMember(Map member, String name) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove member?'),
+        content: Text(
+          '$name will be removed from this team. Their existing tasks are kept.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _service.removeMember(widget.id, member['_id'].toString());
+      messenger.showSnackBar(SnackBar(content: Text('$name removed')));
+      _load();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
     }
   }
 
@@ -192,6 +250,19 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
                                         fontSize: context.sp(12),
                                       ),
                                     ),
+                                  if (member['_id'] != null)
+                                    IconButton(
+                                      tooltip: 'Remove from team',
+                                      onPressed: () => _removeMember(
+                                        member,
+                                        user['name']?.toString() ?? 'Member',
+                                      ),
+                                      icon: Icon(
+                                        Icons.person_remove_outlined,
+                                        color: AppColors.danger,
+                                        size: context.r(20),
+                                      ),
+                                    ),
                                 ],
                               ),
                             );
@@ -217,7 +288,13 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
 }
 
 class _MemberPickerSheet extends StatefulWidget {
-  const _MemberPickerSheet();
+  const _MemberPickerSheet({
+    this.excludeEmployeeIds = const {},
+    this.excludeUserId,
+  });
+
+  final Set<String> excludeEmployeeIds;
+  final String? excludeUserId;
 
   @override
   State<_MemberPickerSheet> createState() => _MemberPickerSheetState();
@@ -246,7 +323,14 @@ class _MemberPickerSheetState extends State<_MemberPickerSheet> {
       final data = await _service.getEmployees();
       if (!mounted) return;
       setState(() {
-        _employees = data;
+        _employees = data.where((e) {
+          if (widget.excludeEmployeeIds.contains(e['_id']?.toString())) {
+            return false;
+          }
+          final u = e['userId'];
+          final userId = (u is Map ? u['_id'] : u)?.toString();
+          return userId == null || userId != widget.excludeUserId;
+        }).toList();
         _loading = false;
       });
     } catch (e) {

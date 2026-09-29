@@ -31,18 +31,34 @@ class PlaceholderScreen extends StatelessWidget {
               Container(
                 width: box,
                 height: box,
-                decoration: BoxDecoration(color: AppColors.brand50, shape: BoxShape.circle),
-                child: Icon(icon, size: context.r(32), color: AppColors.brand500),
+                decoration: BoxDecoration(
+                  color: AppColors.brand50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: context.r(32),
+                  color: AppColors.brand500,
+                ),
               ),
               SizedBox(height: context.h(16)),
-              Text(title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: context.sp(17),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
               SizedBox(height: context.h(8)),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(13),
+                ),
               ),
             ],
           ),

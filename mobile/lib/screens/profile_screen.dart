@@ -79,9 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _copyToClipboard(String label, String value) {
     if (value.isEmpty || value == '--') return;
     Clipboard.setData(ClipboardData(text: value));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$label copied to clipboard')));
   }
 
   String _formatDate(dynamic dateVal) {
@@ -100,17 +100,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.user;
 
     final emp = _employeeData ?? {};
-    final dept = emp['department'] is Map ? emp['department']['dep_name'] : emp['department'];
+    final dept = emp['department'] is Map
+        ? emp['department']['dep_name']
+        : emp['department'];
     final status = (emp['status']?.toString() ?? 'active').toLowerCase();
     final isActive = status == 'active';
     final email = (user?.email.isNotEmpty == true)
         ? user!.email
-        : (emp['userId'] is Map ? emp['userId']['email']?.toString() : null) ?? '--';
+        : (emp['userId'] is Map ? emp['userId']['email']?.toString() : null) ??
+              '--';
 
     return Scaffold(
-      appBar: HrmsAppBar(
-        title: const Text('My Profile'),
-      ),
+      appBar: HrmsAppBar(title: const Text('My Profile')),
       body: RefreshIndicator(
         onRefresh: _fetchProfile,
         child: ListView(
@@ -119,7 +120,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Header card — name/role/status, no avatar.
             Container(
               width: double.infinity,
-              padding: EdgeInsets.fromLTRB(context.w(20), context.h(18), context.w(20), context.h(18)),
+              padding: EdgeInsets.fromLTRB(
+                context.w(20),
+                context.h(18),
+                context.w(20),
+                context.h(18),
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -156,17 +162,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             SizedBox(height: context.h(4)),
                             Text(
                               '${emp['designation'] ?? 'Employee'} · ${dept ?? ''}',
-                              style: TextStyle(color: AppColors.brand200, fontSize: context.sp(13)),
+                              style: TextStyle(
+                                color: AppColors.brand200,
+                                fontSize: context.sp(13),
+                              ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: context.w(9), vertical: context.h(4)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.w(9),
+                          vertical: context.h(4),
+                        ),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.accent500.withValues(alpha: 0.22) : AppColors.danger.withValues(alpha: 0.22),
+                          color: isActive
+                              ? AppColors.accent500.withValues(alpha: 0.22)
+                              : AppColors.danger.withValues(alpha: 0.22),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isActive ? AppColors.accent400 : AppColors.danger, width: 1),
+                          border: Border.all(
+                            color: isActive
+                                ? AppColors.accent400
+                                : AppColors.danger,
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -175,14 +194,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               width: 6,
                               height: 6,
                               decoration: BoxDecoration(
-                                color: isActive ? AppColors.accent400 : AppColors.danger,
+                                color: isActive
+                                    ? AppColors.accent400
+                                    : AppColors.danger,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             SizedBox(width: context.w(5)),
                             Text(
                               isActive ? 'Active' : 'Inactive',
-                              style: TextStyle(color: Colors.white, fontSize: context.sp(11), fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: context.sp(11),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -192,9 +217,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if ((emp['employeeId'] ?? '').toString().isNotEmpty) ...[
                     SizedBox(height: context.h(14)),
                     InkWell(
-                      onTap: () => _copyToClipboard('Employee ID', emp['employeeId'].toString()),
+                      onTap: () => _copyToClipboard(
+                        'Employee ID',
+                        emp['employeeId'].toString(),
+                      ),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: context.w(10), vertical: context.h(6)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.w(10),
+                          vertical: context.h(6),
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
@@ -202,14 +233,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.badge_outlined, size: 14, color: Colors.white70),
+                            const Icon(
+                              Icons.badge_outlined,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
                             SizedBox(width: context.w(6)),
                             Text(
                               'ID: ${emp['employeeId']}',
-                              style: TextStyle(color: Colors.white, fontSize: context.sp(12), fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: context.sp(12),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             SizedBox(width: context.w(6)),
-                            const Icon(Icons.copy, size: 12, color: Colors.white70),
+                            const Icon(
+                              Icons.copy,
+                              size: 12,
+                              color: Colors.white70,
+                            ),
                           ],
                         ),
                       ),
@@ -242,7 +285,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 iconBg: AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
                 items: [
                   _InfoRow('Email Address', email, isCopyable: true),
-                  _InfoRow('Mobile Number', emp['mobilenumber']?.toString() ?? '--', isCopyable: true),
+                  _InfoRow(
+                    'Mobile Number',
+                    emp['mobilenumber']?.toString() ?? '--',
+                    isCopyable: true,
+                  ),
                   _InfoRow('Date of Birth', _formatDate(emp['dob'])),
                   _InfoRow('Gender', emp['gender']?.toString() ?? '--'),
                 ],
@@ -257,7 +304,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 iconBg: AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
                 items: [
                   _InfoRow('Department', dept?.toString() ?? '--'),
-                  _InfoRow('Designation', emp['designation']?.toString() ?? '--'),
+                  _InfoRow(
+                    'Designation',
+                    emp['designation']?.toString() ?? '--',
+                  ),
                   _InfoRow('Joining Date', _formatDate(emp['joiningDate'])),
                 ],
               ),
@@ -297,8 +347,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 width: context.r(30),
                 height: context.r(30),
-                decoration: BoxDecoration(color: AppColors.tint(iconBg ?? AppColors.brand50), shape: BoxShape.circle),
-                child: Icon(icon, size: context.r(16), color: iconColor ?? AppColors.brand600),
+                decoration: BoxDecoration(
+                  color: AppColors.tint(iconBg ?? AppColors.brand50),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: context.r(16),
+                  color: iconColor ?? AppColors.brand600,
+                ),
               ),
               SizedBox(width: context.w(10)),
               Text(
@@ -312,50 +369,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           Divider(height: context.h(20)),
-          ...items.map((it) => Padding(
-                padding: EdgeInsets.only(bottom: context.h(10)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Text(
-                        it.label,
-                        style: TextStyle(
-                          fontSize: context.sp(12),
-                          color: AppColors.inkFaint,
-                          fontWeight: FontWeight.w500,
-                        ),
+          ...items.map(
+            (it) => Padding(
+              padding: EdgeInsets.only(bottom: context.h(10)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      it.label,
+                      style: TextStyle(
+                        fontSize: context.sp(12),
+                        color: AppColors.inkFaint,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Expanded(
-                      flex: 6,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              it.value,
-                              style: TextStyle(
-                                fontSize: context.sp(13),
-                                color: AppColors.ink,
-                                fontWeight: FontWeight.w600,
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            it.value,
+                            style: TextStyle(
+                              fontSize: context.sp(13),
+                              color: AppColors.ink,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (it.isCopyable && it.value != '--')
+                          InkWell(
+                            onTap: () => _copyToClipboard(it.label, it.value),
+                            child: Padding(
+                              padding: EdgeInsets.only(left: context.w(6)),
+                              child: Icon(
+                                Icons.copy,
+                                size: context.r(14),
+                                color: AppColors.inkFaint,
                               ),
                             ),
                           ),
-                          if (it.isCopyable && it.value != '--')
-                            InkWell(
-                              onTap: () => _copyToClipboard(it.label, it.value),
-                              child: Padding(
-                                padding: EdgeInsets.only(left: context.w(6)),
-                                child: Icon(Icons.copy, size: context.r(14), color: AppColors.inkFaint),
-                              ),
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
           ?trailing,
         ],
       ),
@@ -382,7 +445,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.tint(const Color(0xFFFEE2E2)),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.shield_outlined, size: context.r(16), color: AppColors.danger),
+                child: Icon(
+                  Icons.shield_outlined,
+                  size: context.r(16),
+                  color: AppColors.danger,
+                ),
               ),
               SizedBox(width: context.w(10)),
               Text(
@@ -398,12 +465,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Divider(height: context.h(20)),
           Text(
             'Request Account Deletion',
-            style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: TextStyle(
+              fontSize: context.sp(13),
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
           ),
           SizedBox(height: context.h(4)),
           Text(
             'Submit a request to HR/Admin to verify your identity and delete your account.',
-            style: TextStyle(fontSize: context.sp(12), height: 1.4, color: AppColors.inkMuted),
+            style: TextStyle(
+              fontSize: context.sp(12),
+              height: 1.4,
+              color: AppColors.inkMuted,
+            ),
           ),
           SizedBox(height: context.h(12)),
           SizedBox(
@@ -413,11 +488,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 foregroundColor: AppColors.danger,
                 side: const BorderSide(color: AppColors.danger),
                 padding: EdgeInsets.symmetric(vertical: context.h(12)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () => _showDeletionRequestSheet(context),
               icon: const Icon(Icons.delete_outline, size: 18),
-              label: Text('Request Account Deletion', style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600)),
+              label: Text(
+                'Request Account Deletion',
+                style: TextStyle(
+                  fontSize: context.sp(13),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -439,10 +522,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (ctx, setSheetState) {
           if (submitted) {
             return Container(
-              padding: EdgeInsets.fromLTRB(context.w(20), context.h(24), context.w(20), context.h(24)),
+              padding: EdgeInsets.fromLTRB(
+                context.w(20),
+                context.h(24),
+                context.w(20),
+                context.h(24),
+              ),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.panel),
+                ),
               ),
               child: SizedBox(
                 height: context.h(360),
@@ -458,12 +548,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           }
           return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
             child: Container(
               padding: EdgeInsets.all(context.w(20)),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.panel),
+                ),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -474,14 +568,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.tint(const Color(0xFFFEE2E2)), shape: BoxShape.circle),
-                          child: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20),
+                          decoration: BoxDecoration(
+                            color: AppColors.tint(const Color(0xFFFEE2E2)),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.danger,
+                            size: 20,
+                          ),
                         ),
                         SizedBox(width: context.w(10)),
                         Expanded(
                           child: Text(
                             'Request Account Deletion',
-                            style: TextStyle(fontSize: context.sp(16), fontWeight: FontWeight.w700, color: AppColors.ink),
+                            style: TextStyle(
+                              fontSize: context.sp(16),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
                           ),
                         ),
                         IconButton(
@@ -500,28 +605,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Deletion Workflow:', style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                          Text(
+                            'Deletion Workflow:',
+                            style: TextStyle(
+                              fontSize: context.sp(12),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
                           SizedBox(height: context.h(6)),
-                          _stepRow(context, '1', 'Employee submits deletion request'),
-                          _stepRow(context, '2', 'HR/Admin receives the request notification'),
-                          _stepRow(context, '3', 'HR/Admin verifies identity & eligibility'),
-                          _stepRow(context, '4', 'Account + eligible personal data deleted'),
+                          _stepRow(
+                            context,
+                            '1',
+                            'Employee submits deletion request',
+                          ),
+                          _stepRow(
+                            context,
+                            '2',
+                            'HR/Admin receives the request notification',
+                          ),
+                          _stepRow(
+                            context,
+                            '3',
+                            'HR/Admin verifies identity & eligibility',
+                          ),
+                          _stepRow(
+                            context,
+                            '4',
+                            'Account + eligible personal data deleted',
+                          ),
                         ],
                       ),
                     ),
                     SizedBox(height: context.h(14)),
                     Text(
                       'Reason for Deletion (Optional)',
-                      style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w600, color: AppColors.ink),
+                      style: TextStyle(
+                        fontSize: context.sp(12),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
                     ),
                     SizedBox(height: context.h(6)),
                     TextField(
                       controller: reasonCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'e.g. Resigned from company, requesting data removal...',
-                        hintStyle: TextStyle(fontSize: context.sp(12), color: AppColors.inkFaint),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        hintText:
+                            'e.g. Resigned from company, requesting data removal...',
+                        hintStyle: TextStyle(
+                          fontSize: context.sp(12),
+                          color: AppColors.inkFaint,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         contentPadding: EdgeInsets.all(context.w(10)),
                       ),
                     ),
@@ -531,7 +669,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: AppColors.danger,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(vertical: context.h(12)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                       onPressed: busy
                           ? null
@@ -541,10 +681,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 final res = await ApiClient.instance.dio.post(
                                   '/api/account/deletion-request',
                                   data: {'reason': reasonCtrl.text.trim()},
-                                  options: Options(headers: {'x-client': 'mobile'}),
+                                  options: Options(
+                                    headers: {'x-client': 'mobile'},
+                                  ),
                                 );
                                 if (!ctx.mounted) return;
-                                final msg = res.data?['message']?.toString() ??
+                                final msg =
+                                    res.data?['message']?.toString() ??
                                     'Account deletion request submitted to HR/Admin.';
                                 setSheetState(() {
                                   busy = false;
@@ -562,8 +705,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               }
                             },
                       child: busy
-                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Submit Deletion Request', style: TextStyle(fontWeight: FontWeight.w700)),
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Submit Deletion Request',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
                     ),
                   ],
                 ),
@@ -583,10 +736,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 8,
             backgroundColor: AppColors.brand500,
-            child: Text(num, style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(
+              num,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           SizedBox(width: context.w(8)),
-          Expanded(child: Text(text, style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted))),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: context.sp(11),
+                color: AppColors.inkMuted,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -600,5 +768,3 @@ class _InfoRow {
 
   const _InfoRow(this.label, this.value, {this.isCopyable = false});
 }
-
-

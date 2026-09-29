@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useSocketEvent } from "../../context/NotificationContext";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaTrash, FaFileExcel } from "react-icons/fa";
+import { FaTrash, FaFileExcel, FaEdit } from "react-icons/fa";
 
 const TeamList = () => {
   const [teams, setTeams] = useState([]);
@@ -16,6 +17,13 @@ const TeamList = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [exporting, setExporting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [leadFilter, setLeadFilter] = useState("");
+  const [selectedLeads, setSelectedLeads] = useState(new Set());
+  useSocketEvent("team:updated", (e) => {
+    if (["team", "members", "deleted"].includes(e?.kind)) fetchTeams();
+  });
 
   useEffect(() => {
     fetchTeams();
@@ -54,19 +62,41 @@ const TeamList = () => {
 
   const canExport = user?.role?.includes("admin") || user?.role?.includes("team_lead");
 
-  // One workbook for every team (admin: all teams, lead: the teams they lead).
-  const exportAll = async () => {
+  const isAdmin = user?.role?.includes("admin");
+  // Distinct team leads, for the admin's "download by lead" menu.
+  const leads = [...new Map(teams.filter((t) => t.leadId?._id).map((t) => [t.leadId._id, t.leadId])).values()]
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  // Search matches team name, lead name or lead email; the dropdown narrows to one lead.
+  const q = search.trim().toLowerCase();
+  const visibleTeams = teams.filter(
+    (t) =>
+      (!leadFilter || t.leadId?._id === leadFilter) &&
+      (!q || [t.name, t.leadId?.name, t.leadId?.email].some((v) => v?.toLowerCase().includes(q)))
+  );
+
+  const toggleLead = (id) =>
+    setSelectedLeads((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // One workbook for every team (admin: all teams or the selected leads' teams, lead: the teams they lead).
+  const exportAll = async (leadIds) => {
+    setMenuOpen(false);
     setExporting(true);
     try {
       const res = await axios.get(`${API_BASE}/api/team/attendance/export`, {
-        params: { month },
+        params: leadIds?.length ? { month, leadId: leadIds.join(",") } : { month },
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         responseType: "blob",
       });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `all_teams_attendance_${month}.xlsx`;
+      a.download = leadIds?.length ? `selected_leads_attendance_${month}.xlsx` : `all_teams_attendance_${month}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -105,14 +135,53 @@ const TeamList = () => {
                 onChange={(e) => setMonth(e.target.value)}
                 className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
               />
-              <button
-                onClick={exportAll}
-                disabled={exporting || !month}
-                className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-60 transition-colors"
-              >
-                <FaFileExcel className="text-accent-700" />
-                {exporting ? "Exporting..." : "Download Attendance Excel"}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => (isAdmin ? setMenuOpen((o) => !o) : exportAll())}
+                  disabled={exporting || !month}
+                  aria-haspopup={isAdmin ? "menu" : undefined}
+                  aria-expanded={isAdmin ? menuOpen : undefined}
+                  className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-60 transition-colors"
+                >
+                  <FaFileExcel className="text-accent-700" />
+                  {exporting ? "Exporting..." : "Download Attendance Excel"}
+                </button>
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                    <div role="menu" className="absolute right-0 z-20 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-surface-subtle rounded-lg shadow-card py-1">
+                      <button role="menuitem" onClick={() => exportAll()} className="w-full text-left px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-muted">
+                        All teams
+                      </button>
+                      {leads.length > 0 && (
+                        <div className="px-4 pt-2 pb-1 text-xs font-medium text-ink-muted border-t border-surface-subtle">By team lead</div>
+                      )}
+                      {leads.map((l) => (
+                        <label key={l._id} className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-surface-muted cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.has(l._id)}
+                            onChange={() => toggleLead(l._id)}
+                            className="h-4 w-4 rounded text-accent-600"
+                          />
+                          {l.name || "Unknown"}
+                        </label>
+                      ))}
+                      {leads.length > 0 && (
+                        <div className="sticky bottom-0 bg-white border-t border-surface-subtle p-2">
+                          <button
+                            onClick={() => exportAll([...selectedLeads])}
+                            disabled={selectedLeads.size === 0}
+                            className="w-full bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-60"
+                          >
+                            Download selected ({selectedLeads.size})
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </>
           )}
           {user?.role?.includes("admin") && (
@@ -125,6 +194,41 @@ const TeamList = () => {
           )}
         </div>
       </motion.div>
+
+      {teams.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <label htmlFor="team-search" className="sr-only">Search teams</label>
+          <input
+            id="team-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search team or team lead..."
+            className="flex-1 min-w-[200px] max-w-md border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+          />
+          <label htmlFor="team-lead-filter" className="sr-only">Filter by team lead</label>
+          <select
+            id="team-lead-filter"
+            value={leadFilter}
+            onChange={(e) => setLeadFilter(e.target.value)}
+            className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+          >
+            <option value="">All team leads</option>
+            {leads.map((l) => (
+              <option key={l._id} value={l._id}>{l.name || "Unknown"}</option>
+            ))}
+          </select>
+          {(search || leadFilter) && (
+            <button
+              onClick={() => { setSearch(""); setLeadFilter(""); }}
+              className="text-sm font-medium text-accent-700 hover:underline px-2 py-2"
+            >
+              Clear
+            </button>
+          )}
+          <span className="text-sm text-ink-muted">{visibleTeams.length} of {teams.length} teams</span>
+        </div>
+      )}
 
       <motion.div
         className="bg-white rounded-xl shadow-card overflow-x-auto border border-surface-subtle hidden sm:block"
@@ -145,7 +249,7 @@ const TeamList = () => {
           </thead>
           <tbody className="bg-white divide-y divide-surface-subtle">
             <AnimatePresence>
-              {teams.map((team, index) => (
+              {visibleTeams.map((team, index) => (
                 <motion.tr
                   key={team._id}
                   initial={{ opacity: 0, y: 10 }}
@@ -166,6 +270,18 @@ const TeamList = () => {
                   <td className="px-5 py-4 text-ink-muted">{team.members?.length || 0}</td>
                   {user?.role?.includes("admin") && (
                     <td className="px-5 py-4">
+                      <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin-dashboard/edit-team/${team._id}`);
+                        }}
+                        className="text-accent-700 hover:text-accent-800 transition-colors p-2 rounded-full hover:bg-accent-50"
+                        title="Edit Team"
+                        aria-label="Edit Team"
+                      >
+                        <FaEdit />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -176,15 +292,16 @@ const TeamList = () => {
                       >
                         <FaTrash />
                       </button>
+                      </div>
                     </td>
                   )}
                 </motion.tr>
               ))}
             </AnimatePresence>
-            {teams.length === 0 && (
+            {visibleTeams.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center p-8 text-ink-muted">
-                  No teams found.
+                <td colSpan={4} className="text-center p-8 text-ink-muted">
+                  {teams.length === 0 ? "No teams found." : "No teams match your search."}
                 </td>
               </tr>
             )}
@@ -192,7 +309,7 @@ const TeamList = () => {
         </table>
       </motion.div>
       <div className="sm:hidden space-y-3">
-        {teams.map((team) => (
+        {visibleTeams.map((team) => (
           <div
             key={team._id}
             className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 cursor-pointer"
@@ -211,6 +328,18 @@ const TeamList = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right text-sm text-ink-muted">Lead: <span className="font-medium text-ink">{team.leadId?.name || "N/A"}</span></div>
+                {user?.role?.includes("admin") && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/admin-dashboard/edit-team/${team._id}`);
+                    }}
+                    className="text-accent-700 hover:text-accent-800 p-2"
+                    aria-label="Edit Team"
+                  >
+                    <FaEdit />
+                  </button>
+                )}
                 {user?.role?.includes("admin") && (
                   <button
                     onClick={(e) => {

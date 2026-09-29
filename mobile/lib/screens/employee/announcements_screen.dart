@@ -64,49 +64,76 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.campaign_outlined, title: 'No announcements yet', subtitle: 'Company announcements will show up here.'),
-                        ])
-                      : ListView(
-                          padding: EdgeInsets.fromLTRB(context.w(16), context.h(12), context.w(16), context.h(16)),
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(bottom: context.h(14), left: context.w(2)),
-                              child: Text(
-                                'Stay updated with the latest company news',
-                                style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted),
-                              ),
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.campaign_outlined,
+                          title: 'No announcements yet',
+                          subtitle: 'Company announcements will show up here.',
+                        ),
+                      ],
+                    )
+                  : ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        context.w(16),
+                        context.h(12),
+                        context.w(16),
+                        context.h(16),
+                      ),
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: context.h(14),
+                            left: context.w(2),
+                          ),
+                          child: Text(
+                            'Stay updated with the latest company news',
+                            style: TextStyle(
+                              fontSize: context.sp(13),
+                              color: AppColors.inkMuted,
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(context.r(16)),
-                                border: Border.all(color: AppColors.surfaceSubtle),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Column(
-                                children: [
-                                  for (var i = 0; i < _items.length; i++) ...[
-                                    if (i > 0)
-                                      Divider(height: 1, thickness: 1, color: AppColors.surfaceSubtle, indent: context.w(16), endIndent: context.w(16)),
-                                    _AnnouncementRow(
-                                      item: _items[i],
-                                      onTap: () => Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (_) => AnnouncementDetailScreen(id: _items[i]['_id'].toString())),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(context.r(16)),
+                            border: Border.all(color: AppColors.surfaceSubtle),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < _items.length; i++) ...[
+                                if (i > 0)
+                                  Divider(
+                                    height: 1,
+                                    thickness: 1,
+                                    color: AppColors.surfaceSubtle,
+                                    indent: context.w(16),
+                                    endIndent: context.w(16),
+                                  ),
+                                _AnnouncementRow(
+                                  item: _items[i],
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => AnnouncementDetailScreen(
+                                        id: _items[i]['_id'].toString(),
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                ),
+                      ],
+                    ),
+            ),
     );
   }
 }
@@ -145,7 +172,9 @@ class _AnnouncementRow extends StatelessWidget {
     final title = item['title']?.toString() ?? '';
     final description = item['description']?.toString() ?? '';
     final imageUrl = item['imageUrl']?.toString();
-    final (categoryLabel, categoryColor) = categoryStyle(item["category"]?.toString());
+    final (categoryLabel, categoryColor) = categoryStyle(
+      item["category"]?.toString(),
+    );
 
     String date = '';
     try {
@@ -156,7 +185,10 @@ class _AnnouncementRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: context.w(16), vertical: context.h(14)),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.w(16),
+          vertical: context.h(14),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -192,7 +224,11 @@ class _AnnouncementRow extends StatelessWidget {
                       ),
                       Text(
                         date,
-                        style: TextStyle(fontSize: context.sp(11.5), color: AppColors.inkFaint, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: context.sp(11.5),
+                          color: AppColors.inkFaint,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -214,7 +250,11 @@ class _AnnouncementRow extends StatelessWidget {
                       description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted, height: 1.4),
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        color: AppColors.inkMuted,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ],
@@ -223,7 +263,11 @@ class _AnnouncementRow extends StatelessWidget {
             SizedBox(width: context.w(4)),
             Padding(
               padding: EdgeInsets.only(top: context.h(2)),
-              child: Icon(Icons.chevron_right_rounded, size: context.r(20), color: AppColors.inkFaint),
+              child: Icon(
+                Icons.chevron_right_rounded,
+                size: context.r(20),
+                color: AppColors.inkFaint,
+              ),
             ),
           ],
         ),
@@ -237,7 +281,8 @@ class AnnouncementDetailScreen extends StatefulWidget {
   const AnnouncementDetailScreen({super.key, required this.id});
 
   @override
-  State<AnnouncementDetailScreen> createState() => _AnnouncementDetailScreenState();
+  State<AnnouncementDetailScreen> createState() =>
+      _AnnouncementDetailScreenState();
 }
 
 class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
@@ -281,7 +326,10 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
           ? ListView(
               padding: EdgeInsets.all(context.w(20)),
               children: [
-                SkeletonBox(height: context.h(180), borderRadius: BorderRadius.circular(context.r(16))),
+                SkeletonBox(
+                  height: context.h(180),
+                  borderRadius: BorderRadius.circular(context.r(16)),
+                ),
                 SizedBox(height: context.h(16)),
                 const SkeletonBox(height: 22, width: 220),
                 SizedBox(height: context.h(10)),
@@ -289,8 +337,8 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : _buildContent(context),
+          ? buildErrorState(_error!, _load)
+          : _buildContent(context),
     );
   }
 
@@ -298,8 +346,12 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
     final imageUrl = _item?['imageUrl']?.toString();
     final title = _item?['title']?.toString() ?? '';
     final description = _item?['description']?.toString() ?? '';
-    final authorName = (_item?['createdBy'] is Map) ? (_item?['createdBy']?['name']?.toString() ?? '') : '';
-    final (categoryLabel, categoryColor) = categoryStyle(_item?["category"]?.toString());
+    final authorName = (_item?['createdBy'] is Map)
+        ? (_item?['createdBy']?['name']?.toString() ?? '')
+        : '';
+    final (categoryLabel, categoryColor) = categoryStyle(
+      _item?["category"]?.toString(),
+    );
 
     String date = '';
     try {
@@ -324,24 +376,45 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
         ],
         Text(
           categoryLabel,
-          style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w700, letterSpacing: 0.5, color: categoryColor),
+          style: TextStyle(
+            fontSize: context.sp(11.5),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: categoryColor,
+          ),
         ),
         SizedBox(height: context.h(6)),
         Text(
           title,
-          style: TextStyle(fontSize: context.sp(21), fontWeight: FontWeight.w800, color: AppColors.ink, height: 1.25),
+          style: TextStyle(
+            fontSize: context.sp(21),
+            fontWeight: FontWeight.w800,
+            color: AppColors.ink,
+            height: 1.25,
+          ),
         ),
         SizedBox(height: context.h(8)),
         Text(
-          [if (authorName.isNotEmpty) authorName, date].where((s) => s.isNotEmpty).join(' • '),
-          style: TextStyle(fontSize: context.sp(12.5), color: AppColors.inkFaint, fontWeight: FontWeight.w500),
+          [
+            if (authorName.isNotEmpty) authorName,
+            date,
+          ].where((s) => s.isNotEmpty).join(' • '),
+          style: TextStyle(
+            fontSize: context.sp(12.5),
+            color: AppColors.inkFaint,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: context.h(16)),
         Divider(color: AppColors.surfaceSubtle, height: 1),
         SizedBox(height: context.h(16)),
         Text(
           description,
-          style: TextStyle(color: AppColors.ink, fontSize: context.sp(14.5), height: 1.7),
+          style: TextStyle(
+            color: AppColors.ink,
+            fontSize: context.sp(14.5),
+            height: 1.7,
+          ),
         ),
       ],
     );

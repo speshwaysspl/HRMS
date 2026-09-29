@@ -68,10 +68,16 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
           '“${d['dep_name']}” and its employees, leaves and salary records will be removed. This cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -82,7 +88,9 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     }
   }
@@ -99,52 +107,77 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> {
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
-              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
             )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.apartment_outlined, title: 'No departments yet', subtitle: 'Departments you add will show up here.'),
-                        ])
-                      : ListView.builder(
-                          padding: EdgeInsets.all(context.w(16)),
-                          itemCount: _items.length,
-                          itemBuilder: (context, idx) {
-                            final d = _items[idx];
-                            return SimpleCard(
-                                onTap: () => _edit(d),
-                                child: Row(
+          ? buildErrorState(_error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.apartment_outlined,
+                          title: 'No departments yet',
+                          subtitle: 'Departments you add will show up here.',
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(context.w(16)),
+                      itemCount: _items.length,
+                      itemBuilder: (context, idx) {
+                        final d = _items[idx];
+                        return SimpleCard(
+                          onTap: () => _edit(d),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(d['dep_name']?.toString() ?? '',
-                                              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                          if ((d['description'] ?? '').toString().isNotEmpty) ...[
-                                            SizedBox(height: context.h(3)),
-                                            Text(d['description'].toString(),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                          ],
-                                        ],
+                                    Text(
+                                      d['dep_name']?.toString() ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.ink,
                                       ),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                                      onPressed: () => _delete(d),
-                                    ),
+                                    if ((d['description'] ?? '')
+                                        .toString()
+                                        .isNotEmpty) ...[
+                                      SizedBox(height: context.h(3)),
+                                      Text(
+                                        d['description'].toString(),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: AppColors.inkMuted,
+                                          fontSize: context.sp(12),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                            );
-                          },
-                        ),
-                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: AppColors.danger,
+                                ),
+                                onPressed: () => _delete(d),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }
@@ -167,8 +200,12 @@ class _DeptSheetState extends State<_DeptSheet> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.existing?['dep_name']?.toString() ?? '');
-    _desc = TextEditingController(text: widget.existing?['description']?.toString() ?? '');
+    _name = TextEditingController(
+      text: widget.existing?['dep_name']?.toString() ?? '',
+    );
+    _desc = TextEditingController(
+      text: widget.existing?['description']?.toString() ?? '',
+    );
   }
 
   @override
@@ -183,15 +220,23 @@ class _DeptSheetState extends State<_DeptSheet> {
     setState(() => _saving = true);
     try {
       if (widget.existing == null) {
-        await widget.service.add(name: _name.text.trim(), description: _desc.text.trim());
+        await widget.service.add(
+          name: _name.text.trim(),
+          description: _desc.text.trim(),
+        );
       } else {
-        await widget.service.update(widget.existing!['_id'].toString(),
-            name: _name.text.trim(), description: _desc.text.trim());
+        await widget.service.update(
+          widget.existing!['_id'].toString(),
+          name: _name.text.trim(),
+          description: _desc.text.trim(),
+        );
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -201,12 +246,16 @@ class _DeptSheetState extends State<_DeptSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
@@ -215,25 +264,43 @@ class _DeptSheetState extends State<_DeptSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(widget.existing == null ? 'New Department' : 'Edit Department',
-                    style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  widget.existing == null
+                      ? 'New Department'
+                      : 'Edit Department',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(16)),
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(14)),
                 TextFormField(
                   controller: _desc,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Description (optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                  ),
                 ),
                 SizedBox(height: context.h(18)),
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(widget.existing == null ? 'Create' : 'Save'),
                 ),
                 SizedBox(height: context.h(8)),

@@ -35,7 +35,9 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     AppEvents.tabSwitch.addListener(_handleTabSwitch);
     // A launcher shortcut tapped while logged out / cold-starting opens here.
-    WidgetsBinding.instance.addPostFrameCallback((_) => QuickActionsService.consumePending());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => QuickActionsService.consumePending(),
+    );
   }
 
   @override
@@ -132,13 +134,17 @@ class _AppShellState extends State<AppShell> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: isActive ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.08),
+                        color: isActive
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : Colors.white.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       padding: const EdgeInsets.all(3.5),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.28),
+                          color: isActive
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.28),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -155,7 +161,9 @@ class _AppShellState extends State<AppShell> {
                       tab.label,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: color,
                       ),
                     ),
@@ -185,10 +193,7 @@ class _AppShellState extends State<AppShell> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      height: 36,
-                      child: Center(child: iconWidget),
-                    ),
+                    SizedBox(height: 36, child: Center(child: iconWidget)),
                     const SizedBox(height: 3),
                     Text(
                       tab.label,
@@ -196,7 +201,9 @@ class _AppShellState extends State<AppShell> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: color,
                       ),
                     ),
@@ -217,19 +224,11 @@ class _AppShellState extends State<AppShell> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(
-            Icons.article_outlined,
-            size: 22,
-            color: color,
-          ),
+          Icon(Icons.article_outlined, size: 22, color: color),
           Positioned(
             right: 0,
             bottom: 0,
-            child: Icon(
-              Icons.eco,
-              size: 12,
-              color: color,
-            ),
+            child: Icon(Icons.eco, size: 12, color: color),
           ),
         ],
       ),
@@ -240,40 +239,94 @@ class _AppShellState extends State<AppShell> {
     switch (role) {
       case 'admin':
         return [
-          _TabSpec('Home', Icons.dashboard_outlined, const AdminHomeScreen(),
-              activeIcon: Icons.dashboard_rounded),
-          _TabSpec('Leaves', Icons.beach_access_outlined, const AdminLeavesScreen(),
-              activeIcon: Icons.beach_access_rounded),
-          _TabSpec('Employees', Icons.groups_outlined, const AdminEmployeesScreen(),
-              activeIcon: Icons.groups_rounded),
-          _TabSpec('Profile', Icons.person_outline_rounded, const ProfileScreen(),
-              activeIcon: Icons.person_rounded),
+          _TabSpec(
+            'Home',
+            Icons.dashboard_outlined,
+            const AdminHomeScreen(),
+            activeIcon: Icons.dashboard_rounded,
+          ),
+          _TabSpec(
+            'Leaves',
+            Icons.beach_access_outlined,
+            const AdminLeavesScreen(),
+            activeIcon: Icons.beach_access_rounded,
+          ),
+          _TabSpec(
+            'Employees',
+            Icons.groups_outlined,
+            const AdminEmployeesScreen(),
+            activeIcon: Icons.groups_rounded,
+          ),
+          _TabSpec(
+            'Profile',
+            Icons.person_outline_rounded,
+            const ProfileScreen(),
+            activeIcon: Icons.person_rounded,
+          ),
         ];
       case 'hr':
         return [
-          _TabSpec('Home', Icons.dashboard_outlined,
-              const PlaceholderScreen(title: 'HR Dashboard', icon: Icons.dashboard_outlined),
-              activeIcon: Icons.dashboard_rounded),
-          _TabSpec('Recruitment', Icons.badge_outlined,
-              const PlaceholderScreen(title: 'Recruitment', icon: Icons.badge_outlined),
-              activeIcon: Icons.badge_rounded),
-          _TabSpec('Leaves', Icons.beach_access_outlined,
-              const PlaceholderScreen(title: 'Leave Approvals', icon: Icons.beach_access_outlined),
-              activeIcon: Icons.beach_access_rounded),
-          _TabSpec('Profile', Icons.person_outline_rounded, const ProfileScreen(),
-              activeIcon: Icons.person_rounded),
+          _TabSpec(
+            'Home',
+            Icons.dashboard_outlined,
+            const PlaceholderScreen(
+              title: 'HR Dashboard',
+              icon: Icons.dashboard_outlined,
+            ),
+            activeIcon: Icons.dashboard_rounded,
+          ),
+          _TabSpec(
+            'Recruitment',
+            Icons.badge_outlined,
+            const PlaceholderScreen(
+              title: 'Recruitment',
+              icon: Icons.badge_outlined,
+            ),
+            activeIcon: Icons.badge_rounded,
+          ),
+          _TabSpec(
+            'Leaves',
+            Icons.beach_access_outlined,
+            const PlaceholderScreen(
+              title: 'Leave Approvals',
+              icon: Icons.beach_access_outlined,
+            ),
+            activeIcon: Icons.beach_access_rounded,
+          ),
+          _TabSpec(
+            'Profile',
+            Icons.person_outline_rounded,
+            const ProfileScreen(),
+            activeIcon: Icons.person_rounded,
+          ),
         ];
       case 'candidate':
         return [
-          _TabSpec('Home', Icons.dashboard_outlined,
-              const PlaceholderScreen(title: 'My Application', icon: Icons.dashboard_outlined,
-                  message: 'Track your recruitment status here soon.'),
-              activeIcon: Icons.dashboard_rounded),
-          _TabSpec('Documents', Icons.upload_file_outlined,
-              const PlaceholderScreen(title: 'Documents', icon: Icons.upload_file_outlined),
-              activeIcon: Icons.upload_file_rounded),
-          _TabSpec('Profile', Icons.person_outline_rounded, const ProfileScreen(),
-              activeIcon: Icons.person_rounded),
+          _TabSpec(
+            'Home',
+            Icons.dashboard_outlined,
+            const PlaceholderScreen(
+              title: 'My Application',
+              icon: Icons.dashboard_outlined,
+              message: 'Track your recruitment status here soon.',
+            ),
+            activeIcon: Icons.dashboard_rounded,
+          ),
+          _TabSpec(
+            'Documents',
+            Icons.upload_file_outlined,
+            const PlaceholderScreen(
+              title: 'Documents',
+              icon: Icons.upload_file_outlined,
+            ),
+            activeIcon: Icons.upload_file_rounded,
+          ),
+          _TabSpec(
+            'Profile',
+            Icons.person_outline_rounded,
+            const ProfileScreen(),
+            activeIcon: Icons.person_rounded,
+          ),
         ];
       case 'employee':
       default:

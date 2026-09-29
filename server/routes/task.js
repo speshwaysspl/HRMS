@@ -14,8 +14,8 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post("/assign", authMiddleware, assignTask);
-router.put("/:id/details", authMiddleware, editTask);
+router.post("/assign", authMiddleware, upload.single("file"), assignTask);
+router.put("/:id/details", authMiddleware, upload.single("file"), editTask);
 router.put("/:id", authMiddleware, upload.single("file"), updateTaskStatus);
 router.get("/", authMiddleware, getTasks);
 router.delete("/:id", authMiddleware, deleteTask);

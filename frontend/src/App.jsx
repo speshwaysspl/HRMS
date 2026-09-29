@@ -26,7 +26,6 @@ const TeamList = lazy(() => import("./components/team/TeamList"));
 const CreateTeam = lazy(() => import("./components/team/CreateTeam"));
 const TeamDetail = lazy(() => import("./components/team/TeamDetail"));
 const TaskList = lazy(() => import("./components/task/TaskList"));
-const TaskBoard = lazy(() => import("./components/task/TaskBoard"));
  
 // Admin Components (lazy-loaded)
 const AdminSummary = lazy(() => import("./components/dashboard/AdminSummary"));
@@ -183,6 +182,7 @@ function App() {
           {/* Teams */}
           <Route path="teams" element={<TeamList />} />
           <Route path="create-team" element={<CreateTeam />} />
+          <Route path="edit-team/:id" element={<CreateTeam />} />
           <Route path="team/:id" element={<TeamDetail />} />
           <Route path="documents" element={<DocumentList />} />
           <Route path="notifications" element={<NotificationsPage />} />
@@ -228,7 +228,6 @@ function App() {
           <Route path="calendar" element={<EmployeeCalendar />} />
           <Route path="documents" element={<DocumentList />} />
           <Route path="tasks" element={<TaskList />} />
-          <Route path="tasks/board" element={<TaskBoard />} />
           <Route path="notifications" element={<NotificationsPage />} />
 
           {/* Team Lead sections */}

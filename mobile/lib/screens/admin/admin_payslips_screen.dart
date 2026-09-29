@@ -25,7 +25,11 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
   bool _loading = true;
   Object? _error;
   String _query = '';
-  final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+  final _inr = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -60,7 +64,9 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
       await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     }
   }
@@ -82,7 +88,9 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final made = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const AdminPayslipGeneratorScreen()),
+            MaterialPageRoute(
+              builder: (_) => const AdminPayslipGeneratorScreen(),
+            ),
           );
           if (made == true) _load();
         },
@@ -92,7 +100,12 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(context.w(16), context.h(12), context.w(16), context.h(4)),
+            padding: EdgeInsets.fromLTRB(
+              context.w(16),
+              context.h(12),
+              context.w(16),
+              context.h(4),
+            ),
             child: TextField(
               onChanged: (v) => setState(() => _query = v.trim()),
               decoration: const InputDecoration(
@@ -104,27 +117,39 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
           Expanded(
             child: _loading
                 ? ListView(
- padding: EdgeInsets.all(context.w(16)),
- children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
- )
+                    padding: EdgeInsets.all(context.w(16)),
+                    children: const [
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                    ],
+                  )
                 : _error != null
-                    ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: visible.isEmpty
-                            ? ListView(children: [
-                                const SizedBox(height: 100),
-                                EmptyStateView(
-                                    icon: Icons.receipt_long_outlined,
-                                    title: _all.isEmpty ? 'No payslips generated yet' : 'No matching payslips',
-                                    subtitle: _all.isEmpty ? 'Tap Generate to create one.' : 'Try a different search.'),
-                              ])
-                            : ListView.builder(
-                                padding: EdgeInsets.all(context.w(16)),
-                                itemCount: visible.length,
-                                itemBuilder: (_, i) => _row(visible[i]),
+                ? buildErrorState(_error!, _load)
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: visible.isEmpty
+                        ? ListView(
+                            children: [
+                              const SizedBox(height: 100),
+                              EmptyStateView(
+                                icon: Icons.receipt_long_outlined,
+                                title: _all.isEmpty
+                                    ? 'No payslips generated yet'
+                                    : 'No matching payslips',
+                                subtitle: _all.isEmpty
+                                    ? 'Tap Generate to create one.'
+                                    : 'Try a different search.',
                               ),
-                      ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(context.w(16)),
+                            itemCount: visible.length,
+                            itemBuilder: (_, i) => _row(visible[i]),
+                          ),
+                  ),
           ),
         ],
       ),
@@ -145,19 +170,31 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${p['name'] ?? 'Employee'}  ·  ${p['employeeId'] ?? ''}',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  '${p['name'] ?? 'Employee'}  ·  ${p['employeeId'] ?? ''}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(3)),
                 Text(
                   '${p['monthName'] ?? ''} ${p['year'] ?? ''}   ·   Net ${_inr.format(net)}'
                   '${(p['lopDays'] ?? 0) != 0 ? '   ·   LOP ${p['lopDays']}d' : ''}',
-                  style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(12),
+                  ),
                 ),
               ],
             ),
           ),
           SizedBox(width: context.w(8)),
-          Icon(Icons.download_outlined, color: AppColors.brand600, size: context.r(22)),
+          Icon(
+            Icons.download_outlined,
+            color: AppColors.brand600,
+            size: context.r(22),
+          ),
         ],
       ),
     );

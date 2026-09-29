@@ -64,7 +64,9 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
       await _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _busy.remove(id));
@@ -73,13 +75,19 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
 
   List<Map<String, dynamic>> get _visible {
     if (_filter == 'All') return _all;
-    return _all.where((l) => (l['status'] ?? 'Pending').toString() == _filter).toList();
+    return _all
+        .where((l) => (l['status'] ?? 'Pending').toString() == _filter)
+        .toList();
   }
 
   String _dateRange(Map<String, dynamic> l) {
     try {
-      final start = DateFormat('d MMM').format(DateTime.parse(l['startDate'].toString()));
-      final end = DateFormat('d MMM, yyyy').format(DateTime.parse(l['endDate'].toString()));
+      final start = DateFormat(
+        'd MMM',
+      ).format(DateTime.parse(l['startDate'].toString()));
+      final end = DateFormat(
+        'd MMM, yyyy',
+      ).format(DateTime.parse(l['endDate'].toString()));
       return '$start – $end';
     } catch (_) {
       return '${l['startDate']} – ${l['endDate']}';
@@ -98,7 +106,10 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
             height: context.h(52),
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(8)),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(12),
+                vertical: context.h(8),
+              ),
               children: _filters.map((f) {
                 final selected = f == _filter;
                 return Padding(
@@ -115,24 +126,35 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
           Expanded(
             child: _loading
                 ? ListView(
- padding: EdgeInsets.all(context.w(16)),
- children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
- )
+                    padding: EdgeInsets.all(context.w(16)),
+                    children: const [
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                    ],
+                  )
                 : _error != null
-                    ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: visible.isEmpty
-                            ? ListView(children: [
-                                const SizedBox(height: 100),
-                                EmptyStateView(icon: Icons.beach_access_outlined, title: 'No $_filter requests', subtitle: 'Leave requests will show up here.'),
-                              ])
-                            : ListView.builder(
-                                padding: EdgeInsets.all(context.w(16)),
-                                itemCount: visible.length,
-                                itemBuilder: (_, i) => _card(visible[i]),
+                ? buildErrorState(_error!, _load)
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: visible.isEmpty
+                        ? ListView(
+                            children: [
+                              const SizedBox(height: 100),
+                              EmptyStateView(
+                                icon: Icons.beach_access_outlined,
+                                title: 'No $_filter requests',
+                                subtitle: 'Leave requests will show up here.',
                               ),
-                      ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(context.w(16)),
+                            itemCount: visible.length,
+                            itemBuilder: (_, i) => _card(visible[i]),
+                          ),
+                  ),
           ),
         ],
       ),
@@ -160,20 +182,35 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(user['name']?.toString() ?? 'Employee',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                child: Text(
+                  user['name']?.toString() ?? 'Employee',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
               ),
               SizedBox(width: context.w(8)),
               StatusPill(label: status),
             ],
           ),
           SizedBox(height: context.h(4)),
-          Text('${l['leaveType'] ?? ''}  ·  ${_dateRange(l)}',
-              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+          Text(
+            '${l['leaveType'] ?? ''}  ·  ${_dateRange(l)}',
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(12),
+            ),
+          ),
           if ((l['reason'] ?? '').toString().isNotEmpty) ...[
             SizedBox(height: context.h(4)),
-            Text('Reason: ${l['reason']}',
-                style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12))),
+            Text(
+              'Reason: ${l['reason']}',
+              style: TextStyle(
+                color: AppColors.inkFaint,
+                fontSize: context.sp(12),
+              ),
+            ),
           ],
           if (isPending) ...[
             SizedBox(height: context.h(10)),
@@ -194,7 +231,14 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
                   child: ElevatedButton(
                     onPressed: busy ? null : () => _decide(id, 'Approved'),
                     child: busy
-                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text('Approve'),
                   ),
                 ),

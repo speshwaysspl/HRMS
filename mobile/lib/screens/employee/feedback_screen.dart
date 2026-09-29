@@ -10,7 +10,15 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 const _categories = [
-  'General', 'Work Environment', 'Management', 'Benefits', 'Training', 'Technology', 'Suggestion', 'Complaint', 'Other'
+  'General',
+  'Work Environment',
+  'Management',
+  'Benefits',
+  'Training',
+  'Technology',
+  'Suggestion',
+  'Complaint',
+  'Other',
 ];
 
 class FeedbackScreen extends StatefulWidget {
@@ -84,47 +92,88 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.chat_bubble_outline, title: 'No feedback submitted yet', subtitle: 'Share your thoughts with HR using the Submit button.'),
-                        ])
-                      : ListView(
-                          padding: EdgeInsets.all(context.w(16)),
-                          children: _items.map((f) {
-                            final response = f['adminResponse'] as Map?;
-                            return SimpleCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.chat_bubble_outline,
+                          title: 'No feedback submitted yet',
+                          subtitle:
+                              'Share your thoughts with HR using the Submit button.',
+                        ),
+                      ],
+                    )
+                  : ListView(
+                      padding: EdgeInsets.all(context.w(16)),
+                      children: _items.map((f) {
+                        final response = f['adminResponse'] as Map?;
+                        return SimpleCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(child: Text(f['title']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
-                                      SizedBox(width: context.w(8)),
-                                      StatusPill(label: f['status']?.toString() ?? 'Pending'),
-                                    ],
-                                  ),
-                                  SizedBox(height: context.h(4)),
-                                  Text(f['category']?.toString() ?? '', style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(11))),
-                                  SizedBox(height: context.h(6)),
-                                  Text(f['description']?.toString() ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
-                                  if (response != null && response['message'] != null) ...[
-                                    SizedBox(height: context.h(8)),
-                                    Container(
-                                      padding: EdgeInsets.all(context.w(10)),
-                                      decoration: BoxDecoration(color: AppColors.surfaceMuted, borderRadius: BorderRadius.circular(8)),
-                                      child: Text('HR: ${response['message']}', style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
+                                  Expanded(
+                                    child: Text(
+                                      f['title']?.toString() ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.ink,
+                                      ),
                                     ),
-                                  ],
+                                  ),
+                                  SizedBox(width: context.w(8)),
+                                  StatusPill(
+                                    label: f['status']?.toString() ?? 'Pending',
+                                  ),
                                 ],
                               ),
-                            );
-                          }).toList(),
-                        ),
-                ),
+                              SizedBox(height: context.h(4)),
+                              Text(
+                                f['category']?.toString() ?? '',
+                                style: TextStyle(
+                                  color: AppColors.inkFaint,
+                                  fontSize: context.sp(11),
+                                ),
+                              ),
+                              SizedBox(height: context.h(6)),
+                              Text(
+                                f['description']?.toString() ?? '',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.inkMuted,
+                                  fontSize: context.sp(13),
+                                ),
+                              ),
+                              if (response != null &&
+                                  response['message'] != null) ...[
+                                SizedBox(height: context.h(8)),
+                                Container(
+                                  padding: EdgeInsets.all(context.w(10)),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceMuted,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'HR: ${response['message']}',
+                                    style: TextStyle(
+                                      fontSize: context.sp(12),
+                                      color: AppColors.inkMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
     );
   }
 }
@@ -158,7 +207,9 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -168,12 +219,16 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
@@ -182,18 +237,28 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Submit Feedback', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  'Submit Feedback',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(16)),
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(14)),
                 DropdownButtonFormField<String>(
                   initialValue: _category,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  items: _categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
                   onChanged: (v) => setState(() => _category = v ?? _category),
                 ),
                 SizedBox(height: context.h(14)),
@@ -201,12 +266,16 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
                   controller: _descController,
                   maxLines: 4,
                   decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
                 CheckboxListTile(
                   value: _anonymous,
                   onChanged: (v) => setState(() => _anonymous = v ?? false),
-                  title: Text('Submit anonymously', style: TextStyle(fontSize: context.sp(13))),
+                  title: Text(
+                    'Submit anonymously',
+                    style: TextStyle(fontSize: context.sp(13)),
+                  ),
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
@@ -214,7 +283,14 @@ class _SubmitFeedbackSheetState extends State<_SubmitFeedbackSheet> {
                 ElevatedButton(
                   onPressed: _submitting ? null : _submit,
                   child: _submitting
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Submit'),
                 ),
                 SizedBox(height: context.h(8)),

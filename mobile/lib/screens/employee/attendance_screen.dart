@@ -22,7 +22,8 @@ class AttendanceScreen extends StatefulWidget {
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
-class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBindingObserver {
+class _AttendanceScreenState extends State<AttendanceScreen>
+    with WidgetsBindingObserver {
   final _service = AttendanceService();
   Map<String, dynamic>? _today;
   bool _loading = true;
@@ -92,9 +93,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
         _locationAt = DateTime.now();
         _locationLoading = false;
       });
-      final area = await _locationService.resolveArea(quick.latitude, quick.longitude);
+      final area = await _locationService.resolveArea(
+        quick.latitude,
+        quick.longitude,
+      );
       if (!mounted) return;
-      setState(() => _location = LocationFix(latitude: quick.latitude, longitude: quick.longitude, area: area));
+      setState(
+        () => _location = LocationFix(
+          latitude: quick.latitude,
+          longitude: quick.longitude,
+          area: area,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -108,15 +118,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     }
   }
 
-  List<Map<String, dynamic>> get _breaks =>
-      ((_today?['breaks'] as List?) ?? []).map((b) => Map<String, dynamic>.from(b as Map)).toList();
+  List<Map<String, dynamic>> get _breaks => ((_today?['breaks'] as List?) ?? [])
+      .map((b) => Map<String, dynamic>.from(b as Map))
+      .toList();
 
-  bool get _hasOngoingBreak => _breaks.any((b) => b['end'] == null || b['end'] == '');
+  bool get _hasOngoingBreak =>
+      _breaks.any((b) => b['end'] == null || b['end'] == '');
 
   Future<void> _startBreak() async {
     setState(() => _breakBusy = true);
     try {
-      final updated = [..._breaks, {'start': _nowTime, 'end': ''}];
+      final updated = [
+        ..._breaks,
+        {'start': _nowTime, 'end': ''},
+      ];
       await _service.saveBreaks(date: _todayDate, breaks: updated);
       await _load();
     } catch (e) {
@@ -142,7 +157,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
   /// No connection: keep the punch with the time it was made, show it on
   /// screen right away, and let [_syncOffline] send it later.
-  Future<void> _saveOffline(Map<String, dynamic> payload, String time, Map<String, dynamic> localUpdate) async {
+  Future<void> _saveOffline(
+    Map<String, dynamic> payload,
+    String time,
+    Map<String, dynamic> localUpdate,
+  ) async {
     await OfflinePunchService.save(payload, date: _todayDate, time: time);
     if (!mounted) return;
     setState(() => _today = {...?_today, 'date': _todayDate, ...localUpdate});
@@ -201,7 +220,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     return v != null && v.isNotEmpty && v != 'null';
   }
 
-  String _timeOrDash(String key) => _hasTime(key) ? _today![key].toString() : '--:--';
+  String _timeOrDash(String key) =>
+      _hasTime(key) ? _today![key].toString() : '--:--';
 
   String get _todayDate => DateFormat('yyyy-MM-dd').format(DateTime.now());
   String get _nowTime => DateFormat('HH:mm').format(DateTime.now());
@@ -212,14 +232,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
   /// Returns null only when there is no usable location at all.
   Future<LocationFix?> _punchLocation() async {
     final cur = _location;
-    final fresh = _locationAt != null && DateTime.now().difference(_locationAt!) < const Duration(minutes: 2);
+    final fresh =
+        _locationAt != null &&
+        DateTime.now().difference(_locationAt!) < const Duration(minutes: 2);
     if (cur != null && fresh && !cur.area.startsWith('Locating')) return cur;
     try {
       final quick = await _locationService.getQuickFix();
       final area = await _locationService
           .resolveArea(quick.latitude, quick.longitude)
-          .timeout(const Duration(seconds: 3), onTimeout: () => cur?.area ?? 'Unknown Area');
-      final fix = LocationFix(latitude: quick.latitude, longitude: quick.longitude, area: area);
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => cur?.area ?? 'Unknown Area',
+          );
+      final fix = LocationFix(
+        latitude: quick.latitude,
+        longitude: quick.longitude,
+        area: area,
+      );
       if (mounted) {
         setState(() {
           _location = fix;
@@ -251,21 +280,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     try {
       final loc = await _punchLocation();
       if (loc == null) {
-        _toast('Could not get your location. Turn on location/GPS, allow permission and try again.', isError: true);
+        _toast(
+          'Could not get your location. Turn on location/GPS, allow permission and try again.',
+          isError: true,
+        );
         return;
       }
       final time = _nowTime;
       final Map<String, dynamic> saved;
       try {
-        saved = await _service.checkIn(date: _todayDate, inTime: time, workMode: _workMode!, location: loc);
+        saved = await _service.checkIn(
+          date: _todayDate,
+          inTime: time,
+          workMode: _workMode!,
+          location: loc,
+        );
       } catch (e) {
         if (!OfflinePunchService.isOfflineError(e)) rethrow;
-        await _saveOffline({
-          'inTime': time,
-          'workMode': _workMode,
-          'breaks': [],
-          'inLocation': loc.toJson(),
-        }, time, {'inTime': time, 'workMode': _workMode, 'outTime': ''});
+        await _saveOffline(
+          {
+            'inTime': time,
+            'workMode': _workMode,
+            'breaks': [],
+            'inLocation': loc.toJson(),
+          },
+          time,
+          {'inTime': time, 'workMode': _workMode, 'outTime': ''},
+        );
         return;
       }
       _applySaved(saved);
@@ -291,14 +332,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       final time = _nowTime;
       final Map<String, dynamic> saved;
       try {
-        saved = await _service.checkOut(date: _todayDate, outTime: time, breaks: closedBreaks, location: loc);
+        saved = await _service.checkOut(
+          date: _todayDate,
+          outTime: time,
+          breaks: closedBreaks,
+          location: loc,
+        );
       } catch (e) {
         if (!OfflinePunchService.isOfflineError(e)) rethrow;
-        await _saveOffline({
-          'outTime': time,
-          'breaks': closedBreaks,
-          if (loc != null) 'outLocation': loc.toJson(),
-        }, time, {'outTime': time, 'breaks': closedBreaks});
+        await _saveOffline(
+          {
+            'outTime': time,
+            'breaks': closedBreaks,
+            if (loc != null) 'outLocation': loc.toJson(),
+          },
+          time,
+          {'outTime': time, 'breaks': closedBreaks},
+        );
         return;
       }
       _applySaved(saved);
@@ -340,22 +390,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: EdgeInsets.all(context.w(16)),
-                    children: [
-                      _buildCheckCard(hasCheckedIn, hasCheckedOut),
-                      SizedBox(height: context.h(16)),
-                      _buildSummaryCard(),
-                      SizedBox(height: context.h(16)),
-                      _buildBreakCard(hasCheckedIn, hasCheckedOut),
-                      SizedBox(height: context.h(16)),
-                      _buildLocationCard(),
-                    ],
-                  ),
-                ),
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: EdgeInsets.all(context.w(16)),
+                children: [
+                  _buildCheckCard(hasCheckedIn, hasCheckedOut),
+                  SizedBox(height: context.h(16)),
+                  _buildSummaryCard(),
+                  SizedBox(height: context.h(16)),
+                  _buildBreakCard(hasCheckedIn, hasCheckedOut),
+                  SizedBox(height: context.h(16)),
+                  _buildLocationCard(),
+                ],
+              ),
+            ),
     );
   }
 
@@ -370,8 +420,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+          Text(
+            DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(13),
+            ),
+          ),
           SizedBox(height: context.h(12)),
           Row(
             children: [
@@ -384,7 +439,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   _timeOrDash('inTime'),
                 ),
               ),
-              Container(width: 1, height: context.h(56), color: AppColors.surfaceSubtle),
+              Container(
+                width: 1,
+                height: context.h(56),
+                color: AppColors.surfaceSubtle,
+              ),
               Expanded(
                 child: _timeBlock(
                   Icons.logout_rounded,
@@ -402,7 +461,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _submitting || hasCheckedOut || (hasCheckedIn && hasCheckedOut) || (!hasCheckedIn && _workMode == null)
+              onPressed:
+                  _submitting ||
+                      hasCheckedOut ||
+                      (hasCheckedIn && hasCheckedOut) ||
+                      (!hasCheckedIn && _workMode == null)
                   ? null
                   : (hasCheckedIn ? _checkOut : _checkIn),
               icon: Icon(hasCheckedIn ? Icons.logout : Icons.login, size: 18),
@@ -415,7 +478,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                 backgroundColor: hasCheckedOut
                     ? AppColors.surfaceSubtle
                     : (hasCheckedIn ? AppColors.brand600 : AppColors.accent600),
-                foregroundColor: hasCheckedOut ? AppColors.inkMuted : Colors.white,
+                foregroundColor: hasCheckedOut
+                    ? AppColors.inkMuted
+                    : Colors.white,
               ),
             ),
           ),
@@ -432,17 +497,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
     if (hasCheckedIn) {
       // Locked after check-in — mirrors the web Attendance screen.
-      final label = modes.firstWhere(
-        (m) => m['value'] == _workMode,
-        orElse: () => modes[0],
-      )['label'] as String;
+      final label =
+          modes.firstWhere(
+                (m) => m['value'] == _workMode,
+                orElse: () => modes[0],
+              )['label']
+              as String;
       return Row(
         children: [
-          Text('Work Mode', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+          Text(
+            'Work Mode',
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(12),
+            ),
+          ),
           SizedBox(width: context.w(8)),
-          Text(label, style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: context.sp(13))),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w700,
+              fontSize: context.sp(13),
+            ),
+          ),
           SizedBox(width: context.w(4)),
-          Icon(Icons.lock_outline, size: context.sp(13), color: AppColors.inkMuted),
+          Icon(
+            Icons.lock_outline,
+            size: context.sp(13),
+            color: AppColors.inkMuted,
+          ),
         ],
       );
     }
@@ -452,8 +536,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
       children: [
         Row(
           children: [
-            Text('Work Mode', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-            Text(' *', style: TextStyle(color: AppColors.danger, fontSize: context.sp(12))),
+            Text(
+              'Work Mode',
+              style: TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: context.sp(12),
+              ),
+            ),
+            Text(
+              ' *',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontSize: context.sp(12),
+              ),
+            ),
           ],
         ),
         SizedBox(height: context.h(8)),
@@ -462,10 +558,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
             final selected = _workMode == mode['value'];
             return Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: mode == modes.first ? context.w(8) : 0),
+                padding: EdgeInsets.only(
+                  right: mode == modes.first ? context.w(8) : 0,
+                ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(10),
-                  onTap: () => setState(() => _workMode = mode['value'] as String),
+                  onTap: () =>
+                      setState(() => _workMode = mode['value'] as String),
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: context.h(10)),
                     decoration: BoxDecoration(
@@ -473,18 +572,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                       // unselected keeps a visible outline on the card.
                       color: selected ? AppColors.accent500 : AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: selected ? AppColors.accent500 : AppColors.inkFaint, width: 1.5),
+                      border: Border.all(
+                        color: selected
+                            ? AppColors.accent500
+                            : AppColors.inkFaint,
+                        width: 1.5,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(selected ? Icons.check_circle_rounded : mode['icon'] as IconData, size: context.sp(16), color: selected ? Colors.white : AppColors.ink),
+                        Icon(
+                          selected
+                              ? Icons.check_circle_rounded
+                              : mode['icon'] as IconData,
+                          size: context.sp(16),
+                          color: selected ? Colors.white : AppColors.ink,
+                        ),
                         SizedBox(width: context.w(6)),
                         Text(
                           mode['label'] as String,
                           style: TextStyle(
                             fontSize: context.sp(13),
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
                             color: selected ? Colors.white : AppColors.ink,
                           ),
                         ),
@@ -502,7 +614,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
   Widget _buildBreakCard(bool hasCheckedIn, bool hasCheckedOut) {
     final breaks = _breaks;
-    final canStartBreak = hasCheckedIn && !hasCheckedOut && !_hasOngoingBreak && !_breakBusy;
+    final canStartBreak =
+        hasCheckedIn && !hasCheckedOut && !_hasOngoingBreak && !_breakBusy;
 
     return Container(
       padding: EdgeInsets.all(context.w(18)),
@@ -516,16 +629,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
         children: [
           Row(
             children: [
-              Icon(Icons.free_breakfast_outlined, size: 16, color: AppColors.brand600),
+              Icon(
+                Icons.free_breakfast_outlined,
+                size: 16,
+                color: AppColors.brand600,
+              ),
               SizedBox(width: context.w(6)),
-              Text('Break Times', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
+              Text(
+                'Break Times',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                  fontSize: context.sp(14),
+                ),
+              ),
             ],
           ),
           SizedBox(height: context.h(10)),
           if (breaks.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: context.h(6)),
-              child: Text('No breaks logged yet today.', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+              child: Text(
+                'No breaks logged yet today.',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(13),
+                ),
+              ),
             )
           else
             ...breaks.asMap().entries.map((entry) {
@@ -534,24 +664,40 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
               final isOpen = b['end'] == null || b['end'] == '';
               return Container(
                 margin: EdgeInsets.only(bottom: context.h(6)),
-                padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(8)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.w(12),
+                  vertical: context.h(8),
+                ),
                 decoration: BoxDecoration(
                   color: isOpen ? AppColors.accent50 : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: isOpen ? AppColors.accent500.withValues(alpha: 0.4) : AppColors.surfaceSubtle),
+                  border: Border.all(
+                    color: isOpen
+                        ? AppColors.accent500.withValues(alpha: 0.4)
+                        : AppColors.surfaceSubtle,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         'Break ${idx + 1}: ${b['start'] ?? '--:--'} - ${isOpen ? 'Ongoing' : b['end']}',
-                        style: TextStyle(fontSize: context.sp(12.5), color: AppColors.ink),
+                        style: TextStyle(
+                          fontSize: context.sp(12.5),
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
                     if (isOpen && !hasCheckedOut)
                       TextButton(
                         onPressed: _breakBusy ? null : () => _endBreak(idx),
-                        child: Text('End', style: TextStyle(fontSize: context.sp(12), fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'End',
+                          style: TextStyle(
+                            fontSize: context.sp(12),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -584,18 +730,39 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
         children: [
           Row(
             children: [
-              Icon(Icons.location_on_outlined, size: 16, color: AppColors.brand600),
+              Icon(
+                Icons.location_on_outlined,
+                size: 16,
+                color: AppColors.brand600,
+              ),
               SizedBox(width: context.w(6)),
-              Text('Current Location', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
+              Text(
+                'Current Location',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                  fontSize: context.sp(14),
+                ),
+              ),
             ],
           ),
           SizedBox(height: context.h(10)),
           if (_locationLoading)
             Row(
               children: [
-                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
                 SizedBox(width: context.w(8)),
-                Text('Getting your location…', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+                Text(
+                  'Getting your location…',
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(13),
+                  ),
+                ),
               ],
             )
           else if (_location != null)
@@ -612,23 +779,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                     width: double.infinity,
                     child: FlutterMap(
                       options: MapOptions(
-                        initialCenter: LatLng(_location!.latitude, _location!.longitude),
+                        initialCenter: LatLng(
+                          _location!.latitude,
+                          _location!.longitude,
+                        ),
                         initialZoom: 16.5,
-                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.speshway.hrms',
                         ),
                         MarkerLayer(
                           markers: [
                             Marker(
-                              point: LatLng(_location!.latitude, _location!.longitude),
+                              point: LatLng(
+                                _location!.latitude,
+                                _location!.longitude,
+                              ),
                               width: 36,
                               height: 36,
                               alignment: Alignment.topCenter,
-                              child: const Icon(Icons.location_on, color: Color(0xFFDC2626), size: 36),
+                              child: const Icon(
+                                Icons.location_on,
+                                color: Color(0xFFDC2626),
+                                size: 36,
+                              ),
                             ),
                           ],
                         ),
@@ -637,7 +817,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   ),
                 ),
                 SizedBox(height: context.h(10)),
-                Text(_location!.area, style: TextStyle(color: AppColors.ink, fontSize: context.sp(13))),
+                Text(
+                  _location!.area,
+                  style: TextStyle(
+                    color: AppColors.ink,
+                    fontSize: context.sp(13),
+                  ),
+                ),
               ],
             )
           else
@@ -646,7 +832,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
               children: [
                 Text(
                   _locationError ?? 'Location not available.',
-                  style: TextStyle(color: AppColors.danger, fontSize: context.sp(12.5)),
+                  style: TextStyle(
+                    color: AppColors.danger,
+                    fontSize: context.sp(12.5),
+                  ),
                 ),
                 SizedBox(height: context.h(8)),
                 // Only a permanently denied permission needs app settings;
@@ -694,12 +883,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
 
   int get _totalBreakMinutes {
     final outTime = _today?['outTime']?.toString();
-    final sessionEnd = (outTime != null && outTime.isNotEmpty) ? outTime : _nowTime;
+    final sessionEnd = (outTime != null && outTime.isNotEmpty)
+        ? outTime
+        : _nowTime;
     var total = 0;
     for (final b in _breaks) {
       final start = b['start']?.toString();
       if (start == null || start.isEmpty) continue;
-      final end = (b['end']?.toString().isNotEmpty ?? false) ? b['end'].toString() : sessionEnd;
+      final end = (b['end']?.toString().isNotEmpty ?? false)
+          ? b['end'].toString()
+          : sessionEnd;
       try {
         var mins = _toMinutes(end) - _toMinutes(start);
         if (mins < 0) mins += 24 * 60;
@@ -718,14 +911,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
     final outTime = _today?['outTime']?.toString();
     if (inTime == null || inTime.isEmpty) return 'Not Checked In';
     if (outTime == null || outTime.isEmpty) return 'Checked In';
-    if (_workingMinutes >= 480) return _workingMinutes > 480 ? 'Present + OT' : 'Present';
+    if (_workingMinutes >= 480) {
+      return _workingMinutes > 480 ? 'Present + OT' : 'Present';
+    }
     if (_workingMinutes >= 240) return 'Half-Day';
     return 'Absent';
   }
 
   Widget _buildSummaryCard() {
-    final checkInLocation = (_today?['inLocation'] as Map?)?['area']?.toString() ?? _location?.area;
-    final checkOutLocation = (_today?['outLocation'] as Map?)?['area']?.toString();
+    final checkInLocation =
+        (_today?['inLocation'] as Map?)?['area']?.toString() ?? _location?.area;
+    final checkOutLocation = (_today?['outLocation'] as Map?)?['area']
+        ?.toString();
 
     return Container(
       padding: EdgeInsets.all(context.w(18)),
@@ -739,33 +936,104 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
         children: [
           Row(
             children: [
-              Icon(Icons.fact_check_outlined, size: 16, color: AppColors.brand600),
+              Icon(
+                Icons.fact_check_outlined,
+                size: 16,
+                color: AppColors.brand600,
+              ),
               SizedBox(width: context.w(6)),
-              Text("Today's Summary", style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14))),
+              Text(
+                "Today's Summary",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                  fontSize: context.sp(14),
+                ),
+              ),
             ],
           ),
           SizedBox(height: context.h(12)),
-          _summaryRow(Icons.login_rounded, AppColors.accent600, AppColors.accent50, 'Check In', _timeOrDash('inTime')),
-          _summaryRow(Icons.logout_rounded, Color(0xFFDC2626), AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2))), 'Check Out', _timeOrDash('outTime')),
-          _summaryRow(Icons.access_time_rounded, Color(0xFF2563EB), AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))), 'Working Hours', _formatDuration(_workingMinutes)),
-          _summaryRow(Icons.free_breakfast_outlined, Color(0xFFEA580C), AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))), 'Break Time', '${_totalBreakMinutes}m'),
-          _summaryRow(Icons.badge_outlined, AppColors.brand600, AppColors.brand50, 'Status', _todayStatus),
+          _summaryRow(
+            Icons.login_rounded,
+            AppColors.accent600,
+            AppColors.accent50,
+            'Check In',
+            _timeOrDash('inTime'),
+          ),
+          _summaryRow(
+            Icons.logout_rounded,
+            Color(0xFFDC2626),
+            AppColors.tint(AppColors.tint(const Color(0xFFFEF2F2))),
+            'Check Out',
+            _timeOrDash('outTime'),
+          ),
+          _summaryRow(
+            Icons.access_time_rounded,
+            Color(0xFF2563EB),
+            AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
+            'Working Hours',
+            _formatDuration(_workingMinutes),
+          ),
+          _summaryRow(
+            Icons.free_breakfast_outlined,
+            Color(0xFFEA580C),
+            AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))),
+            'Break Time',
+            '${_totalBreakMinutes}m',
+          ),
+          _summaryRow(
+            Icons.badge_outlined,
+            AppColors.brand600,
+            AppColors.brand50,
+            'Status',
+            _todayStatus,
+          ),
           if (_workMode != null)
-            _summaryRow(Icons.apartment_rounded, Color(0xFF9333EA), AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))), 'Work Mode', _workMode == 'home' ? 'Home' : 'Office'),
+            _summaryRow(
+              Icons.apartment_rounded,
+              Color(0xFF9333EA),
+              AppColors.tint(AppColors.tint(const Color(0xFFF3E8FF))),
+              'Work Mode',
+              _workMode == 'home' ? 'Home' : 'Office',
+            ),
           if (checkInLocation != null)
-            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), AppColors.tint(const Color(0xFFCCFBF1)), 'Check-in Location', checkInLocation, wrap: true),
+            _summaryRow(
+              Icons.location_on_outlined,
+              const Color(0xFF0D9488),
+              AppColors.tint(const Color(0xFFCCFBF1)),
+              'Check-in Location',
+              checkInLocation,
+              wrap: true,
+            ),
           if (checkOutLocation != null)
-            _summaryRow(Icons.location_on_outlined, const Color(0xFF0D9488), AppColors.tint(const Color(0xFFCCFBF1)), 'Check-out Location', checkOutLocation, wrap: true),
+            _summaryRow(
+              Icons.location_on_outlined,
+              const Color(0xFF0D9488),
+              AppColors.tint(const Color(0xFFCCFBF1)),
+              'Check-out Location',
+              checkOutLocation,
+              wrap: true,
+            ),
         ],
       ),
     );
   }
 
-  Widget _summaryRow(IconData icon, Color iconColor, Color iconBg, String label, String value, {bool wrap = false}) {
+  Widget _summaryRow(
+    IconData icon,
+    Color iconColor,
+    Color iconBg,
+    String label,
+    String value, {
+    bool wrap = false,
+  }) {
     final iconChip = Container(
       width: context.r(22),
       height: context.r(22),
-      decoration: BoxDecoration(color: AppColors.tint(iconBg), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: AppColors.tint(iconBg),
+        shape: BoxShape.circle,
+      ),
       child: Icon(icon, size: context.r(12), color: iconColor),
     );
     return Padding(
@@ -778,13 +1046,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   children: [
                     iconChip,
                     SizedBox(width: context.w(8)),
-                    Text(label, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12.5))),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(12.5),
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(height: context.h(3)),
                 Padding(
                   padding: EdgeInsets.only(left: context.w(30)),
-                  child: Text(value, style: TextStyle(color: AppColors.ink, fontSize: context.sp(12.5), fontWeight: FontWeight.w600)),
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: AppColors.ink,
+                      fontSize: context.sp(12.5),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             )
@@ -795,16 +1076,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
                   children: [
                     iconChip,
                     SizedBox(width: context.w(8)),
-                    Text(label, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(13),
+                      ),
+                    ),
                   ],
                 ),
-                Text(value, style: TextStyle(color: AppColors.ink, fontSize: context.sp(13), fontWeight: FontWeight.w700)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: AppColors.ink,
+                    fontSize: context.sp(13),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
     );
   }
 
-  Widget _timeBlock(IconData icon, Color iconColor, Color iconBg, String label, String value) {
+  Widget _timeBlock(
+    IconData icon,
+    Color iconColor,
+    Color iconBg,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: context.w(12)),
       child: Column(
@@ -815,23 +1115,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> with WidgetsBinding
               Container(
                 width: context.r(28),
                 height: context.r(28),
-                decoration: BoxDecoration(color: AppColors.tint(iconBg), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: AppColors.tint(iconBg),
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, size: context.r(15), color: iconColor),
               ),
               SizedBox(width: context.w(8)),
               Flexible(
-                child: Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(12),
+                  ),
+                ),
               ),
             ],
           ),
           SizedBox(height: context.h(8)),
-          Text(value, style: TextStyle(fontSize: context.sp(22), fontWeight: FontWeight.w700, color: AppColors.ink)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: context.sp(22),
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
         ],
       ),
     );
   }
-
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddlware.js";
 import { getTeamAttendance, saveTeamAttendance, exportTeamAttendance, exportAllTeamsAttendance } from "../controllers/teamAttendanceController.js";
-import { createTeam, addMembers, getTeams, getTeamDetail, getTeamLeads, deleteTeam } from "../controllers/teamController.js";
+import { createTeam, addMembers, getTeams, getTeamDetail, getTeamLeads, deleteTeam, updateTeam, removeMember } from "../controllers/teamController.js";
 
 const router = express.Router();
 
@@ -14,6 +14,8 @@ router.get("/:id/attendance/export", authMiddleware, exportTeamAttendance);
 router.get("/:id/attendance", authMiddleware, getTeamAttendance);
 router.put("/:id/attendance", authMiddleware, saveTeamAttendance);
 router.get("/:id", authMiddleware, getTeamDetail);
+router.put("/:id", authMiddleware, updateTeam);
+router.delete("/:id/members/:employeeId", authMiddleware, removeMember);
 router.delete("/:id", authMiddleware, deleteTeam);
 
 export default router;

@@ -55,7 +55,9 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
 
   List<Map<String, dynamic>> get _visible {
     if (_filter == 'All') return _all;
-    return _all.where((f) => (f['status'] ?? 'Pending').toString() == _filter).toList();
+    return _all
+        .where((f) => (f['status'] ?? 'Pending').toString() == _filter)
+        .toList();
   }
 
   Future<void> _respond(Map<String, dynamic> f) async {
@@ -79,7 +81,10 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
             height: context.h(52),
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(8)),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(12),
+                vertical: context.h(8),
+              ),
               children: ['All', ..._statuses].map((s) {
                 return Padding(
                   padding: EdgeInsets.only(right: context.w(8)),
@@ -96,26 +101,37 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
             child: _loading
                 ? ListView(
                     padding: EdgeInsets.all(context.w(16)),
-                    children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+                    children: const [
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                    ],
                   )
                 : _error != null
-                    ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: visible.isEmpty
-                            ? ListView(children: [
-                                const SizedBox(height: 100),
-                                EmptyStateView(
-                                    icon: Icons.chat_bubble_outline,
-                                    title: _filter == 'All' ? 'No feedback yet' : 'No $_filter feedback',
-                                    subtitle: 'Employee feedback will show up here.'),
-                              ])
-                            : ListView.builder(
-                                padding: EdgeInsets.all(context.w(16)),
-                                itemCount: visible.length,
-                                itemBuilder: (_, i) => _card(visible[i]),
+                ? buildErrorState(_error!, _load)
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: visible.isEmpty
+                        ? ListView(
+                            children: [
+                              const SizedBox(height: 100),
+                              EmptyStateView(
+                                icon: Icons.chat_bubble_outline,
+                                title: _filter == 'All'
+                                    ? 'No feedback yet'
+                                    : 'No $_filter feedback',
+                                subtitle:
+                                    'Employee feedback will show up here.',
                               ),
-                      ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(context.w(16)),
+                            itemCount: visible.length,
+                            itemBuilder: (_, i) => _card(visible[i]),
+                          ),
+                  ),
           ),
         ],
       ),
@@ -125,7 +141,9 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
   Widget _card(Map<String, dynamic> f) {
     final response = f['adminResponse'] as Map?;
     final anon = f['isAnonymous'] == true;
-    final submitter = anon ? 'Anonymous' : ((f['userId'] as Map?)?['name']?.toString() ?? 'Employee');
+    final submitter = anon
+        ? 'Anonymous'
+        : ((f['userId'] as Map?)?['name']?.toString() ?? 'Employee');
     return SimpleCard(
       onTap: () => _respond(f),
       child: Column(
@@ -134,28 +152,51 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(f['title']?.toString() ?? '',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                child: Text(
+                  f['title']?.toString() ?? '',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
               ),
               SizedBox(width: context.w(8)),
               StatusPill(label: f['status']?.toString() ?? 'Pending'),
             ],
           ),
           SizedBox(height: context.h(4)),
-          Text('$submitter · ${f['category'] ?? ''}',
-              style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(11))),
+          Text(
+            '$submitter · ${f['category'] ?? ''}',
+            style: TextStyle(
+              color: AppColors.inkFaint,
+              fontSize: context.sp(11),
+            ),
+          ),
           SizedBox(height: context.h(6)),
-          Text(f['description']?.toString() ?? '',
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+          Text(
+            f['description']?.toString() ?? '',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(13),
+            ),
+          ),
           if (response != null && response['message'] != null) ...[
             SizedBox(height: context.h(8)),
             Container(
               padding: EdgeInsets.all(context.w(10)),
-              decoration: BoxDecoration(color: AppColors.surfaceMuted, borderRadius: BorderRadius.circular(8)),
-              child: Text('Response: ${response['message']}',
-                  style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Response: ${response['message']}',
+                style: TextStyle(
+                  fontSize: context.sp(12),
+                  color: AppColors.inkMuted,
+                ),
+              ),
             ),
           ],
         ],
@@ -182,7 +223,8 @@ class _RespondSheetState extends State<_RespondSheet> {
   void initState() {
     super.initState();
     _status = widget.feedback['status']?.toString() ?? 'Pending';
-    final existing = (widget.feedback['adminResponse'] as Map?)?['message']?.toString();
+    final existing = (widget.feedback['adminResponse'] as Map?)?['message']
+        ?.toString();
     if (existing != null) _response.text = existing;
   }
 
@@ -203,7 +245,9 @@ class _RespondSheetState extends State<_RespondSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -214,41 +258,68 @@ class _RespondSheetState extends State<_RespondSheet> {
   Widget build(BuildContext context) {
     final f = widget.feedback;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(f['title']?.toString() ?? 'Feedback',
-                  style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+              Text(
+                f['title']?.toString() ?? 'Feedback',
+                style: TextStyle(
+                  fontSize: context.sp(17),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
               SizedBox(height: context.h(6)),
-              Text(f['description']?.toString() ?? '',
-                  style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13), height: 1.4)),
+              Text(
+                f['description']?.toString() ?? '',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(13),
+                  height: 1.4,
+                ),
+              ),
               SizedBox(height: context.h(16)),
               DropdownButtonFormField<String>(
                 initialValue: _statuses.contains(_status) ? _status : 'Pending',
                 decoration: const InputDecoration(labelText: 'Status'),
-                items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: _statuses
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
                 onChanged: (v) => setState(() => _status = v ?? _status),
               ),
               SizedBox(height: context.h(14)),
               TextField(
                 controller: _response,
                 maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Response to employee'),
+                decoration: const InputDecoration(
+                  labelText: 'Response to employee',
+                ),
               ),
               SizedBox(height: context.h(18)),
               ElevatedButton(
                 onPressed: _saving ? null : _save,
                 child: _saving
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Save'),
               ),
               SizedBox(height: context.h(8)),

@@ -85,7 +85,10 @@ class _LeavesScreenState extends State<LeavesScreen> {
         title: const Text('Cancel leave request?'),
         content: Text('${l['leaveType']} · ${_dateRange(l)}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -101,9 +104,17 @@ class _LeavesScreenState extends State<LeavesScreen> {
       await _service.cancelLeave(id);
       AppEvents.bumpLeave();
       await _load(silent: true);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Leave request cancelled')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Leave request cancelled')),
+        );
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      }
     } finally {
       if (mounted) setState(() => _cancelling = null);
     }
@@ -115,7 +126,11 @@ class _LeavesScreenState extends State<LeavesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ApplyLeaveSheet(userId: userId, leaveTypes: _leaveTypes, service: _service),
+      builder: (_) => _ApplyLeaveSheet(
+        userId: userId,
+        leaveTypes: _leaveTypes,
+        service: _service,
+      ),
     );
     if (applied == true) {
       _load();
@@ -144,105 +159,166 @@ class _LeavesScreenState extends State<LeavesScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: EdgeInsets.all(context.w(16)),
-                    children: [
-                      Text('My Requests', style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
-                      SizedBox(height: context.h(10)),
-                      if (_leaves.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: EmptyStateView(
-                            icon: Icons.beach_access_outlined,
-                            title: 'No leave requests yet',
-                            subtitle: 'Apply for a leave and it will show up here.',
-                            action: OutlinedButton.icon(
-                              onPressed: _openApplySheet,
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Apply for Leave'),
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: EdgeInsets.all(context.w(16)),
+                children: [
+                  Text(
+                    'My Requests',
+                    style: TextStyle(
+                      fontSize: context.sp(14),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  SizedBox(height: context.h(10)),
+                  if (_leaves.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: EmptyStateView(
+                        icon: Icons.beach_access_outlined,
+                        title: 'No leave requests yet',
+                        subtitle: 'Apply for a leave and it will show up here.',
+                        action: OutlinedButton.icon(
+                          onPressed: _openApplySheet,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Apply for Leave'),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._leaves.map(
+                      (l) => SimpleCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${l['leaveType']}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: context.sp(15),
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: context.w(8)),
+                                StatusPill(
+                                  label: (l['status'] ?? 'Pending').toString(),
+                                ),
+                              ],
                             ),
-                          ),
-                        )
-                      else
-                        ..._leaves.map((l) => SimpleCard(
-                              child: Column(
+                            SizedBox(height: context.h(10)),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_outlined,
+                                  size: context.r(15),
+                                  color: AppColors.inkMuted,
+                                ),
+                                SizedBox(width: context.w(6)),
+                                Expanded(
+                                  child: Text(
+                                    _dateRange(l),
+                                    style: TextStyle(
+                                      color: AppColors.ink,
+                                      fontSize: context.sp(13),
+                                    ),
+                                  ),
+                                ),
+                                if (_days(l) != null)
+                                  Text(
+                                    _days(l)!,
+                                    style: TextStyle(
+                                      color: AppColors.inkMuted,
+                                      fontSize: context.sp(12),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if ((l['reason'] ?? '')
+                                .toString()
+                                .trim()
+                                .isNotEmpty) ...[
+                              SizedBox(height: context.h(10)),
+                              Divider(
+                                height: 1,
+                                color: AppColors.surfaceSubtle,
+                              ),
+                              SizedBox(height: context.h(10)),
+                              Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text('${l['leaveType']}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: context.sp(15), color: AppColors.ink)),
-                                      ),
-                                      SizedBox(width: context.w(8)),
-                                      StatusPill(label: (l['status'] ?? 'Pending').toString()),
-                                    ],
+                                  Icon(
+                                    Icons.notes_rounded,
+                                    size: context.r(15),
+                                    color: AppColors.inkMuted,
                                   ),
-                                  SizedBox(height: context.h(10)),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_month_outlined, size: context.r(15), color: AppColors.inkMuted),
-                                      SizedBox(width: context.w(6)),
-                                      Expanded(
-                                        child: Text(_dateRange(l), style: TextStyle(color: AppColors.ink, fontSize: context.sp(13))),
-                                      ),
-                                      if (_days(l) != null)
-                                        Text(_days(l)!, style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12), fontWeight: FontWeight.w600)),
-                                    ],
-                                  ),
-                                  if ((l['reason'] ?? '').toString().trim().isNotEmpty) ...[
-                                    SizedBox(height: context.h(10)),
-                                    Divider(height: 1, color: AppColors.surfaceSubtle),
-                                    SizedBox(height: context.h(10)),
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Icon(Icons.notes_rounded, size: context.r(15), color: AppColors.inkMuted),
-                                        SizedBox(width: context.w(6)),
-                                        Expanded(
-                                          child: Text('${l['reason']}',
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                  if ((l['status'] ?? 'Pending').toString() == 'Pending') ...[
-                                    SizedBox(height: context.h(12)),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: OutlinedButton(
-                                        onPressed: _cancelling == l['_id'].toString() ? null : () => _cancel(l),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.danger,
-                                          side: BorderSide(color: AppColors.danger.withValues(alpha: 0.4)),
-                                          minimumSize: const Size.fromHeight(44),
-                                        ),
-                                        child: Text(_cancelling == l['_id'].toString() ? 'Cancelling…' : 'Cancel request'),
+                                  SizedBox(width: context.w(6)),
+                                  Expanded(
+                                    child: Text(
+                                      '${l['reason']}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: AppColors.inkMuted,
+                                        fontSize: context.sp(13),
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
-                            )),
-                    ],
-                  ),
-                ),
+                            ],
+                            if ((l['status'] ?? 'Pending').toString() ==
+                                'Pending') ...[
+                              SizedBox(height: context.h(12)),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: _cancelling == l['_id'].toString()
+                                      ? null
+                                      : () => _cancel(l),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.danger,
+                                    side: BorderSide(
+                                      color: AppColors.danger.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                    ),
+                                    minimumSize: const Size.fromHeight(44),
+                                  ),
+                                  child: Text(
+                                    _cancelling == l['_id'].toString()
+                                        ? 'Cancelling…'
+                                        : 'Cancel request',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 
   /// "1 day" / "2 days" (inclusive), or null if dates can't be parsed.
   String? _days(Map<String, dynamic> l) {
     try {
-      final n = DateTime.parse(l['endDate'].toString())
-              .difference(DateTime.parse(l['startDate'].toString()))
-              .inDays +
+      final n =
+          DateTime.parse(
+            l['endDate'].toString(),
+          ).difference(DateTime.parse(l['startDate'].toString())).inDays +
           1;
       if (n < 1) return null;
       return n == 1 ? '1 day' : '$n days';
@@ -253,8 +329,12 @@ class _LeavesScreenState extends State<LeavesScreen> {
 
   String _dateRange(Map<String, dynamic> l) {
     try {
-      final start = DateFormat('d MMM').format(DateTime.parse(l['startDate'].toString()));
-      final end = DateFormat('d MMM, yyyy').format(DateTime.parse(l['endDate'].toString()));
+      final start = DateFormat(
+        'd MMM',
+      ).format(DateTime.parse(l['startDate'].toString()));
+      final end = DateFormat(
+        'd MMM, yyyy',
+      ).format(DateTime.parse(l['endDate'].toString()));
       return '$start – $end';
     } catch (_) {
       return '${l['startDate']} – ${l['endDate']}';
@@ -266,7 +346,11 @@ class _ApplyLeaveSheet extends StatefulWidget {
   final String userId;
   final List<Map<String, dynamic>> leaveTypes;
   final LeaveService service;
-  const _ApplyLeaveSheet({required this.userId, required this.leaveTypes, required this.service});
+  const _ApplyLeaveSheet({
+    required this.userId,
+    required this.leaveTypes,
+    required this.service,
+  });
 
   @override
   State<_ApplyLeaveSheet> createState() => _ApplyLeaveSheetState();
@@ -311,7 +395,11 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
   Future<void> _submit() async {
     setState(() {
       _startDateError = _startDate == null;
-      _endDateError = _endDate == null || (_startDate != null && _endDate != null && _endDate!.isBefore(_startDate!));
+      _endDateError =
+          _endDate == null ||
+          (_startDate != null &&
+              _endDate != null &&
+              _endDate!.isBefore(_startDate!));
     });
 
     final formOk = _formKey.currentState!.validate();
@@ -320,13 +408,18 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
       if (_startDateError) {
         message = 'Please select a start date';
       } else if (_endDateError) {
-        message = (_endDate != null && _startDate != null && _endDate!.isBefore(_startDate!))
+        message =
+            (_endDate != null &&
+                _startDate != null &&
+                _endDate!.isBefore(_startDate!))
             ? 'End date must be on or after the start date'
             : 'Please select an end date';
       } else if (_selectedType == null) {
         message = 'Please select a leave type';
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: AppColors.danger));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+      );
       return;
     }
     setState(() => _submitting = true);
@@ -341,7 +434,9 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -351,100 +446,179 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: context.r(34),
-                    height: context.r(34),
-                    decoration: BoxDecoration(color: AppColors.accent100, shape: BoxShape.circle),
-                    child: Icon(Icons.event_note_rounded, size: context.r(18), color: AppColors.accent700),
-                  ),
-                  SizedBox(width: context.w(10)),
-                  Text('Apply for Leave', style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
-                ],
-              ),
-              SizedBox(height: context.h(18)),
-              Text('LEAVE DETAILS', style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.6)),
-              SizedBox(height: context.h(8)),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(labelText: 'Leave Type'),
-                items: widget.leaveTypes
-                    .map((t) => DropdownMenuItem(value: t['name'].toString(), child: Text(t['name'].toString())))
-                    .toList(),
-                onChanged: (v) => setState(() => _selectedType = v),
-                validator: (v) => v == null ? 'Required' : null,
-              ),
-              SizedBox(height: context.h(14)),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _pickDate(isStart: true),
-                      icon: Icon(Icons.calendar_today_outlined, size: 15, color: _startDateError ? AppColors.danger : AppColors.inkMuted),
-                      label: Text(
-                        _startDate == null ? 'Start Date' : DateFormat('d MMM, yyyy').format(_startDate!),
-                        style: TextStyle(color: _startDateError ? AppColors.danger : AppColors.ink),
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: context.r(34),
+                      height: context.r(34),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent100,
+                        shape: BoxShape.circle,
                       ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _startDateError ? AppColors.danger : AppColors.surfaceSubtle, width: _startDateError ? 1.5 : 1),
+                      child: Icon(
+                        Icons.event_note_rounded,
+                        size: context.r(18),
+                        color: AppColors.accent700,
                       ),
                     ),
-                  ),
-                  SizedBox(width: context.w(10)),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _pickDate(isStart: false),
-                      icon: Icon(Icons.calendar_today_outlined, size: 15, color: _endDateError ? AppColors.danger : AppColors.inkMuted),
-                      label: Text(
-                        _endDate == null ? 'End Date' : DateFormat('d MMM, yyyy').format(_endDate!),
-                        style: TextStyle(color: _endDateError ? AppColors.danger : AppColors.ink),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _endDateError ? AppColors.danger : AppColors.surfaceSubtle, width: _endDateError ? 1.5 : 1),
+                    SizedBox(width: context.w(10)),
+                    Text(
+                      'Apply for Leave',
+                      style: TextStyle(
+                        fontSize: context.sp(17),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              if (_startDateError || _endDateError) ...[
-                SizedBox(height: context.h(6)),
-                Text(
-                  _startDateError ? 'Start date is required.' : 'End date must be on or after the start date.',
-                  style: TextStyle(color: AppColors.danger, fontSize: context.sp(11.5)),
+                  ],
                 ),
+                SizedBox(height: context.h(18)),
+                Text(
+                  'LEAVE DETAILS',
+                  style: TextStyle(
+                    fontSize: context.sp(11.5),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.inkFaint,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                SizedBox(height: context.h(8)),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedType,
+                  decoration: const InputDecoration(labelText: 'Leave Type'),
+                  items: widget.leaveTypes
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t['name'].toString(),
+                          child: Text(t['name'].toString()),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedType = v),
+                  validator: (v) => v == null ? 'Required' : null,
+                ),
+                SizedBox(height: context.h(14)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickDate(isStart: true),
+                        icon: Icon(
+                          Icons.calendar_today_outlined,
+                          size: 15,
+                          color: _startDateError
+                              ? AppColors.danger
+                              : AppColors.inkMuted,
+                        ),
+                        label: Text(
+                          _startDate == null
+                              ? 'Start Date'
+                              : DateFormat('d MMM, yyyy').format(_startDate!),
+                          style: TextStyle(
+                            color: _startDateError
+                                ? AppColors.danger
+                                : AppColors.ink,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: _startDateError
+                                ? AppColors.danger
+                                : AppColors.surfaceSubtle,
+                            width: _startDateError ? 1.5 : 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: context.w(10)),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickDate(isStart: false),
+                        icon: Icon(
+                          Icons.calendar_today_outlined,
+                          size: 15,
+                          color: _endDateError
+                              ? AppColors.danger
+                              : AppColors.inkMuted,
+                        ),
+                        label: Text(
+                          _endDate == null
+                              ? 'End Date'
+                              : DateFormat('d MMM, yyyy').format(_endDate!),
+                          style: TextStyle(
+                            color: _endDateError
+                                ? AppColors.danger
+                                : AppColors.ink,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: _endDateError
+                                ? AppColors.danger
+                                : AppColors.surfaceSubtle,
+                            width: _endDateError ? 1.5 : 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_startDateError || _endDateError) ...[
+                  SizedBox(height: context.h(6)),
+                  Text(
+                    _startDateError
+                        ? 'Start date is required.'
+                        : 'End date must be on or after the start date.',
+                    style: TextStyle(
+                      color: AppColors.danger,
+                      fontSize: context.sp(11.5),
+                    ),
+                  ),
+                ],
+                SizedBox(height: context.h(14)),
+                TextFormField(
+                  controller: _reasonController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Reason'),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please provide a reason'
+                      : null,
+                ),
+                SizedBox(height: context.h(18)),
+                ElevatedButton(
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Submit Request'),
+                ),
+                SizedBox(height: context.h(8)),
               ],
-              SizedBox(height: context.h(14)),
-              TextFormField(
-                controller: _reasonController,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Reason'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please provide a reason' : null,
-              ),
-              SizedBox(height: context.h(18)),
-              ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Submit Request'),
-              ),
-              SizedBox(height: context.h(8)),
-            ],
-          ),
+            ),
           ),
         ),
       ),

@@ -1,29 +1,38 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  CircularProgress,
-  Card,
-  CardContent,
-  Autocomplete,
-  Chip,
-  Avatar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-} from "@mui/material";
-import { motion } from "framer-motion";
+  FaArrowLeft,
+  FaBullhorn,
+  FaQuoteLeft,
+  FaGift,
+  FaCalendarAlt,
+  FaTrophy,
+  FaThumbtack,
+  FaImage,
+  FaPaperPlane,
+  FaClock,
+} from "react-icons/fa";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
 
-const MotionBox = motion.create(Box);
-const MotionTypography = motion.create(Typography);
+// Drawn icons for the type picker (the emoji stay in the email subject, which is what recipients see).
+export const CATEGORY_ICONS = {
+  important: FaBullhorn,
+  quote: FaQuoteLeft,
+  festival: FaGift,
+  event: FaCalendarAlt,
+  achievement: FaTrophy,
+  general: FaThumbtack,
+};
+
+const SCOPES = [
+  { id: "all", label: "All employees" },
+  { id: "team_leads", label: "Team leads" },
+  { id: "team_members", label: "Team members" },
+  { id: "team", label: "A specific team" },
+  { id: "specific", label: "Specific people" },
+];
 
 export const ANNOUNCEMENT_CATEGORIES = [
   { id: "important", label: "Important Announcement", emoji: "📢", prefix: "Important Announcement", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
@@ -59,7 +68,13 @@ const AnnouncementAdd = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [recipientSearch, setRecipientSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  // Optional schedule: "now" or a local date-time (datetime-local value, browser time zone).
+  const [sendMode, setSendMode] = useState("now");
+  const [scheduleAt, setScheduleAt] = useState("");
   const navigate = useNavigate();
+
+  const imagePreview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+  React.useEffect(() => () => imagePreview && URL.revokeObjectURL(imagePreview), [imagePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,10 +94,25 @@ const AnnouncementAdd = () => {
       return;
     }
 
+    let scheduledIso = null;
+    if (sendMode === "schedule") {
+      const when = scheduleAt ? new Date(scheduleAt) : null;
+      if (!when || isNaN(when.getTime())) {
+        alert("Please pick a date and time to schedule this announcement");
+        return;
+      }
+      if (when.getTime() <= Date.now()) {
+        alert("Scheduled time must be in the future");
+        return;
+      }
+      scheduledIso = when.toISOString();
+    }
+
     try {
       setLoading(true);
 
       const formData = new FormData();
+      if (scheduledIso) formData.append("scheduledAt", scheduledIso);
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("category", category);
@@ -112,7 +142,11 @@ const AnnouncementAdd = () => {
       );
 
       if (response.data.success) {
-        alert("Announcement added successfully");
+        alert(
+          scheduledIso
+            ? `Announcement scheduled for ${new Date(scheduledIso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
+            : "Announcement added successfully"
+        );
         navigate("/admin-dashboard/announcements");
       } else {
         alert(response.data.error || "Failed to add announcement");
@@ -359,445 +393,384 @@ const AnnouncementAdd = () => {
     }
   };
 
-  return (
-    <MotionBox
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="90vh"
-      bgcolor="#f6f7fb"
-      px={{ xs: 2, sm: 3 }}
-    >
-      <Card
-        sx={{
-          width: { xs: '100%', sm: 500, md: 600 },
-          maxWidth: '100%',
-          boxShadow: 'none',
-          border: '1px solid #eef0f6',
-          borderRadius: 3,
-          overflow: "hidden",
-          background: "#ffffff",
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-          <MotionTypography
-            variant="h5"
-            component="h2"
-            align="center"
-            gutterBottom
-            sx={{
-              fontWeight: 600,
-              color: "#1e3a5f",
-              mb: { xs: 2, sm: 3 },
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-            }}
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 120 }}
-          >
-            Add New Announcement
-          </MotionTypography>
+  const currentCat = ANNOUNCEMENT_CATEGORIES.find((c) => c.id === category) || ANNOUNCEMENT_CATEGORIES[0];
+  const emailSubject = `${currentCat.emoji} ${currentCat.prefix}: ${title.trim() || "[Title]"} - SPESHWAY SOLUTIONS`;
+  const q = recipientSearch.trim().toLowerCase();
+  const shownRecipients = candidateEmployees.filter(
+    (emp) => !q || emp.name?.toLowerCase().includes(q) || emp.email?.toLowerCase().includes(q)
+  );
+  const allChecked = candidateEmployees.length > 0 && selectedRecipients.length === candidateEmployees.length;
+  const someChecked = selectedRecipients.length > 0 && !allChecked;
+  const scheduleLabel =
+    sendMode === "schedule" && scheduleAt
+      ? new Date(scheduleAt).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+      : null;
+  const minSchedule = (() => {
+    const d = new Date(Date.now() + 60000);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  })();
+  const submitLabel = loading
+    ? sendMode === "schedule" ? "Scheduling..." : "Publishing..."
+    : sendMode === "schedule" ? "Schedule announcement" : "Publish now";
 
-          <form onSubmit={handleSubmit} encType="multipart/form-data">
-            {/* Announcement Type / Category */}
-            <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, color: '#1e3a5f', fontSize: '0.875rem' }}>
-                Announcement Type
-              </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {ANNOUNCEMENT_CATEGORIES.map((cat) => {
-                  const isSelected = category === cat.id;
-                  return (
+  const inputCls =
+    "w-full rounded-lg border border-surface-subtle bg-white px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 outline-none disabled:opacity-60";
+  const labelCls = "block text-sm font-medium text-ink mb-1.5";
+  const sectionCls = "bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-6";
+
+  return (
+    <div className="min-h-screen bg-surface-muted px-4 py-5 sm:px-6 sm:py-8 pb-28 lg:pb-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <button
+              type="button"
+              onClick={() => navigate("/admin-dashboard/announcements")}
+              className="mb-2 inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
+            >
+              <FaArrowLeft className="text-xs" /> Announcements
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-brand-800 tracking-tight">New announcement</h1>
+            <p className="mt-1 text-sm text-ink-muted">Write it, choose who receives it, then send now or schedule it.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} encType="multipart/form-data" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+          <div className="flex flex-col gap-5 min-w-0">
+            {/* 1. Message */}
+            <section className={sectionCls} aria-labelledby="sec-message">
+              <h2 id="sec-message" className="text-lg font-semibold text-ink">Message</h2>
+
+              <fieldset className="mt-4">
+                <legend className={labelCls}>Type</legend>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ANNOUNCEMENT_CATEGORIES.map((cat) => {
+                    const Icon = CATEGORY_ICONS[cat.id] || FaBullhorn;
+                    const selected = category === cat.id;
+                    return (
+                      <label
+                        key={cat.id}
+                        className={`flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors focus-within:ring-2 focus-within:ring-accent-500 ${
+                          selected ? "font-medium" : "border-surface-subtle text-ink-muted hover:border-slate-300 hover:text-ink"
+                        }`}
+                        style={selected ? { borderColor: cat.color, backgroundColor: cat.bg, color: cat.color } : undefined}
+                      >
+                        <input
+                          type="radio"
+                          name="category"
+                          value={cat.id}
+                          checked={selected}
+                          onChange={() => setCategory(cat.id)}
+                          className="sr-only"
+                        />
+                        <Icon className="shrink-0" aria-hidden="true" />
+                        <span className="truncate">{cat.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <div className="mt-5">
+                <label htmlFor="ann-title" className={labelCls}>Title <span className="text-red-600">*</span></label>
+                <input
+                  id="ann-title"
+                  type="text"
+                  required
+                  maxLength={150}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. Office closed on Friday for Diwali"
+                  className={inputCls}
+                />
+              </div>
+
+              <div className="mt-4">
+                <label htmlFor="ann-body" className={labelCls}>Message <span className="text-red-600">*</span></label>
+                <textarea
+                  id="ann-body"
+                  required
+                  rows={6}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={loading}
+                  placeholder="What do people need to know?"
+                  className={`${inputCls} resize-y leading-relaxed`}
+                />
+              </div>
+
+              <div className="mt-4">
+                <span className={labelCls}>Image <span className="font-normal text-ink-muted">(optional)</span></span>
+                {image ? (
+                  <div className="flex items-center gap-3 rounded-lg border border-surface-subtle p-2">
+                    <img src={imagePreview} alt="Selected announcement image" className="h-16 w-24 rounded-md object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">{image.name}</p>
+                      <p className="text-xs text-ink-muted">{(image.size / 1024).toFixed(0)} KB</p>
+                    </div>
                     <button
-                      key={cat.id}
                       type="button"
-                      onClick={() => setCategory(cat.id)}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 13px',
-                        borderRadius: 20,
-                        fontSize: '0.825rem',
-                        fontWeight: isSelected ? 600 : 500,
-                        border: isSelected ? `2px solid ${cat.color}` : '1px solid #e2e8f0',
-                        backgroundColor: isSelected ? cat.bg : '#ffffff',
-                        color: isSelected ? cat.color : '#475569',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        outline: 'none',
-                      }}
+                      onClick={() => setImage(null)}
+                      disabled={loading}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
                     >
-                      <span style={{ fontSize: '1rem' }}>{cat.emoji}</span>
-                      <span>{cat.label}</span>
+                      Remove
                     </button>
+                  </div>
+                ) : (
+                  <label className="flex min-h-[72px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-4 text-sm text-ink-muted hover:border-accent-500 hover:text-ink focus-within:ring-2 focus-within:ring-accent-500">
+                    <FaImage aria-hidden="true" />
+                    <span>Choose an image to attach</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={loading}
+                      onChange={(e) => e.target.files?.[0] && setImage(e.target.files[0])}
+                    />
+                  </label>
+                )}
+              </div>
+            </section>
+
+            {/* 2. Audience */}
+            <section className={sectionCls} aria-labelledby="sec-audience">
+              <h2 id="sec-audience" className="text-lg font-semibold text-ink">Audience</h2>
+
+              <fieldset className="mt-4">
+                <legend className="sr-only">Send to</legend>
+                <div className="flex flex-wrap gap-2">
+                  {SCOPES.map((s) => {
+                    const selected = scope === s.id;
+                    return (
+                      <label
+                        key={s.id}
+                        className={`inline-flex min-h-[40px] cursor-pointer items-center rounded-full border px-4 text-sm transition-colors focus-within:ring-2 focus-within:ring-accent-500 ${
+                          selected
+                            ? "border-accent-600 bg-accent-600 text-white font-medium"
+                            : "border-surface-subtle bg-white text-ink hover:bg-surface-muted"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="scope"
+                          value={s.id}
+                          checked={selected}
+                          onChange={() => { setScope(s.id); setRecipientSearch(""); }}
+                          className="sr-only"
+                        />
+                        {s.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              {scope === "team" && (
+                <div className="mt-4">
+                  <label htmlFor="ann-team" className={labelCls}>Team</label>
+                  <select id="ann-team" value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className={inputCls}>
+                    {teams.length === 0 && <option value="">No teams found</option>}
+                    {teams.map((t) => (
+                      <option key={t._id} value={t._id}>
+                        {t.name}{t.leadId?.name ? ` · Lead: ${t.leadId.name}` : ""} · {t.members?.length || 0} members
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {scope === "specific" && (
+                <div className="mt-4">
+                  <label htmlFor="ann-dep" className={labelCls}>Department</label>
+                  <select id="ann-dep" value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)} className={`${inputCls} sm:max-w-xs`}>
+                    <option value="all">All departments</option>
+                    {departments.map((d) => (
+                      <option key={d._id} value={d._id}>{d.dep_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="mt-4 rounded-lg border border-surface-subtle">
+                <div className="flex flex-wrap items-center gap-3 border-b border-surface-subtle px-3 py-2.5">
+                  <label className="flex min-h-[36px] cursor-pointer items-center gap-2.5 text-sm font-medium text-ink">
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                      onChange={handleToggleSelectAll}
+                      disabled={candidateEmployees.length === 0}
+                      className="h-4 w-4 rounded text-accent-600 focus:ring-accent-500"
+                    />
+                    Select all
+                  </label>
+                  <span className="text-sm text-ink-muted tabular-nums">
+                    {selectedRecipients.length} of {candidateEmployees.length} selected
+                  </span>
+                  {candidateEmployees.length > 5 && (
+                    <input
+                      type="search"
+                      aria-label="Search recipients"
+                      placeholder="Search name or email"
+                      value={recipientSearch}
+                      onChange={(e) => setRecipientSearch(e.target.value)}
+                      className="ml-auto w-full sm:w-56 rounded-lg border border-surface-subtle px-3 py-1.5 text-sm text-ink focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 outline-none"
+                    />
+                  )}
+                </div>
+
+                <ul className="max-h-80 overflow-y-auto divide-y divide-surface-subtle [scrollbar-width:thin]">
+                  {candidateEmployees.length === 0 ? (
+                    <li className="px-4 py-8 text-center text-sm text-ink-muted">
+                      {employees.length === 0 ? "Loading employees..." : "Nobody matches this audience."}
+                    </li>
+                  ) : shownRecipients.length === 0 ? (
+                    <li className="px-4 py-8 text-center text-sm text-ink-muted">No one matches "{recipientSearch}".</li>
+                  ) : (
+                    shownRecipients.map((emp) => {
+                      const checked = selectedRecipients.includes(emp.userId);
+                      return (
+                        <li key={emp.userId}>
+                          <label className={`flex min-h-[52px] cursor-pointer items-center gap-3 px-3 py-2 transition-colors ${checked ? "" : "bg-surface-muted/60"} hover:bg-surface-muted`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => handleToggleRecipient(emp.userId)}
+                              className="h-4 w-4 rounded text-accent-600 focus:ring-accent-500"
+                            />
+                            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${checked ? "bg-accent-100 text-accent-800" : "bg-slate-200 text-slate-600"}`}>
+                              {emp.name?.charAt(0)?.toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className={`block truncate text-sm font-medium ${checked ? "text-ink" : "text-ink-muted"}`}>{emp.name}</span>
+                              <span className="block truncate text-xs text-ink-muted">{emp.email || emp.designation}</span>
+                            </span>
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${emp.roleBadge === "Team Lead" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>
+                              {emp.roleBadge}
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </div>
+            </section>
+
+            {/* 3. Timing */}
+            <section className={sectionCls} aria-labelledby="sec-when">
+              <h2 id="sec-when" className="text-lg font-semibold text-ink">When to send</h2>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {[
+                  { id: "now", label: "Send now", hint: "Notifications and emails go out immediately.", Icon: FaPaperPlane },
+                  { id: "schedule", label: "Schedule for later", hint: "Hidden from employees until the time you pick.", Icon: FaClock },
+                ].map(({ id, label, hint, Icon }) => {
+                  const selected = sendMode === id;
+                  return (
+                    <label
+                      key={id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors focus-within:ring-2 focus-within:ring-accent-500 ${
+                        selected ? "border-accent-600 bg-accent-50" : "border-surface-subtle hover:bg-surface-muted"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="sendMode"
+                        value={id}
+                        checked={selected}
+                        onChange={() => setSendMode(id)}
+                        disabled={loading}
+                        className="mt-1 h-4 w-4 text-accent-600 focus:ring-accent-500"
+                      />
+                      <span>
+                        <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                          <Icon className={selected ? "text-accent-700" : "text-ink-muted"} aria-hidden="true" /> {label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-ink-muted">{hint}</span>
+                      </span>
+                    </label>
                   );
                 })}
               </div>
-
-              {/* Live Subject Preview */}
-              <Box
-                sx={{
-                  mt: 1.5,
-                  p: 1.25,
-                  bgcolor: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  fontSize: '0.8rem',
-                  color: '#475569',
-                }}
-              >
-                <span style={{ fontWeight: 600, color: '#1e3a5f', whiteSpace: 'nowrap' }}>Email Subject:</span>
-                <span style={{ color: '#0f172a', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {(() => {
-                    const currentCat = ANNOUNCEMENT_CATEGORIES.find(c => c.id === category) || ANNOUNCEMENT_CATEGORIES[0];
-                    return `${currentCat.emoji} ${currentCat.prefix}: ${title.trim() || '[Title]'} - SPESHWAY SOLUTIONS`;
-                  })()}
-                </span>
-              </Box>
-            </div>
-
-            <TextField
-              label="Title"
-              variant="outlined"
-              fullWidth
-              required
-              margin="normal"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={loading}
-              sx={{
-                mb: { xs: 2, sm: 2.5 },
-                '& .MuiInputBase-root': {
-                  fontSize: { xs: '0.9rem', sm: '1rem' }
-                }
-              }}
-            />
-            <TextField
-              label="Description"
-              variant="outlined"
-              fullWidth
-              required
-              multiline
-              rows={4}
-              margin="normal"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={loading}
-              sx={{
-                mb: { xs: 2, sm: 2.5 },
-                '& .MuiInputBase-root': {
-                  fontSize: { xs: '0.9rem', sm: '1rem' }
-                }
-              }}
-            />
-
-            <div style={{ marginTop: 14, marginBottom: 12 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, color: '#1e3a5f' }}>Send To</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', marginBottom: 12 }}>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="radio" name="scope" value="all" checked={scope==='all'} onChange={() => setScope('all')} />
-                  <span>All Employees</span>
-                </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="radio" name="scope" value="team_leads" checked={scope==='team_leads'} onChange={() => setScope('team_leads')} />
-                  <span>Team Leads</span>
-                </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="radio" name="scope" value="team_members" checked={scope==='team_members'} onChange={() => setScope('team_members')} />
-                  <span>Team Members</span>
-                </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="radio" name="scope" value="team" checked={scope==='team'} onChange={() => setScope('team')} />
-                  <span>Specific Team</span>
-                </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="radio" name="scope" value="specific" checked={scope==='specific'} onChange={() => setScope('specific')} />
-                  <span>Specific Employees</span>
-                </label>
-              </div>
-
-              {/* If Specific Team is selected, render Team dropdown first */}
-              {scope === 'team' && (
-                <Box sx={{ mt: 1.5, mb: 1.5, p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 2 }}>
-                  <FormControl fullWidth size="small" required>
-                    <InputLabel id="team-select-label">Select Team</InputLabel>
-                    <Select
-                      labelId="team-select-label"
-                      value={selectedTeam}
-                      label="Select Team"
-                      onChange={(e) => setSelectedTeam(e.target.value)}
-                    >
-                      {teams.length === 0 ? (
-                        <MenuItem value="" disabled>No teams found</MenuItem>
-                      ) : (
-                        teams.map((t) => (
-                          <MenuItem key={t._id} value={t._id}>
-                            {t.name} {t.leadId?.name ? `(Lead: ${t.leadId.name} • ${t.members?.length || 0} members)` : `(${t.members?.length || 0} members)`}
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-                  </FormControl>
-                </Box>
-              )}
-
-              {/* If Specific Employees is selected, render Department filter */}
-              {scope === 'specific' && (
-                <Box sx={{ mt: 1.5, mb: 1.5, display: 'flex', alignItems: 'center' }}>
-                  <FormControl size="small" sx={{ minWidth: 200, maxWidth: '100%' }}>
-                    <InputLabel id="dep-select-label">Filter by Department</InputLabel>
-                    <Select
-                      labelId="dep-select-label"
-                      value={selectedDepartment}
-                      label="Filter by Department"
-                      onChange={(e) => setSelectedDepartment(e.target.value)}
-                    >
-                      <MenuItem value={'all'}>All Departments</MenuItem>
-                      {departments.map((d) => (
-                        <MenuItem key={d._id} value={d._id}>{d.dep_name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-              )}
-
-              {/* Interactive Employees Checklist for ALL Send To options */}
-              <Box
-                sx={{
-                  mt: 1.5,
-                  mb: 1.5,
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 2.5,
-                  bgcolor: '#f8fafc',
-                  p: 2,
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Checkbox
-                      size="small"
-                      checked={candidateEmployees.length > 0 && selectedRecipients.length === candidateEmployees.length}
-                      indeterminate={selectedRecipients.length > 0 && selectedRecipients.length < candidateEmployees.length}
-                      onChange={handleToggleSelectAll}
-                      sx={{ p: 0.5, color: '#16a34a', '&.Mui-checked': { color: '#16a34a' } }}
-                    />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e3a5f' }}>
-                      {scope === 'team' && 'Team Lead & Members'}
-                      {scope === 'team_leads' && 'Team Leads'}
-                      {scope === 'team_members' && 'Team Members'}
-                      {scope === 'all' && 'All Employees'}
-                      {scope === 'specific' && 'Select Employees'} ({selectedRecipients.length}/{candidateEmployees.length} selected)
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    size="small"
-                    onClick={handleToggleSelectAll}
-                    sx={{ textTransform: 'none', fontSize: '0.8rem', color: '#16a34a', p: 0 }}
-                  >
-                    {selectedRecipients.length === candidateEmployees.length ? 'Unselect All' : 'Select All'}
-                  </Button>
-                </Box>
-
-                {candidateEmployees.length > 5 && (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Search by name or email..."
-                    value={recipientSearch}
-                    onChange={(e) => setRecipientSearch(e.target.value)}
-                    sx={{
-                      mb: 1.5,
-                      bgcolor: '#ffffff',
-                      borderRadius: 1.5,
-                      '& .MuiInputBase-input': { fontSize: '0.85rem', py: 0.75 }
-                    }}
+              {sendMode === "schedule" && (
+                <div className="mt-4">
+                  <label htmlFor="ann-schedule" className={labelCls}>Date and time</label>
+                  <input
+                    id="ann-schedule"
+                    type="datetime-local"
+                    value={scheduleAt}
+                    min={minSchedule}
+                    onChange={(e) => setScheduleAt(e.target.value)}
+                    disabled={loading}
+                    required
+                    className={`${inputCls} sm:max-w-xs`}
                   />
-                )}
+                </div>
+              )}
+            </section>
+          </div>
 
-                <Box
-                  sx={{
-                    maxHeight: candidateEmployees.length > 5 ? 285 : 'none',
-                    overflowY: candidateEmployees.length > 5 ? 'auto' : 'visible',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 0.75,
-                    scrollbarWidth: 'none', // Firefox
-                    '&::-webkit-scrollbar': {
-                      display: 'none', // Chrome, Safari, Edge
-                    },
-                    msOverflowStyle: 'none', // IE and Edge
-                  }}
-                >
-                  {candidateEmployees
-                    .filter((emp) => {
-                      if (!recipientSearch.trim()) return true;
-                      const q = recipientSearch.toLowerCase();
-                      return emp.name.toLowerCase().includes(q) || emp.email.toLowerCase().includes(q);
-                    })
-                    .map((emp) => {
-                      const isChecked = selectedRecipients.includes(emp.userId);
-                      return (
-                        <Box
-                          key={emp.userId}
-                          onClick={() => handleToggleRecipient(emp.userId)}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            p: 1,
-                            borderRadius: 1.5,
-                            bgcolor: isChecked ? '#ffffff' : '#f1f5f9',
-                            border: isChecked ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease-in-out',
-                            '&:hover': {
-                              bgcolor: isChecked ? '#f0fdf4' : '#e2e8f0',
-                            }
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, overflow: 'hidden' }}>
-                            <Checkbox
-                              size="small"
-                              checked={isChecked}
-                              onChange={() => handleToggleRecipient(emp.userId)}
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ p: 0, color: '#16a34a', '&.Mui-checked': { color: '#16a34a' } }}
-                            />
-                            <Avatar
-                              sx={{
-                                width: 28,
-                                height: 28,
-                                fontSize: '0.8rem',
-                                bgcolor: isChecked ? '#16a34a' : '#94a3b8',
-                                fontWeight: 600,
-                              }}
-                            >
-                              {emp.name?.charAt(0)?.toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ overflow: 'hidden' }}>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600, color: '#1e293b', fontSize: '0.875rem', lineHeight: 1.2 }}
-                              >
-                                {emp.name}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ color: '#64748b', fontSize: '0.75rem', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
-                              >
-                                {emp.email || emp.designation}
-                              </Typography>
-                            </Box>
-                          </Box>
-
-                          <Chip
-                            size="small"
-                            label={emp.roleBadge}
-                            sx={{
-                              height: 20,
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              bgcolor: emp.roleBadge === 'Team Lead' ? '#fef3c7' : '#e0e7ff',
-                              color: emp.roleBadge === 'Team Lead' ? '#92400e' : '#3730a3',
-                            }}
-                          />
-                        </Box>
-                      );
-                    })}
-
-                  {candidateEmployees.length === 0 && (
-                    <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center', py: 2 }}>
-                      {scope === 'team' ? 'Please select a team from the dropdown above' : 'No employees found'}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
+          {/* Summary + publish (sticky on desktop) */}
+          <aside className="lg:sticky lg:top-6" aria-labelledby="sec-summary">
+            <div className={sectionCls}>
+              <h2 id="sec-summary" className="text-lg font-semibold text-ink">Summary</h2>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="text-xs text-ink-muted">Email subject</dt>
+                  <dd className="mt-0.5 break-words font-medium text-ink">{emailSubject}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Recipients</dt>
+                  <dd className="font-medium text-ink tabular-nums">{selectedRecipients.length}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Audience</dt>
+                  <dd className="font-medium text-ink text-right">{SCOPES.find((s) => s.id === scope)?.label}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Sends</dt>
+                  <dd className={`font-medium text-right ${sendMode === "schedule" ? "text-amber-700" : "text-ink"}`}>
+                    {sendMode === "schedule" ? scheduleLabel || "Pick a time" : "Immediately"}
+                  </dd>
+                </div>
+              </dl>
+              <button
+                type="submit"
+                disabled={loading || selectedRecipients.length === 0}
+                className="mt-5 hidden lg:flex w-full items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-3 text-sm font-semibold text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              >
+                {sendMode === "schedule" ? <FaClock aria-hidden="true" /> : <FaPaperPlane aria-hidden="true" />}
+                {submitLabel}
+              </button>
+              {selectedRecipients.length === 0 && (
+                <p className="mt-2 text-xs text-red-700">Select at least one recipient.</p>
+              )}
             </div>
+          </aside>
 
-            {/* Upload Button */}
-            <Button
-              variant="outlined"
-              component="label"
-              fullWidth
-              sx={{
-                mt: { xs: 1.5, sm: 2 },
-                mb: { xs: 1.5, sm: 2 },
-                color: "#1c2333",
-                borderColor: "#eef0f6",
-                "&:hover": { borderColor: "#16a34a", bgcolor: "#f6f7fb" },
-                fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                py: { xs: 1, sm: 1.25 },
-                px: { xs: 2, sm: 3 },
-                textTransform: 'none',
-              }}
-              disabled={loading}
-            >
-              Upload Image (optional)
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setImage(e.target.files[0]);
-                  }
-                }}
-                disabled={loading}
-              />
-            </Button>
-
-            {/* Show selected image preview */}
-            {image && (
-              <div style={{ marginTop: "16px", textAlign: "center", marginBottom: "16px" }}>
-                <img
-                  src={URL.createObjectURL(image)}
-                  alt={title ? `Preview: ${title}` : 'Announcement image preview'}
-                  style={{
-                    width: "100%",
-                    maxWidth: "200px",
-                    height: "120px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={loading}
-              sx={{
-                height: { xs: 42, sm: 45 },
-                fontWeight: 600,
-                letterSpacing: 0.3,
-                bgcolor: "#16a34a",
-                "&:hover": { bgcolor: "#15803d" },
-                boxShadow: 'none',
-                textTransform: 'none',
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                py: { xs: 1.25, sm: 1.5 },
-              }}
-              startIcon={
-                loading ? <CircularProgress size={20} color="inherit" /> : null
-              }
-            >
-              {loading ? "Adding..." : "Add Announcement"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </MotionBox>
+          {/* Mobile publish bar */}
+          <div className="lg:hidden fixed inset-x-0 bottom-0 z-20 border-t border-surface-subtle bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgba(15,23,42,0.06)]">
+            <div className="mx-auto flex max-w-6xl items-center gap-3">
+              <p className="min-w-0 flex-1 truncate text-xs text-ink-muted">
+                <span className="font-medium text-ink tabular-nums">{selectedRecipients.length}</span> recipients ·{" "}
+                {sendMode === "schedule" ? scheduleLabel || "pick a time" : "sends now"}
+              </p>
+              <button
+                type="submit"
+                disabled={loading || selectedRecipients.length === 0}
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-accent-600 px-4 py-3 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50"
+              >
+                {sendMode === "schedule" ? <FaClock aria-hidden="true" /> : <FaPaperPlane aria-hidden="true" />}
+                {submitLabel}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 

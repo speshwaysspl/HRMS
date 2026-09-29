@@ -25,9 +25,16 @@ const announcementSchema = new Schema(
     image: { type: String, default: null }, // S3 URL
     imageKey: { type: String, default: null }, // S3 object key for deletion
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    // Scheduling: when scheduledAt is in the future the announcement is saved unpublished
+    // and released (notifications + emails) by the scheduler once the time arrives.
+    scheduledAt: { type: Date, default: null },
+    published: { type: Boolean, default: true },
+    publishedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
+
+announcementSchema.index({ published: 1, scheduledAt: 1 });
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
 export default Announcement;

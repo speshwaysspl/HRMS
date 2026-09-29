@@ -46,6 +46,11 @@ class TeamService {
     });
   }
 
+  /// Removes [employeeId] (Employee document id) from the team; their tasks are kept.
+  Future<void> removeMember(String teamId, String employeeId) async {
+    await _dio.delete('/api/team/$teamId/members/$employeeId');
+  }
+
   Future<void> deleteTeam(String id) async {
     await _dio.delete('/api/team/$id');
   }

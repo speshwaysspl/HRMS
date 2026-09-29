@@ -115,6 +115,67 @@ const resolveAnnouncementRecipients = async (scope, targetTeam, customRecipients
   return { recipients: [], targetTeam: null };
 };
 
+// Sends in-app/push notifications and emails for an announcement. Used both when an
+// announcement is created for "now" and by the scheduler when a scheduled one comes due.
+// `file` is the multer upload (only available at creation time) for embedding the image.
+export const publishAnnouncement = async (announcement, io, file = null) => {
+  try {
+    const hasSpecificRecipients = Array.isArray(announcement.recipients) && announcement.recipients.length > 0;
+    const targetRecipients = hasSpecificRecipients ? announcement.recipients : (announcement.scope === 'all' ? null : []);
+    await createAnnouncementNotification(announcement, announcement.createdBy, io, targetRecipients);
+  } catch (notificationError) {
+    console.error('Error sending announcement notifications:', notificationError);
+  }
+
+  try {
+    let employeesList = [];
+    if (Array.isArray(announcement.recipients) && announcement.recipients.length > 0) {
+      employeesList = await Employee.find({ status: 'active', userId: { $in: announcement.recipients } }).populate('userId', 'email name');
+    } else if (announcement.scope === 'all') {
+      employeesList = await Employee.find({ status: 'active' }).populate('userId', 'email name');
+    }
+    if (employeesList.length === 0) return;
+
+    const emailSubject = getAnnouncementEmailSubject(announcement.title, announcement.category);
+    // Embed the uploaded image when we still have the buffer; otherwise link the stored S3 URL.
+    const emailAttachments = file?.buffer
+      ? [{ filename: file.originalname || 'announcement-image.jpg', content: file.buffer, cid: 'announcement-image' }]
+      : [];
+    const emailImageUrl = file?.buffer ? 'cid:announcement-image' : (announcement.image || null);
+
+    for (const employee of employeesList) {
+      if (!employee.userId?.email) continue;
+      const emailHtml = getAnnouncementEmailTemplate({
+        title: announcement.title,
+        description: announcement.description,
+        imageUrl: emailImageUrl,
+        recipientName: employee.userId.name,
+        createdAt: announcement.publishedAt || new Date(),
+        category: announcement.category,
+      });
+      enqueueEmail(employee.userId.email, emailSubject, emailHtml, emailAttachments);
+    }
+    console.log(`Announcement emails queued for ${employeesList.length} employees`);
+  } catch (emailError) {
+    console.error("Error sending announcement emails:", emailError);
+  }
+};
+
+// Releases scheduled announcements whose time has come. Each one is claimed atomically
+// (published: false -> true) so it is only ever sent once, even with overlapping runs.
+export const publishDueAnnouncements = async (io) => {
+  const due = await Announcement.find({ published: false, scheduledAt: { $lte: new Date() } }).select('_id');
+  for (const { _id } of due) {
+    const ann = await Announcement.findOneAndUpdate(
+      { _id, published: false },
+      { published: true, publishedAt: new Date() },
+      { new: true }
+    );
+    if (ann) await publishAnnouncement(ann, io);
+  }
+  return due.length;
+};
+
 // 📌 Create
 const addAnnouncement = async (req, res) => {
   try {
@@ -145,6 +206,17 @@ const addAnnouncement = async (req, res) => {
       return res.status(400).json({ success: false, error: resolveError.message });
     }
 
+    // Optional schedule: an ISO date-time in the future. Anything in the past publishes now.
+    let scheduledAt = null;
+    if (req.body.scheduledAt) {
+      const d = new Date(req.body.scheduledAt);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({ success: false, error: "Invalid schedule date/time" });
+      }
+      if (d.getTime() > Date.now() + 30 * 1000) scheduledAt = d;
+    }
+    const isScheduled = !!scheduledAt;
+
     const newAnnouncement = new Announcement({
       title,
       description,
@@ -155,74 +227,22 @@ const addAnnouncement = async (req, res) => {
       createdBy: req.user._id,
       image: imageUrl,
       imageKey: imageKey, // Store S3 key for deletion
+      scheduledAt,
+      published: !isScheduled,
+      publishedAt: isScheduled ? null : new Date(),
     });
 
     await newAnnouncement.save();
 
-    // Create notifications in DB and emit real-time pop notifications to intended recipients
-    const io = req.app.get('io');
-    const ioForNotification = io; // Always emit pop notifications to intended recipients
-    console.log('🔌 IO object available:', !!io);
-    try {
-      console.log('📢 Calling createAnnouncementNotification...');
-      const hasSpecificRecipients = Array.isArray(newAnnouncement.recipients) && newAnnouncement.recipients.length > 0;
-      const targetRecipients = hasSpecificRecipients ? newAnnouncement.recipients : (newAnnouncement.scope === 'all' ? null : []);
-      await createAnnouncementNotification(newAnnouncement, req.user._id, ioForNotification, targetRecipients);
-      console.log('✅ Announcement notification process completed');
-    } catch (notificationError) {
-      console.error('❌ Error sending announcement notifications:', notificationError);
+    if (isScheduled) {
+      return res.status(201).json({
+        success: true,
+        message: "Announcement scheduled",
+        announcement: { ...newAnnouncement.toObject(), imageUrl: buildImageUrl(imageUrl) },
+      });
     }
 
-    // Send email notifications
-    try {
-      let employeesList = [];
-
-      if (Array.isArray(newAnnouncement.recipients) && newAnnouncement.recipients.length > 0) {
-        employeesList = await Employee.find({ status: 'active', userId: { $in: newAnnouncement.recipients } }).populate('userId', 'email name');
-      } else if (newAnnouncement.scope === 'all') {
-        employeesList = await Employee.find({ status: 'active' }).populate('userId', 'email name');
-      }
-
-      if (employeesList.length > 0) {
-        const emailSubject = getAnnouncementEmailSubject(title, newAnnouncement.category);
-
-        // Prepare email attachments if image exists
-        let emailAttachments = [];
-        if (req.file && req.file.buffer) {
-          emailAttachments = [{
-            filename: req.file.originalname || 'announcement-image.jpg',
-            content: req.file.buffer,
-            cid: 'announcement-image' // Content-ID for embedding in email
-          }];
-        }
-
-        const emailPromises = employeesList.map(employee => {
-          if (employee.userId && employee.userId.email) {
-            // Use CID reference if image exists, otherwise pass null
-            const emailImageUrl = req.file ? 'cid:announcement-image' : null;
-            
-            const emailHtml = getAnnouncementEmailTemplate({
-              title,
-              description,
-              imageUrl: emailImageUrl,
-              recipientName: employee.userId.name,
-              createdAt: new Date(),
-              category: newAnnouncement.category,
-            });
-            
-            enqueueEmail(employee.userId.email, emailSubject, emailHtml, emailAttachments);
-            return Promise.resolve(null);
-          }
-          return Promise.resolve(null);
-        });
-
-        await Promise.allSettled(emailPromises);
-        console.log(`📧 Announcement emails processed for ${employeesList.length} employees`);
-      }
-    } catch (emailError) {
-      console.error("Error sending announcement emails:", emailError);
-      // Don't fail the announcement creation if email sending fails
-    }
+    await publishAnnouncement(newAnnouncement, req.app.get('io'), req.file);
 
     return res.status(201).json({
       success: true,
@@ -246,6 +266,7 @@ const getAnnouncements = async (req, res) => {
     const filter = isAdmin
       ? {}
       : {
+          published: { $ne: false },
           $or: [
             { recipients: req.user._id },
             { scope: 'all', recipients: { $size: 0 } },
@@ -285,6 +306,9 @@ const getAnnouncement = async (req, res) => {
     const roles = Array.isArray(req.user?.role) ? req.user.role : [req.user?.role];
     const isAdmin = roles.includes('admin');
     if (!isAdmin) {
+      if (announcement.published === false) {
+        return res.status(404).json({ success: false, error: "Announcement not found" });
+      }
       const hasRecipients = Array.isArray(announcement.recipients) && announcement.recipients.length > 0;
       const isRecipient = hasRecipients
         ? announcement.recipients.some((r) => (r._id || r).toString() === req.user._id.toString())
@@ -339,6 +363,15 @@ const updateAnnouncement = async (req, res) => {
     announcement.scope = newScope;
     announcement.targetTeam = resolved.targetTeam;
     announcement.recipients = resolved.recipients;
+
+    // A not-yet-published announcement can be rescheduled, or cleared to go out now.
+    if (announcement.published === false && req.body.scheduledAt !== undefined) {
+      const d = req.body.scheduledAt ? new Date(req.body.scheduledAt) : null;
+      if (d && isNaN(d.getTime())) {
+        return res.status(400).json({ success: false, error: "Invalid schedule date/time" });
+      }
+      announcement.scheduledAt = d && d.getTime() > Date.now() ? d : new Date();
+    }
 
     // Handle image update
     if (req.file) {

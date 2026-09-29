@@ -1,12 +1,14 @@
+import '../../services/app_events.dart';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_client.dart';
+import '../../services/milestone_service.dart';
 import '../../services/task_service.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
@@ -16,6 +18,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/star_rating.dart';
 import '../../widgets/state_views.dart';
+import 'milestones_tab.dart';
 import 'team_attendance_tab.dart';
 
 /// Team detail for team leads — mirrors web TeamDetail.jsx: a "Task List"
@@ -40,29 +43,43 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   ];
   final _service = TeamService();
   final _tasks = TaskService();
+  final _milestoneService = MilestoneService();
   late final TabController _tabs = TabController(length: 3, vsync: this);
+  List<Map<String, dynamic>> _milestones = [];
+  // Tasks live inside milestones: null shows the milestone list, 'none' the
+  // unplanned tasks, otherwise that milestone's tasks.
+  String? _milestoneFilter;
   Map<String, dynamic>? _detail;
   bool _loading = true;
   Object? _error;
-  String _filterType = 'startDate';
-  DateTime? _filterFrom;
-  DateTime? _filterTo;
   String? _statusFilter;
 
   @override
   void initState() {
     super.initState();
+    AppEvents.teamChanged.addListener(_onTeamChanged);
     // Rebuild on tab change so Add Task only shows on the task list.
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) setState(() {});
     });
     _load();
+    _loadMilestones();
   }
 
   @override
   void dispose() {
+    AppEvents.teamChanged.removeListener(_onTeamChanged);
     _tabs.dispose();
     super.dispose();
+  }
+
+  /// Server push: someone changed a team this screen shows.
+  void _onTeamChanged() {
+    final e = AppEvents.teamChanged.value;
+    if (e == null || !mounted) return;
+    if (e['teamId'] != widget.id) return;
+    if (e['kind'] != 'milestones') _load();
+    if (e['kind'] == 'milestones' || e['kind'] == 'tasks') _loadMilestones();
   }
 
   Future<void> _load() async {
@@ -80,6 +97,33 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         _error = e;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadMilestones() async {
+    try {
+      final list = await _milestoneService.list(widget.id);
+      if (mounted) setState(() => _milestones = list);
+    } catch (_) {
+      // Milestones are optional; the task list still works without them.
+    }
+  }
+
+  List<Map<String, dynamic>> get _openMilestones =>
+      _milestones.where((m) => m['state'] != 'closed').toList();
+
+  Map<String, dynamic>? _milestoneOf(dynamic id) {
+    if (id == null) return null;
+    for (final m in _milestones) {
+      if (m['_id'].toString() == id.toString()) return m;
+    }
+    return null;
+  }
+
+  Future<void> _newMilestone() async {
+    if (await showNewMilestoneSheet(context, widget.id)) {
+      _toast('Milestone created');
+      _loadMilestones();
     }
   }
 
@@ -108,44 +152,17 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
-  String _ymd(dynamic v) {
-    try {
-      return DateFormat(
-        'yyyy-MM-dd',
-      ).format(DateTime.parse(v.toString()).toLocal());
-    } catch (_) {
-      return '';
-    }
-  }
-
-  Future<void> _pickFilter(bool from) async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: (from ? _filterFrom : _filterTo) ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
-    );
-    if (d != null) setState(() => from ? _filterFrom = d : _filterTo = d);
-  }
-
   Future<void> _downloadPdf() async {
-    final from = _filterFrom == null
-        ? null
-        : DateFormat('yyyy-MM-dd').format(_filterFrom!);
-    final to = _filterTo == null
-        ? null
-        : DateFormat('yyyy-MM-dd').format(_filterTo!);
+    final ms = _milestoneFilter;
     final rows = _taskList
         .where((t) {
-          if (from == null && to == null) return true;
-          final v = _ymd(t[_filterType]);
-          if (v.isEmpty) return false;
-          if (from != null && v.compareTo(from) < 0) return false;
-          if (to != null && v.compareTo(to) > 0) return false;
-          return true;
+          final mid = t['milestoneId']?.toString();
+          if (ms == null) return true;
+          return ms == 'none' ? mid == null : mid == ms;
         })
         .map(
           (t) => [
+            t['title']?.toString() ?? '-',
             ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']
                     ?.toString() ??
                 'Unassigned',
@@ -159,6 +176,31 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
           ],
         )
         .toList();
+    // Heading "<Milestone> (28 Sep - 4 Oct 2026)"; file
+    // "<Milestone>_28Sep-04Oct2026_<TeamLead>.pdf".
+    final m = _milestoneOf(ms);
+    final heading = m?['title']?.toString().trim() ?? 'Unplanned tasks';
+    final lead =
+        ((_detail?['team'] as Map?)?['leadId'] as Map?)?['name']?.toString() ??
+        'N/A';
+    final start = DateTime.tryParse(
+      m?['startDate']?.toString() ?? '',
+    )?.toLocal();
+    final due = DateTime.tryParse(m?['dueDate']?.toString() ?? '')?.toLocal();
+    final hasRange = start != null && due != null;
+    final range = hasRange
+        ? '${DateFormat('d MMM').format(start)} - ${DateFormat('d MMM yyyy').format(due)}'
+        : '';
+    String safe(String v) => v
+        .trim()
+        .replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    final fileName = [
+      safe(heading),
+      if (hasRange)
+        '${DateFormat('ddMMM').format(start)}-${DateFormat('ddMMMyyyy').format(due)}',
+      safe(lead),
+    ].where((p) => p.isNotEmpty).join('_');
     try {
       final doc = pw.Document();
       doc.addPage(
@@ -168,14 +210,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'Task List - ${widget.name}',
+                  hasRange ? '$heading ($range)' : heading,
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
                 pw.Text(
-                  'Team Lead: ${((_detail?['team'] as Map?)?['leadId'] as Map?)?['name'] ?? 'N/A'}',
+                  'Team Lead: $lead',
                   style: const pw.TextStyle(fontSize: 12),
                 ),
               ],
@@ -183,6 +225,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
             pw.SizedBox(height: 10),
             pw.TableHelper.fromTextArray(
               headers: const [
+                'Task',
                 'Employee Name',
                 'Status',
                 'Start Date',
@@ -197,7 +240,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         ),
       );
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/task_list.pdf');
+      final file = File('${dir.path}/$fileName.pdf');
       await file.writeAsBytes(await doc.save());
       await OpenFilex.open(file.path);
     } catch (e) {
@@ -246,11 +289,17 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         teamId: widget.id,
         members: members,
         service: _tasks,
+        milestones: _openMilestones,
+        teamName: widget.name,
+        initialMilestoneId: _milestoneOf(_milestoneFilter)?['state'] == 'open'
+            ? _milestoneFilter
+            : null,
       ),
     );
     if (ok == true) {
-      _toast('Task assigned successfully');
+      _toast('Task assigned');
       _load();
+      _loadMilestones();
     }
   }
 
@@ -258,8 +307,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) =>
-          _UpdateTaskSheet(task: task, statuses: _statuses, service: _tasks),
+      builder: (_) => _UpdateTaskSheet(
+        task: task,
+        statuses: _statuses,
+        service: _tasks,
+        onOpenProof: _openDoc,
+      ),
     );
     if (ok == true) {
       _toast('Task updated');
@@ -271,7 +324,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _EditTaskSheet(task: task, service: _tasks),
+      builder: (_) =>
+          _EditTaskSheet(task: task, service: _tasks, milestones: _milestones),
     );
     if (ok == true) {
       _toast('Task saved');
@@ -387,6 +441,26 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                 ],
               ),
             ),
+            if ((task['reference'] ?? '').toString().isNotEmpty) ...[
+              SizedBox(height: context.h(4)),
+              Text(
+                'Your reference',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+              SizedBox(height: context.h(6)),
+              OutlinedButton.icon(
+                onPressed: () => _openDoc(task['reference'].toString()),
+                icon: const Icon(Icons.attach_file),
+                label: Text(
+                  task['referenceName']?.toString() ?? 'Open reference',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              SizedBox(height: context.h(12)),
+            ],
             SizedBox(height: context.h(8)),
             Text(
               'Employee submission',
@@ -474,108 +548,21 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     ),
   );
 
-  Future<void> _openPdfSheet() async {
-    final f = DateFormat('d MMM yyyy');
-    await showModalBottomSheet(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) {
-          Future<void> pick(bool from) async {
-            await _pickFilter(from);
-            setSheet(() {});
-          }
-
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(context.w(20)),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Download task list (PDF)',
-                    style: TextStyle(
-                      fontSize: context.sp(16),
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  SizedBox(height: context.h(12)),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'startDate',
-                        label: Text('Start date'),
-                      ),
-                      ButtonSegment(value: 'deadline', label: Text('Due date')),
-                    ],
-                    selected: {_filterType},
-                    onSelectionChanged: (v) {
-                      setState(() => _filterType = v.first);
-                      setSheet(() {});
-                    },
-                  ),
-                  SizedBox(height: context.h(12)),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => pick(true),
-                          child: Text(
-                            _filterFrom == null
-                                ? 'From'
-                                : f.format(_filterFrom!),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: context.w(10)),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => pick(false),
-                          child: Text(
-                            _filterTo == null ? 'To' : f.format(_filterTo!),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_filterFrom != null || _filterTo != null)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _filterFrom = null;
-                          _filterTo = null;
-                        });
-                        setSheet(() {});
-                      },
-                      child: const Text('Clear dates (all tasks)'),
-                    ),
-                  SizedBox(height: context.h(8)),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _downloadPdf();
-                      },
-                      icon: const Icon(Icons.picture_as_pdf_outlined),
-                      label: const Text('Download PDF'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _taskTab() {
-    final all = _taskList;
+    final msFilter = _milestoneFilter;
+    final all = _taskList.where((t) {
+      if (msFilter == null) return true;
+      final mid = t['milestoneId']?.toString();
+      return msFilter == 'none' ? mid == null : mid == msFilter;
+    }).toList();
     final tasks = _statusFilter == null
         ? all
         : all.where((t) => t['status'] == _statusFilter).toList();
+    final msName = msFilter == null
+        ? null
+        : msFilter == 'none'
+        ? 'No milestone'
+        : (_milestoneOf(msFilter)?['title']?.toString() ?? 'Milestone');
     int count(String s) => all.where((t) => t['status'] == s).length;
 
     // Single status filter (menu) instead of a row of chips.
@@ -643,16 +630,24 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
               ),
             ),
           ),
+          TextButton.icon(
+            onPressed: _downloadPdf,
+            icon: Icon(Icons.picture_as_pdf_outlined, size: context.r(20)),
+            label: const Text('PDF'),
+          ),
         ],
       ),
     );
 
     return Column(
       children: [
+        _milestoneHeader(msName),
         chips,
         Expanded(
           child: RefreshIndicator(
-            onRefresh: _load,
+            onRefresh: () async {
+              await Future.wait([_load(), _loadMilestones()]);
+            },
             child: tasks.isEmpty
                 ? ListView(
                     children: [
@@ -663,7 +658,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                             ? 'No tasks yet'
                             : 'No $_statusFilter tasks',
                         subtitle: all.isEmpty
-                            ? 'Tap Add Task to assign work to your team.'
+                            ? 'Tap Add Task to plan this milestone\'s work.'
                             : null,
                       ),
                     ],
@@ -681,6 +676,72 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _milestoneHeader(String? name) {
+    final m = _milestoneOf(_milestoneFilter);
+    final muted = TextStyle(
+      color: AppColors.inkMuted,
+      fontSize: context.sp(12),
+    );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.w(8),
+        context.h(4),
+        context.w(16),
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextButton.icon(
+            onPressed: () => setState(() => _milestoneFilter = null),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('All milestones'),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.w(8)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name ?? 'Milestone',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+                SizedBox(height: context.h(2)),
+                if (m != null) ...[
+                  Text(
+                    [
+                      if (DateTime.tryParse(m['dueDate']?.toString() ?? '') !=
+                          null)
+                        'Due ${DateFormat('d MMM yyyy').format(DateTime.parse(m['dueDate'].toString()).toLocal())}',
+                      '${m['progress'] ?? 0}% complete',
+                      '${m['openTasks'] ?? 0} open',
+                      '${m['completedTasks'] ?? 0} done',
+                      if (m['state'] == 'closed') 'Closed',
+                    ].join(' · '),
+                    style: muted,
+                  ),
+                  if ((m['description'] ?? '').toString().isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(top: context.h(4)),
+                      child: Text(m['description'].toString(), style: muted),
+                    ),
+                ] else
+                  Text(
+                    'Tasks not in any milestone. Edit a task to move it into one.',
+                    style: muted,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -809,6 +870,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
           if (_hasProof(t)) ...[
             SizedBox(height: context.h(10)),
             _ProofButton(onTap: () => _openDoc(t['workProof'].toString())),
+          ],
+          if ((t['reference'] ?? '').toString().isNotEmpty) ...[
+            SizedBox(height: context.h(4)),
+            TextButton.icon(
+              onPressed: () => _openDoc(t['reference'].toString()),
+              icon: const Icon(Icons.attach_file, size: 18),
+              label: const Text('Your reference'),
+            ),
           ],
         ],
       ),
@@ -951,89 +1020,109 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     final leadName =
         ((_detail?['team'] as Map?)?['leadId'] as Map?)?['name']?.toString() ??
         'N/A';
-    return Scaffold(
-      appBar: HrmsAppBar(
-        title: Text(widget.name),
-        actions: [
-          if (!_loading && _error == null && _tabs.index == 0)
-            IconButton(
-              tooltip: 'Download task list PDF',
-              onPressed: _openPdfSheet,
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-            ),
-        ],
-        bottom: TabBar(
-          controller: _tabs,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'Tasks'),
-            Tab(text: 'Members'),
-            Tab(text: 'Attendance'),
-          ],
+    return PopScope(
+      canPop: _milestoneFilter == null || _tabs.index != 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _milestoneFilter = null);
+      },
+      child: Scaffold(
+        appBar: HrmsAppBar(
+          title: Text(widget.name),
+          bottom: TabBar(
+            controller: _tabs,
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: const [
+              Tab(text: 'Milestones'),
+              Tab(text: 'Members'),
+              Tab(text: 'Attendance'),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: _loading || _error != null || _tabs.index != 0
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _addTask,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Task'),
-            ),
-      body: _loading
-          ? ListView(
-              padding: EdgeInsets.all(context.w(16)),
-              children: const [
-                SkeletonListTile(),
-                SkeletonListTile(),
-                SkeletonListTile(),
-                SkeletonListTile(),
-              ],
-            )
-          : _error != null
-          ? buildErrorState(_error!, () {
-              setState(() {
-                _loading = true;
-                _error = null;
-              });
-              _load();
-            })
-          : Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.w(16),
-                    vertical: context.h(10),
-                  ),
-                  child: Text(
-                    'Lead: $leadName',
-                    style: TextStyle(
-                      color: AppColors.ink,
-                      fontWeight: FontWeight.w600,
+        floatingActionButton: _loading || _error != null || _tabs.index != 0
+            ? null
+            : _milestoneFilter == 'none'
+            ? null
+            : _milestoneFilter != null
+            ? FloatingActionButton.extended(
+                onPressed: _addTask,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Task'),
+              )
+            : FloatingActionButton.extended(
+                onPressed: _newMilestone,
+                icon: const Icon(Icons.flag_outlined),
+                label: const Text('New milestone'),
+              ),
+        body: _loading
+            ? ListView(
+                padding: EdgeInsets.all(context.w(16)),
+                children: const [
+                  SkeletonListTile(),
+                  SkeletonListTile(),
+                  SkeletonListTile(),
+                  SkeletonListTile(),
+                ],
+              )
+            : _error != null
+            ? buildErrorState(_error!, () {
+                setState(() {
+                  _loading = true;
+                  _error = null;
+                });
+                _load();
+              })
+            : Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.w(16),
+                      vertical: context.h(10),
+                    ),
+                    child: Text(
+                      'Lead: $leadName',
+                      style: TextStyle(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabs,
-                    children: [
-                      _taskTab(),
-                      _membersTab(),
-                      TeamAttendanceTab(
-                        teamId: widget.id,
-                        teamName: widget.name,
-                        members: ((_detail?['memberStats'] as List?) ?? [])
-                            .map((m) => (m as Map)['member'])
-                            .whereType<Map>()
-                            .toList(),
-                      ),
-                    ],
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabs,
+                      children: [
+                        _milestoneFilter != null
+                            ? _taskTab()
+                            : MilestonesTab(
+                                teamId: widget.id,
+                                milestones: _milestones,
+                                canManage: true,
+                                unplannedCount: _taskList
+                                    .where((t) => t['milestoneId'] == null)
+                                    .length,
+                                onChanged: _loadMilestones,
+                                onViewTasks: (id) => setState(() {
+                                  _milestoneFilter = id;
+                                  _statusFilter = null;
+                                }),
+                              ),
+                        _membersTab(),
+                        TeamAttendanceTab(
+                          teamId: widget.id,
+                          teamName: widget.name,
+                          members: ((_detail?['memberStats'] as List?) ?? [])
+                              .map((m) => (m as Map)['member'])
+                              .whereType<Map>()
+                              .toList(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -1042,11 +1131,17 @@ class _AssignTaskSheet extends StatefulWidget {
   final String teamId;
   final List<Map> members;
   final TaskService service;
+  final List<Map<String, dynamic>> milestones;
+  final String? initialMilestoneId;
   const _AssignTaskSheet({
     required this.teamId,
     required this.members,
     required this.service,
+    this.milestones = const [],
+    this.initialMilestoneId,
+    this.teamName,
   });
+  final String? teamName;
 
   @override
   State<_AssignTaskSheet> createState() => _AssignTaskSheetState();
@@ -1058,8 +1153,36 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
   final _selected = <String>{};
   DateTime? _start;
   DateTime? _due;
+  late final String? _milestoneId = widget.initialMilestoneId;
+  // The milestone this task joins; the server gives the task its week.
+  late final Map<String, dynamic>? _milestone = widget.milestones
+      .where((m) => m['_id'].toString() == _milestoneId)
+      .firstOrNull;
   bool _busy = false;
   String? _err;
+  String? _refPath;
+  String? _refName;
+
+  Future<void> _pickReference() async {
+    final r = await FilePicker.platform.pickFiles();
+    final f = r?.files.single;
+    if (f?.path == null) return;
+    setState(() {
+      _refPath = f!.path;
+      _refName = f.name;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _start = DateTime.tryParse(
+      _milestone?['startDate']?.toString() ?? '',
+    )?.toLocal();
+    _due = DateTime.tryParse(
+      _milestone?['dueDate']?.toString() ?? '',
+    )?.toLocal();
+  }
 
   @override
   void dispose() {
@@ -1068,23 +1191,13 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
     super.dispose();
   }
 
-  Future<void> _pick(bool start) async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: (start ? _start : _due) ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
-    );
-    if (d != null) setState(() => start ? _start = d : _due = d);
-  }
-
   Future<void> _submit() async {
     if (_title.text.trim().isEmpty) {
       setState(() => _err = 'Enter a task title');
       return;
     }
     if (_selected.isEmpty) {
-      setState(() => _err = 'Please select at least one member');
+      setState(() => _err = 'Pick at least one member to assign this task to.');
       return;
     }
     setState(() {
@@ -1100,6 +1213,8 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
         assignedTo: _selected.toList(),
         startDate: _start == null ? null : f.format(_start!),
         deadline: _due == null ? null : f.format(_due!),
+        milestoneId: _milestoneId,
+        referencePath: _refPath,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -1128,85 +1243,194 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Assign Task',
+              'Assign task',
               style: TextStyle(
-                fontSize: context.sp(16),
+                fontSize: context.sp(17),
                 fontWeight: FontWeight.w700,
                 color: AppColors.ink,
               ),
             ),
-            SizedBox(height: context.h(12)),
+            if (widget.teamName != null)
+              Text(
+                widget.teamName!,
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(13),
+                ),
+              ),
+            SizedBox(height: context.h(14)),
             TextField(
               controller: _title,
-              decoration: const InputDecoration(labelText: 'Task title'),
+              autofocus: true,
+              enabled: !_busy,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                hintText: 'e.g. Build the login screen',
+              ),
             ),
             SizedBox(height: context.h(10)),
             TextField(
               controller: _desc,
-              maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Description'),
+              enabled: !_busy,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Description (optional)',
+                hintText:
+                    'What needs to be done, and what does done look like?',
+              ),
             ),
-            SizedBox(height: context.h(10)),
+            SizedBox(height: context.h(16)),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pick(true),
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Assign to',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        TextSpan(
+                          text:
+                              ' · ${_selected.length} of ${widget.members.length}',
+                          style: TextStyle(color: AppColors.inkMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (widget.members.length > 1)
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                            final all = widget.members
+                                .map((m) => m['_id'].toString())
+                                .toSet();
+                            _err = null;
+                            if (_selected.length == all.length) {
+                              _selected.clear();
+                            } else {
+                              _selected.addAll(all);
+                            }
+                          }),
                     child: Text(
-                      _start == null ? 'Start date' : f.format(_start!),
+                      _selected.length == widget.members.length
+                          ? 'Clear all'
+                          : 'Select all',
                     ),
                   ),
-                ),
-                SizedBox(width: context.w(10)),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pick(false),
-                    child: Text(_due == null ? 'Due date' : f.format(_due!)),
-                  ),
-                ),
               ],
             ),
+            Wrap(
+              spacing: context.w(8),
+              runSpacing: context.h(8),
+              children: widget.members.map((m) {
+                final id = m['_id'].toString();
+                final name =
+                    (m['userId'] as Map?)?['name']?.toString() ?? 'Unknown';
+                final on = _selected.contains(id);
+                final parts = name
+                    .trim()
+                    .split(RegExp(r'\s+'))
+                    .where((p) => p.isNotEmpty)
+                    .toList();
+                final initials = parts.isEmpty
+                    ? '?'
+                    : (parts.first[0] + (parts.length > 1 ? parts.last[0] : ''))
+                          .toUpperCase();
+                return FilterChip(
+                  selected: on,
+                  showCheckmark: false,
+                  avatar: CircleAvatar(
+                    backgroundColor: on
+                        ? AppColors.accent600
+                        : AppColors.surfaceSubtle,
+                    child: on
+                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        : Text(
+                            initials,
+                            style: TextStyle(
+                              fontSize: context.sp(10),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.inkMuted,
+                            ),
+                          ),
+                  ),
+                  label: Text(
+                    '$name  ${m['employeeId'] ?? ''}'.trim(),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onSelected: _busy
+                      ? null
+                      : (v) => setState(() {
+                          _err = null;
+                          v ? _selected.add(id) : _selected.remove(id);
+                        }),
+                );
+              }).toList(),
+            ),
+            // The task joins the open milestone and takes its week.
+            if (_milestone != null) ...[
+              SizedBox(height: context.h(12)),
+              Row(
+                children: [
+                  Icon(
+                    Icons.event_outlined,
+                    size: context.r(16),
+                    color: AppColors.inkMuted,
+                  ),
+                  SizedBox(width: context.w(6)),
+                  Expanded(
+                    child: Text(
+                      'Adds to ${_milestone['title']}'
+                      '${_start != null && _due != null ? ' · ${f.format(_start!)} – ${f.format(_due!)}' : ''}',
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             SizedBox(height: context.h(12)),
+            Text(
+              'Reference (optional)',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
+            ),
+            SizedBox(height: context.h(6)),
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'Assign to',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : _pickReference,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(
+                      _refName ?? 'Attach image or file showing what to do',
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                TextButton(
-                  onPressed: () => setState(() {
-                    final all = widget.members
-                        .map((m) => m['_id'].toString())
-                        .toSet();
-                    if (_selected.length == all.length) {
-                      _selected.clear();
-                    } else {
-                      _selected.addAll(all);
-                    }
-                  }),
-                  child: const Text('Select all'),
-                ),
+                if (_refPath != null)
+                  IconButton(
+                    tooltip: 'Remove reference',
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                            _refPath = null;
+                            _refName = null;
+                          }),
+                    icon: const Icon(Icons.close),
+                  ),
               ],
             ),
-            ...widget.members.map((m) {
-              final id = m['_id'].toString();
-              final name =
-                  (m['userId'] as Map?)?['name']?.toString() ?? 'Unknown';
-              return CheckboxListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                value: _selected.contains(id),
-                title: Text(name),
-                onChanged: (v) => setState(
-                  () => v == true ? _selected.add(id) : _selected.remove(id),
-                ),
-              );
-            }),
             if (_err != null)
               Padding(
                 padding: EdgeInsets.only(top: context.h(6)),
@@ -1215,19 +1439,34 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
                   style: const TextStyle(color: AppColors.danger),
                 ),
               ),
-            SizedBox(height: context.h(12)),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _busy ? null : _submit,
-                child: _busy
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Assign Task'),
-              ),
+            SizedBox(height: context.h(16)),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                SizedBox(width: context.w(12)),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: _busy ? null : _submit,
+                    child: _busy
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            _selected.length > 1
+                                ? 'Assign to ${_selected.length} members'
+                                : 'Assign task',
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1240,10 +1479,12 @@ class _UpdateTaskSheet extends StatefulWidget {
   final Map task;
   final List<String> statuses;
   final TaskService service;
+  final void Function(String path)? onOpenProof;
   const _UpdateTaskSheet({
     required this.task,
     required this.statuses,
     required this.service,
+    this.onOpenProof,
   });
 
   @override
@@ -1260,19 +1501,6 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
   late int _rating = (widget.task['rating'] as num?)?.toInt() ?? 0;
   bool _busy = false;
   String? _err;
-  String? _filePath;
-  String? _fileName;
-
-  Future<void> _pickFile() async {
-    final r = await FilePicker.platform.pickFiles();
-    final f = r?.files.single;
-    if (f?.path != null) {
-      setState(() {
-        _filePath = f!.path;
-        _fileName = f.name;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -1291,7 +1519,6 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
         _status,
         remark: _remark.text.trim(),
         rating: _rating,
-        filePath: _filePath,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -1330,6 +1557,17 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
             widget.task['title']?.toString() ?? '',
             style: TextStyle(color: AppColors.inkMuted),
           ),
+          if ((widget.task['workProof'] ?? '').toString().isNotEmpty &&
+              widget.onOpenProof != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () =>
+                    widget.onOpenProof!(widget.task['workProof'].toString()),
+                icon: const Icon(Icons.visibility_outlined, size: 18),
+                label: const Text("View employee's work proof"),
+              ),
+            ),
           SizedBox(height: context.h(12)),
           DropdownButtonFormField<String>(
             initialValue: _status,
@@ -1354,15 +1592,6 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
             controller: _remark,
             maxLines: 3,
             decoration: const InputDecoration(labelText: 'Remark'),
-          ),
-          SizedBox(height: context.h(10)),
-          OutlinedButton.icon(
-            onPressed: _pickFile,
-            icon: const Icon(Icons.attach_file),
-            label: Text(
-              _fileName ?? 'Attach file (work proof)',
-              overflow: TextOverflow.ellipsis,
-            ),
           ),
           if (_err != null)
             Padding(
@@ -1532,7 +1761,12 @@ class _SubmissionCard extends StatelessWidget {
 class _EditTaskSheet extends StatefulWidget {
   final Map task;
   final TaskService service;
-  const _EditTaskSheet({required this.task, required this.service});
+  final List<Map<String, dynamic>> milestones;
+  const _EditTaskSheet({
+    required this.task,
+    required this.service,
+    this.milestones = const [],
+  });
 
   @override
   State<_EditTaskSheet> createState() => _EditTaskSheetState();
@@ -1551,6 +1785,7 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
   late DateTime? _due = DateTime.tryParse(
     widget.task['deadline']?.toString() ?? '',
   )?.toLocal();
+  late String _milestoneId = widget.task['milestoneId']?.toString() ?? '';
   bool _busy = false;
   String? _err;
 
@@ -1592,6 +1827,7 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
         description: _desc.text.trim(),
         startDate: _start == null ? null : f.format(_start!),
         deadline: _due == null ? null : f.format(_due!),
+        milestoneId: widget.milestones.isEmpty ? null : _milestoneId,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -1640,26 +1876,58 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
               maxLines: 3,
               decoration: const InputDecoration(labelText: 'Description'),
             ),
-            SizedBox(height: context.h(10)),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : () => _pick(true),
-                    child: Text(
-                      _start == null ? 'Start date' : f.format(_start!),
+            if (widget.milestones.isNotEmpty) ...[
+              SizedBox(height: context.h(10)),
+              DropdownButtonFormField<String>(
+                initialValue: _milestoneId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Milestone'),
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('No milestone'),
+                  ),
+                  for (final m in widget.milestones.where(
+                    (m) =>
+                        m['state'] != 'closed' ||
+                        m['_id'].toString() == _milestoneId,
+                  ))
+                    DropdownMenuItem(
+                      value: m['_id'].toString(),
+                      child: Text(
+                        '${m['title']}${m['state'] == 'closed' ? ' (closed)' : ''}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (v) => setState(() => _milestoneId = v ?? ''),
+              ),
+            ],
+            // Tasks in a milestone use its week, so dates only apply outside one.
+            if (_milestoneId.isEmpty) ...[
+              SizedBox(height: context.h(10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _busy ? null : () => _pick(true),
+                      child: Text(
+                        _start == null ? 'Start date' : f.format(_start!),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: context.w(10)),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : () => _pick(false),
-                    child: Text(_due == null ? 'Due date' : f.format(_due!)),
+                  SizedBox(width: context.w(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _busy ? null : () => _pick(false),
+                      child: Text(_due == null ? 'Due date' : f.format(_due!)),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
             if (_err != null)
               Padding(
                 padding: EdgeInsets.only(top: context.h(8)),

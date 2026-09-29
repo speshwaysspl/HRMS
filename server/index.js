@@ -27,6 +27,8 @@ import { initializeHolidayReminderScheduler } from "./services/holidayScheduler.
 import { initializeDocumentExpiryScheduler } from "./services/documentExpiryScheduler.js";
 import { initializeCheckoutReminderScheduler } from "./services/checkoutReminderScheduler.js";
 import cron from "node-cron";
+import User from "./models/User.js";
+import { publishDueAnnouncements } from "./controllers/announcementController.js";
 import Leave from "./models/Leave.js";
 import Feedback from "./models/Feedback.js";
 import connectToDatabase from "./db/db.js";
@@ -37,6 +39,7 @@ import feedbackRouter from "./routes/feedback.js";
 import eventRouter from "./routes/eventRoutes.js";
 import teamRouter from "./routes/team.js";
 import taskRouter from "./routes/task.js";
+import milestoneRouter from "./routes/milestone.js";
 import documentRouter from "./routes/documentRoutes.js";
 import dailyQuoteRouter from "./routes/dailyQuoteRoutes.js";
 import recruitmentRouter from "./routes/recruitment.js";
@@ -91,11 +94,17 @@ app.use((req, res, next) => { req.io = io; next(); });
 // Handle client connections and room joining
 io.on('connection', (socket) => {
   console.log('🔗 Socket client connected');
-  socket.on('join', (userId) => {
+  socket.on('join', async (userId) => {
     if (userId) {
       const roomName = `user_${userId}`;
       console.log(`🏠 Socket joining room: ${roomName}`);
       socket.join(roomName);
+      // Admins also get every team's live updates. Role is looked up server-side.
+      try {
+        const u = await User.findById(userId).select('role');
+        const roles = Array.isArray(u?.role) ? u.role : [u?.role];
+        if (roles.includes('admin')) socket.join('role_admin');
+      } catch { /* invalid id: user room only */ }
     }
   });
 
@@ -153,6 +162,7 @@ app.use("/api/feedback", feedbackRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/team", teamRouter);
 app.use("/api/task", taskRouter);
+app.use("/api/milestone", milestoneRouter);
 app.use("/api/document", documentRouter);
 app.use("/api/daily-quote", dailyQuoteRouter);
 app.use("/api/recruitment", recruitmentRouter);
@@ -171,6 +181,14 @@ httpServer.listen(PORT, () => {
   initializeDocumentExpiryScheduler(io);
   initializeCheckoutReminderScheduler(io);
   initializeWeeklyReportScheduler();
+  // Release scheduled announcements every minute.
+  cron.schedule("* * * * *", async () => {
+    try {
+      await publishDueAnnouncements(io);
+    } catch (error) {
+      console.error("Error publishing scheduled announcements:", error);
+    }
+  });
   cron.schedule("59 23 * * *", async () => {
     try {
       const now = new Date();

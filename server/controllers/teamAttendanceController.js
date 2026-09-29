@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import Team from "../models/Team.js";
 import TeamAttendance from "../models/TeamAttendance.js";
 import Event from "../models/Event.js";
+import { emitTeamUpdate } from "../utils/realtime.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -26,6 +27,9 @@ const loadTeamForLead = async (req, res) => {
   }
   return team;
 };
+
+// Today's calendar date in IST (YYYY-MM-DD).
+const todayIST = () => new Date(Date.now() + IST_MS).toISOString().slice(0, 10);
 
 const memberIds = (team) =>
   team.members.filter((m) => m.employeeId).map((m) => m.employeeId._id.toString());
@@ -54,6 +58,8 @@ export const saveTeamAttendance = async (req, res) => {
   try {
     const { date, present } = req.body;
     if (!DATE_RE.test(date || "")) return res.status(400).json({ success: false, error: "Invalid date" });
+    if (date !== todayIST())
+      return res.status(400).json({ success: false, error: "Attendance can only be marked for today" });
     if (!Array.isArray(present)) return res.status(400).json({ success: false, error: "present must be an array" });
     const team = await loadTeamForLead(req, res);
     if (!team) return;
@@ -69,6 +75,7 @@ export const saveTeamAttendance = async (req, res) => {
       },
       { upsert: true, new: true }
     );
+    emitTeamUpdate(req.io, team, "attendance");
     res.json({ success: true, present: record.present.map(String), absent: record.absent.map(String) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -196,13 +203,16 @@ export const exportTeamAttendance = async (req, res) => {
 };
 
 // GET /api/team/attendance/export?month=YYYY-MM  -> .xlsx for every team:
-// admin gets all teams, a team lead gets the teams they lead.
+// admin gets all teams (or selected leads' teams via ?leadId=), a team lead gets the teams they lead.
 export const exportAllTeamsAttendance = async (req, res) => {
   try {
     const { month } = req.query;
     if (!MONTH_RE.test(month || "")) return res.status(400).json({ success: false, error: "Invalid month" });
     const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
-    const filter = roles.includes("admin") ? {} : { leadId: req.user._id };
+    const leadId = typeof req.query.leadId === "string" ? req.query.leadId : "";
+    // ?leadId=a,b,c selects the teams of one or more leads.
+    const leadIds = leadId.split(",").filter(Boolean);
+    const filter = roles.includes("admin") ? (leadIds.length ? { leadId: { $in: leadIds } } : {}) : { leadId: req.user._id };
     const teams = await Team.find(filter)
       .sort({ name: 1 })
       .populate({
@@ -212,7 +222,8 @@ export const exportAllTeamsAttendance = async (req, res) => {
       });
     if (teams.length === 0) return res.status(404).json({ success: false, error: "No teams found" });
     const wb = await buildWorkbook(teams, month);
-    await sendWorkbook(res, wb, `all_teams_attendance_${month}.xlsx`);
+    const prefix = roles.includes("admin") && leadIds.length ? "selected_leads" : "all_teams";
+    await sendWorkbook(res, wb, `${prefix}_attendance_${month}.xlsx`);
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

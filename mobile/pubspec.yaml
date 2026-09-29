@@ -1,7 +1,7 @@
 name: speshway
 description: "Speshway HRMS — mobile companion to the Speshway HR platform."
 publish_to: "none"
-version: 1.0.8+11
+version: 1.0.10+13
 
 environment:
   sdk: ^3.11.4
@@ -36,6 +36,7 @@ dependencies:
   location: ^10.0.2
   in_app_update: ^5.0.0
   share_plus: ^12.0.2
+  socket_io_client: ^3.1.6
 
 dev_dependencies:
   flutter_test:

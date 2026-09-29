@@ -1,3 +1,4 @@
+import '../../services/app_events.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
@@ -7,20 +8,80 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/state_views.dart';
 
+/// Month + year picker (no day). Returns the first day of the chosen month.
+Future<DateTime?> showMonthPicker(BuildContext context, {DateTime? initial}) {
+  final now = DateTime.now();
+  var year = (initial ?? now).year;
+  final selected = initial ?? now;
+  return showDialog<DateTime>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setD) => AlertDialog(
+        title: Row(
+          children: [
+            const Expanded(child: Text('Select month')),
+            IconButton(
+              tooltip: 'Previous year',
+              onPressed: year > 2020 ? () => setD(() => year--) : null,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Text('$year'),
+            IconButton(
+              tooltip: 'Next year',
+              onPressed: year < now.year ? () => setD(() => year++) : null,
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 300,
+          child: GridView.count(
+            shrinkWrap: true,
+            crossAxisCount: 3,
+            childAspectRatio: 2,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            children: [
+              for (var m = 1; m <= 12; m++)
+                Builder(
+                  builder: (_) {
+                    final future = year == now.year && m > now.month;
+                    final isSel = year == selected.year && m == selected.month;
+                    final label = Text(
+                      DateFormat.MMM().format(DateTime(year, m)),
+                    );
+                    final onTap = future
+                        ? null
+                        : () => Navigator.pop(ctx, DateTime(year, m));
+                    return isSel
+                        ? FilledButton(onPressed: onTap, child: label)
+                        : OutlinedButton(onPressed: onTap, child: label);
+                  },
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Asks for a month and opens the all-teams attendance Excel.
 Future<void> downloadAllTeamsAttendance(BuildContext context) async {
-  final picked = await showDatePicker(
-    context: context,
-    initialDate: DateTime.now(),
-    firstDate: DateTime(2020),
-    lastDate: DateTime.now(),
-    helpText: 'Pick any day in the month',
-  );
+  final picked = await showMonthPicker(context);
   if (picked == null || !context.mounted) return;
   final messenger = ScaffoldMessenger.of(context);
   messenger.showSnackBar(const SnackBar(content: Text('Preparing Excel...')));
   try {
-    final file = await TeamService().exportAllTeamsAttendance(DateFormat('yyyy-MM').format(picked));
+    final file = await TeamService().exportAllTeamsAttendance(
+      DateFormat('yyyy-MM').format(picked),
+    );
     final r = await OpenFilex.open(file.path);
     if (r.type != ResultType.done) {
       messenger.showSnackBar(SnackBar(content: Text('Saved to ${file.path}')));
@@ -68,7 +129,21 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   @override
   void initState() {
     super.initState();
+    AppEvents.teamChanged.addListener(_onTeamChanged);
     _load();
+  }
+
+  /// Server push: someone changed a team this screen shows.
+  void _onTeamChanged() {
+    final e = AppEvents.teamChanged.value;
+    if (e == null || !mounted) return;
+    if (e['teamId'] == widget.teamId && e['kind'] == 'attendance') _load();
+  }
+
+  @override
+  void dispose() {
+    AppEvents.teamChanged.removeListener(_onTeamChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -77,7 +152,10 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
       _error = null;
     });
     try {
-      final r = await _service.getTeamAttendance(widget.teamId, _dayFmt.format(_date));
+      final r = await _service.getTeamAttendance(
+        widget.teamId,
+        _dayFmt.format(_date),
+      );
       if (!mounted) return;
       setState(() {
         _present = r.present;
@@ -113,7 +191,11 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _service.saveTeamAttendance(widget.teamId, _dayFmt.format(_date), _present);
+      await _service.saveTeamAttendance(
+        widget.teamId,
+        _dayFmt.format(_date),
+        _present,
+      );
       if (!mounted) return;
       setState(() => _marked = true);
       _snack('Attendance saved');
@@ -125,13 +207,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   }
 
   Future<void> _export() async {
-    final month = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      helpText: 'Pick any day in the month',
-    );
+    final month = await showMonthPicker(context, initial: _date);
     if (month == null) return;
     setState(() => _exporting = true);
     try {
@@ -155,13 +231,20 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   Widget build(BuildContext context) {
     super.build(context);
     final members = widget.members;
+    // Attendance can only be changed for today; past dates are view-only.
+    final editable = _dayFmt.format(_date) == _dayFmt.format(DateTime.now());
     final presentCount = members.where((m) => _present.contains(_id(m))).length;
     final allSelected = members.isNotEmpty && presentCount == members.length;
 
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(context.w(16), context.h(12), context.w(16), context.h(4)),
+          padding: EdgeInsets.fromLTRB(
+            context.w(16),
+            context.h(12),
+            context.w(16),
+            context.h(4),
+          ),
           child: Row(
             children: [
               Expanded(
@@ -176,7 +259,11 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                 child: OutlinedButton.icon(
                   onPressed: _exporting ? null : _export,
                   icon: _exporting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.table_view_outlined),
                   label: const Text('Excel'),
                 ),
@@ -185,23 +272,39 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: context.w(16), vertical: context.h(6)),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(16),
+            vertical: context.h(6),
+          ),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text.rich(
-              TextSpan(children: [
-                TextSpan(text: _marked ? 'Marked · ' : 'Not marked yet · '),
-                TextSpan(
-                  text: '$presentCount present',
-                  style: const TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w600),
-                ),
-                const TextSpan(text: ' · '),
-                TextSpan(
-                  text: '${members.length - presentCount} absent',
-                  style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
-                ),
-              ]),
-              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
+              TextSpan(
+                children: [
+                  TextSpan(text: _marked ? 'Marked · ' : 'Not marked yet · '),
+                  TextSpan(
+                    text: '$presentCount present',
+                    style: const TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' · '),
+                  TextSpan(
+                    text: '${members.length - presentCount} absent',
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (!editable)
+                    const TextSpan(text: ' · View only (today only)'),
+                ],
+              ),
+              style: TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: context.sp(13),
+              ),
             ),
           ),
         ),
@@ -211,19 +314,27 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
               : _error != null
               ? buildErrorState(_error!, _load)
               : members.isEmpty
-              ? const EmptyStateView(icon: Icons.group_outlined, title: 'No members in this team')
+              ? const EmptyStateView(
+                  icon: Icons.group_outlined,
+                  title: 'No members in this team',
+                )
               : ListView.builder(
                   itemCount: members.length + 1,
                   itemBuilder: (_, i) {
                     if (i == 0) {
                       return CheckboxListTile(
                         value: allSelected,
-                        onChanged: _saving
+                        onChanged: _saving || !editable
                             ? null
                             : (_) => setState(() {
-                                _present = allSelected ? {} : members.map(_id).toSet();
+                                _present = allSelected
+                                    ? {}
+                                    : members.map(_id).toSet();
                               }),
-                        title: const Text('Mark all present', style: TextStyle(fontWeight: FontWeight.w600)),
+                        title: const Text(
+                          'Mark all present',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         controlAffinity: ListTileControlAffinity.leading,
                       );
                     }
@@ -232,19 +343,25 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                     final isPresent = _present.contains(id);
                     return CheckboxListTile(
                       value: isPresent,
-                      onChanged: _saving
+                      onChanged: _saving || !editable
                           ? null
                           : (v) => setState(() {
-                              v == true ? _present.add(id) : _present.remove(id);
+                              v == true
+                                  ? _present.add(id)
+                                  : _present.remove(id);
                             }),
                       controlAffinity: ListTileControlAffinity.leading,
-                      title: Text((m['userId'] as Map?)?['name']?.toString() ?? 'Unknown'),
+                      title: Text(
+                        (m['userId'] as Map?)?['name']?.toString() ?? 'Unknown',
+                      ),
                       subtitle: Text(m['employeeId']?.toString() ?? ''),
                       secondary: Text(
                         isPresent ? 'Present' : 'Absent',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: isPresent ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          color: isPresent
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
                         ),
                       ),
                     );
@@ -258,9 +375,20 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
             child: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _saving || _loading || _error != null || members.isEmpty ? null : _save,
+                onPressed:
+                    !editable ||
+                        _saving ||
+                        _loading ||
+                        _error != null ||
+                        members.isEmpty
+                    ? null
+                    : _save,
                 icon: _saving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.save_outlined),
                 label: const Text('Save Attendance'),
               ),

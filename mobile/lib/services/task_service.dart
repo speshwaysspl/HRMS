@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 
@@ -18,17 +19,22 @@ class TaskService {
     String description = '',
     String? startDate,
     String? deadline,
+    String? milestoneId,
+    String? referencePath, // optional image/file showing what to do
   }) async {
     await _dio.post(
       '/api/task/assign',
-      data: {
+      data: FormData.fromMap({
         'teamId': teamId,
         'title': title,
         'description': description,
-        'assignedTo': assignedTo,
+        'assignedTo': jsonEncode(assignedTo),
         'startDate': ?startDate,
         'deadline': ?deadline,
-      },
+        'milestoneId': ?milestoneId,
+        if (referencePath != null)
+          'file': await MultipartFile.fromFile(referencePath),
+      }),
     );
   }
 
@@ -39,9 +45,11 @@ class TaskService {
     String? remark,
     int? rating,
     String? filePath,
+    bool removeWorkProof = false,
   }) async {
     final form = FormData.fromMap({
       'status': status,
+      if (removeWorkProof && filePath == null) 'removeWorkProof': 'true',
       'comments': ?comments,
       'remark': ?remark,
       'rating': ?rating,
@@ -57,6 +65,7 @@ class TaskService {
     required String description,
     String? startDate,
     String? deadline,
+    String? milestoneId, // '' clears it; null leaves it unchanged
   }) async {
     await _dio.put(
       '/api/task/$taskId/details',
@@ -65,6 +74,7 @@ class TaskService {
         'description': description,
         'startDate': startDate ?? '',
         'deadline': deadline ?? '',
+        'milestoneId': ?milestoneId,
       },
     );
   }

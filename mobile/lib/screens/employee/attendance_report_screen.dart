@@ -54,7 +54,11 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     try {
       final logs = await _service.getMonthly(_monthKey);
       if (!mounted) return;
-      logs.sort((a, b) => (b['date'] ?? '').toString().compareTo((a['date'] ?? '').toString()));
+      logs.sort(
+        (a, b) => (b['date'] ?? '').toString().compareTo(
+          (a['date'] ?? '').toString(),
+        ),
+      );
       AppCaches.of(context).attendanceMonthly.set(logs);
       setState(() {
         _monthlyLogs = logs;
@@ -92,13 +96,17 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
 
   // Calculate working hours in "Xh Ym"
   String _calcDuration(String? inTime, String? outTime) {
-    if (inTime == null || outTime == null || inTime.isEmpty || outTime.isEmpty) {
+    if (inTime == null ||
+        outTime == null ||
+        inTime.isEmpty ||
+        outTime.isEmpty) {
       return '--';
     }
     try {
       final inParts = inTime.split(':').map(int.parse).toList();
       final outParts = outTime.split(':').map(int.parse).toList();
-      int totalMinutes = (outParts[0] * 60 + outParts[1]) - (inParts[0] * 60 + inParts[1]);
+      int totalMinutes =
+          (outParts[0] * 60 + outParts[1]) - (inParts[0] * 60 + inParts[1]);
       if (totalMinutes < 0) totalMinutes += 24 * 60;
       final h = totalMinutes ~/ 60;
       final m = totalMinutes % 60;
@@ -119,7 +127,9 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     // marks every unrecorded past day "Absent").
     bool offDay(Map<String, dynamic> l) {
       final d = DateTime.tryParse((l['date'] ?? '').toString());
-      final punched = (l['inTime'] ?? '').toString().isNotEmpty && l['inTime'] != 'Not Marked';
+      final punched =
+          (l['inTime'] ?? '').toString().isNotEmpty &&
+          l['inTime'] != 'Not Marked';
       return d != null && d.weekday >= DateTime.saturday && !punched;
     }
 
@@ -139,16 +149,19 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
       return m.contains('wfh') || m.contains('home') || s.contains('home');
     }).length;
 
-    final canGoNext = !DateTime(_currentMonth.year, _currentMonth.month + 1, 1)
-        .isAfter(DateTime(DateTime.now().year, DateTime.now().month, 1));
+    final canGoNext = !DateTime(
+      _currentMonth.year,
+      _currentMonth.month + 1,
+      1,
+    ).isAfter(DateTime(DateTime.now().year, DateTime.now().month, 1));
 
-    final cardW = (context.screenW - context.w(32) - context.w(10)) / context.gridColumns();
+    final cardW =
+        (context.screenW - context.w(32) - context.w(10)) /
+        context.gridColumns();
     final cardH = context.r(44) + context.h(40);
 
     return Scaffold(
-      appBar: HrmsAppBar(
-        title: const Text('Attendance Report'),
-      ),
+      appBar: HrmsAppBar(title: const Text('Attendance Report')),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -156,7 +169,10 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
           children: [
             // Month Selector Bar
             Container(
-              padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(8)),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(12),
+                vertical: context.h(8),
+              ),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(AppRadius.card),
@@ -172,7 +188,11 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                   ),
                   Row(
                     children: [
-                      Icon(Icons.calendar_month, color: AppColors.brand600, size: context.r(20)),
+                      Icon(
+                        Icons.calendar_month,
+                        color: AppColors.brand600,
+                        size: context.r(20),
+                      ),
                       SizedBox(width: context.w(8)),
                       Text(
                         DateFormat('MMMM yyyy').format(_currentMonth),
@@ -185,7 +205,10 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                     ],
                   ),
                   IconButton(
-                    icon: Icon(Icons.chevron_right, color: canGoNext ? AppColors.ink : AppColors.inkFaint),
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: canGoNext ? AppColors.ink : AppColors.inkFaint,
+                    ),
                     onPressed: canGoNext ? _nextMonth : null,
                     tooltip: 'Next Month',
                   ),
@@ -261,11 +284,18 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                 children: [
                   Text(
                     'Daily Attendance Logs',
-                    style: TextStyle(fontSize: context.sp(15), fontWeight: FontWeight.w700, color: AppColors.ink),
+                    style: TextStyle(
+                      fontSize: context.sp(15),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
                   ),
                   Text(
                     '${_monthlyLogs.length} Records',
-                    style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted),
+                    style: TextStyle(
+                      fontSize: context.sp(12),
+                      color: AppColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -274,7 +304,11 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               if (_monthlyLogs.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: EmptyStateView(icon: Icons.event_note, title: 'No records for this month', subtitle: 'Attendance logs will appear here once marked.'),
+                  child: EmptyStateView(
+                    icon: Icons.event_note,
+                    title: 'No records for this month',
+                    subtitle: 'Attendance logs will appear here once marked.',
+                  ),
                 )
               else
                 ..._monthlyLogs.map((log) => _buildDayTile(log)),
@@ -300,7 +334,10 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     final outTime = log['outTime']?.toString() ?? '--:--';
     final status = log['status']?.toString() ?? 'Not Marked';
     final workMode = (log['workMode'] ?? 'office').toString();
-    final duration = _calcDuration(log['inTime']?.toString(), log['outTime']?.toString());
+    final duration = _calcDuration(
+      log['inTime']?.toString(),
+      log['outTime']?.toString(),
+    );
     final breaks = (log['breaks'] as List?)?.length ?? 0;
 
     return SimpleCard(
@@ -312,7 +349,11 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               Expanded(
                 child: Text(
                   formattedDate,
-                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: context.sp(14)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                    fontSize: context.sp(14),
+                  ),
                 ),
               ),
               StatusPill(label: status),
@@ -323,13 +364,31 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _logStat(Icons.login_rounded, AppColors.accent600, AppColors.accent50, 'In Time', inTime),
+                child: _logStat(
+                  Icons.login_rounded,
+                  AppColors.accent600,
+                  AppColors.accent50,
+                  'In Time',
+                  inTime,
+                ),
               ),
               Expanded(
-                child: _logStat(Icons.logout_rounded, AppColors.danger, AppColors.dangerBg, 'Out Time', outTime),
+                child: _logStat(
+                  Icons.logout_rounded,
+                  AppColors.danger,
+                  AppColors.dangerBg,
+                  'Out Time',
+                  outTime,
+                ),
               ),
               Expanded(
-                child: _logStat(Icons.access_time_filled_rounded, Color(0xFF2563EB), AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))), 'Worked', duration),
+                child: _logStat(
+                  Icons.access_time_filled_rounded,
+                  Color(0xFF2563EB),
+                  AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
+                  'Worked',
+                  duration,
+                ),
               ),
             ],
           ),
@@ -337,7 +396,8 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
           Row(
             children: [
               Icon(
-                workMode.toLowerCase().contains('wfh') || workMode.toLowerCase().contains('home')
+                workMode.toLowerCase().contains('wfh') ||
+                        workMode.toLowerCase().contains('home')
                     ? Icons.home_work_outlined
                     : Icons.business_outlined,
                 size: context.r(14),
@@ -346,13 +406,27 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               SizedBox(width: context.w(4)),
               Text(
                 workMode.toUpperCase(),
-                style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: context.sp(11),
+                  color: AppColors.inkMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (breaks > 0) ...[
                 SizedBox(width: context.w(12)),
-                Icon(Icons.coffee_outlined, size: context.r(14), color: AppColors.warning),
+                Icon(
+                  Icons.coffee_outlined,
+                  size: context.r(14),
+                  color: AppColors.warning,
+                ),
                 SizedBox(width: context.w(4)),
-                Text('$breaks ${breaks == 1 ? 'Break' : 'Breaks'}', style: TextStyle(fontSize: context.sp(11), color: AppColors.warning)),
+                Text(
+                  '$breaks ${breaks == 1 ? 'Break' : 'Breaks'}',
+                  style: TextStyle(
+                    fontSize: context.sp(11),
+                    color: AppColors.warning,
+                  ),
+                ),
               ],
             ],
           ),
@@ -361,21 +435,37 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     );
   }
 
-  Widget _logStat(IconData icon, Color color, Color bg, String label, String value) {
+  Widget _logStat(
+    IconData icon,
+    Color color,
+    Color bg,
+    String label,
+    String value,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: context.r(26),
           height: context.r(26),
-          decoration: BoxDecoration(color: AppColors.tint(bg), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: AppColors.tint(bg),
+            shape: BoxShape.circle,
+          ),
           child: Icon(icon, size: context.r(14), color: color),
         ),
         SizedBox(height: context.h(6)),
-        Text(label, style: TextStyle(fontSize: context.sp(11), color: AppColors.inkFaint)),
+        Text(
+          label,
+          style: TextStyle(fontSize: context.sp(11), color: AppColors.inkFaint),
+        ),
         Text(
           value,
-          style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w600, color: AppColors.ink),
+          style: TextStyle(
+            fontSize: context.sp(13),
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
       ],

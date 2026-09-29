@@ -307,7 +307,11 @@ class _LoginScreenState extends State<LoginScreen> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ForgotPasswordScreen(initialEmail: _emailController.text.trim())),
+                MaterialPageRoute(
+                  builder: (_) => ForgotPasswordScreen(
+                    initialEmail: _emailController.text.trim(),
+                  ),
+                ),
               ),
               child: const Text('Forgot password?'),
             ),

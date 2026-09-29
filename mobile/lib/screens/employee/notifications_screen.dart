@@ -41,8 +41,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _load();
   }
 
-  void _syncBadge() => AppEvents.unreadNotifications.value =
-      _items.where((n) => n['isRead'] != true).length;
+  void _syncBadge() => AppEvents.unreadNotifications.value = _items
+      .where((n) => n['isRead'] != true)
+      .length;
 
   @override
   void setState(VoidCallback fn) {
@@ -60,7 +61,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final data = await _service.getNotifications(userId, limit: 50);
       if (!mounted) return;
       setState(() {
-        _items = List<Map<String, dynamic>>.from((data['notifications'] as List?) ?? []);
+        _items = List<Map<String, dynamic>>.from(
+          (data['notifications'] as List?) ?? [],
+        );
         _loading = false;
       });
     } catch (e) {
@@ -88,7 +91,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete all notifications?'),
-        content: const Text('Are you sure you want to clear all notifications? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to clear all notifications? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -120,13 +125,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         if (!mounted) return;
         setState(() => _items = backup);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to clear notifications: ${extractErrorMessage(e)}')),
+          SnackBar(
+            content: Text(
+              'Failed to clear notifications: ${extractErrorMessage(e)}',
+            ),
+          ),
         );
       }
     }
   }
 
-  Future<void> _deleteSingleNotification(Map<String, dynamic> n, int index) async {
+  Future<void> _deleteSingleNotification(
+    Map<String, dynamic> n,
+    int index,
+  ) async {
     setState(() {
       _items.remove(n);
     });
@@ -175,20 +187,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final attendanceTarget = type == 'checkout_reminder'
         ? const AttendanceScreen()
         : type == 'regularization_request'
-            ? const ApprovalsScreen()
-            : type.startsWith('regularization_')
-                ? const AttendanceReportScreen()
-                : null;
+        ? const ApprovalsScreen()
+        : type.startsWith('regularization_')
+        ? const AttendanceReportScreen()
+        : null;
     if (attendanceTarget != null) {
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => attendanceTarget));
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => attendanceTarget));
       return;
     }
 
     // 1. Leave notifications
-    if (type.contains('leave') || title.contains('leave') || message.contains('leave')) {
+    if (type.contains('leave') ||
+        title.contains('leave') ||
+        message.contains('leave')) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => isAdmin ? const AdminLeavesScreen() : const LeavesScreen(),
+          builder: (_) =>
+              isAdmin ? const AdminLeavesScreen() : const LeavesScreen(),
         ),
       );
       return;
@@ -205,34 +222,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title.contains('festival') ||
         title.contains('birthday') ||
         message.contains('announcement')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const AnnouncementsScreen(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const AnnouncementsScreen()));
       return;
     }
 
     // 3. Tasks
-    if (type.contains('task') || title.contains('task') || message.contains('task')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const TasksScreen()),
-      );
+    if (type.contains('task') ||
+        title.contains('task') ||
+        message.contains('task')) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const TasksScreen()));
       return;
     }
 
     // 4. Feedback
-    if (type.contains('feedback') || title.contains('feedback') || message.contains('feedback')) {
+    if (type.contains('feedback') ||
+        title.contains('feedback') ||
+        message.contains('feedback')) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => isAdmin ? const AdminFeedbackScreen() : const FeedbackScreen(),
+          builder: (_) =>
+              isAdmin ? const AdminFeedbackScreen() : const FeedbackScreen(),
         ),
       );
       return;
     }
 
     // 5. Payslips / Salary
-    if (type.contains('payslip') || title.contains('payslip') || title.contains('salary')) {
+    if (type.contains('payslip') ||
+        title.contains('payslip') ||
+        title.contains('salary')) {
       final code = user?.id ?? '';
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => PayslipsScreen(employeeCode: code)),
@@ -309,10 +331,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         flexibleSpace: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'assets/appbar_bg.png',
-              fit: BoxFit.cover,
-            ),
+            Image.asset('assets/appbar_bg.png', fit: BoxFit.cover),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -332,7 +351,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (_items.isNotEmpty) ...[
             TextButton(
               onPressed: _markAllRead,
-              child: const Text('Mark read', style: TextStyle(color: Colors.white70)),
+              child: const Text(
+                'Mark read',
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.white),
@@ -354,88 +376,104 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             )
           : _error != null
-              ? buildErrorState(_lastError ?? _error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.notifications_none, title: 'No notifications yet', subtitle: 'You are all caught up.'),
-                        ])
-                      : ListView.builder(
-                          padding: EdgeInsets.all(context.w(16)),
-                          itemCount: _items.length,
-                          itemBuilder: (context, index) {
-                            final n = _items[index];
-                            final isRead = n['isRead'] == true;
-                            final id = n['_id']?.toString() ?? index.toString();
-                            String date = '';
-                            try {
-                              date = DateFormat('d MMM, h:mm a').format(DateTime.parse(n['createdAt'].toString()));
-                            } catch (_) {}
+          ? buildErrorState(_lastError ?? _error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.notifications_none,
+                          title: 'No notifications yet',
+                          subtitle: 'You are all caught up.',
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(context.w(16)),
+                      itemCount: _items.length,
+                      itemBuilder: (context, index) {
+                        final n = _items[index];
+                        final isRead = n['isRead'] == true;
+                        final id = n['_id']?.toString() ?? index.toString();
+                        String date = '';
+                        try {
+                          date = DateFormat(
+                            'd MMM, h:mm a',
+                          ).format(DateTime.parse(n['createdAt'].toString()));
+                        } catch (_) {}
 
-                            return Dismissible(
-                              key: Key(id),
-                              direction: DismissDirection.horizontal,
-                              background: _buildSwipeBackground(isLeft: true),
-                              secondaryBackground: _buildSwipeBackground(isLeft: false),
-                              onDismissed: (_) => _deleteSingleNotification(n, index),
-                              child: SimpleCard(
-                                onTap: () => _onTapItem(n),
-                                child: Row(
-                                  children: [
-                                    if (!isRead)
-                                      Container(
-                                        width: context.r(8),
-                                        height: context.r(8),
-                                        margin: EdgeInsets.only(right: context.w(10)),
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.accent500,
-                                          shape: BoxShape.circle,
+                        return Dismissible(
+                          key: Key(id),
+                          direction: DismissDirection.horizontal,
+                          background: _buildSwipeBackground(isLeft: true),
+                          secondaryBackground: _buildSwipeBackground(
+                            isLeft: false,
+                          ),
+                          onDismissed: (_) =>
+                              _deleteSingleNotification(n, index),
+                          child: SimpleCard(
+                            onTap: () => _onTapItem(n),
+                            child: Row(
+                              children: [
+                                if (!isRead)
+                                  Container(
+                                    width: context.r(8),
+                                    height: context.r(8),
+                                    margin: EdgeInsets.only(
+                                      right: context.w(10),
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.accent500,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        n['title']?.toString() ?? '',
+                                        style: TextStyle(
+                                          fontWeight: isRead
+                                              ? FontWeight.w500
+                                              : FontWeight.w700,
+                                          color: AppColors.ink,
                                         ),
                                       ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            n['title']?.toString() ?? '',
-                                            style: TextStyle(
-                                              fontWeight: isRead ? FontWeight.w500 : FontWeight.w700,
-                                              color: AppColors.ink,
-                                            ),
-                                          ),
-                                          SizedBox(height: context.h(3)),
-                                          Text(
-                                            n['message']?.toString() ?? '',
-                                            style: TextStyle(
-                                              color: AppColors.inkMuted,
-                                              fontSize: context.sp(13),
-                                            ),
-                                          ),
-                                          SizedBox(height: context.h(4)),
-                                          Text(
-                                            date,
-                                            style: TextStyle(
-                                              color: AppColors.inkFaint,
-                                              fontSize: context.sp(11),
-                                            ),
-                                          ),
-                                        ],
+                                      SizedBox(height: context.h(3)),
+                                      Text(
+                                        n['message']?.toString() ?? '',
+                                        style: TextStyle(
+                                          color: AppColors.inkMuted,
+                                          fontSize: context.sp(13),
+                                        ),
                                       ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      size: context.r(18),
-                                      color: AppColors.inkFaint,
-                                    ),
-                                  ],
+                                      SizedBox(height: context.h(4)),
+                                      Text(
+                                        date,
+                                        style: TextStyle(
+                                          color: AppColors.inkFaint,
+                                          fontSize: context.sp(11),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: context.r(18),
+                                  color: AppColors.inkFaint,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }

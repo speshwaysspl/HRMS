@@ -13,7 +13,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fade;
   late final Animation<double> _scale;
@@ -21,15 +22,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    final reduceMotion = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    final reduceMotion = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     _controller = AnimationController(
       vsync: this,
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 700),
+      duration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 700),
     );
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scale = Tween<double>(
+      begin: 0.88,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _bootstrap();
   }
 
@@ -60,12 +68,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       await AppLockGate.unlockAfterSplash();
     }
     if (!mounted) return;
-    final destination = auth.status == AuthStatus.authenticated ? const AppShell() : const LoginScreen();
+    final destination = auth.status == AuthStatus.authenticated
+        ? const AppShell()
+        : const LoginScreen();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(opacity: animation, child: destination),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FadeTransition(opacity: animation, child: destination),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            child,
       ),
     );
   }

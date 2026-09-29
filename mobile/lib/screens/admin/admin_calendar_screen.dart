@@ -38,7 +38,11 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
     });
     try {
       final data = await _service.getEvents();
-      data.sort((a, b) => (a['date'] ?? '').toString().compareTo((b['date'] ?? '').toString()));
+      data.sort(
+        (a, b) => (a['date'] ?? '').toString().compareTo(
+          (b['date'] ?? '').toString(),
+        ),
+      );
       if (!mounted) return;
       setState(() {
         _items = data;
@@ -70,10 +74,16 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
         title: const Text('Delete event?'),
         content: Text('“${e['title']}” will be removed from the calendar.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -84,7 +94,9 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
       _load();
     } catch (err) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(err))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(err))));
       }
     }
   }
@@ -112,60 +124,93 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
-              children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+              children: const [
+                SkeletonListTile(),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
             )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 100),
-                          EmptyStateView(icon: Icons.event_busy, title: 'No events scheduled', subtitle: 'Holidays and events you add will show up here.'),
-                        ])
-                      : ListView.builder(
-                          padding: EdgeInsets.all(context.w(16)),
-                          itemCount: _items.length,
-                          itemBuilder: (context, idx) {
-                            final e = _items[idx];
-                            String date = '';
-                            try {
-                              date = DateFormat('EEE, d MMM yyyy').format(DateTime.parse(e['date'].toString()));
-                            } catch (_) {}
-                            final type = e['type']?.toString() ?? 'event';
-                            return SimpleCard(
-                              onTap: () => _edit(e),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: context.r(40),
-                                    height: context.r(40),
-                                    decoration: BoxDecoration(color: AppColors.accent50, borderRadius: BorderRadius.circular(10)),
-                                    child: Icon(_iconFor(type), color: AppColors.accent700, size: context.r(20)),
-                                  ),
-                                  SizedBox(width: context.w(12)),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(e['title']?.toString() ?? '',
-                                            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                        SizedBox(height: context.h(2)),
-                                        Text('$date  ·  ${type[0].toUpperCase()}${type.substring(1)}',
-                                            style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                                    onPressed: () => _delete(e),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+          ? buildErrorState(_error!, _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        EmptyStateView(
+                          icon: Icons.event_busy,
+                          title: 'No events scheduled',
+                          subtitle:
+                              'Holidays and events you add will show up here.',
                         ),
-                ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(context.w(16)),
+                      itemCount: _items.length,
+                      itemBuilder: (context, idx) {
+                        final e = _items[idx];
+                        String date = '';
+                        try {
+                          date = DateFormat(
+                            'EEE, d MMM yyyy',
+                          ).format(DateTime.parse(e['date'].toString()));
+                        } catch (_) {}
+                        final type = e['type']?.toString() ?? 'event';
+                        return SimpleCard(
+                          onTap: () => _edit(e),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: context.r(40),
+                                height: context.r(40),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent50,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  _iconFor(type),
+                                  color: AppColors.accent700,
+                                  size: context.r(20),
+                                ),
+                              ),
+                              SizedBox(width: context.w(12)),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e['title']?.toString() ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                    SizedBox(height: context.h(2)),
+                                    Text(
+                                      '$date  ·  ${type[0].toUpperCase()}${type.substring(1)}',
+                                      style: TextStyle(
+                                        color: AppColors.inkMuted,
+                                        fontSize: context.sp(12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: AppColors.danger,
+                                ),
+                                onPressed: () => _delete(e),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }
@@ -192,8 +237,12 @@ class _EventSheetState extends State<_EventSheet> {
   @override
   void initState() {
     super.initState();
-    _title = TextEditingController(text: widget.existing?['title']?.toString() ?? '');
-    _desc = TextEditingController(text: widget.existing?['description']?.toString() ?? '');
+    _title = TextEditingController(
+      text: widget.existing?['title']?.toString() ?? '',
+    );
+    _desc = TextEditingController(
+      text: widget.existing?['description']?.toString() ?? '',
+    );
     _type = widget.existing?['type']?.toString() ?? 'holiday';
     _date = DateTime.tryParse(widget.existing?['date']?.toString() ?? '');
   }
@@ -219,23 +268,36 @@ class _EventSheetState extends State<_EventSheet> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_date == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pick a date')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pick a date')));
       return;
     }
     setState(() => _saving = true);
     final dateStr = DateFormat('yyyy-MM-dd').format(_date!);
     try {
       if (_isEdit) {
-        await widget.service.update(widget.existing!['_id'].toString(),
-            title: _title.text.trim(), date: dateStr, type: _type, description: _desc.text.trim());
+        await widget.service.update(
+          widget.existing!['_id'].toString(),
+          title: _title.text.trim(),
+          date: dateStr,
+          type: _type,
+          description: _desc.text.trim(),
+        );
       } else {
         await widget.service.add(
-            title: _title.text.trim(), date: dateStr, type: _type, description: _desc.text.trim());
+          title: _title.text.trim(),
+          date: dateStr,
+          type: _type,
+          description: _desc.text.trim(),
+        );
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -245,12 +307,16 @@ class _EventSheetState extends State<_EventSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: EdgeInsets.all(context.w(20)),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
         ),
         child: Form(
           key: _formKey,
@@ -259,20 +325,32 @@ class _EventSheetState extends State<_EventSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(_isEdit ? 'Edit Event' : 'New Event',
-                    style: TextStyle(fontSize: context.sp(17), fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text(
+                  _isEdit ? 'Edit Event' : 'New Event',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(16)),
                 TextFormField(
                   controller: _title,
                   decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(14)),
                 DropdownButtonFormField<String>(
                   initialValue: _type,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: _eventTypes
-                      .map((t) => DropdownMenuItem(value: t, child: Text('${t[0].toUpperCase()}${t.substring(1)}')))
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text('${t[0].toUpperCase()}${t.substring(1)}'),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _type = v ?? _type),
                 ),
@@ -280,19 +358,32 @@ class _EventSheetState extends State<_EventSheet> {
                 OutlinedButton.icon(
                   onPressed: _pickDate,
                   icon: const Icon(Icons.calendar_today_outlined, size: 16),
-                  label: Text(_date == null ? 'Select date' : DateFormat('d MMM, yyyy').format(_date!)),
+                  label: Text(
+                    _date == null
+                        ? 'Select date'
+                        : DateFormat('d MMM, yyyy').format(_date!),
+                  ),
                 ),
                 SizedBox(height: context.h(14)),
                 TextFormField(
                   controller: _desc,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Description (optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                  ),
                 ),
                 SizedBox(height: context.h(18)),
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(_isEdit ? 'Save' : 'Create'),
                 ),
                 SizedBox(height: context.h(8)),

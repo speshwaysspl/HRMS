@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { useSocketEvent } from "../../context/NotificationContext";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
-import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit, FaPen, FaTrash } from "react-icons/fa";
+import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit, FaPen, FaTrash, FaUserPlus, FaTimes, FaCheck } from "react-icons/fa";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import TeamAttendance from "./TeamAttendance";
+import MilestonesPanel from "./MilestonesPanel";
+import { ReferencePicker, ReferenceView } from "../task/TaskReference";
 import StarRating from "../task/StarRating";
 
 const getRandomColor = (name) => {
@@ -30,7 +33,18 @@ const TeamDetail = () => {
   const [memberStats, setMemberStats] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' or 'team'
+  const [activeTab, setActiveTab] = useState("milestones"); // 'tasks' = one milestone's tasks // 'tasks' or 'team'
+  // Live refresh when anyone changes this team's tasks, members or details.
+  useSocketEvent("team:updated", (e) => {
+    if (e?.teamId !== id) return;
+    if (e.kind === "milestones") fetchMilestones();
+    else {
+      fetchTeamDetail();
+      if (e.kind === "tasks") fetchMilestones(); // progress counts
+    }
+  });
+  const [milestones, setMilestones] = useState([]);
+  const [milestoneFilter, setMilestoneFilter] = useState(""); // "" all, "none", or a milestone id
   const [employees, setEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const { user } = useAuth();
@@ -43,12 +57,15 @@ const TeamDetail = () => {
   const [newTaskStatus, setNewTaskStatus] = useState("");
   const [newTaskRemark, setNewTaskRemark] = useState("");
   const [newTaskRating, setNewTaskRating] = useState(0);
-  const [workProofFile, setWorkProofFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Task Modal State
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const [assignError, setAssignError] = useState("");
+  const [refFile, setRefFile] = useState(null); // lead's optional "what to do" attachment
   const [isAssigning, setIsAssigning] = useState(false);
   const [taskData, setTaskData] = useState({
     title: "",
@@ -67,6 +84,7 @@ const TeamDetail = () => {
 
   useEffect(() => {
     fetchTeamDetail();
+    fetchMilestones();
     if (user?.role?.includes("admin")) {
       fetchEmployees();
     }
@@ -76,7 +94,7 @@ const TeamDetail = () => {
     const handleEsc = (e) => {
       if (e.key === "Escape") {
         setShowTaskModal(false);
-        setIsMemberDropdownOpen(false);
+        setAssignError("");
       }
     };
     if (showTaskModal) {
@@ -113,6 +131,7 @@ const TeamDetail = () => {
       description: task.description || "",
       startDate: toDateInput(task.startDate),
       deadline: toDateInput(task.deadline),
+      milestoneId: task.milestoneId || "",
     });
 
   const handleSaveDetails = async (e) => {
@@ -133,6 +152,31 @@ const TeamDetail = () => {
       alert(error.response?.data?.error || "Failed to save task");
     } finally {
       setSavingDetails(false);
+    }
+  };
+
+  const removeMember = async (stat) => {
+    const name = stat.member?.userId?.name || "this member";
+    if (!window.confirm(`Remove ${name} from this team? Their existing tasks are kept.`)) return;
+    try {
+      await axios.delete(`${API_BASE}/api/team/${id}/members/${stat.member._id}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      });
+      fetchTeamDetail();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to remove member");
+    }
+  };
+
+  const fetchMilestones = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/milestone`, {
+        params: { teamId: id },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      });
+      if (res.data.success) setMilestones(res.data.milestones || []);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
     }
   };
 
@@ -242,24 +286,32 @@ const TeamDetail = () => {
     e.preventDefault();
     if (isAssigning) return;
     if (taskData.assignedTo.length === 0) {
-        alert("Please select at least one member");
+        setAssignError("Pick at least one member to assign this task to.");
         return;
     }
     try {
       setIsAssigning(true);
-      const response = await axios.post(
-        `${API_BASE}/api/task/assign`,
-        { ...taskData, teamId: id },
-        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
-      );
+      const form = new FormData();
+      form.append("teamId", id);
+      form.append("title", taskData.title);
+      form.append("description", taskData.description || "");
+      form.append("assignedTo", JSON.stringify(taskData.assignedTo));
+      if (taskData.milestoneId) form.append("milestoneId", taskData.milestoneId);
+      if (taskData.startDate) form.append("startDate", taskData.startDate);
+      if (taskData.deadline) form.append("deadline", taskData.deadline);
+      if (refFile) form.append("file", refFile);
+      const response = await axios.post(`${API_BASE}/api/task/assign`, form, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}`, "Content-Type": "multipart/form-data" },
+      });
       if (response.data.success) {
-        alert("Task assigned successfully");
         setShowTaskModal(false);
+        setAssignError("");
+        setRefFile(null);
         fetchTeamDetail(); // Refresh stats
-        setTaskData({ title: "", description: "", startDate: "", deadline: "", assignedTo: [] });
+        setTaskData({ title: "", description: "", startDate: "", deadline: "", assignedTo: [], milestoneId: "" });
       }
     } catch (error) {
-      alert(error.response?.data?.error || "Failed to assign task");
+      setAssignError(error.response?.data?.error || "Couldn't assign the task. Try again.");
     } finally {
       setIsAssigning(false);
     }
@@ -272,9 +324,6 @@ const TeamDetail = () => {
       formData.append("status", newTaskStatus);
       formData.append("remark", newTaskRemark);
       formData.append("rating", String(newTaskRating));
-      if (workProofFile) {
-        formData.append("file", workProofFile);
-      }
       const response = await axios.put(
         `${API_BASE}/api/task/${editingTask._id}`,
         formData,
@@ -288,7 +337,7 @@ const TeamDetail = () => {
       if (response.data.success) {
         // Update local state immediately
         setTasks(prev => prev.map(t => 
-            t._id === editingTask._id ? { ...t, status: newTaskStatus, remark: newTaskRemark, rating: newTaskRating || undefined, workProof: workProofFile ? response.data.task.workProof : t.workProof } : t
+            t._id === editingTask._id ? { ...t, status: newTaskStatus, remark: newTaskRemark, rating: newTaskRating || undefined } : t
         ));
 
         // Also update member stats (completed/pending counts) locally if needed, 
@@ -297,7 +346,6 @@ const TeamDetail = () => {
         fetchTeamDetail(); 
         
         setEditingTask(null);
-        setWorkProofFile(null);
       }
     } catch (error) {
       alert("Failed to update status");
@@ -335,53 +383,50 @@ const TeamDetail = () => {
     }
   };
 
+  // "<Milestone> (28 Sep - 4 Oct 2026)" for the PDF heading; file name
+  // "<Milestone>_28Sep-04Oct2026_<TeamLead>.pdf".
+  const milestoneRange = (m) => {
+    if (!m?.startDate || !m?.dueDate) return "";
+    const s = new Date(m.startDate), e = new Date(m.dueDate);
+    const day = (d, opts) => d.toLocaleDateString("en-GB", opts);
+    return `${day(s, { day: "numeric", month: "short" })} - ${day(e, { day: "numeric", month: "short", year: "numeric" })}`;
+  };
+  const fileSafe = (v) => String(v || "").trim().replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
   const handleDownloadPDF = () => {
+    const m = milestones.find((x) => String(x._id) === String(milestoneFilter));
+    const heading = m ? m.title.trim() : "Unplanned tasks";
+    const range = milestoneRange(m);
+    const lead = team?.leadId?.name || "N/A";
+
     const doc = new jsPDF({ orientation: 'landscape' });
-    doc.text("Task List", 15, 15);
-    doc.text(`Team Lead: ${team?.leadId?.name || "N/A"}`, doc.internal.pageSize.getWidth() - 15, 15, { align: "right" });
-    
-    const tableColumn = ["Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"];
-    const tableRows = [];
+    doc.text(range ? `${heading} (${range})` : heading, 15, 15);
+    doc.text(`Team Lead: ${lead}`, doc.internal.pageSize.getWidth() - 15, 15, { align: "right" });
 
-    const filteredTasks = tasks.filter(task => {
-        if (!filterFrom && !filterTo) return true;
-        
-        const taskDateVal = filterType === 'startDate' ? task.startDate : task.deadline;
-        if (!taskDateVal) return false;
-
-        const d = new Date(taskDateVal);
-        if (isNaN(d.getTime())) return false;
-        
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const taskDateStr = `${year}-${month}-${day}`;
-        
-        if (filterFrom && taskDateStr < filterFrom) return false;
-        if (filterTo && taskDateStr > filterTo) return false;
-        
-        return true;
-    });
-
-    filteredTasks.forEach(task => {
-        const taskData = [
-            task.assignedTo?.userId?.name || "Unassigned",
-            task.status,
-            task.startDate ? new Date(task.startDate).toLocaleDateString() : '-',
-            task.deadline ? new Date(task.deadline).toLocaleDateString() : '-',
-            task.remark || "-",
-            task.rating ? `${task.rating}/5` : "-"
-        ];
-        tableRows.push(taskData);
-    });
+    // Only this milestone's live tasks
+    const rows = tasks
+      .filter((t) => !t.isDeleted)
+      .filter((t) => (milestoneFilter === "none" ? !t.milestoneId : String(t.milestoneId) === String(milestoneFilter)))
+      .map((t) => [
+        t.title || "-",
+        t.assignedTo?.userId?.name || "Unassigned",
+        t.status,
+        t.startDate ? new Date(t.startDate).toLocaleDateString() : "-",
+        t.deadline ? new Date(t.deadline).toLocaleDateString() : "-",
+        t.remark || "-",
+        t.rating ? `${t.rating}/5` : "-",
+      ]);
 
     autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 20,
+      head: [["Task", "Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"]],
+      body: rows,
+      startY: 20,
     });
 
-    doc.save("task_list.pdf");
+    const rangePart = m?.startDate && m?.dueDate
+      ? `${new Date(m.startDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}-${new Date(m.dueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`.replace(/ /g, "")
+      : "";
+    doc.save(`${[fileSafe(heading), rangePart, fileSafe(lead)].filter(Boolean).join("_")}.pdf`);
   };
 
   // Derive member tasks from main tasks list to avoid duplication in state/backend
@@ -396,58 +441,87 @@ const TeamDetail = () => {
     user?.role?.includes("admin") ||
     String(team.leadId?._id || team.leadId) === String(user?._id || user?.id);
 
+  const liveTasks = tasks.filter(t => !t.isDeleted);
+  const inDateRange = (task) => {
+    if (!filterFrom && !filterTo) return true;
+    const val = filterType === 'startDate' ? task.startDate : task.deadline;
+    const d = val ? new Date(val) : null;
+    if (!d || isNaN(d.getTime())) return false;
+    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return (!filterFrom || ds >= filterFrom) && (!filterTo || ds <= filterTo);
+  };
+  const inMilestone = (task) =>
+    !milestoneFilter ||
+    (milestoneFilter === "none" ? !task.milestoneId : String(task.milestoneId) === milestoneFilter);
+  const visibleTasks = liveTasks.filter((t) => inDateRange(t) && inMilestone(t));
+  const dateFiltered = !!(filterFrom || filterTo);
+  const milestoneById = new Map(milestones.map((m) => [String(m._id), m]));
+  const openMilestones = milestones.filter((m) => m.state === "open");
+  const doneCount = liveTasks.filter(t => t.status === 'Completed').length;
+  const canManageTasks = user?.role?.includes('admin') || user?.role?.includes('team_lead');
+
+  const canManageMilestones = canTakeAttendance; // admin or this team's lead
+  const unplannedCount = liveTasks.filter((t) => !t.milestoneId).length;
+  const currentMilestone = milestoneById.get(milestoneFilter);
+  const openMilestoneTasks = (mid) => { setMilestoneFilter(String(mid)); setActiveTab('tasks'); };
+  const backToMilestones = () => { setActiveTab('milestones'); setMilestoneFilter(''); setFilterFrom(''); setFilterTo(''); };
+  const tabs = [
+    { key: 'milestones', label: 'Milestones', count: openMilestones.length },
+    { key: 'team', label: 'Members', count: memberStats.length },
+    ...(canTakeAttendance ? [{ key: 'attendance', label: 'Attendance' }] : []),
+  ];
+
   return (
     <motion.div
-      className="p-6 bg-surface-muted min-h-screen"
+      className="p-4 sm:p-6 bg-surface-muted min-h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
     >
-      <motion.h2
-        className="text-2xl font-semibold mb-4 text-brand-800"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        {team.name}
-      </motion.h2>
-      <motion.div
-        className="bg-white p-4 rounded-xl shadow-card border border-surface-subtle mb-6"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <p className="text-ink"><strong>Lead:</strong> {team.leadId?.name || "N/A"}</p>
-      </motion.div>
+      {/* Header */}
+      <header className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 mb-5">
+        <h1 className="text-xl sm:text-2xl font-semibold text-brand-800 break-words">{team.name}</h1>
+        {team.description && <p className="mt-1 text-sm text-ink-muted max-w-3xl">{team.description}</p>}
+        <dl className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-10 gap-y-3 text-sm">
+          <div>
+            <dt className="text-ink-muted text-xs">Team lead</dt>
+            <dd className="font-medium text-ink">{team.leadId?.name || "N/A"}</dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted text-xs">Members</dt>
+            <dd className="font-medium text-ink tabular-nums">{memberStats.length}</dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted text-xs">Tasks</dt>
+            <dd className="font-medium text-ink tabular-nums">{liveTasks.length}</dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted text-xs">Completed</dt>
+            <dd className="font-medium text-ink tabular-nums">{doneCount} of {liveTasks.length}</dd>
+          </div>
+        </dl>
+      </header>
 
       {/* Tabs */}
-      <motion.div
-        className="flex border-b border-surface-subtle mb-6"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <button
-          className={`px-6 py-2 font-medium transition-colors duration-300 ${activeTab === 'tasks' ? 'border-b-2 border-accent-600 text-accent-600' : 'text-ink-muted hover:text-ink'}`}
-          onClick={() => setActiveTab('tasks')}
-        >
-          Task List
-        </button>
-        <button
-          className={`px-6 py-2 font-medium transition-colors duration-300 ${activeTab === 'team' ? 'border-b-2 border-accent-600 text-accent-600' : 'text-ink-muted hover:text-ink'}`}
-          onClick={() => setActiveTab('team')}
-        >
-          Team Members
-        </button>
-        {canTakeAttendance && (
-          <button
-            className={`px-6 py-2 font-medium transition-colors duration-300 ${activeTab === 'attendance' ? 'border-b-2 border-accent-600 text-accent-600' : 'text-ink-muted hover:text-ink'}`}
-            onClick={() => setActiveTab('attendance')}
-          >
-            Attendance
-          </button>
-        )}
-      </motion.div>
+      <div role="tablist" aria-label="Team sections" className="flex gap-1 overflow-x-auto border-b border-surface-subtle mb-5">
+        {tabs.map(t => {
+          const active = activeTab === t.key || (t.key === 'milestones' && activeTab === 'tasks');
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => (t.key === 'milestones' ? backToMilestones() : setActiveTab(t.key))}
+              className={`shrink-0 flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-t ${active ? 'border-accent-600 text-accent-700' : 'border-transparent text-ink-muted hover:text-ink'}`}
+            >
+              {t.label}
+              {t.count !== undefined && (
+                <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${active ? 'bg-accent-100 text-accent-800' : 'bg-surface-subtle text-ink-muted'}`}>{t.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'tasks' && (
@@ -457,55 +531,60 @@ const TeamDetail = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white rounded-xl shadow-card border border-surface-subtle p-4"
+                className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5"
             >
-                <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                    <div className="flex gap-2 flex-wrap">
-                        {(user?.role?.includes('admin') || user?.role?.includes('team_lead')) && (
-                            <>
-                                <button
-                                    className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
-                                    onClick={() => {
-                                        setTaskData({ title: "", description: "", deadline: "", assignedTo: [] });
-                                        setShowTaskModal(true);
-                                    }}
-                                >
-                                    <span>+</span> Add Task
-                                </button>
-
-                                <div className="flex items-center gap-2 flex-wrap bg-white p-1 rounded-lg border border-surface-subtle">
-                                    <select
-                                        className="p-1.5 rounded text-sm border-none bg-transparent focus:outline-none text-ink font-medium"
-                                        value={filterType}
-                                        onChange={(e) => setFilterType(e.target.value)}
-                                    >
-                                        <option value="startDate">Start Date</option>
-                                        <option value="deadline">Due Date</option>
-                                    </select>
-                                    <input
-                                        type="date"
-                                        className="p-1.5 rounded text-sm border border-surface-subtle focus:outline-none focus:border-accent-500"
-                                        value={filterFrom}
-                                        onChange={(e) => setFilterFrom(e.target.value)}
-                                    />
-                                    <span className="text-ink-muted font-medium">-</span>
-                                    <input
-                                        type="date"
-                                        className="p-1.5 rounded text-sm border border-surface-subtle focus:outline-none focus:border-accent-500"
-                                        value={filterTo}
-                                        onChange={(e) => setFilterTo(e.target.value)}
-                                    />
-                                </div>
-
-                                <button
-                                    className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
-                                    onClick={handleDownloadPDF}
-                                >
-                                    <FaFilePdf /> Download PDF
-                                </button>
-                            </>
+                <div className="mb-4 pb-4 border-b border-surface-subtle">
+                    <button
+                        onClick={backToMilestones}
+                        className="inline-flex items-center gap-1.5 rounded text-sm font-medium text-accent-700 hover:underline outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                    >
+                        <span aria-hidden="true">&larr;</span> All milestones
+                    </button>
+                    <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                        <h2 className="text-lg font-semibold text-ink">
+                            {milestoneFilter === 'none' ? 'Unplanned tasks' : currentMilestone?.title || 'Milestone'}
+                        </h2>
+                        {currentMilestone && (
+                            <span className="text-sm text-ink-muted tabular-nums">
+                                {currentMilestone.dueDate ? `Due ${new Date(currentMilestone.dueDate).toLocaleDateString()} · ` : ''}
+                                {currentMilestone.progress}% complete · {currentMilestone.openTasks} open · {currentMilestone.completedTasks} done
+                                {currentMilestone.state === 'closed' ? ' · Closed' : ''}
+                            </span>
                         )}
                     </div>
+                    {milestoneFilter === 'none' && (
+                        <p className="mt-1 text-sm text-ink-muted">Tasks created before milestones. Edit a task to move it into a milestone.</p>
+                    )}
+                    {currentMilestone?.description && <p className="mt-1 text-sm text-ink-muted max-w-prose">{currentMilestone.description}</p>}
+                </div>
+                <div className="flex flex-col gap-3 mb-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                    </div>
+                    {canManageTasks && (
+                        <div className="flex gap-2">
+                            <button
+                                className="flex-1 sm:flex-none border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleDownloadPDF}
+                                disabled={visibleTasks.length === 0}
+                            >
+                                <FaFilePdf className="text-red-600" /> Download PDF
+                            </button>
+                            <button
+                                className="flex-1 sm:flex-none bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => {
+                                    const ms = milestoneById.get(milestoneFilter);
+                                    setTaskData({ title: "", description: "", deadline: "", assignedTo: [], milestoneId: ms && ms.state === "open" ? ms._id : "" });
+                                    setRefFile(null);
+                                    setShowTaskModal(true);
+                                }}
+                                disabled={memberStats.length === 0}
+                                hidden={!currentMilestone}
+                                title={memberStats.length === 0 ? "Add members before assigning tasks" : undefined}
+                            >
+                                <span aria-hidden="true">+</span> Add Task
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto border border-surface-subtle rounded-lg hidden sm:block">
@@ -552,7 +631,7 @@ const TeamDetail = () => {
                         </thead>
                         <tbody className="divide-y divide-surface-subtle bg-white">
                             <AnimatePresence>
-                            {tasks.filter(t => !t.isDeleted).map((task, index) => {
+                            {visibleTasks.map((task, index) => {
                                 const assignee = task.assignedTo;
                                 const assigneeName = assignee?.userId?.name || "Unassigned";
                                 const assigneeColor = assignee ? getRandomColor(assigneeName) : 'bg-gray-100 text-gray-500';
@@ -594,7 +673,6 @@ const TeamDetail = () => {
                                                     setNewTaskStatus(task.status);
                                                     setNewTaskRemark(task.remark || "");
                                                     setNewTaskRating(task.rating || 0);
-                                                    setWorkProofFile(null);
                                                 }}
                                                 className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor} hover:opacity-80 transition-opacity cursor-pointer`}
                                             >
@@ -613,15 +691,31 @@ const TeamDetail = () => {
                                         </td>
 
                                         <td className="p-3">
-                                            {task.workProof ? (
-                                                <a
-                                                    href={getDocumentUrl(task.workProof)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="bg-brand-700 text-white text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 hover:bg-brand-800 transition-colors"
-                                                >
-                                                    <FaEye /> View Doc
-                                                </a>
+                                            {task.workProof || task.reference ? (
+                                                <div className="flex flex-col items-start gap-1">
+                                                    {task.workProof && (
+                                                        <a
+                                                            href={getDocumentUrl(task.workProof)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title={task.workProofName || "Employee's work proof"}
+                                                            className="bg-brand-700 text-white text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 hover:bg-brand-800 transition-colors"
+                                                        >
+                                                            <FaEye aria-hidden="true" /> Work proof
+                                                        </a>
+                                                    )}
+                                                    {task.reference && (
+                                                        <a
+                                                            href={getDocumentUrl(task.reference)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title={task.referenceName || "Your reference"}
+                                                            className="text-xs text-accent-700 hover:underline inline-flex items-center gap-1"
+                                                        >
+                                                            <FaFilePdf className="text-[10px]" aria-hidden="true" /> Reference
+                                                        </a>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <span className="text-ink-faint text-xs">-</span>
                                             )}
@@ -635,7 +729,6 @@ const TeamDetail = () => {
                                                         setNewTaskStatus(task.status);
                                                         setNewTaskRemark(task.remark || "");
                                                         setNewTaskRating(task.rating || 0);
-                                                        setWorkProofFile(null);
                                                     }}
                                                     className="p-2 bg-brand-100 text-brand-700 rounded-lg hover:bg-brand-200 transition-colors"
                                                     title="Update Task"
@@ -672,16 +765,18 @@ const TeamDetail = () => {
                                 );
                             })}
                             </AnimatePresence>
-                            {tasks.filter(t => !t.isDeleted).length === 0 && (
+                            {visibleTasks.length === 0 && (
                                 <tr>
-                                    <td colSpan="8" className="text-center p-8 text-ink-muted">No tasks found.</td>
+                                    <td colSpan="8" className="text-center px-6 py-14 text-ink-muted">{!dateFiltered
+                                        ? (memberStats.length === 0 ? "No tasks yet. Add members to the team, then assign their first task." : "No tasks in this milestone yet. Use Add Task to plan the week's work.")
+                                        : "No tasks in this date range."}</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
                 <div className="sm:hidden space-y-3">
-                    {tasks.filter(t => !t.isDeleted).map(task => {
+                    {visibleTasks.map(task => {
                         const assignee = task.assignedTo;
                         const assigneeName = assignee?.userId?.name || "Unassigned";
                         let statusColor = 'bg-slate-100 text-slate-700';
@@ -699,7 +794,6 @@ const TeamDetail = () => {
                                             setNewTaskStatus(task.status);
                                             setNewTaskRemark(task.remark || "");
                                             setNewTaskRating(task.rating || 0);
-                                            setWorkProofFile(null);
                                         }}
                                         className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
                                     >
@@ -735,7 +829,6 @@ const TeamDetail = () => {
                                             setNewTaskStatus(task.status);
                                             setNewTaskRemark(task.remark || "");
                                             setNewTaskRating(task.rating || 0);
-                                            setWorkProofFile(null);
                                         }}
                                         className="text-brand-700 text-sm font-medium flex items-center gap-1 bg-brand-100 px-3 py-1.5 rounded-lg"
                                     >
@@ -763,211 +856,300 @@ const TeamDetail = () => {
                             </div>
                         );
                     })}
-                    {tasks.filter(t => !t.isDeleted).length === 0 && (
-                        <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-6 text-center text-ink-muted">
-                            No tasks found.
+                    {visibleTasks.length === 0 && (
+                        <div className="rounded-lg bg-surface-muted p-6 text-center text-sm text-ink-muted">
+                            {!dateFiltered
+                                        ? (memberStats.length === 0 ? "No tasks yet. Add members to the team, then assign their first task." : "No tasks in this milestone yet. Use Add Task to plan the week's work.")
+                                        : "No tasks in this date range."}
                         </div>
                     )}
                 </div>
             </motion.div>
         )}
 
-        {activeTab === 'team' && (
-            <motion.div
-                key="team"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-            >
-            {/* Add Members Section (Admin Only) - Inline Multi-select */}
-            {user?.role?.includes('admin') && (
-                <div className="bg-white p-4 rounded-xl shadow-card border border-surface-subtle mb-6">
-                    <h3 className="text-lg font-semibold mb-4 text-ink">Add Team Members</h3>
-                    <div className="flex flex-col gap-4">
-                        <input
-                            type="text"
-                            placeholder="Search employees to add..."
-                            className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink w-full focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-colors"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-
-                        <div className="border border-surface-subtle rounded-lg max-h-60 overflow-y-auto p-2 bg-surface-muted">
-                            {searchTerm && employees
-                            .filter(emp => {
-                                const isAlreadyMember = memberStats.some(stat => stat.member._id === emp._id);
-                                if (isAlreadyMember) return false;
-                                
-                                // Handle role array and allow team_lead to be added as member too
-                                const empRoles = Array.isArray(emp.userId.role) ? emp.userId.role : [emp.userId.role];
-                                if (!empRoles.some(r => ['employee', 'team_lead'].includes(r))) return false;
-
-                                const searchLower = searchTerm.toLowerCase();
-                                const nameMatch = emp.userId?.name?.toLowerCase().includes(searchLower);
-                                const idMatch = emp.employeeId.toLowerCase().includes(searchLower);
-                                return nameMatch || idMatch;
-                            })
-                            .map(emp => (
-                                <motion.div
-                                    key={emp._id}
-                                    className={`flex items-center p-2 border-b border-surface-subtle last:border-0 cursor-pointer rounded-md ${selectedEmployees.includes(emp._id) ? 'bg-accent-50' : ''}`}
-                                    onClick={() => toggleEmployeeSelection(emp._id)}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedEmployees.includes(emp._id)}
-                                        onChange={() => {}} // Handled by div click
-                                        className="mr-3 h-4 w-4 rounded text-accent-600 focus:ring-accent-500"
-                                    />
-                                    <div>
-                                        <div className="font-medium text-ink">{emp.userId?.name || 'Unknown'}</div>
-                                        <div className="text-xs text-ink-muted">{emp.employeeId}</div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                            {!searchTerm && selectedEmployees.length > 0 && (
-                                <div className="text-ink-muted text-sm mb-2 font-medium">Selected employees:</div>
-                            )}
-                            {/* Show selected employees even if not searching */}
-                            {employees
-                                .filter(emp => selectedEmployees.includes(emp._id))
-                                .map(emp => (
-                                     <motion.div
-                                    key={emp._id}
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className="flex items-center p-2 bg-accent-50 border-b border-surface-subtle last:border-0 cursor-pointer rounded-md mb-1"
-                                    onClick={() => toggleEmployeeSelection(emp._id)}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={true}
-                                        onChange={() => {}}
-                                        className="mr-3 h-4 w-4 rounded text-accent-600 focus:ring-accent-500"
-                                    />
-                                    <div>
-                                        <div className="font-medium text-accent-800">{emp.userId?.name || 'Unknown'}</div>
-                                        <div className="text-xs text-accent-700">{emp.employeeId}</div>
-                                    </div>
-                                </motion.div>
-                                ))
-                            }
-
-                            {searchTerm && employees.filter(emp => {
-                                const isAlreadyMember = memberStats.some(stat => stat.member._id === emp._id);
-                                if (isAlreadyMember) return false;
-                                
-                                // Handle role array and allow team_lead to be added as member too
-                                const empRoles = Array.isArray(emp.userId.role) ? emp.userId.role : [emp.userId.role];
-                                if (!empRoles.some(r => ['employee', 'team_lead'].includes(r))) return false;
-
-                                const searchLower = searchTerm.toLowerCase();
-                                return emp.userId.name.toLowerCase().includes(searchLower) || emp.employeeId.toLowerCase().includes(searchLower);
-                            }).length === 0 && (
-                                 <p className="text-ink-muted text-center py-4">No employees found matching "{searchTerm}"</p>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={handleAddMembers}
-                            disabled={selectedEmployees.length === 0}
-                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                                selectedEmployees.length > 0
-                                ? 'bg-accent-600 hover:bg-accent-700 text-white'
-                                : 'bg-slate-300 text-white cursor-not-allowed'
-                            }`}
-                        >
-                            Add Selected Members ({selectedEmployees.length})
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Stats Section - Converted to Table */}
-            <h3 className="text-lg font-semibold mb-4 text-ink">Team Members</h3>
-            <div className="bg-white rounded-xl shadow-card border border-surface-subtle overflow-x-auto mb-8 hidden sm:block">
-                <table className="min-w-full divide-y divide-surface-subtle">
-                    <thead className="bg-surface-muted">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Name</th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Total Tasks</th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Status</th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-ink">Progress</th>
-
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-surface-subtle">
-                        {memberStats.map((stat, index) => (
-                            <motion.tr
-                                key={stat.member._id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="hover:bg-surface-muted cursor-pointer transition-colors"
-                                onClick={() => setSelectedMember(stat)}
-                            >
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="font-semibold text-ink">{stat.member?.userId?.name || 'Unknown'}</div>
-                                    <div className="text-xs text-ink-muted">{stat.member?.employeeId}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-muted">
-                                    {stat.totalTasks}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-accent-700 text-xs font-medium">Completed: {stat.completed}</span>
-                                        <span className="text-amber-700 text-xs font-medium">Pending: {stat.pending}</span>
-                                        <span className="text-red-700 text-xs font-medium">Overdue: {stat.overdue}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap align-middle">
-                                    <div className="w-full bg-surface-subtle rounded-full h-2.5 max-w-[100px] overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${stat.progress}%` }}
-                                            transition={{ duration: 1, ease: "easeOut" }}
-                                            className="bg-accent-600 h-2.5 rounded-full"
-                                        />
-                                    </div>
-                                    <span className="text-xs text-ink-muted mt-1 block font-medium">{stat.progress}%</span>
-                                </td>
-
-                            </motion.tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="sm:hidden space-y-3 mb-8">
-                {memberStats.map((stat) => (
-                    <div
-                        key={stat.member._id}
-                        className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 cursor-pointer"
-                        onClick={() => setSelectedMember(stat)}
-                    >
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <div className="font-semibold text-ink">{stat.member?.userId?.name || 'Unknown'}</div>
-                                <div className="text-xs text-ink-muted">{stat.member?.employeeId}</div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-sm text-ink-muted">Total: <span className="font-semibold text-ink">{stat.totalTasks}</span></div>
-                                <div className="w-24 bg-surface-subtle rounded-full h-2 mt-1 overflow-hidden">
-                                    <div className="bg-accent-600 h-2 rounded-full" style={{ width: `${stat.progress}%` }} />
-                                </div>
-                                <div className="text-xs text-ink-muted mt-1">{stat.progress}%</div>
-                            </div>
-                        </div>
-                        <div className="mt-3 flex gap-3 text-xs">
-                            <span className="text-accent-700 font-medium">Completed {stat.completed}</span>
-                            <span className="text-amber-700 font-medium">Pending {stat.pending}</span>
-                            <span className="text-red-700 font-medium">Overdue {stat.overdue}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+        {activeTab === 'milestones' && (
+            <motion.div key="milestones" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="mb-8">
+                <MilestonesPanel
+                    teamId={id}
+                    milestones={milestones}
+                    canManage={canManageMilestones}
+                    onChanged={fetchMilestones}
+                    onViewTasks={openMilestoneTasks}
+                    unplannedCount={unplannedCount}
+                />
             </motion.div>
         )}
+
+        {activeTab === 'team' && (() => {
+            const isAdmin = user?.role?.includes('admin');
+            const memberIds = new Set(memberStats.map(s => s.member._id));
+            const leadUserId = String(team.leadId?._id || team.leadId || '');
+            const q = searchTerm.trim().toLowerCase();
+            const eligible = employees.filter(emp => {
+                if (memberIds.has(emp._id) || !emp.userId) return false;
+                if (String(emp.userId._id || emp.userId) === leadUserId) return false;
+                const roles = Array.isArray(emp.userId.role) ? emp.userId.role : [emp.userId.role];
+                return roles.some(r => ['employee', 'team_lead'].includes(r));
+            });
+            const results = eligible.filter(emp =>
+                !q || emp.userId?.name?.toLowerCase().includes(q) || emp.employeeId?.toLowerCase().includes(q)
+            );
+            const selected = employees.filter(emp => selectedEmployees.includes(emp._id));
+            const mq = memberSearch.trim().toLowerCase();
+            const shownMembers = memberStats.filter(s =>
+                !mq || s.member?.userId?.name?.toLowerCase().includes(mq) || s.member?.employeeId?.toLowerCase().includes(mq)
+            );
+            const initials = (name) => {
+                const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+                if (parts.length === 0) return '?';
+                return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+            };
+            const closeAdd = () => { setAddOpen(false); setSearchTerm(''); };
+            const confirmAdd = async () => { closeAdd(); await handleAddMembers(); };
+
+            return (
+            <motion.div
+                key="team"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mb-8"
+            >
+            <section className="bg-white rounded-xl shadow-card border border-surface-subtle" aria-labelledby="members-heading">
+                <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-surface-subtle">
+                    <h3 id="members-heading" className="text-lg font-semibold text-ink mr-auto">
+                        Members <span className="text-ink-muted font-normal tabular-nums">· {memberStats.length}</span>
+                    </h3>
+                    {memberStats.length > 3 && (
+                        <input
+                            type="search"
+                            aria-label="Search members"
+                            placeholder="Search members..."
+                            value={memberSearch}
+                            onChange={(e) => setMemberSearch(e.target.value)}
+                            className="w-full sm:w-64 order-last sm:order-none border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                        />
+                    )}
+                    {isAdmin && (
+                        <button
+                            onClick={() => setAddOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none transition-colors"
+                        >
+                            <FaUserPlus aria-hidden="true" /> Add members
+                        </button>
+                    )}
+                </div>
+
+                {memberStats.length === 0 ? (
+                    <div className="px-6 py-16 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-700">
+                            <FaUser className="text-xl" aria-hidden="true" />
+                        </div>
+                        <p className="font-semibold text-ink">No members in this team yet</p>
+                        <p className="mt-1 text-sm text-ink-muted">
+                            {isAdmin ? 'Add employees to start assigning them tasks.' : 'An admin can add members to this team.'}
+                        </p>
+                        {isAdmin && (
+                            <button
+                                onClick={() => setAddOpen(true)}
+                                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none"
+                            >
+                                <FaUserPlus aria-hidden="true" /> Add members
+                            </button>
+                        )}
+                    </div>
+                ) : shownMembers.length === 0 ? (
+                    <p className="px-6 py-10 text-center text-sm text-ink-muted">No members match "{memberSearch}".</p>
+                ) : (
+                    <>
+                    <div className="hidden md:grid grid-cols-[minmax(0,1fr)_repeat(4,5rem)_10rem_2.75rem] gap-4 px-5 py-2.5 bg-surface-muted text-xs font-medium text-ink-muted">
+                        <span>Member</span>
+                        <span className="text-right">Tasks</span>
+                        <span className="text-right">Done</span>
+                        <span className="text-right">Pending</span>
+                        <span className="text-right">Overdue</span>
+                        <span>Progress</span>
+                        <span className="sr-only">Actions</span>
+                    </div>
+                    <ul className="divide-y divide-surface-subtle">
+                        {shownMembers.map((stat) => {
+                            const name = stat.member?.userId?.name || 'Unknown';
+                            return (
+                            <li key={stat.member._id} className="group relative grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_repeat(4,5rem)_10rem_2.75rem] items-center gap-x-4 gap-y-2 px-5 py-3.5 hover:bg-surface-muted transition-colors">
+                                <button
+                                    onClick={() => setSelectedMember(stat)}
+                                    className="flex min-w-0 items-center gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-lg after:absolute after:inset-0"
+                                    aria-label={`View ${name}'s tasks`}
+                                >
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 text-sm font-semibold text-accent-800">
+                                        {initials(name)}
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className="block font-medium text-ink truncate">{name}</span>
+                                        <span className="block text-xs text-ink-muted tabular-nums">
+                                            {stat.member?.employeeId}
+                                            {stat.member?.designation ? ` · ${stat.member.designation}` : ''}
+                                        </span>
+                                    </span>
+                                </button>
+
+                                {/* Desktop columns */}
+                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.totalTasks}</span>
+                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.completed}</span>
+                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.pending}</span>
+                                <span className={`hidden md:block text-right text-sm tabular-nums ${stat.overdue > 0 ? 'font-semibold text-red-700' : 'text-ink-muted'}`}>{stat.overdue}</span>
+                                <div className="hidden md:flex items-center gap-2">
+                                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={stat.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${name} progress`}>
+                                        <div className="h-full rounded-full bg-accent-600" style={{ width: `${stat.progress}%` }} />
+                                    </div>
+                                    <span className="w-9 text-right text-xs tabular-nums text-ink-muted">{stat.progress}%</span>
+                                </div>
+
+                                {/* Remove */}
+                                {isAdmin ? (
+                                    <button
+                                        onClick={() => removeMember(stat)}
+                                        className="relative z-10 justify-self-end rounded-lg p-2.5 text-ink-muted md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition"
+                                        title="Remove from team"
+                                        aria-label={`Remove ${name} from team`}
+                                    >
+                                        <FaTrash aria-hidden="true" />
+                                    </button>
+                                ) : <span className="hidden md:block" />}
+
+                                {/* Mobile summary */}
+                                <div className="col-span-2 md:hidden flex items-center gap-3 pl-[3.25rem] text-xs text-ink-muted tabular-nums">
+                                    <span>{stat.completed}/{stat.totalTasks} done</span>
+                                    {stat.overdue > 0 && <span className="font-medium text-red-700">{stat.overdue} overdue</span>}
+                                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-subtle">
+                                        <div className="h-full rounded-full bg-accent-600" style={{ width: `${stat.progress}%` }} />
+                                    </div>
+                                </div>
+                            </li>
+                            );
+                        })}
+                    </ul>
+                    </>
+                )}
+            </section>
+
+            {/* Add members panel */}
+            <AnimatePresence>
+            {isAdmin && addOpen && (
+                <div className="fixed inset-0 z-50" onKeyDown={(e) => e.key === 'Escape' && closeAdd()}>
+                    <motion.div
+                        className="absolute inset-0 bg-black/40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                        onClick={closeAdd}
+                    />
+                    <motion.aside
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="add-heading"
+                        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-xl"
+                        initial={reduceMotion ? { opacity: 0 } : { x: '100%' }}
+                        animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
+                        exit={reduceMotion ? { opacity: 0 } : { x: '100%' }}
+                        transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                        <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+                            <div>
+                                <h3 id="add-heading" className="text-lg font-semibold text-ink">Add members</h3>
+                                <p className="text-sm text-ink-muted">to {team.name}</p>
+                            </div>
+                            <button
+                                onClick={closeAdd}
+                                className="rounded-lg p-2 text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                                aria-label="Close"
+                            >
+                                <FaTimes aria-hidden="true" />
+                            </button>
+                        </div>
+                        <div className="px-5 pb-3 border-b border-surface-subtle">
+                            <input
+                                type="search"
+                                autoFocus
+                                aria-label="Search employees to add"
+                                placeholder={`Search ${eligible.length} employees by name or ID`}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full border border-surface-subtle rounded-lg px-3 py-2.5 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                            />
+                            {selected.length > 0 && (
+                                <div className="mt-3 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                                    {selected.map(emp => (
+                                        <button
+                                            key={emp._id}
+                                            onClick={() => toggleEmployeeSelection(emp._id)}
+                                            className="inline-flex items-center gap-1 rounded-full bg-accent-100 px-2.5 py-1 text-xs font-medium text-accent-800 hover:bg-accent-200 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                                            aria-label={`Unselect ${emp.userId?.name}`}
+                                        >
+                                            {emp.userId?.name || 'Unknown'} <FaTimes className="text-[10px]" aria-hidden="true" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <ul className="flex-1 overflow-y-auto py-1">
+                            {results.length === 0 ? (
+                                <li className="px-5 py-10 text-center text-sm text-ink-muted">
+                                    {q ? `No employees match "${searchTerm}".` : 'Everyone is already in this team.'}
+                                </li>
+                            ) : results.map(emp => {
+                                const checked = selectedEmployees.includes(emp._id);
+                                return (
+                                    <li key={emp._id}>
+                                        <label className={`flex min-h-[52px] items-center gap-3 px-5 py-2 cursor-pointer transition-colors ${checked ? 'bg-accent-50' : 'hover:bg-surface-muted'}`}>
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggleEmployeeSelection(emp._id)}
+                                                className="h-4 w-4 rounded text-accent-600 focus:ring-accent-500"
+                                            />
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-semibold text-ink">
+                                                {initials(emp.userId?.name)}
+                                            </span>
+                                            <span className="min-w-0">
+                                                <span className="block text-sm font-medium text-ink truncate">{emp.userId?.name || 'Unknown'}</span>
+                                                <span className="block text-xs text-ink-muted tabular-nums">
+                                                    {emp.employeeId}{emp.designation ? ` · ${emp.designation}` : ''}
+                                                </span>
+                                            </span>
+                                        </label>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+
+                        <div className="flex gap-3 p-4 border-t border-surface-subtle">
+                            <button
+                                onClick={closeAdd}
+                                className="rounded-lg border border-surface-subtle px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmAdd}
+                                disabled={selectedEmployees.length === 0}
+                                className="flex-1 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                            >
+                                {selectedEmployees.length === 0
+                                    ? 'Select employees'
+                                    : `Add ${selectedEmployees.length} member${selectedEmployees.length > 1 ? 's' : ''}`}
+                            </button>
+                        </div>
+                    </motion.aside>
+                </div>
+            )}
+            </AnimatePresence>
+            </motion.div>
+            );
+        })()}
         {activeTab === 'attendance' && canTakeAttendance && (
             <motion.div
                 key="attendance"
@@ -1074,7 +1256,6 @@ const TeamDetail = () => {
                                                         setNewTaskStatus(task.status);
                                                         setNewTaskRemark(task.remark || "");
                                                         setNewTaskRating(task.rating || 0);
-                                                        setWorkProofFile(null);
                                                     }}
                                                     className="hover:underline focus:outline-none"
                                                 >
@@ -1130,7 +1311,7 @@ const TeamDetail = () => {
                         <p className="p-3 bg-surface-muted rounded-lg text-ink text-sm border border-surface-subtle">{editingTask.title}</p>
                         {editingTask.workProof && (
                             <p className="mt-2 text-sm">
-                                <span className="font-medium text-ink">Work Proof: </span>
+                                <span className="font-medium text-ink">Employee's work proof: </span>
                                 <a
                                     href={editingTask.workProof.startsWith("http") ? editingTask.workProof : `${API_BASE}/${editingTask.workProof}`}
                                     target="_blank"
@@ -1142,14 +1323,6 @@ const TeamDetail = () => {
 
                             </p>
                         )}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2 text-ink">Attach File (Work Proof)</label>
-                        <input
-                            type="file"
-                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink"
-                            onChange={(e) => setWorkProofFile(e.target.files[0])}
-                        />
                     </div>
                     <div className="mb-4">
                         <label className="block text-sm font-medium mb-2 text-ink">Status</label>
@@ -1190,112 +1363,161 @@ const TeamDetail = () => {
 
       {/* Assign Task Modal */}
       <AnimatePresence>
-      {showTaskModal && (
-        <motion.div 
+      {showTaskModal && (() => {
+        const close = () => { if (!isAssigning) { setShowTaskModal(false); setAssignError(""); } };
+        const assignedCount = taskData.assignedTo.length;
+        const fieldCls = "w-full border border-surface-subtle rounded-lg px-3 py-2.5 text-sm text-ink bg-white placeholder:text-ink-faint focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none";
+        const labelCls = "block text-sm font-medium text-ink mb-1.5";
+        const initialsOf = (name) => {
+          const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+          if (parts.length === 0) return '?';
+          return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+        };
+        return (
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-brand-950/60 overflow-y-auto h-full w-full flex justify-center items-center"
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
+            className="fixed inset-0 z-50 bg-brand-950/60 flex justify-center items-end sm:items-center sm:p-4"
+            onClick={close}
+            onKeyDown={(e) => e.key === 'Escape' && close()}
         >
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className="bg-white p-8 rounded-xl shadow-panel border border-surface-subtle w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="assign-heading"
+                initial={reduceMotion ? { opacity: 0 } : { y: 16, opacity: 0 }}
+                animate={reduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { y: 16, opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-white w-full sm:max-w-xl max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-xl shadow-panel border border-surface-subtle"
+                onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="text-lg font-semibold mb-4 text-ink">Assign Task</h3>
-                <form onSubmit={handleAssignTask} className="space-y-4">
-                    <input
-                        type="text" placeholder="Task Title" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                        value={taskData.title} onChange={(e) => setTaskData({...taskData, title: e.target.value})} required
-                    />
-                    <textarea
-                        placeholder="Description" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-                        value={taskData.description} onChange={(e) => setTaskData({...taskData, description: e.target.value})}
-                    />
-                    <div className="relative">
-                        <button
-                            type="button"
-                            className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-accent-500"
-                            onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)}
-                        >
-                            <span className="truncate text-ink">
-                                {taskData.assignedTo.length === 0
-                                    ? "Select Member"
-                                    : `${taskData.assignedTo.length} member(s) selected`}
-                            </span>
-                            <span className="text-ink-faint">▼</span>
-                        </button>
-                        <AnimatePresence>
-                        {isMemberDropdownOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                className="absolute z-10 w-full bg-white border border-surface-subtle rounded-lg shadow-panel max-h-60 overflow-y-auto mt-1"
-                            >
-                                <div
-                                    className="flex items-center p-3 hover:bg-surface-muted cursor-pointer border-b border-surface-subtle"
-                                    onClick={toggleSelectAllMembers}
+                <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-surface-subtle">
+                    <div>
+                        <h3 id="assign-heading" className="text-lg font-semibold text-ink">Assign task</h3>
+                        <p className="text-sm text-ink-muted">{team.name}</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={close}
+                        className="rounded-lg p-2 text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                        aria-label="Close"
+                    >
+                        <FaTimes aria-hidden="true" />
+                    </button>
+                </div>
+
+                <form id="assign-form" onSubmit={handleAssignTask} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                    <div>
+                        <label htmlFor="task-title" className={labelCls}>Title</label>
+                        <input
+                            id="task-title"
+                            type="text"
+                            autoFocus
+                            placeholder="e.g. Build the login screen"
+                            className={fieldCls}
+                            value={taskData.title}
+                            onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="task-desc" className={labelCls}>
+                            Description <span className="font-normal text-ink-muted">(optional)</span>
+                        </label>
+                        <textarea
+                            id="task-desc"
+                            rows={3}
+                            placeholder="What needs to be done, and what does done look like?"
+                            className={`${fieldCls} resize-y`}
+                            value={taskData.description}
+                            onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
+                        />
+                    </div>
+
+                    <fieldset>
+                        <div className="flex items-center justify-between mb-2">
+                            <legend className="text-sm font-medium text-ink">
+                                Assign to <span className="font-normal text-ink-muted tabular-nums">· {assignedCount} of {memberStats.length}</span>
+                            </legend>
+                            {memberStats.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => { toggleSelectAllMembers(); setAssignError(""); }}
+                                    className="rounded px-1 text-sm font-medium text-accent-700 hover:text-accent-800 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
                                 >
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected()}
-                                        onChange={() => {}}
-                                        className="mr-3 h-4 w-4 rounded text-accent-600"
-                                    />
-                                    <span className="text-sm text-ink">Select All</span>
-                                </div>
-                                {memberStats.map(stat => (
-                                    <div
+                                    {isAllSelected() ? 'Clear all' : 'Select all'}
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto">
+                            {memberStats.map(stat => {
+                                const name = stat.member?.userId?.name || 'Unknown';
+                                const on = taskData.assignedTo.includes(stat.member._id);
+                                return (
+                                    <button
                                         key={stat.member._id}
-                                        className="flex items-center p-3 hover:bg-surface-muted cursor-pointer border-b border-surface-subtle last:border-0"
-                                        onClick={() => toggleTaskMemberSelection(stat.member._id)}
+                                        type="button"
+                                        role="checkbox"
+                                        aria-checked={on}
+                                        onClick={() => { toggleTaskMemberSelection(stat.member._id); setAssignError(""); }}
+                                        className={`inline-flex min-h-[40px] items-center gap-2 rounded-full border py-1 pl-1 pr-3.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent-500 outline-none ${on ? 'border-accent-600 bg-accent-50 text-accent-800' : 'border-surface-subtle bg-white text-ink hover:bg-surface-muted'}`}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            checked={taskData.assignedTo.includes(stat.member._id)}
-                                            onChange={() => {}}
-                                            className="mr-3 h-4 w-4 rounded text-accent-600"
-                                        />
-                                        <span className="text-sm text-ink">{stat.member?.userId?.name || 'Unknown'} <span className="text-ink-muted text-xs">({stat.member?.employeeId})</span></span>
-                                    </div>
-                                ))}
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-medium block mb-1 text-ink-muted uppercase">Start Date</label>
-                            <input
-                                type="date" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
-                                value={taskData.startDate} onChange={(e) => setTaskData({...taskData, startDate: e.target.value})}
-                            />
+                                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${on ? 'bg-accent-600 text-white' : 'bg-surface-subtle text-ink-muted'}`}>
+                                            {on ? <FaCheck aria-hidden="true" className="text-[11px]" /> : initialsOf(name)}
+                                        </span>
+                                        {name}
+                                        <span className="text-xs text-ink-muted tabular-nums">{stat.member?.employeeId}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div>
-                            <label className="text-xs font-medium block mb-1 text-ink-muted uppercase">Deadline</label>
-                            <input
-                                type="date" className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
-                                value={taskData.deadline} onChange={(e) => setTaskData({...taskData, deadline: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button type="button" onClick={() => setShowTaskModal(false)} className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium transition-colors">Cancel</button>
-                        <button
-                            type="submit"
-                            disabled={isAssigning}
-                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isAssigning ? 'bg-accent-300 text-white cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'}`}
-                        >
-                            {isAssigning ? 'Assigning...' : 'Assign'}
-                        </button>
-                    </div>
+                        {assignError && <p role="alert" className="mt-2 text-sm text-red-700">{assignError}</p>}
+                    </fieldset>
+
+                    {milestoneById.get(String(taskData.milestoneId)) && (() => {
+                        const m = milestoneById.get(String(taskData.milestoneId));
+                        const d = (v) => new Date(v).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+                        return (
+                            <p className="flex items-center gap-2 rounded-lg bg-surface-muted px-3 py-2.5 text-sm text-ink">
+                                <FaCalendarAlt className="shrink-0 text-ink-muted" aria-hidden="true" />
+                                <span>
+                                    Adds to <span className="font-medium">{m.title}</span>
+                                    {m.startDate && m.dueDate ? ` · ${d(m.startDate)} – ${d(m.dueDate)}` : ''}
+                                </span>
+                            </p>
+                        );
+                    })()}
+
+                    <ReferencePicker file={refFile} onChange={setRefFile} disabled={isAssigning} />
                 </form>
+
+                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-surface-subtle bg-surface-muted/60 rounded-b-xl">
+                    <button
+                        type="button"
+                        onClick={close}
+                        className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2.5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-accent-500 outline-none transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        form="assign-form"
+                        disabled={isAssigning}
+                        className="rounded-lg bg-accent-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+                    >
+                        {isAssigning
+                            ? 'Assigning...'
+                            : assignedCount > 1 ? `Assign to ${assignedCount} members` : 'Assign task'}
+                    </button>
+                </div>
             </motion.div>
         </motion.div>
-      )}
+        );
+      })()}
       </AnimatePresence>
 
       {/* Edit Task Details Modal */}
@@ -1334,6 +1556,24 @@ const TeamDetail = () => {
                             onChange={(e) => setEditDetails({ ...editDetails, description: e.target.value })}
                         />
                     </div>
+                    {milestones.length > 0 && (
+                        <div>
+                            <label htmlFor="edit-milestone" className="block text-sm font-medium mb-1 text-ink">Milestone</label>
+                            <p className="mb-1.5 text-xs text-ink-muted">Tasks in a milestone use its week as their dates.</p>
+                            <select
+                                id="edit-milestone"
+                                className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+                                value={editDetails.milestoneId || ""}
+                                onChange={(e) => setEditDetails({ ...editDetails, milestoneId: e.target.value })}
+                            >
+                                <option value="">No milestone</option>
+                                {milestones
+                                    .filter((m) => m.state === "open" || String(m._id) === String(editDetails.milestoneId))
+                                    .map((m) => <option key={m._id} value={m._id}>{m.title}{m.state === "closed" ? " (closed)" : ""}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {!editDetails.milestoneId && (
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="edit-start" className="text-xs font-medium block mb-1 text-ink-muted uppercase">Start Date</label>
@@ -1356,6 +1596,7 @@ const TeamDetail = () => {
                             />
                         </div>
                     </div>
+                    )}
                     <div className="flex justify-end gap-3 pt-2">
                         <button type="button" onClick={() => setEditDetails(null)} className="border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2 text-sm font-medium transition-colors">Cancel</button>
                         <button
@@ -1434,6 +1675,8 @@ const TeamDetail = () => {
                             {viewTask.description || "No description provided."}
                         </p>
                     </div>
+
+                    <ReferenceView url={viewTask.reference} name={viewTask.referenceName} />
 
                     <div>
                         <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Remark</label>

@@ -2,6 +2,7 @@ import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import Task from "../models/Task.js";
+import { emitTeamUpdate } from "../utils/realtime.js";
 
 // Create Team
 export const createTeam = async (req, res) => {
@@ -29,6 +30,7 @@ export const createTeam = async (req, res) => {
     });
 
     await newTeam.save();
+    emitTeamUpdate(req.io, newTeam, "team");
     res.status(201).json({ success: true, team: newTeam });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -78,6 +80,7 @@ export const addMembers = async (req, res) => {
     team.members = [...team.members, ...newMembers];
     
     await team.save();
+    emitTeamUpdate(req.io, team, "members");
     res.status(200).json({ success: true, team });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -200,10 +203,56 @@ export const deleteTeam = async (req, res) => {
         // Delete associated tasks
         await Task.deleteMany({ teamId: id });
 
+        await emitTeamUpdate(req.io, team, "deleted");
         await Team.findByIdAndDelete(id);
 
         res.status(200).json({ success: true, message: "Team deleted successfully" });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
+};
+
+// Update Team (admin): name, description, start date, lead
+export const updateTeam = async (req, res) => {
+  try {
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    if (!userRoles.includes("admin")) {
+      return res.status(403).json({ success: false, error: "Only admin can edit team" });
+    }
+    const { name, description, startDate, leadId } = req.body;
+    if (!name?.trim()) return res.status(400).json({ success: false, error: "Team name is required" });
+    if (!leadId) return res.status(400).json({ success: false, error: "Team Lead is required" });
+
+    const team = await Team.findByIdAndUpdate(
+      req.params.id,
+      { name: name.trim(), description, ...(startDate ? { startDate } : {}), leadId, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+    emitTeamUpdate(req.io, team, "team");
+    res.status(200).json({ success: true, team });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Remove a member from a team (admin only). Their tasks are kept.
+export const removeMember = async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    if (!userRoles.includes("admin")) {
+      return res.status(403).json({ success: false, error: "Only admin can remove team members" });
+    }
+    const before = team.members.length;
+    team.members = team.members.filter((m) => m.employeeId?.toString() !== req.params.employeeId);
+    if (team.members.length === before) return res.status(404).json({ success: false, error: "Member not in this team" });
+    team.updatedAt = new Date();
+    await team.save();
+    emitTeamUpdate(req.io, team, "members");
+    res.status(200).json({ success: true, team });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 };

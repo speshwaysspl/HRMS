@@ -33,8 +33,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) =>
-        NotificationService().refreshUnread(context.read<AuthProvider>().user?.id ?? ''));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => NotificationService().refreshUnread(
+        context.read<AuthProvider>().user?.id ?? '',
+      ),
+    );
     _load();
   }
 
@@ -70,10 +73,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         flexibleSpace: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'assets/appbar_bg.png',
-              fit: BoxFit.cover,
-            ),
+            Image.asset('assets/appbar_bg.png', fit: BoxFit.cover),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -98,12 +98,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               children: [
                 IconButton(
                   tooltip: 'Notifications',
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                  ),
                   onPressed: () {
                     final userId = context.read<AuthProvider>().user?.id ?? '';
                     Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))
-                        .then((_) => NotificationService().refreshUnread(userId));
+                        .push(
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationsScreen(),
+                          ),
+                        )
+                        .then(
+                          (_) => NotificationService().refreshUnread(userId),
+                        );
                   },
                 ),
                 if (unread > 0)
@@ -113,7 +122,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
               ],
@@ -125,11 +137,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
-              children: const [SkeletonCard(height: 80), SkeletonCard(height: 80), SkeletonListTile(), SkeletonListTile()],
+              children: const [
+                SkeletonCard(height: 80),
+                SkeletonCard(height: 80),
+                SkeletonListTile(),
+                SkeletonListTile(),
+              ],
             )
           : _error != null
-              ? buildErrorState(_error!, _load)
-              : RefreshIndicator(onRefresh: _load, child: _content(name)),
+          ? buildErrorState(_error!, _load)
+          : RefreshIndicator(onRefresh: _load, child: _content(name)),
     );
   }
 
@@ -138,17 +155,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     final leave = (s['leaveSummary'] as Map?) ?? {};
     final deptBreakdown = (s['departmentBreakdown'] as List?) ?? [];
     final pad = context.w(16);
-    final cardW = (context.screenW - pad * 2 - context.w(10)) / context.gridColumns();
+    final cardW =
+        (context.screenW - pad * 2 - context.w(10)) / context.gridColumns();
     final cardH = context.r(44) + context.h(40);
 
     return ListView(
       padding: EdgeInsets.all(pad),
       children: [
-        Text('Welcome back, $name',
-            style: TextStyle(fontSize: context.sp(20), fontWeight: FontWeight.w700, color: AppColors.ink)),
+        Text(
+          'Welcome back, $name',
+          style: TextStyle(
+            fontSize: context.sp(20),
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
         SizedBox(height: context.h(4)),
-        Text('Organisation overview',
-            style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+        Text(
+          'Organisation overview',
+          style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)),
+        ),
         SizedBox(height: context.h(20)),
 
         GridView.count(
@@ -189,65 +215,114 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ),
         SizedBox(height: context.h(20)),
 
-        Text('Quick Actions',
-            style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: context.sp(14),
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
         SizedBox(height: context.h(10)),
         SimpleCard(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ApprovalsScreen()),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const ApprovalsScreen())),
+          child: _action(
+            Icons.fact_check_outlined,
+            'Attendance Corrections',
+            'Review regularisation requests',
           ),
-          child: _action(Icons.fact_check_outlined, 'Attendance Corrections', 'Review regularisation requests'),
         ),
         SimpleCard(
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const AdminAnnouncementsScreen()),
           ),
-          child: _action(Icons.campaign_outlined, 'Announcements', 'Post and view company announcements'),
+          child: _action(
+            Icons.campaign_outlined,
+            'Announcements',
+            'Post and view company announcements',
+          ),
         ),
         SizedBox(height: context.h(20)),
 
         if (deptBreakdown.isNotEmpty) ...[
-          Text('Headcount by Department',
-              style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w700, color: AppColors.ink)),
+          Text(
+            'Headcount by Department',
+            style: TextStyle(
+              fontSize: context.sp(14),
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
           SizedBox(height: context.h(10)),
-          ...deptBreakdown.map((d) => Padding(
-                padding: EdgeInsets.symmetric(vertical: context.h(6)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text('${d['department'] ?? 'Unassigned'}',
-                          style: TextStyle(fontSize: context.sp(13), color: AppColors.ink)),
+          ...deptBreakdown.map(
+            (d) => Padding(
+              padding: EdgeInsets.symmetric(vertical: context.h(6)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${d['department'] ?? 'Unassigned'}',
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        color: AppColors.ink,
+                      ),
                     ),
-                    Text('${d['count'] ?? 0}',
-                        style: TextStyle(fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted)),
-                  ],
-                ),
-              )),
+                  ),
+                  Text(
+                    '${d['count'] ?? 0}',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ],
     );
   }
 
   Widget _action(IconData icon, String title, String subtitle) => Row(
-        children: [
-          Container(
-            width: context.r(40),
-            height: context.r(40),
-            decoration: BoxDecoration(color: AppColors.brand50, borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: AppColors.brand600, size: context.r(20)),
-          ),
-          SizedBox(width: context.w(12)),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w600, color: AppColors.ink)),
-                SizedBox(height: context.h(2)),
-                Text(subtitle, style: TextStyle(fontSize: context.sp(12), color: AppColors.inkMuted)),
-              ],
+    children: [
+      Container(
+        width: context.r(40),
+        height: context.r(40),
+        decoration: BoxDecoration(
+          color: AppColors.brand50,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: AppColors.brand600, size: context.r(20)),
+      ),
+      SizedBox(width: context.w(12)),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: context.sp(14),
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: AppColors.inkFaint),
-        ],
-      );
+            SizedBox(height: context.h(2)),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: context.sp(12),
+                color: AppColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Icon(Icons.chevron_right, color: AppColors.inkFaint),
+    ],
+  );
 }

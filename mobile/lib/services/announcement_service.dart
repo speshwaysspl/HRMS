@@ -16,14 +16,18 @@ class AnnouncementService {
   }
 
   /// Admin/HR: post a new announcement to everyone (no image).
+  /// [scheduledAt] (optional, future) holds it back until that time; the server
+  /// then publishes it and sends notifications/emails.
   Future<void> createAnnouncement({
     required String title,
     required String description,
+    DateTime? scheduledAt,
   }) async {
     await _dio.post('/api/announcement/', data: {
       'title': title,
       'description': description,
       'scope': 'all',
+      if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
     });
   }
 
