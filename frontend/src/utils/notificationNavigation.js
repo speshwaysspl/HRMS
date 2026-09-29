@@ -22,6 +22,11 @@ export const getNotificationTarget = (notification, user) => {
   const isEmployee = userRoles.includes("employee");
 
   switch (notification.type) {
+    case "team_attendance_reminder":
+      return notification.relatedId
+        ? `${isAdmin ? "/admin-dashboard" : "/employee-dashboard"}/team/${notification.relatedId._id || notification.relatedId}`
+        : null;
+
     case "checkout_reminder":
       return isEmployee ? "/employee-dashboard/attendance" : null;
 

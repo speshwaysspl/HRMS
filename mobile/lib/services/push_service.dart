@@ -19,6 +19,7 @@ import '../screens/employee/leaves_screen.dart';
 import '../screens/employee/notifications_screen.dart';
 import '../screens/employee/payslips_screen.dart';
 import '../screens/employee/tasks_screen.dart';
+import '../screens/teamlead/my_teams_screen.dart';
 import 'app_settings.dart';
 import 'auth_provider.dart';
 import 'notification_service.dart';
@@ -222,7 +223,9 @@ class PushService {
     final isAdmin = context.read<AuthProvider>().user?.isAdmin == true;
 
     Widget target;
-    if (type == 'checkout_reminder') {
+    if (type == 'team_attendance_reminder') {
+      target = const MyTeamsScreen();
+    } else if (type == 'checkout_reminder') {
       target = const AttendanceScreen();
     } else if (type == 'regularization_request') {
       target = const ApprovalsScreen();

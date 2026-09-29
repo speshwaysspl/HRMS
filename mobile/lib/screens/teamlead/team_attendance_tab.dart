@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../../services/auth_provider.dart';
 import '../../services/app_events.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -232,7 +234,9 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
     super.build(context);
     final members = widget.members;
     // Attendance can only be changed for today; past dates are view-only.
-    final editable = _dayFmt.format(_date) == _dayFmt.format(DateTime.now());
+    // Team leads change today only; admins can also correct past dates.
+    final isToday = _dayFmt.format(_date) == _dayFmt.format(DateTime.now());
+    final editable = isToday || (context.read<AuthProvider>().user?.isAdmin ?? false);
     final presentCount = members.where((m) => _present.contains(_id(m))).length;
     final allSelected = members.isNotEmpty && presentCount == members.length;
 
@@ -299,6 +303,11 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                   ),
                   if (!editable)
                     const TextSpan(text: ' · View only (today only)'),
+                  if (editable && !isToday)
+                    const TextSpan(
+                      text: ' · Editing a past date',
+                      style: TextStyle(color: Color(0xFFB45309), fontWeight: FontWeight.w600),
+                    ),
                 ],
               ),
               style: TextStyle(

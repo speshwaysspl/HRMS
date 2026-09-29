@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../services/api_client.dart';
 import '../../services/auth_provider.dart';
 import '../../services/notification_service.dart';
+import '../teamlead/my_teams_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
@@ -184,7 +185,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Attendance: check-out reminder, correction requests / decisions.
     // A birthday wish is a personal note — the list item itself is enough.
     if (type == 'birthday_wish') return;
-    final attendanceTarget = type == 'checkout_reminder'
+    final attendanceTarget = type == 'team_attendance_reminder'
+        ? const MyTeamsScreen()
+        : type == 'checkout_reminder'
         ? const AttendanceScreen()
         : type == 'regularization_request'
         ? const ApprovalsScreen()

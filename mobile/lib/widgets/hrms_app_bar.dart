@@ -8,8 +8,9 @@ class HrmsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? title;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
+  final Widget? leading;
 
-  const HrmsAppBar({super.key, this.title, this.actions, this.bottom});
+  const HrmsAppBar({super.key, this.title, this.actions, this.bottom, this.leading});
 
   @override
   Size get preferredSize =>
@@ -20,6 +21,7 @@ class HrmsAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      leading: leading,
       title: title,
       actions: actions,
       bottom: bottom,

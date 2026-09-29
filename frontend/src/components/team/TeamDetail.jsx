@@ -50,6 +50,15 @@ const TeamDetail = () => {
   const { user } = useAuth();
 
   const [selectedMember, setSelectedMember] = useState(null); // For detail modal
+  // Milestone groups in the member modal start collapsed.
+  const [memberOpenGroups, setMemberOpenGroups] = useState(() => new Set());
+  useEffect(() => { setMemberOpenGroups(new Set()); }, [selectedMember?.member?._id]);
+  const toggleMemberGroup = (key) =>
+    setMemberOpenGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   const [editingTask, setEditingTask] = useState(null); // For status update
   const [viewTask, setViewTask] = useState(null); // For viewing task details
   const [editDetails, setEditDetails] = useState(null); // For editing title/description/dates
@@ -457,7 +466,6 @@ const TeamDetail = () => {
   const dateFiltered = !!(filterFrom || filterTo);
   const milestoneById = new Map(milestones.map((m) => [String(m._id), m]));
   const openMilestones = milestones.filter((m) => m.state === "open");
-  const doneCount = liveTasks.filter(t => t.status === 'Completed').length;
   const canManageTasks = user?.role?.includes('admin') || user?.role?.includes('team_lead');
 
   const canManageMilestones = canTakeAttendance; // admin or this team's lead
@@ -478,6 +486,8 @@ const TeamDetail = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Team header + tabs are hidden inside a milestone: it reads as its own sub-page. */}
+      {activeTab !== 'tasks' && (<>
       {/* Header */}
       <header className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 mb-5">
         <h1 className="text-xl sm:text-2xl font-semibold text-brand-800 break-words">{team.name}</h1>
@@ -490,14 +500,6 @@ const TeamDetail = () => {
           <div>
             <dt className="text-ink-muted text-xs">Members</dt>
             <dd className="font-medium text-ink tabular-nums">{memberStats.length}</dd>
-          </div>
-          <div>
-            <dt className="text-ink-muted text-xs">Tasks</dt>
-            <dd className="font-medium text-ink tabular-nums">{liveTasks.length}</dd>
-          </div>
-          <div>
-            <dt className="text-ink-muted text-xs">Completed</dt>
-            <dd className="font-medium text-ink tabular-nums">{doneCount} of {liveTasks.length}</dd>
           </div>
         </dl>
       </header>
@@ -522,6 +524,7 @@ const TeamDetail = () => {
           );
         })}
       </div>
+      </>)}
 
       <AnimatePresence mode="wait">
         {activeTab === 'tasks' && (
@@ -538,7 +541,7 @@ const TeamDetail = () => {
                         onClick={backToMilestones}
                         className="inline-flex items-center gap-1.5 rounded text-sm font-medium text-accent-700 hover:underline outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
                     >
-                        <span aria-hidden="true">&larr;</span> All milestones
+                        <span aria-hidden="true">&larr;</span> {team.name} · Milestones
                     </button>
                     <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
                         <h2 className="text-lg font-semibold text-ink">
@@ -552,6 +555,11 @@ const TeamDetail = () => {
                             </span>
                         )}
                     </div>
+                    {currentMilestone && (
+                        <div className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={currentMilestone.progress} aria-valuemin={0} aria-valuemax={100} aria-label="Milestone progress">
+                            <div className="h-2 rounded-full bg-accent-600" style={{ width: `${currentMilestone.progress}%` }} />
+                        </div>
+                    )}
                     {milestoneFilter === 'none' && (
                         <p className="mt-1 text-sm text-ink-muted">Tasks created before milestones. Edit a task to move it into a milestone.</p>
                     )}
@@ -1234,7 +1242,32 @@ const TeamDetail = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-surface-subtle">
-                                    {memberTasks.map((task) => (
+                                    {(() => {
+                                        // Group by milestone (milestone order), then tasks with no milestone.
+                                        const ids = new Set(milestones.map(m => String(m._id)));
+                                        const groups = milestones
+                                            .map(m => ({ key: String(m._id), title: m.title, closed: m.state === 'closed', tasks: memberTasks.filter(t => String(t.milestoneId || '') === String(m._id)) }))
+                                            .filter(g => g.tasks.length);
+                                        const rest = memberTasks.filter(t => !ids.has(String(t.milestoneId || '')));
+                                        if (rest.length) groups.push({ key: 'none', title: 'No milestone', tasks: rest });
+                                        return groups.flatMap(g => [
+                                            <tr key={`g-${g.key}`} className="bg-surface-muted">
+                                                <td colSpan={4} className="p-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleMemberGroup(g.key)}
+                                                        aria-expanded={memberOpenGroups.has(g.key)}
+                                                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-ink hover:bg-surface-subtle outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500"
+                                                    >
+                                                        <span aria-hidden="true" className={`inline-block text-ink-muted transition-transform motion-reduce:transition-none ${memberOpenGroups.has(g.key) ? 'rotate-90' : ''}`}>&rsaquo;</span>
+                                                        {g.title}
+                                                        <span className="ml-auto font-normal text-ink-muted">
+                                                            {g.tasks.filter(t => t.status === 'Completed').length} of {g.tasks.length} done{g.closed ? ' · Closed' : ''}
+                                                        </span>
+                                                    </button>
+                                                </td>
+                                            </tr>,
+                                            ...(memberOpenGroups.has(g.key) ? g.tasks : []).map((task) => (
                                         <tr key={task._id} className={task.isDeleted ? "bg-red-50" : "hover:bg-surface-muted transition-colors"}>
                                             <td className="px-4 py-3">
                                                 <div className="font-medium text-sm text-ink">
@@ -1265,7 +1298,8 @@ const TeamDetail = () => {
 
 
                                         </tr>
-                                    ))}
+                                    ))]);
+                                    })()}
                                 </tbody>
                             </table>
                         </div>

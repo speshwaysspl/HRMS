@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSocketEvent } from "../../context/NotificationContext";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
+import { useAuth } from "../../context/AuthContext";
 import { FaFileExcel, FaSave } from "react-icons/fa";
 
 const todayStr = () => {
@@ -13,6 +14,8 @@ const authHeader = () => ({ Authorization: `Bearer ${sessionStorage.getItem("tok
 
 // Manual daily roll-call kept by the team lead. Independent of punch-in attendance.
 const TeamAttendance = ({ teamId, members }) => {
+  const { user } = useAuth();
+  const isAdmin = (Array.isArray(user?.role) ? user.role : [user?.role]).includes("admin");
   const [date, setDate] = useState(todayStr());
   const [present, setPresent] = useState(new Set());
   const [marked, setMarked] = useState(false);
@@ -94,8 +97,8 @@ const TeamAttendance = ({ teamId, members }) => {
     }
   };
 
-  // Attendance can only be changed for today; past dates are view-only.
-  const editable = date === todayStr();
+  // Team leads change today only; admins can also correct past dates.
+  const editable = date === todayStr() || isAdmin;
   const presentCount = members.filter((m) => present.has(m._id)).length;
 
   const isToday = date === todayStr();
@@ -141,6 +144,9 @@ const TeamAttendance = ({ teamId, members }) => {
           <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-red-700 tabular-nums">{members.length - presentCount} absent</span>
           {!editable && (
             <span className="text-xs text-ink-muted">View only. Attendance can be changed for today only.</span>
+          )}
+          {editable && !isToday && (
+            <span className="text-xs font-medium text-amber-700">Editing a past date (admin).</span>
           )}
         </div>
 

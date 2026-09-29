@@ -44,7 +44,7 @@ class WorkProofField extends StatelessWidget {
     return last.replaceFirst(RegExp(r'^\d{10,}[-_]'), '');
   }
 
-  Future<void> _pick() async {
+  Future<void> _pick(BuildContext context) async {
     final r = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'],
@@ -52,7 +52,11 @@ class WorkProofField extends StatelessWidget {
     final path = r?.files.single.path;
     if (path == null) return;
     if (await File(path).length() > 10 * 1024 * 1024) {
-      onPicked(null);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('That file is over 10 MB. Pick a smaller one.')),
+        );
+      }
       return;
     }
     onPicked(path);
@@ -87,7 +91,7 @@ class WorkProofField extends StatelessWidget {
         return Text('No file attached.', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)));
       }
       return OutlinedButton.icon(
-        onPressed: enabled ? _pick : null,
+        onPressed: enabled ? () => _pick(context) : null,
         style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
         icon: const Icon(Icons.upload_file_rounded),
         label: const Text('Attach work proof (max 10 MB)'),
@@ -147,7 +151,7 @@ class WorkProofField extends StatelessWidget {
                 ),
               if (editable)
                 TextButton.icon(
-                  onPressed: enabled ? _pick : null,
+                  onPressed: enabled ? () => _pick(context) : null,
                   icon: const Icon(Icons.swap_horiz, size: 18),
                   label: Text(isNew ? 'Change' : 'Replace'),
                 ),

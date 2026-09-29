@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import '../../services/app_events.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +12,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/work_proof_field.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -394,19 +394,7 @@ class _TaskUpdateSheet extends StatefulWidget {
 class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
   bool _saving = false;
   String? _filePath;
-  String? _fileName;
   bool _removeSaved = false; // saved proof marked for removal on submit
-
-  Future<void> _pickFile() async {
-    final r = await FilePicker.platform.pickFiles();
-    final f = r?.files.single;
-    if (f?.path == null) return;
-    setState(() {
-      _filePath = f!.path;
-      _fileName = f.name;
-      _removeSaved = false;
-    });
-  }
 
   String _fmt(dynamic v) {
     try {
@@ -458,9 +446,6 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
     ),
   );
 
-  Future<void> _openUrl(String url) =>
-      launchUrl(Uri.parse(_absUrl(url)), mode: LaunchMode.externalApplication);
-
   Widget _note(IconData icon, String text, Color color) => Row(
     children: [
       Icon(icon, color: color, size: context.r(20)),
@@ -506,7 +491,15 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
               ),
             ),
             SizedBox(height: context.h(8)),
-            _FileTile(name: savedName, onOpen: () => _openUrl(savedUrl)),
+            WorkProofField(
+              existingUrl: savedUrl,
+              existingName: savedName,
+              pickedPath: null,
+              removed: false,
+              editable: false,
+              onPicked: (_) {},
+              onRemovedChanged: (_) {},
+            ),
           ],
         ],
       );
@@ -528,89 +521,15 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
             style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
           ),
           SizedBox(height: context.h(8)),
-          if (_filePath != null)
-            // Newly picked file (uploaded on submit)
-            _FileTile(
-              name: _fileName ?? 'New file',
-              caption: savedUrl.isNotEmpty && !_removeSaved
-                  ? 'Replaces your current proof'
-                  : 'New file',
-              actions: [
-                TextButton(
-                  onPressed: _saving ? null : _pickFile,
-                  child: const Text('Change'),
-                ),
-                TextButton(
-                  onPressed: _saving
-                      ? null
-                      : () => setState(() {
-                          _filePath = null;
-                          _fileName = null;
-                        }),
-                  child: const Text('Discard'),
-                ),
-              ],
-            )
-          else if (savedUrl.isNotEmpty && !_removeSaved)
-            // Proof already submitted
-            _FileTile(
-              name: savedName,
-              caption: 'Submitted',
-              onOpen: () => _openUrl(savedUrl),
-              actions: [
-                TextButton(
-                  onPressed: _saving ? null : _pickFile,
-                  child: const Text('Replace'),
-                ),
-                TextButton(
-                  onPressed: _saving
-                      ? null
-                      : () => setState(() => _removeSaved = true),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                  ),
-                  child: const Text('Remove'),
-                ),
-              ],
-            )
-          else ...[
-            if (_removeSaved)
-              Padding(
-                padding: EdgeInsets.only(bottom: context.h(8)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '$savedName will be removed when you resubmit.',
-                        style: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: context.sp(12),
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() => _removeSaved = false),
-                      child: const Text('Undo'),
-                    ),
-                  ],
-                ),
-              ),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _pickFile,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Attach work proof'),
-            ),
-            Padding(
-              padding: EdgeInsets.only(top: context.h(4)),
-              child: Text(
-                'Image, PDF or document, up to 10 MB',
-                style: TextStyle(
-                  color: AppColors.inkMuted,
-                  fontSize: context.sp(12),
-                ),
-              ),
-            ),
-          ],
+          WorkProofField(
+            existingUrl: savedUrl.isEmpty ? null : savedUrl,
+            existingName: savedName,
+            pickedPath: _filePath,
+            removed: _removeSaved,
+            enabled: !_saving,
+            onPicked: (path) => setState(() => _filePath = path),
+            onRemovedChanged: (v) => setState(() => _removeSaved = v),
+          ),
           SizedBox(height: context.h(16)),
           SizedBox(
             width: double.infinity,
@@ -759,95 +678,6 @@ class _ReferenceView extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-String _absUrl(String url) {
-  if (url.startsWith('http')) return url;
-  final base = ApiClient.instance.dio.options.baseUrl.replaceAll(
-    RegExp(r'/$'),
-    '',
-  );
-  return '$base/${url.startsWith('/') ? url.substring(1) : url}';
-}
-
-/// A file row (name + caption) with an optional open action and buttons —
-/// mirrors web WorkProofField.
-class _FileTile extends StatelessWidget {
-  const _FileTile({
-    required this.name,
-    this.caption,
-    this.onOpen,
-    this.actions = const [],
-  });
-  final String name;
-  final String? caption;
-  final VoidCallback? onOpen;
-  final List<Widget> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.surfaceSubtle),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        context.w(12),
-        context.h(8),
-        context.w(4),
-        context.h(4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: onOpen,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.insert_drive_file_outlined,
-                  color: AppColors.inkMuted,
-                  size: context.r(22),
-                ),
-                SizedBox(width: context.w(10)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (caption != null)
-                        Text(
-                          caption!,
-                          style: TextStyle(
-                            color: AppColors.inkMuted,
-                            fontSize: context.sp(12),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (onOpen != null)
-                  IconButton(
-                    tooltip: 'Open',
-                    onPressed: onOpen,
-                    icon: const Icon(Icons.open_in_new),
-                  ),
-              ],
-            ),
-          ),
-          if (actions.isNotEmpty)
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
-        ],
-      ),
     );
   }
 }

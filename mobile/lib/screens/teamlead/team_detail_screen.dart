@@ -49,6 +49,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   // Tasks live inside milestones: null shows the milestone list, 'none' the
   // unplanned tasks, otherwise that milestone's tasks.
   String? _milestoneFilter;
+  bool get _inMilestone => _milestoneFilter != null && _tabs.index == 0;
   Map<String, dynamic>? _detail;
   bool _loading = true;
   Object? _error;
@@ -266,6 +267,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       builder: (_) => _MemberSheet(
         stat: stat,
         tasks: memberTasks,
+        milestones: _milestones,
         date: _date,
         openDoc: _openDoc,
         onUpdate: (t) {
@@ -685,62 +687,107 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       color: AppColors.inkMuted,
       fontSize: context.sp(12),
     );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.w(8),
-        context.h(4),
-        context.w(16),
-        0,
-      ),
+    if (m == null) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          context.w(16),
+          context.h(12),
+          context.w(16),
+          0,
+        ),
+        child: Text(
+          'Tasks not in any milestone. Edit a task to move it into one.',
+          style: muted,
+        ),
+      );
+    }
+    final progress = ((m['progress'] as num?) ?? 0).clamp(0, 100).toDouble();
+    final due = DateTime.tryParse(m['dueDate']?.toString() ?? '');
+    final closed = m['state'] == 'closed';
+    Widget stat(String value, String label) => Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextButton.icon(
-            onPressed: () => setState(() => _milestoneFilter = null),
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('All milestones'),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: context.sp(16),
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.w(8)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Text(label, style: muted),
+        ],
+      ),
+    );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.w(16),
+        context.h(12),
+        context.w(16),
+        0,
+      ),
+      child: SimpleCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  name ?? 'Milestone',
-                  style: TextStyle(
-                    fontSize: context.sp(17),
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
+                Icon(
+                  Icons.event_outlined,
+                  size: context.r(16),
+                  color: AppColors.inkMuted,
+                ),
+                SizedBox(width: context.w(6)),
+                Expanded(
+                  child: Text(
+                    due != null
+                        ? 'Due ${DateFormat('d MMM yyyy').format(due.toLocal())}'
+                        : 'No due date',
+                    style: muted,
                   ),
                 ),
-                SizedBox(height: context.h(2)),
-                if (m != null) ...[
-                  Text(
-                    [
-                      if (DateTime.tryParse(m['dueDate']?.toString() ?? '') !=
-                          null)
-                        'Due ${DateFormat('d MMM yyyy').format(DateTime.parse(m['dueDate'].toString()).toLocal())}',
-                      '${m['progress'] ?? 0}% complete',
-                      '${m['openTasks'] ?? 0} open',
-                      '${m['completedTasks'] ?? 0} done',
-                      if (m['state'] == 'closed') 'Closed',
-                    ].join(' · '),
-                    style: muted,
-                  ),
-                  if ((m['description'] ?? '').toString().isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: context.h(4)),
-                      child: Text(m['description'].toString(), style: muted),
+                if (closed)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.w(8),
+                      vertical: context.h(2),
                     ),
-                ] else
-                  Text(
-                    'Tasks not in any milestone. Edit a task to move it into one.',
-                    style: muted,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('Closed', style: muted),
                   ),
               ],
             ),
-          ),
-        ],
+            SizedBox(height: context.h(12)),
+            Row(
+              children: [
+                stat('${progress.round()}%', 'complete'),
+                stat('${m['openTasks'] ?? 0}', 'open'),
+                stat('${m['completedTasks'] ?? 0}', 'done'),
+              ],
+            ),
+            SizedBox(height: context.h(10)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress / 100,
+                minHeight: context.h(6),
+                color: AppColors.accent600,
+                backgroundColor: AppColors.surfaceSubtle,
+              ),
+            ),
+            if ((m['description'] ?? '').toString().isNotEmpty) ...[
+              SizedBox(height: context.h(10)),
+              Text(
+                m['description'].toString(),
+                style: muted.copyWith(fontSize: context.sp(13)),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1026,20 +1073,37 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         if (!didPop) setState(() => _milestoneFilter = null);
       },
       child: Scaffold(
-        appBar: HrmsAppBar(
-          title: Text(widget.name),
-          bottom: TabBar(
-            controller: _tabs,
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: 'Milestones'),
-              Tab(text: 'Members'),
-              Tab(text: 'Attendance'),
-            ],
-          ),
-        ),
+        // Inside a milestone the screen becomes a focused sub-page: its own title,
+        // one back arrow (to the milestone list) and no team tabs.
+        appBar: _inMilestone
+            ? HrmsAppBar(
+                leading: IconButton(
+                  tooltip: 'All milestones',
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => setState(() => _milestoneFilter = null),
+                ),
+                title: Text(
+                  _milestoneFilter == 'none'
+                      ? 'No milestone'
+                      : (_milestoneOf(_milestoneFilter)?['title']?.toString() ??
+                            'Milestone'),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            : HrmsAppBar(
+                title: Text(widget.name),
+                bottom: TabBar(
+                  controller: _tabs,
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: 'Milestones'),
+                    Tab(text: 'Members'),
+                    Tab(text: 'Attendance'),
+                  ],
+                ),
+              ),
         floatingActionButton: _loading || _error != null || _tabs.index != 0
             ? null
             : _milestoneFilter == 'none'
@@ -1073,6 +1137,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                 });
                 _load();
               })
+            : _inMilestone
+            ? _taskTab()
             : Column(
                 children: [
                   Container(
@@ -1093,21 +1159,19 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                     child: TabBarView(
                       controller: _tabs,
                       children: [
-                        _milestoneFilter != null
-                            ? _taskTab()
-                            : MilestonesTab(
-                                teamId: widget.id,
-                                milestones: _milestones,
-                                canManage: true,
-                                unplannedCount: _taskList
-                                    .where((t) => t['milestoneId'] == null)
-                                    .length,
-                                onChanged: _loadMilestones,
-                                onViewTasks: (id) => setState(() {
-                                  _milestoneFilter = id;
-                                  _statusFilter = null;
-                                }),
-                              ),
+                        MilestonesTab(
+                          teamId: widget.id,
+                          milestones: _milestones,
+                          canManage: true,
+                          unplannedCount: _taskList
+                              .where((t) => t['milestoneId'] == null)
+                              .length,
+                          onChanged: _loadMilestones,
+                          onViewTasks: (id) => setState(() {
+                            _milestoneFilter = id;
+                            _statusFilter = null;
+                          }),
+                        ),
                         _membersTab(),
                         TeamAttendanceTab(
                           teamId: widget.id,
@@ -1962,16 +2026,83 @@ class _EditTaskSheetState extends State<_EditTaskSheet> {
 class _MemberSheet extends StatelessWidget {
   final Map stat;
   final List<Map> tasks;
+  final List<Map<String, dynamic>> milestones;
   final String Function(dynamic) date;
   final Future<void> Function(String) openDoc;
   final void Function(Map task) onUpdate;
   const _MemberSheet({
     required this.stat,
     required this.tasks,
+    this.milestones = const [],
     required this.date,
     required this.openDoc,
     required this.onUpdate,
   });
+
+  /// The member's tasks grouped by milestone (milestone order, then tasks
+  /// with no milestone). Empty groups are skipped.
+  List<({String title, String? meta, List<Map> tasks})> _groups() {
+    final out = <({String title, String? meta, List<Map> tasks})>[];
+    final known = <String>{};
+    for (final m in milestones) {
+      final id = m['_id']?.toString();
+      if (id == null) continue;
+      known.add(id);
+      final list = tasks
+          .where((t) => t['milestoneId']?.toString() == id)
+          .toList();
+      if (list.isEmpty) continue;
+      final done = list.where((t) => t['status'] == 'Completed').length;
+      out.add((
+        title: m['title']?.toString() ?? 'Milestone',
+        meta:
+            '$done of ${list.length} done${m['state'] == 'closed' ? ' · Closed' : ''}',
+        tasks: list,
+      ));
+    }
+    final rest = tasks
+        .where((t) => !known.contains(t['milestoneId']?.toString()))
+        .toList();
+    if (rest.isNotEmpty) {
+      out.add((title: 'No milestone', meta: null, tasks: rest));
+    }
+    return out;
+  }
+
+  Widget _groupHeader(BuildContext context, String title, String? meta) =>
+      Padding(
+        padding: EdgeInsets.only(top: context.h(6), bottom: context.h(8)),
+        child: Row(
+          children: [
+            Icon(
+              Icons.flag_outlined,
+              size: context.r(18),
+              color: AppColors.brand500,
+            ),
+            SizedBox(width: context.w(8)),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                  fontSize: context.sp(14),
+                ),
+              ),
+            ),
+            if (meta != null)
+              Text(
+                meta,
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(12),
+                ),
+              ),
+          ],
+        ),
+      );
 
   Widget _section(BuildContext context, String title) => Padding(
     padding: EdgeInsets.only(top: context.h(18), bottom: context.h(10)),
@@ -2151,84 +2282,137 @@ class _MemberSheet extends StatelessWidget {
               ),
             )
           else
-            ...tasks.map((t) {
-              final deleted = t['isDeleted'] == true;
-              final proof = t['workProof']?.toString() ?? '';
-              return Container(
-                margin: EdgeInsets.only(bottom: context.h(10)),
-                padding: EdgeInsets.all(context.w(14)),
-                decoration: BoxDecoration(
-                  color: deleted ? AppColors.dangerBg : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.surfaceSubtle),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            for (final g in _groups())
+              _CollapsibleGroup(
+                header: _groupHeader(context, g.title, g.meta),
+                children: g.tasks.map((t) {
+                  final deleted = t['isDeleted'] == true;
+                  final proof = t['workProof']?.toString() ?? '';
+                  return Container(
+                    margin: EdgeInsets.only(bottom: context.h(10)),
+                    padding: EdgeInsets.all(context.w(14)),
+                    decoration: BoxDecoration(
+                      color: deleted ? AppColors.dangerBg : AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.surfaceSubtle),
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(text: t['title']?.toString() ?? ''),
-                                if (deleted)
-                                  const TextSpan(
-                                    text: '  (Deleted)',
-                                    style: TextStyle(
-                                      color: AppColors.danger,
-                                      fontWeight: FontWeight.w700,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: t['title']?.toString() ?? '',
                                     ),
-                                  ),
-                              ],
+                                    if (deleted)
+                                      const TextSpan(
+                                        text: '  (Deleted)',
+                                        style: TextStyle(
+                                          color: AppColors.danger,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.ink,
+                                ),
+                              ),
                             ),
+                            GestureDetector(
+                              onTap: deleted ? null : () => onUpdate(t),
+                              child: _StatusPill(t['status']?.toString() ?? ''),
+                            ),
+                          ],
+                        ),
+                        if ((t['description']?.toString() ?? '')
+                            .isNotEmpty) ...[
+                          SizedBox(height: context.h(4)),
+                          Text(
+                            t['description'].toString(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink,
+                              color: AppColors.inkMuted,
+                              fontSize: context.sp(12),
                             ),
                           ),
+                        ],
+                        SizedBox(height: context.h(8)),
+                        Row(
+                          children: [
+                            Text(
+                              '${date(t['startDate'])}  →  ${date(t['deadline'])}',
+                              style: TextStyle(
+                                color: AppColors.inkMuted,
+                                fontSize: context.sp(12),
+                              ),
+                            ),
+                          ],
                         ),
-                        GestureDetector(
-                          onTap: deleted ? null : () => onUpdate(t),
-                          child: _StatusPill(t['status']?.toString() ?? ''),
-                        ),
+                        if (proof.isNotEmpty) ...[
+                          SizedBox(height: context.h(10)),
+                          _ProofButton(onTap: () => openDoc(proof)),
+                        ],
                       ],
                     ),
-                    if ((t['description']?.toString() ?? '').isNotEmpty) ...[
-                      SizedBox(height: context.h(4)),
-                      Text(
-                        t['description'].toString(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: context.sp(12),
-                        ),
-                      ),
-                    ],
-                    SizedBox(height: context.h(8)),
-                    Row(
-                      children: [
-                        Text(
-                          '${date(t['startDate'])}  →  ${date(t['deadline'])}',
-                          style: TextStyle(
-                            color: AppColors.inkMuted,
-                            fontSize: context.sp(12),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (proof.isNotEmpty) ...[
-                      SizedBox(height: context.h(10)),
-                      _ProofButton(onTap: () => openDoc(proof)),
-                    ],
-                  ],
-                ),
-              );
-            }),
+                  );
+                }).toList(),
+              ),
         ],
       ),
+    );
+  }
+}
+
+/// A milestone group that starts collapsed; tapping the header shows its tasks.
+class _CollapsibleGroup extends StatefulWidget {
+  const _CollapsibleGroup({required this.header, required this.children});
+  final Widget header;
+  final List<Widget> children;
+
+  @override
+  State<_CollapsibleGroup> createState() => _CollapsibleGroupState();
+}
+
+class _CollapsibleGroupState extends State<_CollapsibleGroup> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          button: true,
+          expanded: _open,
+          child: InkWell(
+            onTap: () => setState(() => _open = !_open),
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              children: [
+                AnimatedRotation(
+                  turns: _open ? 0.25 : 0,
+                  duration: MediaQuery.of(context).disableAnimations
+                      ? Duration.zero
+                      : const Duration(milliseconds: 200),
+                  child: Icon(Icons.chevron_right, color: AppColors.inkMuted),
+                ),
+                SizedBox(width: context.w(4)),
+                Expanded(child: widget.header),
+              ],
+            ),
+          ),
+        ),
+        if (_open) ...widget.children,
+        SizedBox(height: context.h(8)),
+      ],
     );
   }
 }

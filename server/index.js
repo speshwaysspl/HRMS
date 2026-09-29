@@ -26,6 +26,7 @@ import { initializeBirthdayScheduler } from "./services/birthdayScheduler.js";
 import { initializeHolidayReminderScheduler } from "./services/holidayScheduler.js";
 import { initializeDocumentExpiryScheduler } from "./services/documentExpiryScheduler.js";
 import { initializeCheckoutReminderScheduler } from "./services/checkoutReminderScheduler.js";
+import { initializeTeamAttendanceReminderScheduler } from "./services/teamAttendanceReminderScheduler.js";
 import cron from "node-cron";
 import User from "./models/User.js";
 import { publishDueAnnouncements } from "./controllers/announcementController.js";
@@ -180,6 +181,7 @@ httpServer.listen(PORT, () => {
   initializeHolidayReminderScheduler(io);
   initializeDocumentExpiryScheduler(io);
   initializeCheckoutReminderScheduler(io);
+  initializeTeamAttendanceReminderScheduler(io);
   initializeWeeklyReportScheduler();
   // Release scheduled announcements every minute.
   cron.schedule("* * * * *", async () => {

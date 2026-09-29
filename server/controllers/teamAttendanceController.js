@@ -58,7 +58,11 @@ export const saveTeamAttendance = async (req, res) => {
   try {
     const { date, present } = req.body;
     if (!DATE_RE.test(date || "")) return res.status(400).json({ success: false, error: "Invalid date" });
-    if (date !== todayIST())
+    const isAdmin = (Array.isArray(req.user.role) ? req.user.role : [req.user.role]).includes("admin");
+    // Team leads mark today only; admins can also correct past days. Nobody marks the future.
+    if (date > todayIST())
+      return res.status(400).json({ success: false, error: "Attendance can't be marked for a future date" });
+    if (!isAdmin && date !== todayIST())
       return res.status(400).json({ success: false, error: "Attendance can only be marked for today" });
     if (!Array.isArray(present)) return res.status(400).json({ success: false, error: "present must be an array" });
     const team = await loadTeamForLead(req, res);
@@ -84,7 +88,7 @@ export const saveTeamAttendance = async (req, res) => {
 
 const pad = (n) => String(n).padStart(2, "0");
 const fill = (argb) => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
-const YELLOW = "FFFFFF00", CYAN = "FF00FFFF", GREEN = "FF6AA84F", RED = "FFFF0000";
+const YELLOW = "FFFFFF00", CYAN = "FF00FFFF", GREEN = "FF6AA84F", RED = "FFFF0000", PRESENT_GREEN = "FF00B050";
 const thin = { style: "thin", color: { argb: "FFBFBFBF" } };
 const border = { top: thin, left: thin, bottom: thin, right: thin };
 
@@ -165,7 +169,7 @@ const buildWorkbook = async (teams, month) => {
         else if (dow === 6) { cells.push(["SATURDAY", CYAN]); present++; }
         else if (dow === 0) { cells.push(["SUNDAY", CYAN]); present++; }
         else if (holidayDays.has(d)) { cells.push(["HOLIDAY", GREEN]); present++; }
-        else if (isPresent) { cells.push(["PRESENT", null]); present++; }
+        else if (isPresent) { cells.push(["PRESENT", PRESENT_GREEN]); present++; }
         else cells.push(["", null]);
       }
       const row = ws.addRow([emp.userId?.name?.toUpperCase() || "-", ...cells.map((c) => c[0]), present, absent]);
