@@ -6,6 +6,12 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-09-30 — Team pages, payslips and announcements phone layouts mirror the app (web)
+- `team/TeamDetail.jsx` + `team/TeamAttendance.jsx` (commit 0c1b8b6), below `sm`: dark header panel with team name + full-width Milestones/Members/Attendance tabs, "Lead: X"; attendance shows date · Excel buttons, one coloured summary line, P / Half / A segments, sticky Save; Monthly report card desktop-only. Mirrors `teamlead/team_detail_screen.dart` + `team_attendance_tab.dart`.
+- `salary/View.jsx` (employee payslips, `/salary/:id`), below `sm`: no "Salary Management" heading or "Salary Records" wrapper card — payslip cards sit directly on the page like `payslips_screen.dart`; amounts use en-IN grouping, whole rupees (₹49,229) like the app. Admin landing (no id) unchanged.
+- `employee/EmployeeAnnouncements.jsx`, below `md`: page H1 hidden (app bar already says Announcements), only the subtitle, no extra padding — like `announcements_screen.dart`.
+- `npx vite build` OK. Flutter unchanged (reference).
+
 ## 2026-09-30 — Teams page phone layout mirrors the app (web)
 - `frontend/src/components/team/TeamList.jsx` below `sm`: matches Flutter `teamlead/my_teams_screen.dart` — "Your teams · N" row with an Attendance button (opens month picker, picking a month downloads the Excel), cards with bold name + chevron, 2-line description, overlapping member-initial avatars (max 4, +N) and "N members"; skeleton loading and illustrated empty state. Desktop header/search/table unchanged; on phones the search/filter row shows for admins only (app has none), and admins keep Edit/Delete + "+ New". Flutter unchanged (it's the reference). `npx vite build` OK.
 

@@ -77,16 +77,16 @@ const EmployeeAnnouncements = () => {
   );
 
   return (
-    <div className="min-h-screen bg-surface-muted p-4 md:p-6">
+    <div className="min-h-screen bg-surface-muted md:p-6">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-5 md:mb-8"
+          className="mb-3.5 md:mb-8 px-0.5 md:px-0"
         >
-          <h1 className="text-2xl md:text-3xl font-extrabold text-ink mb-1">Announcements</h1>
-          <p className="text-ink-muted text-sm md:text-base">Stay updated with the latest company news</p>
+          <h1 className="hidden md:block text-3xl font-extrabold text-ink mb-1">Announcements</h1>
+          <p className="text-ink-muted text-[13px] md:text-base">Stay updated with the latest company news</p>
         </motion.div>
 
         <motion.div

@@ -338,9 +338,12 @@ const View = () => {
     }
   };
 
+  // Same as the app: en-IN grouping, whole rupees (₹49,229).
+  const inr = (v) => `₹${Math.round(Number(v || 0)).toLocaleString("en-IN")}`;
+
   return (
-    <div className="overflow-x-auto p-5">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div className="overflow-x-auto sm:p-5">
+      <div className={`${id ? "hidden sm:flex" : "flex"} flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4`}>
         <h2 className="text-2xl font-semibold text-ink">Salary Management</h2>
         {user?.role === 'admin' && !id && (
           <div className="flex flex-wrap gap-3">
@@ -366,8 +369,8 @@ const View = () => {
         )}
       </div>
 
-      <div className="bg-surface p-6 rounded-xl shadow-card">
-        <h3 className="text-lg font-semibold text-ink mb-4">Salary Records</h3>
+      <div className={id ? "sm:bg-surface sm:p-6 sm:rounded-xl sm:shadow-card" : "bg-surface p-6 rounded-xl shadow-card"}>
+        <h3 className={`${id ? "hidden sm:block" : ""} text-lg font-semibold text-ink mb-4`}>Salary Records</h3>
 
 
 
@@ -454,7 +457,7 @@ const View = () => {
           </div>
 
           {/* Mobile: square cards */}
-          <div className="sm:hidden grid grid-cols-1 gap-3">
+          <div className="sm:hidden grid grid-cols-1 gap-2.5">
             {salaries.map((salary, index) => {
               const empId = (() => {
                 if (salary.employeeId) {
@@ -485,7 +488,7 @@ const View = () => {
 
                   <div className="mb-3">
                     <div className="text-[11px] text-ink-faint uppercase tracking-wide">Net Salary</div>
-                    <div className="text-2xl font-bold text-accent-700">₹{Number(salary.netSalary).toFixed(2)}</div>
+                    <div className="text-2xl font-bold text-accent-700 tabular-nums">{inr(salary.netSalary)}</div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 pt-3 border-t border-surface-subtle text-xs">
@@ -495,11 +498,11 @@ const View = () => {
                     </div>
                     <div>
                       <div className="text-ink-faint">Salary</div>
-                      <div className="font-medium text-ink truncate">₹{Number(salary.basicSalary).toFixed(2)}</div>
+                      <div className="font-medium text-ink truncate tabular-nums">{inr(salary.basicSalary)}</div>
                     </div>
                     <div>
                       <div className="text-ink-faint">Deduction</div>
-                      <div className="font-medium text-ink truncate">₹{Number(salary.deductions).toFixed(2)}</div>
+                      <div className="font-medium text-ink truncate tabular-nums">{inr(salary.deductions)}</div>
                     </div>
                   </div>
 
