@@ -20,6 +20,9 @@ const Add = () => {
     const [leave, setLeave] = useState({
         userId: user._id,
     })
+    const [proof, setProof] = useState(null);
+    const [proofError, setProofError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [balance, setBalance] = useState([]);
 
@@ -104,10 +107,16 @@ const Add = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (proofError) return;
+    setSubmitting(true);
 
     try {
+        // Multipart so the optional proof file travels with the request.
+        const form = new FormData();
+        Object.entries(leave).forEach(([k, v]) => v != null && form.append(k, v));
+        if (proof) form.append("proof", proof);
         const response = await axios.post(
-          `${API_BASE}/api/leave/add`,leave,
+          `${API_BASE}/api/leave/add`,form,
           {
             headers: {
               "Authorization": `Bearer ${sessionStorage.getItem("token")}`,
@@ -121,8 +130,21 @@ const Add = () => {
         if (error.response && !error.response.data.success) {
           alert(error.response.data.error);
         }
+      } finally {
+        setSubmitting(false);
       }
   }
+
+  const pickProof = (e) => {
+    const file = e.target.files?.[0] || null;
+    setProofError("");
+    if (file && !/^(image\/(jpeg|png|webp|heic)|application\/pdf)$/.test(file.type)) {
+      setProofError("Proof must be an image (JPG, PNG, WEBP) or a PDF.");
+    } else if (file && file.size > 5 * 1024 * 1024) {
+      setProofError("Proof file must be 5 MB or smaller.");
+    }
+    setProof(file);
+  };
 
   return (
     <div className="max-w-4xl mx-auto mt-6 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
@@ -196,12 +218,32 @@ const Add = () => {
               required
             ></textarea>
           </div>
+
+          {/* optional proof */}
+          <div>
+            <label htmlFor="leave-proof" className="block text-sm font-medium text-ink-muted">
+              Proof <span className="font-normal text-ink-faint">(optional)</span>
+            </label>
+            <input
+              id="leave-proof"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+              onChange={pickProof}
+              aria-describedby="leave-proof-hint"
+              aria-invalid={!!proofError}
+              className="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-surface-muted file:px-4 file:py-2 file:text-sm file:font-medium file:text-ink hover:file:bg-surface-subtle border border-surface-subtle rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500"
+            />
+            <p id="leave-proof-hint" className={`mt-1 text-xs ${proofError ? "text-red-700" : "text-ink-muted"}`}>
+              {proofError || "Medical certificate or other document. Image or PDF, up to 5 MB. Shared with Admin and HR."}
+            </p>
+          </div>
         </div>
         <button
           type="submit"
-          className="w-full mt-6 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150"
+          disabled={submitting || !!proofError}
+          className="w-full mt-6 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 disabled:opacity-60"
         >
-          Add Leave
+          {submitting ? "Submitting..." : "Add Leave"}
         </button>
       </form>
     </div>

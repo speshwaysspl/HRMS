@@ -8,6 +8,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const LeaveAction = lazy(() => import("./pages/LeaveAction"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
@@ -110,6 +111,7 @@ function App() {
         <Route path="/terms-and-conditions" element={<Terms />} />
         <Route path="/privacy-policy" element={<Privacy />} />
         <Route path="/delete-account" element={<DeleteAccount />} />
+        <Route path="/leave-action" element={<LeaveAction />} />
         <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
  

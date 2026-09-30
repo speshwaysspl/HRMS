@@ -5,7 +5,9 @@ import { wrapEmail } from "./emailTemplates.js";
 
 dotenv.config();
 
-const sendEmail = async (to, subject, html, attachments = []) => {
+// options.fromName / options.replyTo override the defaults for one email
+// (e.g. a leave request shows the employee's name and replies go to them).
+const sendEmail = async (to, subject, html, attachments = [], options = {}) => {
 
   try {
     if (!to || !to.includes('@')) {
@@ -17,8 +19,8 @@ const sendEmail = async (to, subject, html, attachments = []) => {
       process.env.MAIL_FROM_EMAIL ||
       process.env.AWS_SES_FROM ||
       '';
-    const fromName = process.env.MAIL_FROM_NAME || 'SPESHWAY SOLUTIONS PVT LTD';
-    const replyTo = process.env.MAIL_REPLY_TO || undefined;
+    const fromName = (options.fromName || process.env.MAIL_FROM_NAME || 'SPESHWAY SOLUTIONS PVT LTD').replace(/["\r\n]/g, '');
+    const replyTo = options.replyTo || process.env.MAIL_REPLY_TO || undefined;
 
     console.log(`📧 Attempting to send email to: ${to}`);
 

@@ -66,7 +66,7 @@ const createLeaveRequestNotification = async (leaveData, io) => {
 };
 
 // Create notification for leave status update (Admin -> Employee)
-const createLeaveStatusNotification = async (leaveData, status, adminId, io) => {
+const createLeaveStatusNotification = async (leaveData, status, adminId, io, remark = '') => {
   try {
     const employee = await Employee.findById(leaveData.employeeId).populate('userId');
     const admin = await User.findById(adminId);
@@ -74,7 +74,7 @@ const createLeaveStatusNotification = async (leaveData, status, adminId, io) => 
     const data = {
       type: status === 'Approved' ? 'leave_approved' : 'leave_rejected',
       title: `Leave Request ${status}`,
-      message: `Your leave request for ${leaveData.leaveType} has been ${statusText} by ${admin?.name || 'admin'}`,
+      message: `Your leave request for ${leaveData.leaveType} has been ${statusText} by ${admin?.name || 'admin'}${remark ? `. Remark: ${remark}` : ''}`,
       recipientId: employee.userId._id,
       senderId: adminId,
       relatedId: leaveData._id

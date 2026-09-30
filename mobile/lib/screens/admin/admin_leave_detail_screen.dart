@@ -9,6 +9,9 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/leave_reject_dialog.dart';
+import '../../widgets/work_proof_field.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminLeaveDetailScreen extends StatefulWidget {
   final String id;
@@ -54,9 +57,14 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
   }
 
   Future<void> _decide(String status) async {
+    String? remark;
+    if (status == 'Rejected') {
+      remark = await askLeaveRejectReason(context);
+      if (remark == null || !mounted) return;
+    }
     setState(() => _busy = true);
     try {
-      await _service.setStatus(widget.id, status);
+      await _service.setStatus(widget.id, status, remark: remark);
       _changed = true;
       await _load();
     } catch (e) {
@@ -148,6 +156,30 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
                         height: 1.4,
                       ),
                     ),
+                    if ((l['proof'] ?? '').toString().isNotEmpty) ...[
+                      SizedBox(height: context.h(16)),
+                      Text(
+                        'Proof',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: context.sp(13),
+                        ),
+                      ),
+                      SizedBox(height: context.h(4)),
+                      OutlinedButton.icon(
+                        onPressed: () => launchUrl(
+                          Uri.parse(WorkProofField.absUrl(l['proof'].toString())),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                        label: Text(
+                          (l['proofName'] ?? '').toString().isNotEmpty
+                              ? l['proofName'].toString()
+                              : 'View proof',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                     if (status == 'Pending') ...[
                       SizedBox(height: context.h(24)),
                       Row(

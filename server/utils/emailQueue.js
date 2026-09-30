@@ -12,15 +12,15 @@ const processNext = async () => {
   processing = true;
   const item = queue.shift();
   try {
-    await sendEmail(item.to, item.subject, item.html, item.attachments);
+    await sendEmail(item.to, item.subject, item.html, item.attachments, item.options);
   } catch (error) {
     console.error("Queued email error:", error);
   }
   setTimeout(processNext, delayMs);
 };
 
-export const enqueueEmail = (to, subject, html, attachments = []) => {
-  queue.push({ to, subject, html, attachments });
+export const enqueueEmail = (to, subject, html, attachments = [], options = {}) => {
+  queue.push({ to, subject, html, attachments, options });
   if (!processing) {
     processNext();
   }

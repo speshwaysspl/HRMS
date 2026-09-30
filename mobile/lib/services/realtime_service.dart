@@ -28,6 +28,13 @@ class RealtimeService {
     socket.on('team:updated', (data) {
       if (data is Map) AppEvents.teamChanged.value = Map<String, dynamic>.from(data);
     });
+    // A leave was approved/rejected (from the dashboard or HR's email): refresh leave screens.
+    socket.on('newNotification', (data) {
+      final type = data is Map ? data['type']?.toString() ?? '' : '';
+      if (type == 'leave_approved' || type == 'leave_rejected') {
+        AppEvents.leaveChanged.value++;
+      }
+    });
     socket.onConnectError((e) => debugPrint('Realtime connect error: $e'));
     socket.connect();
     _socket = socket;

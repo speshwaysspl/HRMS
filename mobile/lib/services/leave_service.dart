@@ -18,8 +18,12 @@ class LeaveService {
   }
 
   /// Admin/HR: approve or reject a leave request ('Approved' | 'Rejected').
-  Future<void> setStatus(String leaveId, String status) async {
-    await _dio.put('/api/leave/$leaveId', data: {'status': status});
+  /// [remark] is shown to the employee (required by the UI when rejecting).
+  Future<void> setStatus(String leaveId, String status, {String? remark}) async {
+    await _dio.put('/api/leave/$leaveId', data: {
+      'status': status,
+      'remark': ?remark,
+    });
   }
 
   /// Full detail of one leave request (employee + department populated).
@@ -46,14 +50,31 @@ class LeaveService {
     required String startDate,
     required String endDate,
     required String reason,
+    String? proofPath,
   }) async {
-    await _dio.post('/api/leave/add', data: {
+    // Multipart so the optional proof (image/PDF) goes with the request.
+    await _dio.post('/api/leave/add', data: FormData.fromMap({
       'userId': userId,
       'leaveType': leaveType,
       'startDate': startDate,
       'endDate': endDate,
       'reason': reason,
-    });
+      if (proofPath != null) 'proof': await MultipartFile.fromFile(proofPath),
+    }));
+  }
+
+  /// Adds or replaces the proof on the employee's own Pending/Rejected leave.
+  /// Returns true when a Rejected leave was resubmitted (back to Pending).
+  Future<bool> uploadProof(String leaveId, String path) async {
+    final res = await _dio.put(
+      '/api/leave/mine/$leaveId/proof',
+      data: FormData.fromMap({'proof': await MultipartFile.fromFile(path)}),
+    );
+    return (res.data as Map)['resubmitted'] == true;
+  }
+
+  Future<void> deleteProof(String leaveId) async {
+    await _dio.delete('/api/leave/mine/$leaveId/proof');
   }
 
   /// Withdraws the employee's own leave request (only while Pending).

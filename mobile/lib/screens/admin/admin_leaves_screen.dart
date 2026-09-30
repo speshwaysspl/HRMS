@@ -12,6 +12,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 import 'admin_leave_detail_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/leave_reject_dialog.dart';
 
 class AdminLeavesScreen extends StatefulWidget {
   const AdminLeavesScreen({super.key});
@@ -58,9 +59,14 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
   }
 
   Future<void> _decide(String id, String status) async {
+    String? remark;
+    if (status == 'Rejected') {
+      remark = await askLeaveRejectReason(context);
+      if (remark == null || !mounted) return;
+    }
     setState(() => _busy.add(id));
     try {
-      await _service.setStatus(id, status);
+      await _service.setStatus(id, status, remark: remark);
       await _load();
     } catch (e) {
       if (mounted) {

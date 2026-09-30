@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +17,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/leave_details_sheet.dart';
 
 class LeavesScreen extends StatefulWidget {
   const LeavesScreen({super.key});
@@ -34,6 +38,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
   @override
   void initState() {
     super.initState();
+    AppEvents.leaveChanged.addListener(_onLeaveChanged);
     final cache = AppCaches.of(context).leavesList;
     if (cache.hasData) {
       _leaves = cache.data!;
@@ -42,6 +47,16 @@ class _LeavesScreenState extends State<LeavesScreen> {
     } else {
       _load();
     }
+  }
+
+  void _onLeaveChanged() {
+    if (mounted) _load(silent: true);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.leaveChanged.removeListener(_onLeaveChanged);
+    super.dispose();
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -191,6 +206,10 @@ class _LeavesScreenState extends State<LeavesScreen> {
                   else
                     ..._leaves.map(
                       (l) => SimpleCard(
+                        onTap: () async {
+                          await showLeaveDetailsSheet(context, l);
+                          if (mounted) _load(silent: true);
+                        },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -276,6 +295,17 @@ class _LeavesScreenState extends State<LeavesScreen> {
                                 ],
                               ),
                             ],
+                            SizedBox(height: context.h(8)),
+                            Text(
+                              (l['status'] ?? '') == 'Rejected'
+                                  ? 'Tap to see why it was rejected'
+                                  : 'Tap for details & proof',
+                              style: TextStyle(
+                                color: AppColors.accent600,
+                                fontSize: context.sp(12),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             if ((l['status'] ?? 'Pending').toString() ==
                                 'Pending') ...[
                               SizedBox(height: context.h(12)),
@@ -363,6 +393,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _submitting = false;
+  String? _proofPath;
   bool _startDateError = false;
   bool _endDateError = false;
 
@@ -430,6 +461,7 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
         startDate: DateFormat('yyyy-MM-dd').format(_startDate!),
         endDate: DateFormat('yyyy-MM-dd').format(_endDate!),
         reason: _reasonController.text.trim(),
+        proofPath: _proofPath,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -441,6 +473,23 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<void> _pickProof() async {
+    final r = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'heic', 'pdf'],
+    );
+    final path = r?.files.single.path;
+    if (path == null || !mounted) return;
+    if (await File(path).length() > 5 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Proof must be 5 MB or smaller.')),
+      );
+      return;
+    }
+    setState(() => _proofPath = path);
   }
 
   @override
@@ -601,6 +650,57 @@ class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Please provide a reason'
                       : null,
+                ),
+                SizedBox(height: context.h(12)),
+                if (_proofPath == null)
+                  OutlinedButton.icon(
+                    onPressed: _submitting ? null : _pickProof,
+                    icon: const Icon(Icons.attach_file_rounded),
+                    label: const Text('Attach proof (optional)'),
+                  )
+                else
+                  Container(
+                    padding: EdgeInsets.only(left: context.w(12)),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.surfaceSubtle),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _proofPath!.toLowerCase().endsWith('.pdf')
+                              ? Icons.picture_as_pdf_outlined
+                              : Icons.image_outlined,
+                          color: AppColors.inkMuted,
+                        ),
+                        SizedBox(width: context.w(8)),
+                        Expanded(
+                          child: Text(
+                            _proofPath!.split(RegExp(r'[\/]')).last,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColors.ink,
+                              fontSize: context.sp(13),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove proof',
+                          onPressed: _submitting
+                              ? null
+                              : () => setState(() => _proofPath = null),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                SizedBox(height: context.h(4)),
+                Text(
+                  'Image or PDF, up to 5 MB. Shared with Admin and HR.',
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(12),
+                  ),
                 ),
                 SizedBox(height: context.h(18)),
                 ElevatedButton(

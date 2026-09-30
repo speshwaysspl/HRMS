@@ -12,7 +12,7 @@ class AppEvents {
   /// Fired after a successful attendance check-in / check-out.
   static final ValueNotifier<int> attendanceChanged = ValueNotifier<int>(0);
 
-  /// Fired after a leave request is applied.
+  /// Fired after a leave request is applied, or when one is approved/rejected.
   static final ValueNotifier<int> leaveChanged = ValueNotifier<int>(0);
 
   /// Fired when an action requests changing the bottom navigation tab.

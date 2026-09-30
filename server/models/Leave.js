@@ -15,6 +15,11 @@ const leaveSchema = new Schema({
     enum: ["Pending", "Approved", "Rejected"],
     default: "Pending",
   },
+  // Optional supporting document (medical certificate etc.), image or PDF.
+  proof: { type: String, default: "" },
+  proofName: { type: String, default: "" },
+  // Comment from whoever approved/rejected (required when rejecting from the HR email).
+  reviewRemark: { type: String, default: "" },
   appliedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
