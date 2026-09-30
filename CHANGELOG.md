@@ -6,6 +6,9 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-09-30 — Teams page phone layout mirrors the app (web)
+- `frontend/src/components/team/TeamList.jsx` below `sm`: matches Flutter `teamlead/my_teams_screen.dart` — "Your teams · N" row with an Attendance button (opens month picker, picking a month downloads the Excel), cards with bold name + chevron, 2-line description, overlapping member-initial avatars (max 4, +N) and "N members"; skeleton loading and illustrated empty state. Desktop header/search/table unchanged; on phones the search/filter row shows for admins only (app has none), and admins keep Edit/Delete + "+ New". Flutter unchanged (it's the reference). `npx vite build` OK.
+
 ## 2026-09-30 — Styled Leave Type dropdown (web only)
 - New reusable `frontend/src/components/common/SelectMenu.jsx` (styled combobox/listbox: anchored menu, 44px rows, check on selected, keyboard + outside-click close, keeps `required` validation). Replaces the native `<select>` in `leave/Add.jsx`, whose browser option list rendered oversized and unstyled. Web-only: Flutter already uses a Material `DropdownButtonFormField`. `npx vite build` OK.
 
