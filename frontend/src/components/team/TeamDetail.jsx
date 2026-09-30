@@ -481,7 +481,7 @@ const TeamDetail = () => {
 
   return (
     <motion.div
-      className="p-4 sm:p-6 bg-surface-muted min-h-screen"
+      className="sm:p-6 bg-surface-muted min-h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -489,7 +489,29 @@ const TeamDetail = () => {
       {/* Team header + tabs are hidden inside a milestone: it reads as its own sub-page. */}
       {activeTab !== 'tasks' && (<>
       {/* Header */}
-      <header className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 mb-5">
+      {/* Phone: dark header with the team name + tabs, like the app's HrmsAppBar with TabBar. */}
+      <div className="sm:hidden mb-3 rounded-xl bg-gradient-to-b from-brand-900 to-brand-800 text-white overflow-hidden">
+        <h1 className="px-4 pt-4 text-lg font-bold break-words">{team.name}</h1>
+        <div role="tablist" aria-label="Team sections" className="flex mt-2">
+          {tabs.map(t => {
+            const active = activeTab === t.key || (t.key === 'milestones' && activeTab === 'tasks');
+            return (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => (t.key === 'milestones' ? backToMilestones() : setActiveTab(t.key))}
+                className={`flex-1 min-h-[48px] text-sm font-semibold border-b-[3px] transition-colors outline-none focus-visible:bg-white/10 ${active ? 'border-white text-white' : 'border-transparent text-white/70'}`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <p className="sm:hidden px-1 mb-3 text-sm font-semibold text-ink">Lead: {team.leadId?.name || "N/A"}</p>
+
+      <header className="hidden sm:block bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 mb-5">
         <h1 className="text-xl sm:text-2xl font-semibold text-brand-800 break-words">{team.name}</h1>
         {team.description && <p className="mt-1 text-sm text-ink-muted max-w-3xl">{team.description}</p>}
         <dl className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-10 gap-y-3 text-sm">
@@ -505,7 +527,7 @@ const TeamDetail = () => {
       </header>
 
       {/* Tabs */}
-      <div role="tablist" aria-label="Team sections" className="flex gap-1 overflow-x-auto border-b border-surface-subtle mb-5">
+      <div role="tablist" aria-label="Team sections" className="hidden sm:flex gap-1 overflow-x-auto border-b border-surface-subtle mb-5">
         {tabs.map(t => {
           const active = activeTab === t.key || (t.key === 'milestones' && activeTab === 'tasks');
           return (

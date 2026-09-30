@@ -4,16 +4,18 @@ import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { useAuth } from "../../context/AuthContext";
 import { FaFileExcel, FaSave } from "react-icons/fa";
+import { FiCalendar, FiGrid } from "react-icons/fi";
 
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+// `short` = the app's compact segment labels (P / Half / A) used on phones.
 const STATUSES = [
-  { value: "present", label: "Present", on: "bg-accent-100 text-accent-800" },
-  { value: "half", label: "Half day", on: "bg-amber-100 text-amber-800" },
-  { value: "absent", label: "Absent", on: "bg-red-100 text-red-700" },
+  { value: "present", label: "Present", short: "P", on: "bg-accent-100 text-accent-800" },
+  { value: "half", label: "Half day", short: "Half", on: "bg-amber-100 text-amber-800" },
+  { value: "absent", label: "Absent", short: "A", on: "bg-red-100 text-red-700" },
 ];
 
 const authHeader = () => ({ Authorization: `Bearer ${sessionStorage.getItem("token")}` });
@@ -91,18 +93,18 @@ const TeamAttendance = ({ teamId, members }) => {
     }
   };
 
-  const exportExcel = async () => {
+  const exportExcel = async (forMonth = month) => {
     setExporting(true);
     try {
       const res = await axios.get(`${API_BASE}/api/team/${teamId}/attendance/export`, {
-        params: { month },
+        params: { month: forMonth },
         headers: authHeader(),
         responseType: "blob",
       });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `team_attendance_${month}.xlsx`;
+      a.download = `team_attendance_${forMonth}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -126,7 +128,43 @@ const TeamAttendance = ({ teamId, members }) => {
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
       {/* Roll call */}
       <section className="bg-white rounded-xl shadow-card border border-surface-subtle min-w-0" aria-labelledby="rollcall-heading">
-        <div className="flex flex-wrap items-end justify-between gap-3 px-4 sm:px-5 py-4 border-b border-surface-subtle">
+        {/* Phone: two equal outlined buttons, like the app (date picker · Excel). */}
+        <div className="sm:hidden grid grid-cols-2 gap-2.5 p-3">
+          <label className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-surface-subtle text-sm font-semibold text-brand-700 focus-within:ring-2 focus-within:ring-accent-500">
+            <FiCalendar size={16} aria-hidden="true" />
+            {new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+            <input
+              type="date"
+              aria-label="Attendance date"
+              max={todayStr()}
+              value={date}
+              disabled={saving}
+              onClick={(e) => e.currentTarget.showPicker?.()}
+              onChange={(e) => e.target.value && setDate(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </label>
+          <label className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-surface-subtle text-sm font-semibold text-brand-700 focus-within:ring-2 focus-within:ring-accent-500">
+            <FiGrid size={16} aria-hidden="true" />
+            {exporting ? "Preparing..." : "Excel"}
+            <input
+              type="month"
+              aria-label="Download attendance Excel for month"
+              max={todayStr().slice(0, 7)}
+              value={month}
+              disabled={exporting}
+              onClick={(e) => e.currentTarget.showPicker?.()}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                setMonth(e.target.value);
+                exportExcel(e.target.value);
+              }}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </label>
+        </div>
+
+        <div className="hidden sm:flex flex-wrap items-end justify-between gap-3 px-4 sm:px-5 py-4 border-b border-surface-subtle">
           <div className="min-w-0">
             <h3 id="rollcall-heading" className="text-lg font-semibold text-ink">Mark attendance</h3>
             <p className="text-sm text-ink-muted">{prettyDate}</p>
@@ -152,7 +190,16 @@ const TeamAttendance = ({ teamId, members }) => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 text-sm">
+        <p className="sm:hidden px-4 pb-3 text-[13px] leading-relaxed text-ink-muted tabular-nums">
+          {marked ? "Marked" : "Not marked yet"} ·{" "}
+          <span className="font-semibold text-green-600">{presentCount} present</span> ·{" "}
+          <span className="font-semibold text-amber-700">{halfCount} half day</span> ·{" "}
+          <span className="font-semibold text-red-600">{members.length - presentCount - halfCount} absent</span>
+          {!editable && " · View only (today only)"}
+          {editable && !isToday && <span className="font-semibold text-amber-700"> · Editing a past date</span>}
+        </p>
+
+        <div className="hidden sm:flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 text-sm">
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${marked ? "bg-accent-100 text-accent-800" : "bg-amber-100 text-amber-800"}`}>
             {marked ? "Marked" : "Not marked yet"}
           </span>
@@ -186,7 +233,7 @@ const TeamAttendance = ({ teamId, members }) => {
               const status = statusOf(m._id);
               const name = m.userId?.name || "Unknown";
               return (
-                <li key={m._id} className="flex flex-wrap items-center gap-3 px-4 sm:px-5 py-3 min-h-[56px]">
+                <li key={m._id} className="flex items-center gap-3 px-4 sm:px-5 py-3 min-h-[60px]">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-ink truncate">{name}</div>
                     <div className="text-xs text-ink-muted">{m.employeeId}</div>
@@ -202,11 +249,13 @@ const TeamAttendance = ({ teamId, members }) => {
                           aria-checked={selected}
                           disabled={!editable}
                           onClick={() => setStatus(m._id, s.value)}
-                          className={`min-h-[36px] rounded-md px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:cursor-default ${
+                          aria-label={s.label}
+                          className={`min-h-[40px] min-w-[40px] sm:min-w-0 rounded-md px-2.5 sm:px-3 text-sm sm:text-xs font-semibold sm:font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:cursor-default ${
                             selected ? s.on : `text-ink-muted ${editable ? "hover:bg-surface-muted" : ""}`
                           }`}
                         >
-                          {s.label}
+                          <span className="sm:hidden">{s.short}</span>
+                          <span className="hidden sm:inline">{s.label}</span>
                         </button>
                       );
                     })}
@@ -238,7 +287,7 @@ const TeamAttendance = ({ teamId, members }) => {
       </section>
 
       {/* Monthly report */}
-      <aside className="bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 self-start" aria-labelledby="report-heading">
+      <aside className="hidden sm:block bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 self-start" aria-labelledby="report-heading">
         <h3 id="report-heading" className="text-base font-semibold text-ink">Monthly report</h3>
         <p className="mt-1 text-sm text-ink-muted">Download the attendance register for a whole month as Excel.</p>
         <label className="block text-xs font-medium text-ink-muted mt-4 mb-1" htmlFor="ta-month">Month</label>
