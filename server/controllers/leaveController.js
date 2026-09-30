@@ -21,7 +21,7 @@ const actionButton = (href, label, bg) =>
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
 
-// Every new leave request is also emailed to HR (HR_EMAIL, default charanteja@speshway.com).
+// Every new leave request is also emailed to HR (HR_EMAIL, default hr@speshway.com).
 const emailLeaveToHR = async (leave, employee, proofFile) => {
     await employee.populate([{ path: 'userId', select: 'name email' }, { path: 'department', select: 'dep_name' }])
     const name = employee.userId?.name || 'Employee'
@@ -46,7 +46,7 @@ ${rows.map(([k, v]) => `<tr><td style="border:1px solid #ddd;font-weight:bold">$
 </table>
 <p style="margin-top:24px">${actionButton(`${actionBase}&action=approve`, 'Approve', '#337038')}${actionButton(`${actionBase}&action=reject`, 'Reject', '#DC2626')}</p>
 <p style="font-size:13px;color:#6b7280">You can add a remark on the next page. Rejecting requires a reason. This link expires in 14 days; you can also review the request in the Admin Dashboard under Leaves.</p>`
-    enqueueEmail(process.env.HR_EMAIL || 'charanteja@speshway.com', `Leave Request - ${name} (${fmtDate(leave.startDate)} to ${fmtDate(leave.endDate)})`, html, proofFile ? [{ filename: proofFile.originalname, content: proofFile.buffer, contentType: proofFile.mimetype }] : [], {
+    enqueueEmail(process.env.HR_EMAIL || 'hr@speshway.com', `Leave Request - ${name} (${fmtDate(leave.startDate)} to ${fmtDate(leave.endDate)})`, html, proofFile ? [{ filename: proofFile.originalname, content: proofFile.buffer, contentType: proofFile.mimetype }] : [], {
         // Sent through the company mailbox (a personal address can't be used as the sender
         // without failing SPF/DKIM), but shown under the employee's name; Reply goes to them.
         fromName: `${name} via Speshway HRMS`,
