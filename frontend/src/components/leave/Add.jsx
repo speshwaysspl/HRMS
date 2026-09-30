@@ -64,7 +64,7 @@ const Add = () => {
             // If end date is already selected, validate it against new start date
             // Same day is fine (a one-day leave).
             if (leave.endDate && value > leave.endDate) {
-                alert('From date can't be after the To date!');
+                alert("From date can't be after the To date!");
                 return false;
             }
         }
@@ -76,7 +76,7 @@ const Add = () => {
             }
             // Same day as From is allowed (one-day leave)
             if (leave.startDate && value < leave.startDate) {
-                alert('To date can't be before the From date!');
+                alert("To date can't be before the From date!");
                 return false;
             }
         }
