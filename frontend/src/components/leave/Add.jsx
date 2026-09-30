@@ -52,16 +52,9 @@ const Add = () => {
         return toISTDateString(new Date());
     };
 
-    // Get tomorrow's date in YYYY-MM-DD format in IST
-    const getTomorrowDate = () => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return toISTDateString(tomorrow);
-    };
 
     const validateDates = (name, value) => {
         const today = getTodayDate();
-        const tomorrow = getTomorrowDate();
         
         if (name === 'startDate') {
             if (value < today) {
@@ -69,20 +62,21 @@ const Add = () => {
                 return false;
             }
             // If end date is already selected, validate it against new start date
-            if (leave.endDate && value >= leave.endDate) {
-                alert('From date should be before the To date!');
+            // Same day is fine (a one-day leave).
+            if (leave.endDate && value > leave.endDate) {
+                alert('From date can't be after the To date!');
                 return false;
             }
         }
         
         if (name === 'endDate') {
-            if (value < tomorrow) {
-                alert('To date should be tomorrow or a future date!');
+            if (value < today) {
+                alert('To date should be today or a future date!');
                 return false;
             }
-            // If start date is selected, validate end date against it
-            if (leave.startDate && value <= leave.startDate) {
-                alert('To date should be after the From date!');
+            // Same day as From is allowed (one-day leave)
+            if (leave.startDate && value < leave.startDate) {
+                alert('To date can't be before the From date!');
                 return false;
             }
         }
@@ -196,7 +190,7 @@ const Add = () => {
               <input
                 type="date"
                 name="endDate"
-                min={leave.startDate ? toISTDateString(new Date(new Date(leave.startDate).getTime() + 24 * 60 * 60 * 1000)) : getTomorrowDate()}
+                min={leave.startDate || getTodayDate()}
                 onChange={handleChange}
                 className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                 required
