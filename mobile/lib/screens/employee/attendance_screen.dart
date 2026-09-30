@@ -125,15 +125,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   bool get _hasOngoingBreak =>
       _breaks.any((b) => b['end'] == null || b['end'] == '');
 
-  Future<void> _startBreak() async {
+  /// Re-reads today's breaks from the server first (the web app edits the
+  /// same record), applies [change], saves, then reloads.
+  Future<void> _updateBreaks(
+    List<Map<String, dynamic>> Function(List<Map<String, dynamic>>) change,
+  ) async {
     setState(() => _breakBusy = true);
     try {
-      final updated = [
-        ..._breaks,
-        {'start': _nowTime, 'end': ''},
-      ];
-      await _service.saveBreaks(date: _todayDate, breaks: updated);
-      await _load();
+      final latest = await _service.getToday();
+      final current = ((latest?['breaks'] as List?) ?? [])
+          .map((b) => Map<String, dynamic>.from(b as Map))
+          .toList();
+      await _service.saveBreaks(date: _todayDate, breaks: change(current));
+      await _load(silent: true);
     } catch (e) {
       if (mounted) _toast(extractErrorMessage(e), isError: true);
     } finally {
@@ -141,18 +145,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
-  Future<void> _endBreak(int index) async {
-    setState(() => _breakBusy = true);
-    try {
-      final updated = [..._breaks];
-      updated[index] = {...updated[index], 'end': _nowTime};
-      await _service.saveBreaks(date: _todayDate, breaks: updated);
-      await _load();
-    } catch (e) {
-      if (mounted) _toast(extractErrorMessage(e), isError: true);
-    } finally {
-      if (mounted) setState(() => _breakBusy = false);
-    }
+  bool _isOpen(Map<String, dynamic> b) => b['end'] == null || b['end'] == '';
+
+  Future<void> _startBreak() => _updateBreaks((breaks) =>
+      breaks.any(_isOpen) ? breaks : [...breaks, {'start': _nowTime, 'end': ''}]);
+
+  Future<void> _endBreak() {
+    final now = _nowTime;
+    return _updateBreaks((breaks) =>
+        breaks.map((b) => _isOpen(b) ? {...b, 'end': now} : b).toList());
   }
 
   /// No connection: keep the punch with the time it was made, show it on
@@ -690,7 +691,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     ),
                     if (isOpen && !hasCheckedOut)
                       TextButton(
-                        onPressed: _breakBusy ? null : () => _endBreak(idx),
+                        onPressed: _breakBusy ? null : _endBreak,
                         child: Text(
                           'End',
                           style: TextStyle(

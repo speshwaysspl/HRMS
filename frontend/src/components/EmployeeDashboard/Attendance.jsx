@@ -328,29 +328,10 @@ const Attendance = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Check for ongoing break in localStorage
-        const savedBreak = localStorage.getItem('ongoingBreak');
+        // Breaks come from the server only — the mobile app edits the same
+        // record, so a locally cached break would go stale.
+        localStorage.removeItem("ongoingBreak");
         let breaks = res.data?.breaks || [];
-
-        if (savedBreak) {
-          try {
-            const ongoingBreak = JSON.parse(savedBreak);
-            // If there's an ongoing break in localStorage, add it to breaks
-            if (!ongoingBreak.end) {
-              // Check if this break is already in the breaks array
-              const existingBreakIndex = breaks.findIndex(b => !b.end);
-              if (existingBreakIndex >= 0) {
-                // Replace the existing ongoing break
-                breaks[existingBreakIndex] = ongoingBreak;
-              } else {
-                // Add the ongoing break to the breaks array
-                breaks.push(ongoingBreak);
-              }
-            }
-          } catch (e) {
-            console.error("Error parsing saved break:", e);
-          }
-        }
 
         // Self-heal: a day that's already checked out should never still
         // have a break marked "Ongoing" (can happen from a checkout saved
@@ -358,7 +339,6 @@ const Attendance = () => {
         // and persist the fix.
         if (res.data?.outTime && breaks.some((b) => !b.end)) {
           breaks = breaks.map((b) => (b.end ? b : { ...b, end: res.data.outTime }));
-          localStorage.removeItem("ongoingBreak");
           axios
             .post(
               `${API_BASE}/api/attendance`,
@@ -438,29 +418,30 @@ const Attendance = () => {
 
   const getCurrentTime = () => toISTTimeString();
 
-  const saveBreaksToBackend = async () => {
+  const [breakBusy, setBreakBusy] = useState(false);
+
+  // Start/End Break: re-read today's breaks from the server (the mobile app
+  // may have changed them), apply the change, save, and show what was saved.
+  const updateBreaks = async (change) => {
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    setBreakBusy(true);
+    setBanner(null);
     try {
-      const token = sessionStorage.getItem("token");
-      if (!token) return;
-
-      const today = toISTDateString(new Date());
-      const attendanceData = {
-        date: today,
-        breaks: tracker.breaks,
-      };
-
-      // Check if there's an ongoing break
-      const ongoingBreakIndex = tracker.breaks.findIndex(b => !b.end);
-      if (ongoingBreakIndex >= 0) {
-        // Save the ongoing break to localStorage
-        localStorage.setItem('ongoingBreak', JSON.stringify(tracker.breaks[ongoingBreakIndex]));
-      }
-
-      await axios.post(`${API_BASE}/api/attendance`, attendanceData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data: latest } = await axios.get(`${API_BASE}/api/attendance/today`, { headers });
+      const breaks = change((latest?.breaks || []).map((b) => ({ start: b.start, end: b.end || "" })));
+      const { data: saved } = await axios.post(
+        `${API_BASE}/api/attendance`,
+        { date: toISTDateString(new Date()), breaks },
+        { headers }
+      );
+      setTodayRecord(saved);
+      setTracker((prev) => ({ ...prev, breaks: saved.breaks || breaks }));
     } catch (err) {
-      // Error saving breaks
+      setBanner({ type: "error", message: err.response?.data?.message || "Couldn't save the break. Please try again." });
+    } finally {
+      setBreakBusy(false);
     }
   };
 
@@ -480,7 +461,6 @@ const Attendance = () => {
       // Checking out ends the day — any break left running gets closed
       // out at the same moment instead of staying "Ongoing" forever.
       updatedTracker.breaks = updatedTracker.breaks.map((b) => (b.end ? b : { ...b, end: now }));
-      localStorage.removeItem("ongoingBreak");
     }
 
     setTracker(updatedTracker);
@@ -548,32 +528,14 @@ const Attendance = () => {
     }
   };
 
-  const handleStartBreak = () => {
-    const now = getCurrentTime();
-    const newBreak = { start: now, end: "" };
-
-    setTracker((prev) => ({
-      ...prev,
-      breaks: [...prev.breaks, newBreak],
-    }));
-
-    localStorage.setItem(
-      'ongoingBreak',
-      JSON.stringify({ start: now, end: "", timestamp: new Date().getTime() })
+  const handleStartBreak = () =>
+    updateBreaks((breaks) =>
+      breaks.some((b) => !b.end) ? breaks : [...breaks, { start: getCurrentTime(), end: "" }]
     );
 
-    setTimeout(() => saveBreaksToBackend(), 100);
-  };
-
-  const handleEndBreak = (idx) => {
+  const handleEndBreak = () => {
     const now = getCurrentTime();
-    setTracker((prev) => {
-      const updated = [...prev.breaks];
-      updated[idx] = { ...updated[idx], end: now };
-      return { ...prev, breaks: updated };
-    });
-    localStorage.removeItem('ongoingBreak');
-    setTimeout(() => saveBreaksToBackend(), 100);
+    updateBreaks((breaks) => breaks.map((b) => (b.end ? b : { ...b, end: now })));
   };
 
   const handleCopyCoordinates = () => {
@@ -860,8 +822,8 @@ const Attendance = () => {
                     </span>
                     {!b.end && (
                       <button
-                        onClick={() => handleEndBreak(idx)}
-                        disabled={!!todayRecord?.outTime || loading}
+                        onClick={handleEndBreak}
+                        disabled={!!todayRecord?.outTime || loading || breakBusy}
                         className="px-2.5 py-1.5 bg-accent-600 hover:bg-accent-700 text-white text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                       >
                         End
@@ -874,7 +836,7 @@ const Attendance = () => {
 
             <button
               onClick={handleStartBreak}
-              disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading || !!ongoingBreak}
+              disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading || breakBusy || !!ongoingBreak}
               className="mt-3 w-full px-4 py-2.5 bg-white border border-surface-subtle hover:bg-surface-muted text-ink text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               + Start Break

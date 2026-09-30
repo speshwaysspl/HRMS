@@ -6,6 +6,11 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-09-30 — Break tracking fixed on web, hardened on both (web + mobile)
+- **Web bug**: `Attendance.jsx` saved breaks via `setTimeout(saveBreaksToBackend)` reading a stale `tracker` closure — Start Break never reached the server and End Break re-saved the break as open (after re-login it showed "Ongoing" again). A `localStorage` `ongoingBreak` cache masked it. Replaced with `updateBreaks()`: re-fetch today's breaks, apply start/end, POST, render the server response; cache removed.
+- **Mobile** (`attendance_screen.dart`): Start/End Break re-fetch today's breaks before saving (`_updateBreaks`), so web/phone edits can't overwrite each other; End closes the open break.
+- Verified: `flutter analyze` clean, `flutter test` pass, `npx vite build` OK.
+
 ## 2026-09-19 — Announcements redesign (Flutter + web synced) + splash/login logo fix
 - **Flutter**: `announcements_screen.dart` and Home `_buildRecentAnnouncementCard` — removed NEW badge and all green/gradient; flat themed surface card with brand-blue icon chip and link, follows light/dark automatically. `flutter analyze` clean.
 - **Web (parity)**: `Summary.jsx` Recent Announcements card and `EmployeeAnnouncements.jsx` list rebuilt identically with `brand`/`surface`/`ink` tokens; responsive (`md:` padding/type on the list). ESLint 0 errors.
