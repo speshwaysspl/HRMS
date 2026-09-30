@@ -6,6 +6,9 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-09-30 — Styled Leave Type dropdown (web only)
+- New reusable `frontend/src/components/common/SelectMenu.jsx` (styled combobox/listbox: anchored menu, 44px rows, check on selected, keyboard + outside-click close, keeps `required` validation). Replaces the native `<select>` in `leave/Add.jsx`, whose browser option list rendered oversized and unstyled. Web-only: Flutter already uses a Material `DropdownButtonFormField`. `npx vite build` OK.
+
 ## 2026-09-30 — Break tracking fixed on web, hardened on both (web + mobile)
 - **Web bug**: `Attendance.jsx` saved breaks via `setTimeout(saveBreaksToBackend)` reading a stale `tracker` closure — Start Break never reached the server and End Break re-saved the break as open (after re-login it showed "Ongoing" again). A `localStorage` `ongoingBreak` cache masked it. Replaced with `updateBreaks()`: re-fetch today's breaks, apply start/end, POST, render the server response; cache removed.
 - **Mobile** (`attendance_screen.dart`): Start/End Break re-fetch today's breaks before saving (`_updateBreaks`), so web/phone edits can't overwrite each other; End closes the open break.

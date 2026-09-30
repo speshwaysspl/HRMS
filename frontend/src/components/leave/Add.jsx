@@ -5,6 +5,7 @@ import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import SelectMenu from "../common/SelectMenu";
 
 const Add = () => {
     const {user} = useAuth()
@@ -149,17 +150,14 @@ const Add = () => {
             <label className="block text-sm font-medium text-ink-muted">
               Leave Type
             </label>
-            <select
+            <SelectMenu
               name="leaveType"
+              value={leave.leaveType || ""}
               onChange={handleChange}
-              className="mt-1 p-2 block w-full border border-surface-subtle rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+              placeholder="Select Leave Type"
+              options={leaveTypes.map((lt) => ({ value: lt.name, label: lt.name }))}
               required
-            >
-              <option value="">Select Leave Type</option>
-              {leaveTypes.map((lt) => (
-                <option key={lt._id} value={lt.name}>{lt.name}</option>
-              ))}
-            </select>
+            />
             {selectedBalance && (
               <p className="text-xs text-ink-muted mt-1.5">
                 {selectedBalance.remaining} of {selectedBalance.monthlyQuota || (selectedBalance.annualQuota ? Math.round(selectedBalance.annualQuota / 12) : 1)} {((selectedBalance.monthlyQuota || (selectedBalance.annualQuota ? Math.round(selectedBalance.annualQuota / 12) : 1)) === 1 ? 'day' : 'days')} remaining this month

@@ -32,6 +32,8 @@ MERN stack + Flutter mobile app.
 
 - **Breaks: server is the only source of truth** (web `updateBreaks`, mobile `_updateBreaks`): re-fetch today, change, POST full `breaks`, render server response. Don't bring back the web `localStorage` `ongoingBreak` cache or `setTimeout` save (caused breaks not saving, fixed 2026-09-30).
 
+- **Dropdowns on web**: use `components/common/SelectMenu.jsx` (`name/value/onChange/options/placeholder/required`, fires a fake `{target:{name,value}}` event) instead of a native `<select>` for user-facing forms.
+
 ## 6. Current Work
 - Mobile app is at a Play Store-submittable state: release signing verified, analyzer clean, Firebase config consistent, basic test suite in place. Remaining open items before actual submission (not code fixes, need user action): confirm `new-hrms-d8eaf` is genuinely the intended production Firebase project; prepare Play Console store listing assets (screenshots, description, feature graphic); optionally bump Gradle 8.14→9.1+/AGP 8.11.1→9.0.1+/Kotlin 2.2.21→2.3.20+ in a dedicated low-stakes session (currently only deprecation warnings, not failures — deferred by explicit user choice).
 - No admin-side UI exists to review/action account-deletion requests (`GET /api/account/deletion-requests`) — explicitly deferred, not forgotten.
