@@ -1,12 +1,12 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FaUmbrellaBeach, FaCalendarCheck, FaHome, FaTasks, FaUser } from "react-icons/fa";
+import { FaUmbrellaBeach, FaCalendarCheck, FaHome, FaTasks, FaUser, FaUsers } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 
 /**
  * Mobile-only bottom tab bar for the employee experience — mirrors the
- * Flutter mobile app's 5-tab layout (Leaves / Attendance / Home / Tasks /
- * Profile) so the web app feels the same on a phone. The hamburger menu +
+ * Flutter mobile app's 5-tab layout (Leaves / Attendance / Home / Tasks or
+ * My Team / Profile) so the web app feels the same on a phone. The hamburger menu +
  * sidebar drawer stay available for everything else (Salary, Announcements,
  * Team Lead sections, etc.), matching how the mobile app pairs a bottom bar
  * with a side drawer for "more" links. Hidden on md+ (desktop keeps the
@@ -14,12 +14,17 @@ import { useAuth } from "../../context/AuthContext";
  */
 const MobileBottomNav = () => {
   const { user } = useAuth();
+  const roles = Array.isArray(user?.role) ? user.role : [user?.role];
+  // Same as the Flutter shell: team leads get My Team here; their own tasks stay in the drawer.
+  const isTeamLead = roles.includes("team_lead");
 
   const tabs = [
     { to: "/employee-dashboard/leaves/" + (user?._id || ""), label: "Leaves", icon: FaUmbrellaBeach },
     { to: "/employee-dashboard/attendance", label: "Attendance", icon: FaCalendarCheck },
     { to: "/employee-dashboard", label: "Home", icon: FaHome, end: true, center: true },
-    { to: "/employee-dashboard/tasks", label: "Tasks", icon: FaTasks },
+    isTeamLead
+      ? { to: "/employee-dashboard/team/teams", label: "My Team", icon: FaUsers }
+      : { to: "/employee-dashboard/tasks", label: "Tasks", icon: FaTasks },
     { to: "/employee-dashboard/profile/" + (user?._id || ""), label: "Profile", icon: FaUser },
   ];
 

@@ -45,6 +45,11 @@ export const processBirthdayWishes = async (io) => {
         
         // Create announcement
         const announcementResult = await createBirthdayAnnouncement(employee, systemAdmin._id);
+        // Already wished today (earlier run / another instance): skip email + notification too.
+        if (announcementResult.duplicate) {
+          console.log(`⏭️ Birthday already processed today for ${employeeName}`);
+          continue;
+        }
         if (announcementResult.success) {
           announcementSuccessCount++;
           console.log(`📢 Announcement created for ${employeeName}`);
@@ -66,8 +71,8 @@ export const processBirthdayWishes = async (io) => {
           try {
             await createNotification({
               type: 'birthday',
-              title: `🎉 Happy Birthday, ${employeeName}!`,
-              message: 'Wishing you a fantastic day and a great year ahead from all of us at Speshway!',
+              title: `🎉 Happy Birthday, ${employeeName}! 🎂`,
+              message: 'Warm wishes from the Management & Team at Speshway Solutions Private Limited.',
               recipientId: employee.userId._id,
               senderId: systemAdmin._id,
               relatedId: announcementResult.announcementId
@@ -119,22 +124,37 @@ export const createBirthdayAnnouncement = async (employee, adminId) => {
     const employeeName = employee.userId?.name || 'Employee';
     const department = employee.department?.dep_name || 'Department';
     
-    const announcement = new Announcement({
-      title: `🎉 Happy Birthday ${employeeName}! 🎂`,
-      description: getBirthdayMessage(employee),
-      createdBy: adminId,
-      image: null // You can add a default birthday image URL here if needed
-    });
-    
-    await announcement.save();
-    
+    const day = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10); // IST date
+    const dedupeKey = `birthday:${employee._id}:${day}`;
+
+    // Atomic insert-if-missing: the unique dedupeKey guarantees one post per employee per day.
+    const res = await Announcement.updateOne(
+      { dedupeKey },
+      {
+        $setOnInsert: {
+          title: `🎉 Happy Birthday, ${employeeName}! 🎂`,
+          description: getBirthdayMessage(employee),
+          createdBy: adminId,
+          image: null,
+          dedupeKey,
+        },
+      },
+      { upsert: true }
+    );
+    if (!res.upsertedId) {
+      return { success: false, duplicate: true, message: `Birthday already announced for ${employeeName}` };
+    }
+
     return {
       success: true,
       message: `Birthday announcement created for ${employeeName}`,
-      announcementId: announcement._id
+      announcementId: res.upsertedId
     };
     
   } catch (error) {
+    if (error.code === 11000) {
+      return { success: false, duplicate: true, message: 'Birthday already announced today' };
+    }
     console.error('Error creating birthday announcement:', error);
     return {
       success: false,
@@ -160,7 +180,7 @@ export const sendBirthdayEmail = async (employee) => {
       };
     }
     
-    const subject = `🎉 Happy Birthday ${employeeName}! - SPESHWAY SOLUTIONS`;
+    const subject = `🎉 Happy Birthday, ${employeeName}! - Speshway Solutions Private Limited`;
     const htmlContent = getBirthdayEmailTemplate(employee);
     
     enqueueEmail(employeeEmail, subject, htmlContent);

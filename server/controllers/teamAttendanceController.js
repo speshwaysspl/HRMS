@@ -46,6 +46,7 @@ export const getTeamAttendance = async (req, res) => {
       success: true,
       marked: !!record,
       present: record ? record.present.map(String) : [],
+      halfDay: record ? (record.halfDay || []).map(String) : [],
       absent: record ? record.absent.map(String) : [],
     });
   } catch (error) {
@@ -53,10 +54,10 @@ export const getTeamAttendance = async (req, res) => {
   }
 };
 
-// PUT /api/team/:id/attendance  { date, present: [employeeObjectId] }
+// PUT /api/team/:id/attendance  { date, present: [employeeObjectId], halfDay?: [employeeObjectId] }
 export const saveTeamAttendance = async (req, res) => {
   try {
-    const { date, present } = req.body;
+    const { date, present, halfDay = [] } = req.body;
     if (!DATE_RE.test(date || "")) return res.status(400).json({ success: false, error: "Invalid date" });
     const isAdmin = (Array.isArray(req.user.role) ? req.user.role : [req.user.role]).includes("admin");
     // Team leads mark today only; admins can also correct past days. Nobody marks the future.
@@ -64,23 +65,33 @@ export const saveTeamAttendance = async (req, res) => {
       return res.status(400).json({ success: false, error: "Attendance can't be marked for a future date" });
     if (!isAdmin && date !== todayIST())
       return res.status(400).json({ success: false, error: "Attendance can only be marked for today" });
-    if (!Array.isArray(present)) return res.status(400).json({ success: false, error: "present must be an array" });
+    if (!Array.isArray(present) || !Array.isArray(halfDay))
+      return res.status(400).json({ success: false, error: "present and halfDay must be arrays" });
     const team = await loadTeamForLead(req, res);
     if (!team) return;
 
     const ids = memberIds(team);
     const presentSet = new Set(present.map(String).filter((p) => ids.includes(p)));
+    // Half day wins over present if a member is sent in both.
+    const halfSet = new Set(halfDay.map(String).filter((p) => ids.includes(p)));
+    halfSet.forEach((h) => presentSet.delete(h));
     const record = await TeamAttendance.findOneAndUpdate(
       { teamId: team._id, date },
       {
         present: [...presentSet],
-        absent: ids.filter((i) => !presentSet.has(i)),
+        halfDay: [...halfSet],
+        absent: ids.filter((i) => !presentSet.has(i) && !halfSet.has(i)),
         markedBy: req.user._id,
       },
       { upsert: true, new: true }
     );
     emitTeamUpdate(req.io, team, "attendance");
-    res.json({ success: true, present: record.present.map(String), absent: record.absent.map(String) });
+    res.json({
+      success: true,
+      present: record.present.map(String),
+      halfDay: record.halfDay.map(String),
+      absent: record.absent.map(String),
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -88,7 +99,7 @@ export const saveTeamAttendance = async (req, res) => {
 
 const pad = (n) => String(n).padStart(2, "0");
 const fill = (argb) => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
-const YELLOW = "FFFFFF00", CYAN = "FF00FFFF", GREEN = "FF6AA84F", RED = "FFFF0000", PRESENT_GREEN = "FF00B050";
+const ORANGE = "FFFFC000", YELLOW = "FFFFFF00", CYAN = "FF00FFFF", GREEN = "FF6AA84F", RED = "FFFF0000", PRESENT_GREEN = "FF00B050";
 const thin = { style: "thin", color: { argb: "FFBFBFBF" } };
 const border = { top: thin, left: thin, bottom: thin, right: thin };
 
@@ -97,7 +108,7 @@ const border = { top: thin, left: thin, bottom: thin, right: thin };
 const buildWorkbook = async (teams, month) => {
   const [y, m] = month.split("-").map(Number);
   const days = new Date(y, m, 0).getDate();
-  const lastCol = days + 3; // name + days + present + absent
+  const lastCol = days + 4; // name + days + present + half day + absent
   const monthLabel = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
 
   const records = await TeamAttendance.find({
@@ -122,12 +133,14 @@ const buildWorkbook = async (teams, month) => {
   for (let c = 2; c <= days + 1; c++) ws.getColumn(c).width = 13;
   ws.getColumn(days + 2).width = 10;
   ws.getColumn(days + 3).width = 10;
+  ws.getColumn(days + 4).width = 10;
 
   const header = ws.getRow(1);
   header.values = [
     "NAME OF THE EMPLOYEE",
     ...Array.from({ length: days }, (_, i) => `${pad(i + 1)}-${pad(m)}-${y}`),
     "PRESENT",
+    "HALF DAY",
     "ABSENT",
   ];
   header.height = 22;
@@ -157,22 +170,24 @@ const buildWorkbook = async (teams, month) => {
       const emp = mem.employeeId;
       if (!emp) continue;
       const id = emp._id.toString();
-      let present = 0, absent = 0;
+      let present = 0, half = 0, absent = 0;
       const cells = [];
       for (let d = 1; d <= days; d++) {
         const dow = new Date(y, m - 1, d).getDay();
         const rec = byTeamDate.get(`${team._id}|${month}-${pad(d)}`);
         const isAbsent = rec?.absent.some((x) => x.toString() === id);
         const isPresent = rec?.present.some((x) => x.toString() === id);
+        const isHalf = rec?.halfDay?.some((x) => x.toString() === id);
         // Weekends and holidays count as present unless explicitly marked absent.
         if (isAbsent) { cells.push(["ABSENT", RED]); absent++; }
+        else if (isHalf) { cells.push(["HALF DAY", ORANGE]); half++; }
         else if (dow === 6) { cells.push(["SATURDAY", CYAN]); present++; }
         else if (dow === 0) { cells.push(["SUNDAY", CYAN]); present++; }
         else if (holidayDays.has(d)) { cells.push(["HOLIDAY", GREEN]); present++; }
         else if (isPresent) { cells.push(["PRESENT", PRESENT_GREEN]); present++; }
         else cells.push(["", null]);
       }
-      const row = ws.addRow([emp.userId?.name?.toUpperCase() || "-", ...cells.map((c) => c[0]), present, absent]);
+      const row = ws.addRow([emp.userId?.name?.toUpperCase() || "-", ...cells.map((c) => c[0]), present, half, absent]);
       row.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.border = border;
         cell.font = { name: "Times New Roman", size: 10, bold: col === 1 };

@@ -30,11 +30,15 @@ const announcementSchema = new Schema(
     scheduledAt: { type: Date, default: null },
     published: { type: Boolean, default: true },
     publishedAt: { type: Date, default: null },
+    // Set by automated posts (e.g. "birthday:<employeeId>:<YYYY-MM-DD>") so a job
+    // that runs twice (restart, second server instance) can't post the same thing again.
+    dedupeKey: { type: String, default: undefined },
   },
   { timestamps: true }
 );
 
 announcementSchema.index({ published: 1, scheduledAt: 1 });
+announcementSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
 export default Announcement;

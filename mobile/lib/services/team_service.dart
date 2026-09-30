@@ -56,18 +56,28 @@ class TeamService {
   }
 
   /// Team lead's manual roll-call for [date] (YYYY-MM-DD). Separate from punch-in attendance.
-  Future<({bool marked, Set<String> present})> getTeamAttendance(String teamId, String date) async {
+  Future<({bool marked, Set<String> present, Set<String> halfDay})> getTeamAttendance(String teamId, String date) async {
     final res = await _dio.get('/api/team/$teamId/attendance', queryParameters: {'date': date});
     final data = res.data as Map;
     return (
       marked: data['marked'] == true,
       present: ((data['present'] as List?) ?? []).map((e) => e.toString()).toSet(),
+      halfDay: ((data['halfDay'] as List?) ?? []).map((e) => e.toString()).toSet(),
     );
   }
 
-  /// [present] are Employee document ids; every other member is saved as absent.
-  Future<void> saveTeamAttendance(String teamId, String date, Iterable<String> present) async {
-    await _dio.put('/api/team/$teamId/attendance', data: {'date': date, 'present': present.toList()});
+  /// [present] / [halfDay] are Employee document ids; every other member is saved as absent.
+  Future<void> saveTeamAttendance(
+    String teamId,
+    String date,
+    Iterable<String> present, {
+    Iterable<String> halfDay = const [],
+  }) async {
+    await _dio.put('/api/team/$teamId/attendance', data: {
+      'date': date,
+      'present': present.toList(),
+      'halfDay': halfDay.toList(),
+    });
   }
 
   /// Monthly register for every team the caller can see (admin: all, lead: own).

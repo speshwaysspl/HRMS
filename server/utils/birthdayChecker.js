@@ -94,9 +94,17 @@ export const isToday = (date) => {
  * @returns {string} Birthday message
  */
 export const getBirthdayMessage = (employee) => {
-  const name = employee.userId?.name || 'Employee';
-  
-  return `🎉 Happy Birthday ${name}! 🎂\n\nWishing you a wonderful day filled with happiness and joy. May this new year of your life bring you success, good health, and prosperity.\n\nFrom all of us at SPESHWAY SOLUTIONS PRIVATE LIMITED`;
+  const name = employee.userId?.name || 'our colleague';
+  const dept = employee.department?.dep_name;
+  const who = dept ? `${name} from the ${dept} Department` : name;
+
+  return [
+    `On behalf of the Management and entire team at Speshway Solutions Private Limited, we wish ${who} a very happy and wonderful birthday!`,
+    'We sincerely appreciate your dedication, hard work, and valuable contributions to the organization. Your efforts are truly appreciated, and we are glad to have you as a part of the Speshway Solutions family.',
+    'May this new year of your life bring you happiness, good health, personal growth, and continued success. Wishing you many more achievements and memorable moments in the year ahead.',
+    `Once again, Happy Birthday, ${name}! 🎉🎂`,
+    'Warm regards,\nManagement & Team\nSpeshway Solutions Private Limited',
+  ].join('\n\n');
 };
 
 /**
@@ -125,31 +133,23 @@ export const getBirthdayEmailTemplate = (employee) => {
     <body>
         <div class="container">
             <div class="header">
-                <div class="birthday-icon">🎉🎂🎈</div>
-                <h1 class="title">Happy Birthday ${name}!</h1>
+                <h1 class="title">🎉 Happy Birthday, ${name}! 🎂</h1>
             </div>
             
             <div class="message">
-                <p>Dear ${name},</p>
+                <p>On behalf of the <strong>Management and entire team at Speshway Solutions Private Limited</strong>, we wish <strong>${name}${employee.department?.dep_name ? ` from the ${employee.department.dep_name} Department` : ''}</strong> a very happy and wonderful birthday!</p>
                 
-                <p>On this special day, we want to take a moment to celebrate you! Your dedication, hard work, and positive attitude make our workplace a better place every day.</p>
+                <p>We sincerely appreciate your <strong>dedication, hard work, and valuable contributions</strong> to the organization. Your efforts are truly appreciated, and we are glad to have you as a part of the Speshway Solutions family.</p>
                 
-                <p>May this new year of your life be filled with:</p>
-                <ul>
-                    <li>🌟 Success in all your endeavors</li>
-                    <li>💪 Good health and happiness</li>
-                    <li>🚀 New opportunities and growth</li>
-                    <li>😊 Joy and wonderful memories</li>
-                </ul>
+                <p>May this new year of your life bring you <strong>happiness, good health, personal growth, and continued success</strong>. Wishing you many more achievements and memorable moments in the year ahead.</p>
                 
-                <p>Thank you for being such a valuable member of our team. We're grateful to have you with us!</p>
-                
-                <p>Wishing you the happiest of birthdays!</p>
+                <p><strong>Once again, Happy Birthday, ${name}! 🎉🎂</strong></p>
             </div>
             
             <div class="footer">
-                <p>With warm wishes,</p>
-                <p class="company-name">SPESHWAY SOLUTIONS PRIVATE LIMITED</p>
+                <p>Warm regards,</p>
+                <p><strong>Management &amp; Team</strong></p>
+                <p class="company-name">Speshway Solutions Private Limited</p>
             </div>
         </div>
     </body>

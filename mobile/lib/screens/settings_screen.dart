@@ -9,6 +9,7 @@ import '../services/auth_provider.dart';
 import '../services/settings_api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
+import '../widgets/account_deletion_sheet.dart';
 import '../widgets/hrms_app_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -181,6 +182,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+          SizedBox(height: context.h(24)),
+          _sectionLabel(context, 'Account'),
+          _Card(
+            child: _Row(
+              icon: Icons.delete_outline_rounded,
+              title: 'Request account deletion',
+              subtitle: 'HR/Admin will verify and process your request',
+              onTap: () => showAccountDeletionSheet(context),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.inkFaint,
+              ),
             ),
           ),
         ],

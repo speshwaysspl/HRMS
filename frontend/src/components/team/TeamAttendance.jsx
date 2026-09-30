@@ -10,6 +10,12 @@ const todayStr = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+const STATUSES = [
+  { value: "present", label: "Present", on: "bg-accent-100 text-accent-800" },
+  { value: "half", label: "Half day", on: "bg-amber-100 text-amber-800" },
+  { value: "absent", label: "Absent", on: "bg-red-100 text-red-700" },
+];
+
 const authHeader = () => ({ Authorization: `Bearer ${sessionStorage.getItem("token")}` });
 
 // Manual daily roll-call kept by the team lead. Independent of punch-in attendance.
@@ -18,6 +24,7 @@ const TeamAttendance = ({ teamId, members }) => {
   const isAdmin = (Array.isArray(user?.role) ? user.role : [user?.role]).includes("admin");
   const [date, setDate] = useState(todayStr());
   const [present, setPresent] = useState(new Set());
+  const [half, setHalf] = useState(new Set());
   const [marked, setMarked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
@@ -38,6 +45,7 @@ const TeamAttendance = ({ teamId, members }) => {
       .then((res) => {
         if (cancelled) return;
         setPresent(new Set(res.data.present));
+        setHalf(new Set(res.data.halfDay || []));
         setMarked(res.data.marked);
       })
       .catch((err) => {
@@ -51,22 +59,29 @@ const TeamAttendance = ({ teamId, members }) => {
     };
   }, [teamId, date, reloadKey]);
 
-  const toggle = (id) =>
-    setPresent((prev) => {
+  const statusOf = (id) => (half.has(id) ? "half" : present.has(id) ? "present" : "absent");
+  const setStatus = (id, status) => {
+    const withId = (on) => (prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (on) next.add(id);
+      else next.delete(id);
       return next;
-    });
+    };
+    setPresent(withId(status === "present"));
+    setHalf(withId(status === "half"));
+  };
 
   const allSelected = members.length > 0 && members.every((m) => present.has(m._id));
-  const toggleAll = () => setPresent(allSelected ? new Set() : new Set(members.map((m) => m._id)));
+  const toggleAll = () => {
+    setPresent(allSelected ? new Set() : new Set(members.map((m) => m._id)));
+    setHalf(new Set());
+  };
 
   const save = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      await axios.put(`${API_BASE}/api/team/${teamId}/attendance`, { date, present: [...present] }, { headers: authHeader() });
+      await axios.put(`${API_BASE}/api/team/${teamId}/attendance`, { date, present: [...present], halfDay: [...half] }, { headers: authHeader() });
       setMarked(true);
       setMessage({ type: "success", text: "Attendance saved" });
     } catch (err) {
@@ -100,6 +115,7 @@ const TeamAttendance = ({ teamId, members }) => {
   // Team leads change today only; admins can also correct past dates.
   const editable = date === todayStr() || isAdmin;
   const presentCount = members.filter((m) => present.has(m._id)).length;
+  const halfCount = members.filter((m) => half.has(m._id)).length;
 
   const isToday = date === todayStr();
   const prettyDate = new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
@@ -112,7 +128,7 @@ const TeamAttendance = ({ teamId, members }) => {
       <section className="bg-white rounded-xl shadow-card border border-surface-subtle min-w-0" aria-labelledby="rollcall-heading">
         <div className="flex flex-wrap items-end justify-between gap-3 px-4 sm:px-5 py-4 border-b border-surface-subtle">
           <div className="min-w-0">
-            <h3 id="rollcall-heading" className="text-lg font-semibold text-ink">Daily roll call</h3>
+            <h3 id="rollcall-heading" className="text-lg font-semibold text-ink">Mark attendance</h3>
             <p className="text-sm text-ink-muted">{prettyDate}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -141,7 +157,8 @@ const TeamAttendance = ({ teamId, members }) => {
             {marked ? "Marked" : "Not marked yet"}
           </span>
           <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-accent-700 tabular-nums">{presentCount} present</span>
-          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-red-700 tabular-nums">{members.length - presentCount} absent</span>
+          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-amber-700 tabular-nums">{halfCount} half day</span>
+          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-red-700 tabular-nums">{members.length - presentCount - halfCount} absent</span>
           {!editable && (
             <span className="text-xs text-ink-muted">View only. Attendance can be changed for today only.</span>
           )}
@@ -166,19 +183,34 @@ const TeamAttendance = ({ teamId, members }) => {
               </label>
             </li>
             {members.map((m) => {
-              const isPresent = present.has(m._id);
+              const status = statusOf(m._id);
+              const name = m.userId?.name || "Unknown";
               return (
-                <li key={m._id}>
-                  <label className={`flex items-center gap-3 px-4 sm:px-5 py-3 min-h-[56px] ${editable ? "cursor-pointer hover:bg-surface-muted" : "cursor-default"}`}>
-                    <input type="checkbox" checked={isPresent} onChange={() => toggle(m._id)} disabled={!editable} className="h-5 w-5 rounded text-accent-600" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-ink truncate">{m.userId?.name || "Unknown"}</div>
-                      <div className="text-xs text-ink-muted">{m.employeeId}</div>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${isPresent ? "bg-accent-100 text-accent-700" : "bg-red-100 text-red-700"}`}>
-                      {isPresent ? "Present" : "Absent"}
-                    </span>
-                  </label>
+                <li key={m._id} className="flex flex-wrap items-center gap-3 px-4 sm:px-5 py-3 min-h-[56px]">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-ink truncate">{name}</div>
+                    <div className="text-xs text-ink-muted">{m.employeeId}</div>
+                  </div>
+                  <div role="radiogroup" aria-label={`Attendance for ${name}`} className="inline-flex shrink-0 rounded-lg border border-surface-subtle p-0.5">
+                    {STATUSES.map((s) => {
+                      const selected = status === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          disabled={!editable}
+                          onClick={() => setStatus(m._id, s.value)}
+                          className={`min-h-[36px] rounded-md px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:cursor-default ${
+                            selected ? s.on : `text-ink-muted ${editable ? "hover:bg-surface-muted" : ""}`
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </li>
               );
             })}
@@ -193,7 +225,7 @@ const TeamAttendance = ({ teamId, members }) => {
 
         {editable && members.length > 0 && (
           <div className="sticky bottom-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-3 mt-2 border-t border-surface-subtle bg-white rounded-b-xl">
-            <span className="text-sm text-ink-muted hidden sm:inline">Unticked members are saved as absent.</span>
+            <span className="text-sm text-ink-muted hidden sm:inline">Set each member to Present, Half day or Absent.</span>
             <button
               onClick={save}
               disabled={saving || loading}

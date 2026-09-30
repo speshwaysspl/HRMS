@@ -93,7 +93,7 @@ Future<void> downloadAllTeamsAttendance(BuildContext context) async {
   }
 }
 
-/// Team lead's manual daily roll-call: tick who is present, the rest are
+/// Team lead's manual daily roll-call: each member is present, half day or
 /// absent. Independent of punch-in attendance. Monthly register exports to Excel.
 class TeamAttendanceTab extends StatefulWidget {
   const TeamAttendanceTab({
@@ -119,6 +119,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   static final _dayFmt = DateFormat('yyyy-MM-dd');
   DateTime _date = DateTime.now();
   Set<String> _present = {};
+  Set<String> _half = {};
   bool _marked = false;
   bool _loading = true;
   bool _saving = false;
@@ -161,6 +162,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
       if (!mounted) return;
       setState(() {
         _present = r.present;
+        _half = r.halfDay;
         _marked = r.marked;
         _loading = false;
       });
@@ -197,6 +199,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
         widget.teamId,
         _dayFmt.format(_date),
         _present,
+        halfDay: _half,
       );
       if (!mounted) return;
       setState(() => _marked = true);
@@ -238,6 +241,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
     final isToday = _dayFmt.format(_date) == _dayFmt.format(DateTime.now());
     final editable = isToday || (context.read<AuthProvider>().user?.isAdmin ?? false);
     final presentCount = members.where((m) => _present.contains(_id(m))).length;
+    final halfCount = members.where((m) => _half.contains(_id(m))).length;
     final allSelected = members.isNotEmpty && presentCount == members.length;
 
     return Column(
@@ -295,7 +299,15 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                   ),
                   const TextSpan(text: ' · '),
                   TextSpan(
-                    text: '${members.length - presentCount} absent',
+                    text: '$halfCount half day',
+                    style: const TextStyle(
+                      color: Color(0xFFB45309),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' · '),
+                  TextSpan(
+                    text: '${members.length - presentCount - halfCount} absent',
                     style: const TextStyle(
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w600,
@@ -339,6 +351,7 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                                 _present = allSelected
                                     ? {}
                                     : members.map(_id).toSet();
+                                _half = {};
                               }),
                         title: const Text(
                           'Mark all present',
@@ -349,29 +362,47 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
                     }
                     final m = members[i - 1];
                     final id = _id(m);
-                    final isPresent = _present.contains(id);
-                    return CheckboxListTile(
-                      value: isPresent,
-                      onChanged: _saving || !editable
-                          ? null
-                          : (v) => setState(() {
-                              v == true
-                                  ? _present.add(id)
-                                  : _present.remove(id);
-                            }),
-                      controlAffinity: ListTileControlAffinity.leading,
+                    final status = _half.contains(id)
+                        ? 'half'
+                        : _present.contains(id)
+                        ? 'present'
+                        : 'absent';
+                    return ListTile(
                       title: Text(
                         (m['userId'] as Map?)?['name']?.toString() ?? 'Unknown',
                       ),
                       subtitle: Text(m['employeeId']?.toString() ?? ''),
-                      secondary: Text(
-                        isPresent ? 'Present' : 'Absent',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isPresent
-                              ? const Color(0xFF16A34A)
-                              : const Color(0xFFDC2626),
+                      trailing: SegmentedButton<String>(
+                        showSelectedIcon: false,
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
                         ),
+                        segments: const [
+                          ButtonSegment(
+                            value: 'present',
+                            label: Text('P'),
+                            tooltip: 'Present',
+                          ),
+                          ButtonSegment(
+                            value: 'half',
+                            label: Text('Half'),
+                            tooltip: 'Half day',
+                          ),
+                          ButtonSegment(
+                            value: 'absent',
+                            label: Text('A'),
+                            tooltip: 'Absent',
+                          ),
+                        ],
+                        selected: {status},
+                        onSelectionChanged: _saving || !editable
+                            ? null
+                            : (v) => setState(() {
+                                _present.remove(id);
+                                _half.remove(id);
+                                if (v.first == 'present') _present.add(id);
+                                if (v.first == 'half') _half.add(id);
+                              }),
                       ),
                     );
                   },

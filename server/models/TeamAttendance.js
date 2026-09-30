@@ -8,6 +8,7 @@ const teamAttendanceSchema = new Schema(
     teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true },
     date: { type: String, required: true }, // YYYY-MM-DD
     present: [{ type: Schema.Types.ObjectId, ref: "Employee" }],
+    halfDay: [{ type: Schema.Types.ObjectId, ref: "Employee" }],
     absent: [{ type: Schema.Types.ObjectId, ref: "Employee" }],
     markedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

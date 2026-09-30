@@ -1,6 +1,6 @@
 // src/components/forms/DepartmentForm.js
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -9,6 +9,7 @@ import {
   FaLinkedin,
   FaGlobe,
   FaMapMarkerAlt,
+  FaTrashAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
@@ -102,7 +103,7 @@ const Setting = () => {
   return (
     <div className="flex flex-col min-h-screen bg-surface-muted">
       {/* Main Content */}
-      <div className="flex-grow flex items-center justify-center p-3 sm:p-4 md:p-6">
+      <div className="flex-grow flex flex-col items-center justify-center gap-4 p-3 sm:p-4 md:p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -195,6 +196,19 @@ const Setting = () => {
             </button>
           </form>
         </motion.div>
+
+        <section aria-labelledby="account-heading" className="bg-white p-4 sm:p-6 rounded-xl shadow-card border border-surface-subtle w-full max-w-lg">
+          <h2 id="account-heading" className="text-base font-semibold text-ink">Request account deletion</h2>
+          <p className="text-sm text-ink-muted mt-1 leading-relaxed">
+            Submit a request to HR/Admin to verify your identity and delete your account.
+          </p>
+          <Link
+            to="/delete-account"
+            className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-red-600 text-red-600 py-2.5 text-sm font-semibold hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
+          >
+            <FaTrashAlt size={13} /> Request Account Deletion
+          </Link>
+        </section>
       </div>
 
       {/* Footer */}
