@@ -420,8 +420,9 @@ const deleteAnnouncement = async (req, res) => {
       return res.status(404).json({ success: false, error: "Announcement not found" });
     }
 
-    // Only creator can delete
-    if (req.user._id.toString() !== announcement.createdBy.toString()) {
+    // Admins can delete any; others only their own
+    const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    if (!roles.includes("admin") && req.user._id.toString() !== announcement.createdBy.toString()) {
       return res.status(403).json({ success: false, error: "Unauthorized to delete this announcement" });
     }
 
@@ -444,7 +445,36 @@ const deleteAnnouncement = async (req, res) => {
   }
 };
 
+// POST /api/announcement/bulk-delete  { ids: [announcementId] }
+// Same rule as single delete: admins remove any, others only their own.
+const deleteAnnouncements = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, error: "ids must be a non-empty array" });
+    }
+    const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const filter = roles.includes("admin") ? { _id: { $in: ids } } : { _id: { $in: ids }, createdBy: req.user._id };
+    const own = await Announcement.find(filter).select("imageKey");
+    await Promise.all(
+      own.filter((a) => a.imageKey).map((a) =>
+        deleteFromS3(a.imageKey).catch((e) => console.error("Error deleting image from S3:", e))
+      )
+    );
+    await Announcement.deleteMany({ _id: { $in: own.map((a) => a._id) } });
+    return res.status(200).json({
+      success: true,
+      deleted: own.map((a) => String(a._id)),
+      skipped: ids.length - own.length,
+    });
+  } catch (error) {
+    console.error("Bulk delete announcement error:", error);
+    return res.status(500).json({ success: false, error: "Server error deleting announcements" });
+  }
+};
+
 export {
+  deleteAnnouncements,
   addAnnouncement,
   getAnnouncements,
   getAnnouncement,

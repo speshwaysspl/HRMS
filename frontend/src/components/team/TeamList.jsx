@@ -21,6 +21,22 @@ const initials = (name) => {
 
 const MAX_AVATARS = 4;
 
+const timeOf = (v) => new Date(v).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+// Today's roll-call status for a team (admin view).
+const AttendanceStatus = ({ team }) => {
+  if (!team.members?.length) return <span className="text-sm text-ink-faint">No members</span>;
+  const a = team.attendanceToday;
+  return a?.marked ? (
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-800">Marked</span>
+      <span className="text-xs text-ink-muted">{timeOf(a.markedAt)}{a.markedBy ? ` · ${a.markedBy}` : ""}</span>
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Not marked</span>
+  );
+};
+
 const TeamList = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +51,10 @@ const TeamList = () => {
   const [search, setSearch] = useState("");
   const [leadFilter, setLeadFilter] = useState("");
   const [selectedLeads, setSelectedLeads] = useState(new Set());
+  // "" | "marked" | "not_marked" — today's team roll call.
+  const [attFilter, setAttFilter] = useState("");
   useSocketEvent("team:updated", (e) => {
-    if (["team", "members", "deleted"].includes(e?.kind)) fetchTeams();
+    if (["team", "members", "deleted", "attendance"].includes(e?.kind)) fetchTeams();
   });
 
   useEffect(() => {
@@ -86,8 +104,19 @@ const TeamList = () => {
   const visibleTeams = teams.filter(
     (t) =>
       (!leadFilter || t.leadId?._id === leadFilter) &&
+      (!attFilter ||
+        (attFilter === "marked" ? !!t.attendanceToday?.marked : !t.attendanceToday?.marked && t.members?.length > 0)) &&
       (!q || [t.name, t.leadId?.name, t.leadId?.email].some((v) => v?.toLowerCase().includes(q)))
   );
+
+  // Teams with no members have no roll call to take, so they're not "pending".
+  const trackable = teams.filter((t) => t.members?.length);
+  const markedCount = trackable.filter((t) => t.attendanceToday?.marked).length;
+  const pendingCount = trackable.length - markedCount;
+
+  // Not marked first, then marked, then teams with no members.
+  const attRank = (t) => (!t.members?.length ? 2 : t.attendanceToday?.marked ? 1 : 0);
+  if (isAdmin) visibleTeams.sort((x, y) => attRank(x) - attRank(y));
 
   const toggleLead = (id) =>
     setSelectedLeads((prev) => {
@@ -242,9 +271,24 @@ const TeamList = () => {
               <option key={l._id} value={l._id}>{l.name || "Unknown"}</option>
             ))}
           </select>
-          {(search || leadFilter) && (
+          {isAdmin && (
+            <>
+              <label htmlFor="team-att-filter" className="sr-only">Filter by today's attendance</label>
+              <select
+                id="team-att-filter"
+                value={attFilter}
+                onChange={(e) => setAttFilter(e.target.value)}
+                className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+              >
+                <option value="">Today: all</option>
+                <option value="marked">Today: marked ({markedCount})</option>
+                <option value="not_marked">Today: not marked ({pendingCount})</option>
+              </select>
+            </>
+          )}
+          {(search || leadFilter || attFilter) && (
             <button
-              onClick={() => { setSearch(""); setLeadFilter(""); }}
+              onClick={() => { setSearch(""); setLeadFilter(""); setAttFilter(""); }}
               className="text-sm font-medium text-accent-700 hover:underline px-2 py-2"
             >
               Clear
@@ -266,6 +310,9 @@ const TeamList = () => {
               <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Team Name</th>
               <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Lead</th>
               <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Members</th>
+              {isAdmin && (
+                <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Today's Attendance</th>
+              )}
               {user?.role?.includes("admin") && (
                 <th className="px-5 py-3 text-left text-sm font-semibold text-ink">Action</th>
               )}
@@ -292,6 +339,11 @@ const TeamList = () => {
                   <td className="px-5 py-4 font-medium text-ink">{team.name}</td>
                   <td className="px-5 py-4 text-ink-muted">{team.leadId?.name || "N/A"}</td>
                   <td className="px-5 py-4 text-ink-muted">{team.members?.length || 0}</td>
+                  {isAdmin && (
+                    <td className="px-5 py-4">
+                      <AttendanceStatus team={team} />
+                    </td>
+                  )}
                   {user?.role?.includes("admin") && (
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1">
@@ -324,7 +376,7 @@ const TeamList = () => {
             </AnimatePresence>
             {visibleTeams.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center p-8 text-ink-muted">
+                <td colSpan={5} className="text-center p-8 text-ink-muted">
                   {teams.length === 0 ? "No teams found." : "No teams match your search."}
                 </td>
               </tr>
@@ -409,6 +461,11 @@ const TeamList = () => {
                     )}
                     <FiChevronRight size={22} className="shrink-0 text-ink-faint" aria-hidden="true" />
                   </div>
+                  {isAdmin && (
+                    <div className="mt-1.5">
+                      <AttendanceStatus team={team} />
+                    </div>
+                  )}
                   {description && <p className="mt-1 text-[13px] leading-snug text-ink-muted line-clamp-2">{description}</p>}
                   <div className="mt-3.5 flex items-center gap-2.5">
                     {shown.length > 0 && (

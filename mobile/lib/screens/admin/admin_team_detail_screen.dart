@@ -152,8 +152,8 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             tabs: [
-              Tab(text: 'Members'),
               Tab(text: 'Attendance'),
+              Tab(text: 'Members'),
             ],
           ),
         ),
@@ -164,6 +164,16 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
         ),
         body: TabBarView(
           children: [
+            _loading || _error != null
+                ? const SizedBox.shrink()
+                : TeamAttendanceTab(
+                    teamId: widget.id,
+                    teamName: widget.name,
+                    members: memberStats
+                        .map((m) => (m as Map)['member'] ?? m)
+                        .whereType<Map>()
+                        .toList(),
+                  ),
             _loading
                 ? ListView(
                     padding: EdgeInsets.all(context.w(16)),
@@ -269,16 +279,6 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
                           }),
                       ],
                     ),
-                  ),
-            _loading || _error != null
-                ? const SizedBox.shrink()
-                : TeamAttendanceTab(
-                    teamId: widget.id,
-                    teamName: widget.name,
-                    members: memberStats
-                        .map((m) => (m as Map)['member'] ?? m)
-                        .whereType<Map>()
-                        .toList(),
                   ),
           ],
         ),

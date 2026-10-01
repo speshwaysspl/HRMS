@@ -95,10 +95,68 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
     }
   }
 
+  Future<void> _deleteAll() async {
+    final n = _items.length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Delete all $n announcements?'),
+        content: const Text(
+          "They will be removed for everyone. This can't be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete all',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final skipped = await _service.deleteAnnouncements(
+        _items.map((a) => a['_id'].toString()).toList(),
+      );
+      if (mounted && skipped > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$skipped posted by someone else ${skipped == 1 ? 'was' : 'were'} kept.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      }
+    }
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HrmsAppBar(title: const Text('Announcements')),
+      appBar: HrmsAppBar(
+        title: const Text('Announcements'),
+        actions: [
+          if (!_loading && _items.isNotEmpty)
+            IconButton(
+              tooltip: 'Delete all',
+              icon: const Icon(Icons.delete_sweep_outlined),
+              onPressed: _deleteAll,
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openComposer,
         icon: const Icon(Icons.add),

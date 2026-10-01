@@ -52,9 +52,6 @@ const AnnouncementAdd = lazy(() => import("./components/announcements/Announceme
 const EditAnnouncement = lazy(() => import("./components/announcements/EditAnnouncement"));
 const AdminAttendanceReport = lazy(() => import("./components/attendance/AdminAttendanceReport"));
 const RegularizationApprovals = lazy(() => import("./components/attendance/RegularizationApprovals"));
-const TeamReviews = lazy(() => import("./components/performance/TeamReviews"));
-const MyReviews = lazy(() => import("./components/performance/MyReviews"));
-const ReportSettings = lazy(() => import("./components/dashboard/ReportSettings"));
 const AdminFeedback = lazy(() => import("./components/feedback/AdminFeedback"));
 const AdminCalendar = lazy(() => import("./components/calendar/AdminCalendar"));
 const AdminDailyQuote = lazy(() => import("./components/dailyQuote/AdminDailyQuote"));
@@ -163,7 +160,6 @@ function App() {
  
           {/* Settings */}
           <Route path="setting" element={<Setting />} />
-          <Route path="report-settings" element={<ReportSettings />} />
 
           {/* Announcements */}
           <Route path="announcements" element={<AnnouncementList />} />
@@ -174,7 +170,6 @@ function App() {
           {/* Attendance Report */}
           <Route path="attendance-report" element={<AdminAttendanceReport />} />
           <Route path="attendance-approvals" element={<RegularizationApprovals />} />
-          <Route path="team-reviews" element={<TeamReviews />} />
 
           {/* Feedback */}
           <Route path="feedback" element={<AdminFeedback />} />
@@ -225,7 +220,6 @@ function App() {
           {/* Attendance */}
           <Route path="attendance" element={<Attendance />} />
           <Route path="attendance-report" element={<AttendanceReport />} />
-          <Route path="my-reviews" element={<MyReviews />} />
           <Route path="feedback" element={<EmployeeFeedback />} />
           <Route path="calendar" element={<EmployeeCalendar />} />
           <Route path="documents" element={<DocumentList />} />
@@ -235,7 +229,6 @@ function App() {
           {/* Team Lead sections */}
           <Route path="team/teams" element={<TeamList />} />
           <Route path="team/:id" element={<TeamDetail />} />
-          <Route path="team/reviews" element={<TeamReviews />} />
         </Route>
 
         {/* HR Dashboard */}
@@ -257,7 +250,6 @@ function App() {
           <Route path="offer" element={<ReadyForOffer />} />
           <Route path="interviews" element={<InterviewScheduler />} />
           <Route path="settings" element={<Setting />} />
-          <Route path="report-settings" element={<ReportSettings />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 

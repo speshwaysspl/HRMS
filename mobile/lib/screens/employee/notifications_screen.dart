@@ -1,3 +1,4 @@
+import '../admin/admin_teams_screen.dart';
 import 'package:flutter/material.dart';
 import '../../services/app_events.dart';
 import 'package:intl/intl.dart';
@@ -185,7 +186,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Attendance: check-out reminder, correction requests / decisions.
     // A birthday wish is a personal note — the list item itself is enough.
     if (type == 'birthday_wish') return;
-    final attendanceTarget = type == 'team_attendance_reminder'
+    final attendanceTarget = type == 'team_attendance_marked'
+        ? const AdminTeamsScreen()
+        : type == 'team_attendance_reminder'
         ? const MyTeamsScreen()
         : type == 'checkout_reminder'
         ? const AttendanceScreen()

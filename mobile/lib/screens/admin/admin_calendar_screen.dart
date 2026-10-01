@@ -10,7 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
-const _eventTypes = ['holiday', 'meeting', 'event'];
+const _eventTypes = ['holiday', 'wfh'];
 
 class AdminCalendarScreen extends StatefulWidget {
   const AdminCalendarScreen({super.key});
@@ -24,6 +24,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   Object? _error;
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  String? _selected; // yyyy-MM-dd day filter
 
   @override
   void initState() {
@@ -57,12 +59,13 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
     }
   }
 
-  Future<void> _edit([Map<String, dynamic>? existing]) async {
+  Future<void> _edit([Map<String, dynamic>? existing, DateTime? day]) async {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _EventSheet(service: _service, existing: existing),
+      builder: (_) =>
+          _EventSheet(service: _service, existing: existing, initialDate: day),
     );
     if (saved == true) _load();
   }
@@ -105,6 +108,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
     switch (type) {
       case 'holiday':
         return Icons.beach_access;
+      case 'wfh':
+        return Icons.home_work_outlined;
       case 'meeting':
         return Icons.groups_outlined;
       default:
@@ -112,20 +117,83 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
     }
   }
 
+  // Events are stored at UTC midnight of their calendar day.
+  static String _dayKey(dynamic v) {
+    final d = DateTime.tryParse(v?.toString() ?? '');
+    return d == null ? '' : DateFormat('yyyy-MM-dd').format(d.toUtc());
+  }
+
+  Future<void> _importHolidays() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Import India holidays'),
+        content: const Text(
+          'Import India public holidays? Existing matching holidays will be skipped.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final msg = await _service.seed();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final byDay = <String, List<Map<String, dynamic>>>{};
+    for (final e in _items) {
+      byDay.putIfAbsent(_dayKey(e['date']), () => []).add(e);
+    }
+    final prefix = DateFormat('yyyy-MM').format(_month);
+    final monthEvents = _items
+        .where((e) => _dayKey(e['date']).startsWith(prefix))
+        .where((e) => _selected == null || _dayKey(e['date']) == _selected)
+        .toList();
+
     return Scaffold(
-      appBar: HrmsAppBar(title: const Text('Calendar & Events')),
+      appBar: HrmsAppBar(
+        title: const Text('Calendar'),
+        actions: [
+          IconButton(
+            tooltip: 'Import India holidays',
+            icon: const Icon(Icons.download_outlined),
+            onPressed: _importHolidays,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(),
         icon: const Icon(Icons.add),
-        label: const Text('Add'),
+        label: const Text('Add event'),
       ),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),
               children: const [
-                SkeletonListTile(),
+                SkeletonCard(height: 300),
                 SkeletonListTile(),
                 SkeletonListTile(),
               ],
@@ -134,83 +202,324 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
           ? buildErrorState(_error!, _load)
           : RefreshIndicator(
               onRefresh: _load,
-              child: _items.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 100),
-                        EmptyStateView(
-                          icon: Icons.event_busy,
-                          title: 'No events scheduled',
-                          subtitle:
-                              'Holidays and events you add will show up here.',
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(context.w(16)),
-                      itemCount: _items.length,
-                      itemBuilder: (context, idx) {
-                        final e = _items[idx];
-                        String date = '';
-                        try {
-                          date = DateFormat(
-                            'EEE, d MMM yyyy',
-                          ).format(DateTime.parse(e['date'].toString()));
-                        } catch (_) {}
-                        final type = e['type']?.toString() ?? 'event';
-                        return SimpleCard(
-                          onTap: () => _edit(e),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: context.r(40),
-                                height: context.r(40),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  _iconFor(type),
-                                  color: AppColors.accent700,
-                                  size: context.r(20),
-                                ),
-                              ),
-                              SizedBox(width: context.w(12)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      e['title']?.toString() ?? '',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.ink,
-                                      ),
-                                    ),
-                                    SizedBox(height: context.h(2)),
-                                    Text(
-                                      '$date  ·  ${type[0].toUpperCase()}${type.substring(1)}',
-                                      style: TextStyle(
-                                        color: AppColors.inkMuted,
-                                        fontSize: context.sp(12),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: AppColors.danger,
-                                ),
-                                onPressed: () => _delete(e),
-                              ),
-                            ],
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  context.w(16),
+                  context.h(12),
+                  context.w(16),
+                  context.h(96),
+                ),
+                children: [
+                  _MonthGrid(
+                    month: _month,
+                    byDay: byDay,
+                    selected: _selected,
+                    onMonth: (m) => setState(() {
+                      _month = m;
+                      _selected = null;
+                    }),
+                    onDay: (k) {
+                      setState(() => _selected = k);
+                      _edit(null, DateTime.parse(k));
+                    },
+                  ),
+                  SizedBox(height: context.h(16)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _selected == null
+                              ? 'Events this month · ${monthEvents.length}'
+                              : '${DateFormat('EEEE, dd MMM').format(DateTime.parse(_selected!))} · ${monthEvents.length}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
+                            fontSize: context.sp(15),
                           ),
-                        );
-                      },
+                        ),
+                      ),
+                      if (_selected != null)
+                        TextButton(
+                          onPressed: () => setState(() => _selected = null),
+                          child: const Text('Whole month'),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: context.h(8)),
+                  if (monthEvents.isEmpty)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: context.h(24)),
+                      child: Text(
+                        _selected == null
+                            ? 'No holidays or work-from-home days marked for this month.'
+                            : 'Nothing on this day.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.inkMuted),
+                      ),
                     ),
+                  for (final e in monthEvents) _eventCard(e),
+                ],
+              ),
             ),
+    );
+  }
+
+  Widget _eventCard(Map<String, dynamic> e) {
+    final type = e['type']?.toString() ?? 'event';
+    final c = _typeColor(type);
+    String date = '';
+    try {
+      date = DateFormat(
+        'EEEE dd MMM',
+      ).format(DateTime.parse(e['date'].toString()).toUtc());
+    } catch (_) {}
+    return SimpleCard(
+      onTap: () => _edit(e),
+      child: Row(
+        children: [
+          Container(
+            width: context.r(40),
+            height: context.r(40),
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(_iconFor(type), color: c, size: context.r(20)),
+          ),
+          SizedBox(width: context.w(12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  e['title']?.toString() ?? '',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
+                SizedBox(height: context.h(2)),
+                Text(
+                  '$date  ·  ${_typeLabel(type)}',
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Remove',
+            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+            onPressed: () => _delete(e),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _typeLabel(String t) => switch (t) {
+  'holiday' => 'Holiday',
+  'wfh' => 'Work from home',
+  'meeting' => 'Meeting',
+  'event' => 'Event',
+  _ => 'Other',
+};
+
+Color _typeColor(String t) => switch (t) {
+  'holiday' => AppColors.danger,
+  'wfh' => const Color(0xFF2563EB),
+  'meeting' => AppColors.brand600,
+  'event' => AppColors.accent600,
+  _ => AppColors.inkMuted,
+};
+
+const _weekendFg = Color(0xFFE11D48);
+
+/// Month grid with tinted, dotted days (mirrors web AdminCalendar).
+class _MonthGrid extends StatelessWidget {
+  final DateTime month;
+  final Map<String, List<Map<String, dynamic>>> byDay;
+  final String? selected;
+  final ValueChanged<DateTime> onMonth;
+  final ValueChanged<String> onDay;
+  const _MonthGrid({
+    required this.month,
+    required this.byDay,
+    required this.selected,
+    required this.onMonth,
+    required this.onDay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final first = DateTime(month.year, month.month, 1).weekday % 7; // Sun=0
+    final days = DateTime(month.year, month.month + 1, 0).day;
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return Container(
+      padding: EdgeInsets.all(context.w(12)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.surfaceSubtle),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Previous month',
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () => onMonth(DateTime(month.year, month.month - 1)),
+              ),
+              Expanded(
+                child: Text(
+                  DateFormat('MMMM yyyy').format(month),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                    fontSize: context.sp(16),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Next month',
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () => onMonth(DateTime(month.year, month.month + 1)),
+              ),
+            ],
+          ),
+          GridView.count(
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            children: [
+              for (final (i, d) in const [
+                'S',
+                'M',
+                'T',
+                'W',
+                'T',
+                'F',
+                'S',
+              ].indexed)
+                Center(
+                  child: Text(
+                    d,
+                    style: TextStyle(
+                      color: i == 0 || i == 6 ? _weekendFg : AppColors.inkMuted,
+                      fontSize: context.sp(12),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              for (var i = 0; i < first; i++) const SizedBox.shrink(),
+              for (var day = 1; day <= days; day++) _cell(context, day, today),
+            ],
+          ),
+          SizedBox(height: context.h(8)),
+          Wrap(
+            spacing: 14,
+            runSpacing: 4,
+            children: [
+              for (final t in const ['holiday', 'wfh', 'event'])
+                _legend(context, _typeColor(t), _typeLabel(t)),
+              _legend(context, _weekendFg, 'Weekend'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _legend(BuildContext context, Color c, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 5),
+      Text(
+        label,
+        style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
+      ),
+    ],
+  );
+
+  Widget _cell(BuildContext context, int day, String today) {
+    final date = DateTime(month.year, month.month, day);
+    final k = DateFormat('yyyy-MM-dd').format(date);
+    final evs = byDay[k] ?? const [];
+    final weekend =
+        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+    final main = evs.isEmpty
+        ? null
+        : _typeColor(evs.first['type']?.toString() ?? 'event');
+    final isSel = selected == k;
+    return Semantics(
+      button: true,
+      selected: isSel,
+      label:
+          '$day${evs.isEmpty ? '' : ', ${evs.map((e) => e['title']).join(', ')}'}${weekend ? ', weekend' : ''}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => onDay(k),
+        child: Container(
+          decoration: BoxDecoration(
+            color: main != null
+                ? main.withValues(alpha: 0.12)
+                : weekend
+                ? AppColors.tint(const Color(0xFFFFF1F2))
+                : null,
+            borderRadius: BorderRadius.circular(8),
+            border: k == today
+                ? Border.all(color: AppColors.accent600, width: 2)
+                : isSel
+                ? Border.all(color: AppColors.brand600, width: 2)
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$day',
+                style: TextStyle(
+                  fontSize: context.sp(13),
+                  fontWeight: k == today ? FontWeight.w700 : FontWeight.w500,
+                  color: weekend && main == null ? _weekendFg : AppColors.ink,
+                ),
+              ),
+              if (evs.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final e in evs.take(3))
+                      Container(
+                        margin: const EdgeInsets.only(
+                          top: 2,
+                          left: 1,
+                          right: 1,
+                        ),
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: _typeColor(e['type']?.toString() ?? 'event'),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -218,7 +527,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
 class _EventSheet extends StatefulWidget {
   final EventService service;
   final Map<String, dynamic>? existing;
-  const _EventSheet({required this.service, this.existing});
+  final DateTime? initialDate;
+  const _EventSheet({required this.service, this.existing, this.initialDate});
 
   @override
   State<_EventSheet> createState() => _EventSheetState();
@@ -244,7 +554,12 @@ class _EventSheetState extends State<_EventSheet> {
       text: widget.existing?['description']?.toString() ?? '',
     );
     _type = widget.existing?['type']?.toString() ?? 'holiday';
-    _date = DateTime.tryParse(widget.existing?['date']?.toString() ?? '');
+    if (!_eventTypes.contains(_type)) _type = 'holiday';
+    _date =
+        DateTime.tryParse(
+          widget.existing?['date']?.toString() ?? '',
+        )?.toUtc() ??
+        widget.initialDate;
   }
 
   @override
@@ -348,7 +663,7 @@ class _EventSheetState extends State<_EventSheet> {
                       .map(
                         (t) => DropdownMenuItem(
                           value: t,
-                          child: Text('${t[0].toUpperCase()}${t.substring(1)}'),
+                          child: Text(_typeLabel(t)),
                         ),
                       )
                       .toList(),

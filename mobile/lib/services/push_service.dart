@@ -1,3 +1,4 @@
+import '../screens/admin/admin_teams_screen.dart';
 import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -50,10 +51,12 @@ Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // This isolate has its own plugin instance; it must be initialised here
   // or show() fails silently.
-  await _localNotifications.initialize(const InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    iOS: DarwinInitializationSettings(),
-  ));
+  await _localNotifications.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    ),
+  );
   await _showLocalNotification(message);
 }
 
@@ -110,8 +113,7 @@ class PushService {
     );
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
-    const androidInit =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
     await _localNotifications.initialize(
       const InitializationSettings(android: androidInit, iOS: iosInit),
@@ -125,7 +127,8 @@ class PushService {
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_channel);
   }
 
@@ -179,9 +182,7 @@ class PushService {
         _messageHandlersBound = true;
 
         FirebaseMessaging.onMessage.listen(_showLocalNotification);
-        FirebaseMessaging.onMessageOpenedApp.listen(
-          (m) => _handleOpen(m.data),
-        );
+        FirebaseMessaging.onMessageOpenedApp.listen((m) => _handleOpen(m.data));
 
         final initial = await messaging.getInitialMessage();
         if (initial != null) {
@@ -197,8 +198,8 @@ class PushService {
   Future<void> unregisterForUser() async {
     if (kIsWeb) return;
     try {
-      final token = _lastRegisteredToken ??
-          await FirebaseMessaging.instance.getToken();
+      final token =
+          _lastRegisteredToken ?? await FirebaseMessaging.instance.getToken();
       if (token != null) {
         await _notificationService.unregisterFcmToken(token);
       }
@@ -223,7 +224,9 @@ class PushService {
     final isAdmin = context.read<AuthProvider>().user?.isAdmin == true;
 
     Widget target;
-    if (type == 'team_attendance_reminder') {
+    if (type == 'team_attendance_marked') {
+      target = const AdminTeamsScreen();
+    } else if (type == 'team_attendance_reminder') {
       target = const MyTeamsScreen();
     } else if (type == 'checkout_reminder') {
       target = const AttendanceScreen();
@@ -249,7 +252,9 @@ class PushService {
       target = const TasksScreen();
     } else if (type.contains('feedback') || title.contains('feedback')) {
       target = isAdmin ? const AdminFeedbackScreen() : const FeedbackScreen();
-    } else if (type.contains('payslip') || title.contains('payslip') || title.contains('salary')) {
+    } else if (type.contains('payslip') ||
+        title.contains('payslip') ||
+        title.contains('salary')) {
       final code = context.read<AuthProvider>().user?.id ?? '';
       target = PayslipsScreen(employeeCode: code);
     } else {

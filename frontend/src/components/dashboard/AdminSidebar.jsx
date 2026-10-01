@@ -61,7 +61,6 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       label: "Performance",
       icon: <FaClipboardCheck />,
       links: [
-        { to: "/admin-dashboard/team-reviews", label: "Performance Reviews", icon: <FaClipboardCheck /> },
         { to: "/admin-dashboard/feedback", label: "Feedback Management", icon: <FaClipboardCheck /> },
       ],
     },
@@ -80,7 +79,6 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       icon: <FaCogs />,
       links: [
         { to: "/admin-dashboard/setting", label: "General Settings", icon: <FaCogs /> },
-        { to: "/admin-dashboard/report-settings", label: "Report Settings", icon: <FaCogs /> },
       ],
     },
   ];

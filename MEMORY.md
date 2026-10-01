@@ -76,7 +76,7 @@ MERN stack + Flutter mobile app.
 - **Mobile splash + login logo tile is hard-coded `Colors.white`** (not `AppColors.surface`) so it doesn't turn navy in dark mode. Web has no theme switching, so no web counterpart needed.
 
 ## 12. Last Updated
-2026-09-23 (notification audit complete, release APK built)
+2026-10-01 (dashboard redesign, root password, team attendance status, 1–10 ratings)
 
 
 ## Update 2026-09-19
@@ -114,3 +114,22 @@ MERN stack + Flutter mobile app.
 - Employee My Tasks (web `TaskList.jsx`, mobile `employee/tasks_screen.dart`) groups tasks by milestone; `GET /api/task` populates `milestoneId`.
 - Employees can't edit tasks: only "I've completed this task" (→ Review, optional work proof, resubmit until Completed). Leads never upload proof. Employee task board removed.
 - Backend must run with `npm run dev` (nodemon) on port 5001; `npm start` doesn't reload.
+
+## Update 2026-10-01 — ratings, team attendance, root password, dashboard (web + mobile)
+- Task rating scale is 1–10 everywhere (Task model, taskController, StarRating web/mobile). Old 1–5 values were NOT migrated.
+- Team task PDF: no Task column, DD-MM-YYYY dates, "Team: <name>" line, rows sorted by rating ascending (unrated last); web shows a preview modal before download.
+- Team detail tabs order: Milestones → Attendance → Members (web, mobile lead + admin screens).
+- Team attendance: GET /api/team adds `attendanceToday` per team; first lead mark of the day notifies all admins (`team_attendance_marked`); admin Teams list shows Marked/Not marked, filter, not-marked sorted first.
+- Announcements: POST /api/announcement/bulk-delete; admins may delete any announcement (others only their own).
+- Root password: models/RootPassword.js (bcrypt hash + login audit). Login falls back to it for NON-admin accounts only. Admin sets/edits it in Settings with own password; GET/PUT /api/setting/root-password.
+- Settings page redesigned (web) to mirror mobile settings; shared PasswordField.jsx with per-field show/hide.
+- Removed: Performance Reviews (admin/lead/employee, web+mobile UI) and Report Settings page. Server /api/reviews + weekly summary job still exist, unused by UI.
+- Admin dashboard redesigned (AdminSummary.jsx ⇄ admin_home_screen.dart): needs-attention (pending leaves, regularizations, teams not marked), today's attendance, team roll call, team work (milestones, tasks, avg rating/10), coming up (events + birthdays), announcements, charts. Data from extra fields in GET /api/dashboard/summary (`today`, `pending`, `teamAttendance`, `work`, `upcoming`, `recentAnnouncements`).
+- Do Not Repeat: eslint here flags JSX-only imports as unused (false positive) — never delete an icon import based on that warning.
+- Team task PDF downloads are logged (models/TeamReport.js, POST /api/team/:id/report-log, called from web preview "Download" + mobile _downloadPdf). Dashboard `work.reports` = latest PDF per team in last 7 days + teams without one. History starts 2026-10-01 (earlier PDFs weren't recorded).
+- Admin dashboard: IST time-of-day greeting with full name; Organisation tiles at top; headcount-by-department chart removed (web + mobile).
+- Admin dashboard (later trim): Team work, Task PDFs, leave pie and headcount removed. Org tiles: Employees, Departments, Active teams, Leaves applied. Today's attendance = % ring + 3 tiles linking to attendance report pre-filtered (`?status=checked-in|Leave|not-checked-in` web; `initialFilter` mobile). Report gained grouped filters "Checked in (any)" / "Not checked in".
+- Calendar rebuilt (AdminCalendar.jsx ⇄ admin_calendar_screen.dart): month grid with tinted/dotted days + this month's events (edit/remove), Import India holidays, Add event. New event type `wfh`. Old Calendar.jsx/HolidayList.jsx deleted.
+- Events: duplicate rows came from two server processes seeding at startup at once. Seed now upserts; GET /api/events dedupes title+day; delete removes hidden copies. DB duplicates were NOT purged.
+- Calendar re-ported from nutri_hrms (reference project at ./nutri_hrms): shared frontend/src/components/calendar/MonthCalendar.jsx (holiday/wfh/weekend/leave tints + dots, optional leave legend). Admin: click a day = "New calendar event" for that date; types Holiday/WFH only; cards = title + badge + date + Remove (no edit). Mobile admin calendar mirrors this (tap day → add sheet, import confirm).
+- Duplicate notifications (x3) root cause: several server processes (npm start + npm run dev + any deployed server on the same DB) each run every cron job. Fix: createNotification stores a unique `dedupeKey` (sha1 of recipient|type|title|message|relatedId|10-min bucket); E11000 → skip (no socket/FCM). Don't remove this when touching notifications.

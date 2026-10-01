@@ -13,14 +13,12 @@ import '../screens/employee/attendance_screen.dart';
 import '../screens/employee/calendar_screen.dart';
 import '../screens/employee/feedback_screen.dart';
 import '../screens/employee/leaves_screen.dart';
-import '../screens/employee/my_reviews_screen.dart';
 import '../screens/employee/payslips_screen.dart';
 import '../screens/employee/tasks_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/teamlead/my_teams_screen.dart';
-import '../screens/teamlead/team_reviews_screen.dart';
 import '../screens/admin/admin_announcements_screen.dart';
 import '../screens/admin/admin_attendance_report_screen.dart';
 import '../screens/admin/admin_calendar_screen.dart';
@@ -30,7 +28,6 @@ import '../screens/admin/admin_feedback_screen.dart';
 import '../screens/admin/admin_leave_types_screen.dart';
 import '../screens/admin/admin_payroll_templates_screen.dart';
 import '../screens/admin/admin_payslips_screen.dart';
-import '../screens/admin/admin_reviews_screen.dart';
 import '../screens/admin/admin_teams_screen.dart';
 
 /// Side navigation. Replaces the old "More" bottom-nav tab. Options are
@@ -78,8 +75,6 @@ class AppDrawer extends StatelessWidget {
   static const _greenBg = Color(0xFFDCFCE7);
   static const _indigo = Color(0xFF4F46E5);
   static const _indigoBg = Color(0xFFE0E7FF);
-  static const _pink = Color(0xFFDB2777);
-  static const _pinkBg = Color(0xFFFCE7F3);
 
   List<Widget> _employeeSections(BuildContext context, bool isTeamLead) => [
         _Section(
@@ -100,8 +95,6 @@ class AppDrawer extends StatelessWidget {
           children: [
             _Item(Icons.checklist_rounded, 'Tasks', color: _purple, iconBg: _purpleBg,
                 onTap: () => _go(context, (_) => const TasksScreen())),
-            _Item(Icons.star_outline_rounded, 'My Reviews', color: _pink, iconBg: _pinkBg,
-                onTap: () => _go(context, (_) => const MyReviewsScreen())),
           ],
         ),
         _Section(
@@ -126,8 +119,6 @@ class AppDrawer extends StatelessWidget {
             children: [
               _Item(Icons.groups_outlined, 'My Teams', color: _indigo, iconBg: _indigoBg,
                   onTap: () => _go(context, (_) => const MyTeamsScreen())),
-              _Item(Icons.star_outline_rounded, 'Team Reviews', color: _pink, iconBg: _pinkBg,
-                  onTap: () => _go(context, (_) => const TeamReviewsScreen())),
             ],
           ),
       ];
@@ -147,8 +138,6 @@ class AppDrawer extends StatelessWidget {
                 onTap: () => _go(context, (_) => const AdminCalendarScreen())),
             _Item(Icons.groups_outlined, 'Teams', color: _teal, iconBg: _tealBg,
                 onTap: () => _go(context, (_) => const AdminTeamsScreen())),
-            _Item(Icons.star_outline_rounded, 'Performance Reviews', color: _pink, iconBg: _pinkBg,
-                onTap: () => _go(context, (_) => const AdminReviewsScreen())),
           ],
         ),
         _Section(

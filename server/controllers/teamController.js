@@ -2,6 +2,8 @@ import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import Task from "../models/Task.js";
+import TeamAttendance from "../models/TeamAttendance.js";
+import TeamReport from "../models/TeamReport.js";
 import { emitTeamUpdate } from "../utils/realtime.js";
 
 // Create Team
@@ -127,7 +129,49 @@ export const getTeams = async (req, res) => {
          teams = [];
       }
     }
+    // Admins and leads also get whether today's (IST) roll call is taken.
+    if (userRoles.includes("admin") || userRoles.includes("team_lead")) {
+      const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+      const records = await TeamAttendance.find({ date: today, teamId: { $in: teams.map((t) => t._id) } })
+        .select("teamId updatedAt markedBy")
+        .populate("markedBy", "name")
+        .lean();
+      const byTeam = new Map(records.map((r) => [String(r.teamId), r]));
+      teams = teams.map((t) => {
+        const r = byTeam.get(String(t._id));
+        return {
+          ...t.toObject(),
+          attendanceToday: r
+            ? { marked: true, markedAt: r.updatedAt, markedBy: r.markedBy?.name || null }
+            : { marked: false },
+        };
+      });
+    }
     res.status(200).json({ success: true, teams });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// POST /api/team/:id/report-log { milestoneId?, title?, taskCount? }
+// Records that the lead/admin downloaded this team's task PDF.
+export const logTeamReport = async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id).select("leadId");
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+    const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    if (!roles.includes("admin") && String(team.leadId) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, error: "Not allowed" });
+    }
+    const { milestoneId, title, taskCount } = req.body || {};
+    await TeamReport.create({
+      teamId: team._id,
+      milestoneId: /^[a-f0-9]{24}$/i.test(String(milestoneId || "")) ? milestoneId : null,
+      title: String(title || "").slice(0, 200),
+      taskCount: Number(taskCount) || 0,
+      generatedBy: req.user._id,
+    });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

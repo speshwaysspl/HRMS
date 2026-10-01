@@ -10,19 +10,29 @@ class EventService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  /// Admin: [type] is 'holiday' | 'meeting' | 'event'. [date] is yyyy-MM-dd.
+  /// Admin: adds the built-in India holiday list; returns the server message.
+  Future<String> seed() async {
+    final res = await _dio.post('/api/events/seed');
+    return (res.data as Map)['message']?.toString() ?? 'Holidays imported';
+  }
+
+  /// Admin: [type] is 'holiday' | 'wfh' | 'meeting' | 'event' | 'other'.
+  /// [date] is yyyy-MM-dd.
   Future<void> add({
     required String title,
     required String date,
     required String type,
     String description = '',
   }) async {
-    await _dio.post('/api/events/add', data: {
-      'title': title,
-      'date': date,
-      'type': type,
-      'description': description,
-    });
+    await _dio.post(
+      '/api/events/add',
+      data: {
+        'title': title,
+        'date': date,
+        'type': type,
+        'description': description,
+      },
+    );
   }
 
   Future<void> update(
@@ -32,12 +42,15 @@ class EventService {
     required String type,
     String description = '',
   }) async {
-    await _dio.put('/api/events/$id', data: {
-      'title': title,
-      'date': date,
-      'type': type,
-      'description': description,
-    });
+    await _dio.put(
+      '/api/events/$id',
+      data: {
+        'title': title,
+        'date': date,
+        'type': type,
+        'description': description,
+      },
+    );
   }
 
   Future<void> remove(String id) async {

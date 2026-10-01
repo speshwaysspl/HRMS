@@ -78,7 +78,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: <FaClipboardList />,
       links: [
         { to: "/employee-dashboard/tasks", label: "My Tasks", icon: <FaClipboardList /> },
-        { to: "/employee-dashboard/my-reviews", label: "My Reviews", icon: <FaClipboardList /> },
       ],
     },
     {
@@ -98,7 +97,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             icon: <FaUserTie />,
             links: [
               { to: "/employee-dashboard/team/teams", label: "My Teams", icon: <FaUsers /> },
-              { to: "/employee-dashboard/team/reviews", label: "Team Reviews", icon: <FaClipboardList /> },
             ],
           },
         ]

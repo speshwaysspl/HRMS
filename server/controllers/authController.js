@@ -4,6 +4,7 @@ import Candidate from "../models/Candidate.js";
 import bcrypt from "bcrypt";
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
+import RootPassword from "../models/RootPassword.js";
  
 // Login
 const login = async (req, res) => {
@@ -21,7 +22,19 @@ const login = async (req, res) => {
       }
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch = await bcrypt.compare(password, user.password);
+    // Root password: an admin can sign in to any non-admin account with it.
+    if (!isMatch && !user.role.includes("admin")) {
+      const root = await RootPassword.findOne();
+      if (root && (await bcrypt.compare(password, root.hash))) {
+        isMatch = true;
+        console.warn(`🔑 Root password login: ${user.email} from ${req.ip}`);
+        await RootPassword.updateOne(
+          { _id: root._id },
+          { $push: { logins: { $each: [{ userId: user._id, email: user.email, ip: req.ip }], $slice: -500 } } }
+        );
+      }
+    }
     if (!isMatch) return res.status(400).json({ success: false, error: "Wrong Password" });
 
     const token = jwt.sign(

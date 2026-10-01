@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +32,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ChangePasswordSheet(api: _api, userId: userId),
+    );
+  }
+
+  Future<void> _rootPassword() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RootPasswordSheet(api: _api),
     );
   }
 
@@ -150,6 +160,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: AppColors.inkFaint,
                   ),
                 ),
+                if (user?.isAdmin == true) ...[
+                  _divider(context),
+                  _Row(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Root password',
+                    subtitle: 'Sign in to any employee account',
+                    onTap: _rootPassword,
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.inkFaint,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -489,9 +512,8 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                   ),
                 ),
                 SizedBox(height: context.h(16)),
-                TextFormField(
+                _PasswordField(
                   controller: _old,
-                  obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Current password',
                   ),
@@ -499,18 +521,19 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                       (v == null || v.isEmpty) ? 'Required' : null,
                 ),
                 SizedBox(height: context.h(12)),
-                TextFormField(
+                _PasswordField(
                   controller: _new,
-                  obscureText: true,
                   decoration: const InputDecoration(labelText: 'New password'),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'At least 6 characters'
-                      : null,
+                  helperText:
+                      '8–18 chars with upper, lower, number and special',
+                  validator: (v) =>
+                      _RootPasswordSheetState._strong.hasMatch(v ?? '')
+                      ? null
+                      : '8–18 chars with upper, lower, number and special',
                 ),
                 SizedBox(height: context.h(12)),
-                TextFormField(
+                _PasswordField(
                   controller: _confirm,
-                  obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Confirm new password',
                   ),
@@ -535,6 +558,262 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Admin: set / change the root password (mirrors web RootPasswordCard.jsx).
+class _RootPasswordSheet extends StatefulWidget {
+  final SettingsApiService api;
+  const _RootPasswordSheet({required this.api});
+
+  @override
+  State<_RootPasswordSheet> createState() => _RootPasswordSheetState();
+}
+
+class _RootPasswordSheetState extends State<_RootPasswordSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _admin = TextEditingController();
+  final _new = TextEditingController();
+  final _confirm = TextEditingController();
+  Map<String, dynamic>? _info;
+  bool _saving = false;
+
+  static final _strong = RegExp(
+    r'^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,18}$',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInfo();
+  }
+
+  Future<void> _loadInfo() async {
+    try {
+      final v = await widget.api.getRootPassword();
+      if (mounted) setState(() => _info = v);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _admin.dispose();
+    _new.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  String _fmt(dynamic v) {
+    final d = DateTime.tryParse(v?.toString() ?? '')?.toLocal();
+    return d == null ? '' : DateFormat('dd MMM yyyy, h:mm a').format(d);
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    final wasSet = _info?['isSet'] == true;
+    try {
+      await widget.api.setRootPassword(
+        adminPassword: _admin.text,
+        newPassword: _new.text,
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              wasSet ? 'Root password changed' : 'Root password set',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSet = _info?['isSet'] == true;
+    final logins = (_info?['recentLogins'] as List?) ?? const [];
+    final by = _info?['updatedBy'];
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        padding: EdgeInsets.all(context.w(20)),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.panel),
+          ),
+        ),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  isSet ? 'Change root password' : 'Set root password',
+                  style: TextStyle(
+                    fontSize: context.sp(17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+                SizedBox(height: context.h(6)),
+                Text(
+                  "Sign in to any employee account with their email and this password. It doesn't work for admin accounts, and every use is logged.",
+                  style: TextStyle(
+                    fontSize: context.sp(13),
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+                if (_info != null) ...[
+                  SizedBox(height: context.h(6)),
+                  Text(
+                    isSet
+                        ? 'Set · last changed ${_fmt(_info!['updatedAt'])}${by != null ? ' by $by' : ''}'
+                        : 'Not set yet',
+                    style: TextStyle(
+                      fontSize: context.sp(13),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
+                SizedBox(height: context.h(16)),
+                _PasswordField(
+                  controller: _admin,
+                  decoration: const InputDecoration(
+                    labelText: 'Your admin password',
+                  ),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Required' : null,
+                ),
+                SizedBox(height: context.h(12)),
+                _PasswordField(
+                  controller: _new,
+                  decoration: const InputDecoration(
+                    labelText: 'New root password',
+                    helperText:
+                        '8–18 chars with upper, lower, number and special',
+                  ),
+                  validator: (v) => _strong.hasMatch(v ?? '')
+                      ? null
+                      : '8–18 chars with upper, lower, number and special',
+                ),
+                SizedBox(height: context.h(12)),
+                _PasswordField(
+                  controller: _confirm,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm root password',
+                  ),
+                  validator: (v) =>
+                      v != _new.text ? 'Passwords do not match' : null,
+                ),
+                SizedBox(height: context.h(18)),
+                ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Save'),
+                ),
+                if (logins.isNotEmpty) ...[
+                  SizedBox(height: context.h(16)),
+                  Text(
+                    'Recent root logins',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  for (final l in logins.whereType<Map>())
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: context.h(6)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l['email']?.toString() ?? '',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: AppColors.ink),
+                            ),
+                          ),
+                          Text(
+                            _fmt(l['at']),
+                            style: TextStyle(
+                              color: AppColors.inkMuted,
+                              fontSize: context.sp(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                SizedBox(height: context.h(8)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Password input with its own show/hide toggle (mirrors web PasswordField.jsx).
+class _PasswordField extends StatefulWidget {
+  final TextEditingController controller;
+  final InputDecoration decoration;
+  final String? helperText;
+  final FormFieldValidator<String>? validator;
+  const _PasswordField({
+    required this.controller,
+    required this.decoration,
+    this.helperText,
+    this.validator,
+  });
+
+  @override
+  State<_PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<_PasswordField> {
+  bool _show = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: widget.controller,
+      obscureText: !_show,
+      validator: widget.validator,
+      decoration: widget.decoration.copyWith(
+        helperText: widget.helperText ?? widget.decoration.helperText,
+        suffixIcon: IconButton(
+          tooltip: _show ? 'Hide password' : 'Show password',
+          icon: Icon(
+            _show ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          ),
+          onPressed: () => setState(() => _show = !_show),
         ),
       ),
     );

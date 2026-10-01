@@ -52,7 +52,6 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
       icon: <FaCogs />,
       links: [
         { to: "/hr-dashboard/settings", label: "General Settings", icon: <FaCogs /> },
-        { to: "/hr-dashboard/report-settings", label: "Report Settings", icon: <FaCogs /> },
       ],
     },
   ];

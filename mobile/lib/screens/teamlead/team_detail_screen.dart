@@ -155,25 +155,35 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
 
   Future<void> _downloadPdf() async {
     final ms = _milestoneFilter;
-    final rows = _taskList
-        .where((t) {
+    String ddmmyyyy(dynamic v) {
+      final d = DateTime.tryParse(v?.toString() ?? '')?.toLocal();
+      return d == null ? '-' : DateFormat('dd-MM-yyyy').format(d);
+    }
+
+    // This milestone's tasks, lowest rating first (unrated last).
+    final tasks =
+        _taskList.where((t) {
           final mid = t['milestoneId']?.toString();
           if (ms == null) return true;
           return ms == 'none' ? mid == null : mid == ms;
-        })
+        }).toList()..sort(
+          (a, b) => ((a['rating'] as num?) ?? 11).compareTo(
+            (b['rating'] as num?) ?? 11,
+          ),
+        );
+    final rows = tasks
         .map(
           (t) => [
-            t['title']?.toString() ?? '-',
             ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']
                     ?.toString() ??
                 'Unassigned',
             t['status']?.toString() ?? '',
-            _date(t['startDate']),
-            _date(t['deadline']),
+            ddmmyyyy(t['startDate']),
+            ddmmyyyy(t['deadline']),
             (t['remark']?.toString().isNotEmpty ?? false)
                 ? t['remark'].toString()
                 : '-',
-            t['rating'] == null ? '-' : '${t['rating']}/5',
+            t['rating'] == null ? '-' : '${t['rating']}/10',
           ],
         )
         .toList();
@@ -223,10 +233,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                 ),
               ],
             ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Team: ${(_detail?['team'] as Map?)?['name']?.toString() ?? '-'}',
+              style: const pw.TextStyle(fontSize: 12),
+            ),
             pw.SizedBox(height: 10),
             pw.TableHelper.fromTextArray(
               headers: const [
-                'Task',
                 'Employee Name',
                 'Status',
                 'Start Date',
@@ -243,6 +257,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/$fileName.pdf');
       await file.writeAsBytes(await doc.save());
+      // Admin dashboard lists which teams generated their report.
+      _service
+          .logReport(
+            widget.id,
+            milestoneId: m?['_id']?.toString(),
+            title: heading,
+            taskCount: rows.length,
+          )
+          .catchError((_) {});
       await OpenFilex.open(file.path);
     } catch (e) {
       _toast('Could not create PDF: ${extractErrorMessage(e)}');
@@ -1099,8 +1122,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                   unselectedLabelColor: Colors.white70,
                   tabs: const [
                     Tab(text: 'Milestones'),
-                    Tab(text: 'Members'),
                     Tab(text: 'Attendance'),
+                    Tab(text: 'Members'),
                   ],
                 ),
               ),
@@ -1172,7 +1195,6 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                             _statusFilter = null;
                           }),
                         ),
-                        _membersTab(),
                         TeamAttendanceTab(
                           teamId: widget.id,
                           teamName: widget.name,
@@ -1181,6 +1203,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                               .whereType<Map>()
                               .toList(),
                         ),
+                        _membersTab(),
                       ],
                     ),
                   ),

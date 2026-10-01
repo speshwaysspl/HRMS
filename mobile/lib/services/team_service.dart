@@ -18,6 +18,23 @@ class TeamService {
   }
 
   /// Admin: users with the team_lead role, for the "assign lead" picker.
+  /// Records a downloaded team task PDF (shown on the admin dashboard).
+  Future<void> logReport(
+    String teamId, {
+    String? milestoneId,
+    String? title,
+    int taskCount = 0,
+  }) async {
+    await _dio.post(
+      '/api/team/$teamId/report-log',
+      data: {
+        'milestoneId': milestoneId,
+        'title': title,
+        'taskCount': taskCount,
+      },
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getLeads() async {
     final res = await _dio.get('/api/team/leads');
     final list = (res.data as Map)['leads'] as List? ?? [];
@@ -30,20 +47,23 @@ class TeamService {
     String description = '',
     String? startDate,
   }) async {
-    await _dio.post('/api/team/add', data: {
-      'name': name,
-      'leadId': leadId,
-      'description': description,
-      'startDate': ?startDate,
-    });
+    await _dio.post(
+      '/api/team/add',
+      data: {
+        'name': name,
+        'leadId': leadId,
+        'description': description,
+        'startDate': ?startDate,
+      },
+    );
   }
 
   /// [employeeIds] are Employee document ids.
   Future<void> addMembers(String teamId, List<String> employeeIds) async {
-    await _dio.post('/api/team/members', data: {
-      'teamId': teamId,
-      'employeeIds': employeeIds,
-    });
+    await _dio.post(
+      '/api/team/members',
+      data: {'teamId': teamId, 'employeeIds': employeeIds},
+    );
   }
 
   /// Removes [employeeId] (Employee document id) from the team; their tasks are kept.
@@ -56,13 +76,21 @@ class TeamService {
   }
 
   /// Team lead's manual roll-call for [date] (YYYY-MM-DD). Separate from punch-in attendance.
-  Future<({bool marked, Set<String> present, Set<String> halfDay})> getTeamAttendance(String teamId, String date) async {
-    final res = await _dio.get('/api/team/$teamId/attendance', queryParameters: {'date': date});
+  Future<({bool marked, Set<String> present, Set<String> halfDay})>
+  getTeamAttendance(String teamId, String date) async {
+    final res = await _dio.get(
+      '/api/team/$teamId/attendance',
+      queryParameters: {'date': date},
+    );
     final data = res.data as Map;
     return (
       marked: data['marked'] == true,
-      present: ((data['present'] as List?) ?? []).map((e) => e.toString()).toSet(),
-      halfDay: ((data['halfDay'] as List?) ?? []).map((e) => e.toString()).toSet(),
+      present: ((data['present'] as List?) ?? [])
+          .map((e) => e.toString())
+          .toSet(),
+      halfDay: ((data['halfDay'] as List?) ?? [])
+          .map((e) => e.toString())
+          .toSet(),
     );
   }
 
@@ -73,11 +101,14 @@ class TeamService {
     Iterable<String> present, {
     Iterable<String> halfDay = const [],
   }) async {
-    await _dio.put('/api/team/$teamId/attendance', data: {
-      'date': date,
-      'present': present.toList(),
-      'halfDay': halfDay.toList(),
-    });
+    await _dio.put(
+      '/api/team/$teamId/attendance',
+      data: {
+        'date': date,
+        'present': present.toList(),
+        'halfDay': halfDay.toList(),
+      },
+    );
   }
 
   /// Monthly register for every team the caller can see (admin: all, lead: own).
@@ -94,7 +125,11 @@ class TeamService {
   }
 
   /// Monthly register for [month] (YYYY-MM) as an .xlsx file.
-  Future<File> exportTeamAttendance(String teamId, String teamName, String month) async {
+  Future<File> exportTeamAttendance(
+    String teamId,
+    String teamName,
+    String month,
+  ) async {
     final res = await _dio.get<List<int>>(
       '/api/team/$teamId/attendance/export',
       queryParameters: {'month': month},
@@ -129,38 +164,21 @@ class RegularizationService {
     required String requestedOutTime,
     required String reason,
   }) async {
-    await _dio.post('/api/attendance-regularization/', data: {
-      'date': date,
-      'requestedInTime': requestedInTime,
-      'requestedOutTime': requestedOutTime,
-      'reason': reason,
-    });
+    await _dio.post(
+      '/api/attendance-regularization/',
+      data: {
+        'date': date,
+        'requestedInTime': requestedInTime,
+        'requestedOutTime': requestedOutTime,
+        'reason': reason,
+      },
+    );
   }
 
   Future<void> decide(String id, String status) async {
-    await _dio.put('/api/attendance-regularization/$id', data: {'status': status});
-  }
-}
-
-class ReviewService {
-  final Dio _dio = ApiClient.instance.dio;
-
-  Future<List<Map<String, dynamic>>> getTeamReviews() async {
-    final res = await _dio.get('/api/reviews/team');
-    final list = (res.data as Map)['reviews'] as List? ?? [];
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> getMyReviews() async {
-    final res = await _dio.get('/api/reviews/mine');
-    final list = (res.data as Map)['reviews'] as List? ?? [];
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
-
-  /// Admin/HR: every performance review across the org.
-  Future<List<Map<String, dynamic>>> getAllReviews() async {
-    final res = await _dio.get('/api/reviews/all');
-    final list = (res.data as Map)['reviews'] as List? ?? [];
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    await _dio.put(
+      '/api/attendance-regularization/$id',
+      data: {'status': status},
+    );
   }
 }

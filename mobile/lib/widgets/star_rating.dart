@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Task rating (1-5) given by the team lead. Read-only unless [onChanged] is
+/// Task rating (1-10) given by the team lead. Read-only unless [onChanged] is
 /// set; tapping the current value again clears it (reports 0).
 class StarRating extends StatelessWidget {
   const StarRating({
@@ -21,11 +21,11 @@ class StarRating extends StatelessWidget {
   Widget build(BuildContext context) {
     final editable = onChanged != null;
     return Semantics(
-      label: value > 0 ? 'Rated $value out of 5' : 'Not rated',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      label: value > 0 ? 'Rated $value out of 10' : 'Not rated',
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          for (var n = 1; n <= 5; n++)
+          for (var n = 1; n <= 10; n++)
             editable
                 ? IconButton(
                     tooltip: '$n star${n > 1 ? 's' : ''}',

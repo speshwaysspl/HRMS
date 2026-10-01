@@ -23,12 +23,16 @@ class AnnouncementService {
     required String description,
     DateTime? scheduledAt,
   }) async {
-    await _dio.post('/api/announcement/', data: {
-      'title': title,
-      'description': description,
-      'scope': 'all',
-      if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
-    });
+    await _dio.post(
+      '/api/announcement/',
+      data: {
+        'title': title,
+        'description': description,
+        'scope': 'all',
+        if (scheduledAt != null)
+          'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      },
+    );
   }
 
   Future<void> updateAnnouncement(
@@ -36,14 +40,22 @@ class AnnouncementService {
     required String title,
     required String description,
   }) async {
-    await _dio.put('/api/announcement/$id', data: {
-      'title': title,
-      'description': description,
-      'scope': 'all',
-    });
+    await _dio.put(
+      '/api/announcement/$id',
+      data: {'title': title, 'description': description, 'scope': 'all'},
+    );
   }
 
   Future<void> deleteAnnouncement(String id) async {
     await _dio.delete('/api/announcement/$id');
+  }
+
+  /// Deletes many at once; returns how many were skipped (posted by others).
+  Future<int> deleteAnnouncements(List<String> ids) async {
+    final res = await _dio.post(
+      '/api/announcement/bulk-delete',
+      data: {'ids': ids},
+    );
+    return (res.data['skipped'] as num?)?.toInt() ?? 0;
   }
 }

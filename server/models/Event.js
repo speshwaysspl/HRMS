@@ -14,7 +14,7 @@ const eventSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["holiday", "meeting", "event", "other"],
+    enum: ["holiday", "wfh", "meeting", "event", "other"],
     default: "event",
   },
   createdAt: {

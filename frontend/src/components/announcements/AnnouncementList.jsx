@@ -27,6 +27,7 @@ const AnnouncementList = () => {
   const [status, setStatus] = useState("all"); // all | published | scheduled
   const [type, setType] = useState("all");
   const [deletingId, setDeletingId] = useState(null);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements`, []);
   useMeta({
@@ -69,6 +70,28 @@ const AnnouncementList = () => {
       alert(err.response?.data?.error || "Could not delete announcement");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // Deletes every announcement in the current view (all, or what the filters show).
+  const handleDeleteAll = async () => {
+    const n = visible.length;
+    if (!window.confirm(`Delete ${n === items.length ? "all" : "these"} ${n} announcement${n === 1 ? "" : "s"}? This can't be undone.`)) return;
+    setDeletingAll(true);
+    try {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const { data } = await axios.post(
+        `${API_BASE}/api/announcement/bulk-delete`,
+        { ids: visible.map((a) => a._id) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const gone = new Set(data.deleted);
+      setItems((prev) => prev.filter((x) => !gone.has(x._id)));
+      if (data.skipped) alert(`${data.skipped} announcement${data.skipped === 1 ? " was" : "s were"} posted by someone else and kept.`);
+    } catch (err) {
+      alert(err.response?.data?.error || "Could not delete announcements");
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -140,6 +163,16 @@ const AnnouncementList = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full sm:w-64 rounded-lg border border-surface-subtle px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 outline-none"
               />
+              {!loading && visible.length > 0 && (
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deletingAll}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 outline-none disabled:opacity-50"
+                >
+                  <FaTrash aria-hidden="true" />
+                  {deletingAll ? "Deleting..." : `Delete ${filtered ? "these" : "all"} (${visible.length})`}
+                </button>
+              )}
             </div>
           </div>
 

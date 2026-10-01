@@ -2,7 +2,9 @@ import ExcelJS from "exceljs";
 import Team from "../models/Team.js";
 import TeamAttendance from "../models/TeamAttendance.js";
 import Event from "../models/Event.js";
+import User from "../models/User.js";
 import { emitTeamUpdate } from "../utils/realtime.js";
+import { createNotification } from "./notificationController.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -54,6 +56,21 @@ export const getTeamAttendance = async (req, res) => {
   }
 };
 
+const notifyAdminsMarked = async (req, team, record) => {
+  const admins = await User.find({ role: "admin" }).select("_id");
+  const half = record.halfDay.length ? `, ${record.halfDay.length} half day` : "";
+  for (const a of admins) {
+    await createNotification({
+      type: "team_attendance_marked",
+      title: `Attendance marked: ${team.name}`,
+      message: `${req.user.name || "Team lead"} marked today's attendance for ${team.name} — ${record.present.length} present${half}, ${record.absent.length} absent.`,
+      recipientId: a._id,
+      senderId: req.user._id,
+      relatedId: team._id,
+    }, req.io);
+  }
+};
+
 // PUT /api/team/:id/attendance  { date, present: [employeeObjectId], halfDay?: [employeeObjectId] }
 export const saveTeamAttendance = async (req, res) => {
   try {
@@ -71,6 +88,7 @@ export const saveTeamAttendance = async (req, res) => {
     if (!team) return;
 
     const ids = memberIds(team);
+    const firstMark = !(await TeamAttendance.exists({ teamId: team._id, date }));
     const presentSet = new Set(present.map(String).filter((p) => ids.includes(p)));
     // Half day wins over present if a member is sent in both.
     const halfSet = new Set(halfDay.map(String).filter((p) => ids.includes(p)));
@@ -86,6 +104,8 @@ export const saveTeamAttendance = async (req, res) => {
       { upsert: true, new: true }
     );
     emitTeamUpdate(req.io, team, "attendance");
+    // Tell admins the first time a lead takes today's roll call (edits stay quiet).
+    if (firstMark && !isAdmin) notifyAdminsMarked(req, team, record).catch(() => {});
     res.json({
       success: true,
       present: record.present.map(String),

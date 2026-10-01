@@ -1,13 +1,30 @@
+import crypto from 'crypto';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
 import { sendMulticastNotification } from '../services/fcmService.js';
 
 // Create and broadcast a single notification
+const DEDUPE_WINDOW_MS = 10 * 60 * 1000;
+const dedupeKeyFor = (d) =>
+  crypto
+    .createHash('sha1')
+    .update([
+      d.recipientId, d.type, d.title, d.message, d.relatedId || '',
+      Math.floor(Date.now() / DEDUPE_WINDOW_MS),
+    ].map(String).join('|'))
+    .digest('hex');
+
 const createNotification = async (notificationData, io) => {
   try {
-    const notification = new Notification(notificationData);
-    await notification.save();
+    const notification = new Notification({ ...notificationData, dedupeKey: dedupeKeyFor(notificationData) });
+    try {
+      await notification.save();
+    } catch (err) {
+      // Another server process already sent this one: don't emit or push again.
+      if (err?.code === 11000) return null;
+      throw err;
+    }
     await notification.populate('senderId', 'name email');
     await notification.populate('recipientId', 'name email');
 

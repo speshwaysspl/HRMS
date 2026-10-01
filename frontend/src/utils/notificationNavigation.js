@@ -27,6 +27,9 @@ export const getNotificationTarget = (notification, user) => {
         ? `${isAdmin ? "/admin-dashboard" : "/employee-dashboard"}/team/${notification.relatedId._id || notification.relatedId}`
         : null;
 
+    case "team_attendance_marked":
+      return isAdmin ? "/admin-dashboard/teams" : null;
+
     case "checkout_reminder":
       return isEmployee ? "/employee-dashboard/attendance" : null;
 

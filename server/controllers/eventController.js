@@ -6,18 +6,14 @@ const seedHolidaysInternal = async () => {
   try {
     let count = 0;
     for (const holiday of holidays) {
-      const existing = await Event.findOne({
-        date: new Date(holiday.date),
-        title: holiday.title
-      });
-      
-      if (!existing) {
-        await new Event({
-          ...holiday,
-          date: new Date(holiday.date)
-        }).save();
-        count++;
-      }
+      if (!holiday.date) continue;
+      // Upsert so two server processes seeding at once can't create duplicates.
+      const r = await Event.updateOne(
+        { date: new Date(holiday.date), title: holiday.title },
+        { $setOnInsert: { ...holiday, date: new Date(holiday.date) } },
+        { upsert: true }
+      );
+      if (r.upsertedCount) count++;
     }
     if (count > 0) {
       console.log(`Auto-seeded ${count} new holidays`);
@@ -41,7 +37,15 @@ const seedHolidays = async (req, res) => {
 
 const getEvents = async (req, res) => {
   try {
-    const events = await Event.find();
+    const all = await Event.find().sort({ date: 1, createdAt: 1 }).lean();
+    // Same title on the same day is one event (older seeding created copies).
+    const seen = new Set();
+    const events = all.filter((e) => {
+      const k = `${e.title.trim().toLowerCase()}|${new Date(e.date).toISOString().slice(0, 10)}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     return res.status(200).json({ success: true, events });
   } catch (error) {
     return res.status(500).json({ success: false, error: "get events server error" });
@@ -95,6 +99,8 @@ const deleteEvent = async (req, res) => {
     if (!deleteEvent) {
       return res.status(404).json({ success: false, error: "event not found" });
     }
+    // Also drop hidden duplicates of the same event.
+    await Event.deleteMany({ title: deleteEvent.title, date: deleteEvent.date });
     return res.status(200).json({ success: true, event: deleteEvent });
   } catch (error) {
     return res.status(500).json({ success: false, error: "delete event server error" });

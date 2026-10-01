@@ -18,7 +18,7 @@ const taskSchema = new Schema({
   workProof: { type: String }, // URL to uploaded file
   workProofName: { type: String }, // original file name, for display
   remark: { type: String }, // Team lead / admin review note (separate from description)
-  rating: { type: Number, min: 1, max: 5 }, // Team lead / admin rating of the work
+  rating: { type: Number, min: 1, max: 10 }, // Team lead / admin rating of the work
   isDeleted: { type: Boolean, default: false }, // Soft delete flag
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

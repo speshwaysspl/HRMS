@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString, formatISTDate } from "../../utils/dateTimeUtils";
@@ -7,7 +8,15 @@ import useMeta from "../../utils/useMeta";
 import { FiCalendar } from "react-icons/fi";
 import PageHeader from "../common/PageHeader";
 
+// Grouped filters used by the admin dashboard tiles (?status=checked-in, etc.).
+const NOT_IN = ["Not Yet", "Absent", "Work from Home - Not Marked"];
+const STATUS_GROUPS = {
+  "checked-in": (s) => !NOT_IN.includes(s) && s !== "Leave",
+  "not-checked-in": (s) => NOT_IN.includes(s),
+};
+
 const AdminAttendanceReport = () => {
+  const [searchParams] = useSearchParams();
   useMeta({
     title: "Admin Attendance Report — Speshway HRMS",
     description: "Search and review attendance across employees.",
@@ -28,7 +37,7 @@ const AdminAttendanceReport = () => {
   const [errorMsg, setErrorMsg] = useState("");
  
   // 🔹 Common fetch function
-  const fetchData = async (url, errorMessage) => {
+  const fetchData = async (url, errorMessage, status = statusFilter) => {
     setLoading(true);
     setErrorMsg("");
     setAttendanceData([]);
@@ -44,7 +53,7 @@ const AdminAttendanceReport = () => {
  
       if (Array.isArray(data) && data.length > 0) {
         setAttendanceData(data);
-        applyStatusFilter(data, statusFilter); // ✅ Apply filter immediately
+        applyStatusFilter(data, status); // ✅ Apply filter immediately
       } else {
         setErrorMsg(errorMessage);
       }
@@ -60,6 +69,8 @@ const AdminAttendanceReport = () => {
     // No need to modify status as it's now calculated correctly in the backend
     if (status === "All") {
       setFilteredData(data);
+    } else if (STATUS_GROUPS[status]) {
+      setFilteredData(data.filter((item) => STATUS_GROUPS[status](item.status)));
     } else {
       setFilteredData(data.filter((item) => item.status === status));
     }
@@ -143,6 +154,15 @@ const AdminAttendanceReport = () => {
     fetchData(url, "No records found.");
   };
  
+  // Opened from a dashboard tile: load today's report with that filter applied.
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status) return;
+    setStatusFilter(status);
+    fetchData(`${API_BASE}/api/attendance/admin/all?date=${selectedDate}`, "No records found.", status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // 🔹 Monthly Attendance
   const fetchMonthlyAttendance = () => {
     if (!selectedMonth || (!employeeId && !employeeName))
@@ -292,6 +312,8 @@ const AdminAttendanceReport = () => {
             className="w-full sm:w-auto p-2 border border-surface-subtle rounded-lg text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
           >
             <option value="All">All Status</option>
+            <option value="checked-in">Checked in (any)</option>
+            <option value="not-checked-in">Not checked in</option>
             <option value="Present">Present</option>
             <option value="Present + Overtime">Present + Overtime</option>
             <option value="Half-Day">Half-Day</option>

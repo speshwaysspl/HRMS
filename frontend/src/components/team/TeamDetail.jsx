@@ -83,6 +83,24 @@ const TeamDetail = () => {
     deadline: "",
     assignedTo: [],
   });
+  // Generated task PDF shown in a preview before downloading: { url, fileName }.
+  const [pdfPreview, setPdfPreview] = useState(null);
+  const closePdfPreview = () => {
+    if (pdfPreview) URL.revokeObjectURL(pdfPreview.url);
+    setPdfPreview(null);
+  };
+  const savePdfPreview = () => {
+    const a = document.createElement("a");
+    a.href = pdfPreview.url;
+    a.download = pdfPreview.fileName;
+    a.click();
+    // Admin dashboard lists which teams generated their report.
+    axios
+      .post(`${API_BASE}/api/team/${id}/report-log`, pdfPreview.log, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      })
+      .catch(() => {});
+  };
   const [docsModal, setDocsModal] = useState({ open: false, documents: [], employeeName: "" });
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -411,31 +429,44 @@ const TeamDetail = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.text(range ? `${heading} (${range})` : heading, 15, 15);
     doc.text(`Team Lead: ${lead}`, doc.internal.pageSize.getWidth() - 15, 15, { align: "right" });
+    doc.setFontSize(12);
+    doc.text(`Team: ${team?.name || "-"}`, 15, 23);
 
-    // Only this milestone's live tasks
+    // DD-MM-YYYY
+    const ddmmyyyy = (v) => {
+      if (!v) return "-";
+      const d = new Date(v);
+      return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+    };
+
+    // Only this milestone's live tasks, lowest rating first (unrated last)
     const rows = tasks
       .filter((t) => !t.isDeleted)
       .filter((t) => (milestoneFilter === "none" ? !t.milestoneId : String(t.milestoneId) === String(milestoneFilter)))
+      .sort((a, b) => (a.rating || 11) - (b.rating || 11))
       .map((t) => [
-        t.title || "-",
         t.assignedTo?.userId?.name || "Unassigned",
         t.status,
-        t.startDate ? new Date(t.startDate).toLocaleDateString() : "-",
-        t.deadline ? new Date(t.deadline).toLocaleDateString() : "-",
+        ddmmyyyy(t.startDate),
+        ddmmyyyy(t.deadline),
         t.remark || "-",
-        t.rating ? `${t.rating}/5` : "-",
+        t.rating ? `${t.rating}/10` : "-",
       ]);
 
     autoTable(doc, {
-      head: [["Task", "Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"]],
+      head: [["Employee Name", "Status", "Start Date", "Due Date", "Remark", "Rating"]],
       body: rows,
-      startY: 20,
+      startY: 28,
     });
 
     const rangePart = m?.startDate && m?.dueDate
       ? `${new Date(m.startDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}-${new Date(m.dueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`.replace(/ /g, "")
       : "";
-    doc.save(`${[fileSafe(heading), rangePart, fileSafe(lead)].filter(Boolean).join("_")}.pdf`);
+    setPdfPreview({
+      url: URL.createObjectURL(doc.output("blob")),
+      fileName: `${[fileSafe(heading), rangePart, fileSafe(lead)].filter(Boolean).join("_")}.pdf`,
+      log: { milestoneId: m?._id || null, title: heading, taskCount: rows.length },
+    });
   };
 
   // Derive member tasks from main tasks list to avoid duplication in state/backend
@@ -475,8 +506,8 @@ const TeamDetail = () => {
   const backToMilestones = () => { setActiveTab('milestones'); setMilestoneFilter(''); setFilterFrom(''); setFilterTo(''); };
   const tabs = [
     { key: 'milestones', label: 'Milestones', count: openMilestones.length },
-    { key: 'team', label: 'Members', count: memberStats.length },
     ...(canTakeAttendance ? [{ key: 'attendance', label: 'Attendance' }] : []),
+    { key: 'team', label: 'Members', count: memberStats.length },
   ];
 
   return (
@@ -597,7 +628,7 @@ const TeamDetail = () => {
                                 onClick={handleDownloadPDF}
                                 disabled={visibleTasks.length === 0}
                             >
-                                <FaFilePdf className="text-red-600" /> Download PDF
+                                <FaFilePdf className="text-red-600" /> Preview PDF
                             </button>
                             <button
                                 className="flex-1 sm:flex-none bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1773,6 +1804,42 @@ const TeamDetail = () => {
         </motion.div>
       )}
       </AnimatePresence>
+
+      {/* Task PDF preview */}
+      {pdfPreview && (
+        <div
+          className="fixed inset-0 bg-brand-950/60 flex justify-center items-center z-[60] p-2 sm:p-4"
+          onClick={closePdfPreview}
+          onKeyDown={(e) => e.key === "Escape" && closePdfPreview()}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pdf-preview-title"
+            className="bg-white rounded-xl shadow-panel w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-subtle">
+              <h3 id="pdf-preview-title" className="flex-1 min-w-0 truncate font-semibold text-ink">{pdfPreview.fileName}</h3>
+              <button
+                onClick={savePdfPreview}
+                autoFocus
+                className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+              >
+                <FaFilePdf /> Download
+              </button>
+              <button
+                onClick={closePdfPreview}
+                aria-label="Close preview"
+                className="p-2.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <iframe title="PDF preview" src={pdfPreview.url} className="flex-1 w-full bg-surface-muted" />
+          </div>
+        </div>
+      )}
 
       {/* Employee Documents Modal */}
       <AnimatePresence>

@@ -1,17 +1,17 @@
 import React from "react";
 import { FaStar, FaRegStar } from "react-icons/fa";
 
-// Task rating (1-5) given by the team lead. Read-only unless `onChange` is passed;
+// Task rating (1-10) given by the team lead. Read-only unless `onChange` is passed;
 // clicking the current value again clears it.
 const StarRating = ({ value = 0, onChange, size = 16 }) => {
   const editable = typeof onChange === "function";
   return (
     <div
-      className="inline-flex items-center gap-0.5"
+      className="inline-flex flex-wrap items-center gap-0.5"
       role={editable ? "radiogroup" : "img"}
-      aria-label={value ? `Rated ${value} out of 5` : "Not rated"}
+      aria-label={value ? `Rated ${value} out of 10` : "Not rated"}
     >
-      {[1, 2, 3, 4, 5].map((n) => {
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
         const Icon = n <= value ? FaStar : FaRegStar;
         const star = <Icon size={size} className={n <= value ? "text-amber-500" : "text-ink-faint"} />;
         return editable ? (

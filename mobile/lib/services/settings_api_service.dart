@@ -10,21 +10,30 @@ class SettingsApiService {
     required String oldPassword,
     required String newPassword,
   }) async {
-    await _dio.put('/api/setting/change-password', data: {
-      'userId': userId,
-      'oldPassword': oldPassword,
-      'newPassword': newPassword,
-    });
+    await _dio.put(
+      '/api/setting/change-password',
+      data: {
+        'userId': userId,
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      },
+    );
   }
 
-  /// Weekly summary email subscription for the current user.
-  Future<bool> getWeeklySummary() async {
-    final res = await _dio.get('/api/report-subscription/mine');
-    final sub = (res.data as Map)['subscription'] as Map? ?? {};
-    return sub['weeklySummaryEnabled'] != false;
+  /// Admin: root password status + recent root logins.
+  Future<Map<String, dynamic>> getRootPassword() async {
+    final res = await _dio.get('/api/setting/root-password');
+    return Map<String, dynamic>.from(res.data as Map);
   }
 
-  Future<void> setWeeklySummary(bool enabled) async {
-    await _dio.put('/api/report-subscription/mine', data: {'weeklySummaryEnabled': enabled});
+  /// Admin: set or change the root password (confirmed with own password).
+  Future<void> setRootPassword({
+    required String adminPassword,
+    required String newPassword,
+  }) async {
+    await _dio.put(
+      '/api/setting/root-password',
+      data: {'adminPassword': adminPassword, 'newPassword': newPassword},
+    );
   }
 }

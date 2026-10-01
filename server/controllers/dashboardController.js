@@ -5,6 +5,122 @@ import Attendance from "../models/Attendance.js";
 import Salary from "../models/Salary.js";
 import Notification from "../models/Notification.js";
 import { toISTDateString } from "../utils/dateTimeUtils.js";
+import Team from "../models/Team.js";
+import TeamAttendance from "../models/TeamAttendance.js";
+import Task from "../models/Task.js";
+import Milestone from "../models/Milestone.js";
+import AttendanceRegularization from "../models/AttendanceRegularization.js";
+import Event from "../models/Event.js";
+import Announcement from "../models/Announcement.js";
+import TeamReport from "../models/TeamReport.js";
+
+const IST_MS = 5.5 * 3600 * 1000;
+const DAY_MS = 24 * 3600 * 1000;
+
+// What needs the admin's attention today, plus team work progress.
+const buildTodayOverview = async () => {
+    const now = new Date();
+    const today = toISTDateString(now);
+    const nowIst = new Date(now.getTime() + IST_MS);
+    const dayStart = new Date(Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - IST_MS);
+    const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+    const weekEnd = new Date(dayStart.getTime() + 7 * DAY_MS);
+    const monthAgo = new Date(dayStart.getTime() - 30 * DAY_MS);
+
+    const [
+        activeEmployees, checkedIn, onLeave, pendingRegularizations,
+        teams, markedTeams, taskStatus, overdueTasks, rated,
+        openMilestones, dueSoonMilestones, events, employeesWithDob, announcements, reports,
+    ] = await Promise.all([
+        Employee.countDocuments({ status: { $ne: "inactive" } }),
+        Attendance.countDocuments({ date: today, inTime: { $nin: [null, ""] } }),
+        Leave.countDocuments({ status: "Approved", startDate: { $lt: dayEnd }, endDate: { $gte: dayStart } }),
+        AttendanceRegularization.countDocuments({ status: "Pending" }),
+        Team.find({ "members.0": { $exists: true } }).select("name leadId").populate("leadId", "name").lean(),
+        TeamAttendance.find({ date: today }).select("teamId").lean(),
+        Task.aggregate([{ $match: { isDeleted: { $ne: true } } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
+        Task.countDocuments({ isDeleted: { $ne: true }, status: { $nin: ["Completed", "Not Completed"] }, deadline: { $lt: dayStart } }),
+        Task.aggregate([
+            { $match: { isDeleted: { $ne: true }, rating: { $gte: 1 }, updatedAt: { $gte: monthAgo } } },
+            { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } },
+        ]),
+        Milestone.countDocuments({ state: "open" }),
+        Milestone.find({ state: "open", dueDate: { $gte: dayStart, $lt: weekEnd } })
+            .select("title dueDate teamId").populate("teamId", "name").sort({ dueDate: 1 }).limit(5).lean(),
+        Event.find({ date: { $gte: dayStart, $lt: new Date(dayStart.getTime() + 30 * DAY_MS) } })
+            .select("title date type").sort({ date: 1 }).limit(15).lean(),
+        Employee.find({ dob: { $ne: null }, status: { $ne: "inactive" } }).select("dob userId").populate("userId", "name").lean(),
+        Announcement.find({ published: { $ne: false } })
+            .select("title category publishedAt createdAt").sort({ publishedAt: -1, createdAt: -1 }).limit(3).lean(),
+        TeamReport.find({ createdAt: { $gte: new Date(dayStart.getTime() - 6 * DAY_MS) } })
+            .sort({ createdAt: -1 }).populate("teamId", "name").populate("generatedBy", "name").lean(),
+    ]);
+
+    // Latest PDF per team in the last 7 days.
+    const reportByTeam = new Map();
+    for (const r of reports) {
+        if (r.teamId && !reportByTeam.has(String(r.teamId._id))) reportByTeam.set(String(r.teamId._id), r);
+    }
+
+    const marked = new Set(markedTeams.map((r) => String(r.teamId)));
+    const notMarked = teams
+        .filter((t) => !marked.has(String(t._id)))
+        .map((t) => ({ _id: t._id, name: t.name, lead: t.leadId?.name || null }));
+
+    // Birthdays in the next 7 days (IST calendar days).
+    const birthdays = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(nowIst.getTime() + i * DAY_MS);
+        const m = d.getUTCMonth(), day = d.getUTCDate();
+        for (const e of employeesWithDob) {
+            const dob = new Date(new Date(e.dob).getTime() + IST_MS);
+            if (dob.getUTCMonth() === m && dob.getUTCDate() === day) {
+                birthdays.push({ name: e.userId?.name || "Employee", inDays: i });
+            }
+        }
+    }
+
+    const byStatus = Object.fromEntries(taskStatus.map((t) => [t._id, t.count]));
+    return {
+        today: {
+            date: today,
+            activeEmployees,
+            checkedIn,
+            onLeave,
+            notCheckedIn: Math.max(activeEmployees - checkedIn - onLeave, 0),
+        },
+        pending: { regularizations: pendingRegularizations },
+        teamAttendance: { total: teams.length, marked: teams.length - notMarked.length, notMarked },
+        work: {
+            openMilestones,
+            dueSoon: dueSoonMilestones.filter((m) => m.teamId).map((m) => ({ _id: m._id, title: m.title, dueDate: m.dueDate, teamId: m.teamId?._id, team: m.teamId?.name || "" })),
+            tasks: {
+                assigned: byStatus["Assigned"] || 0,
+                inProgress: (byStatus["In Progress"] || 0) + (byStatus["Review"] || 0),
+                completed: byStatus["Completed"] || 0,
+                notCompleted: (byStatus["Not Completed"] || 0) + (byStatus["Overdue"] || 0),
+            },
+            overdue: overdueTasks,
+            avgRating: rated[0] ? Math.round(rated[0].avg * 10) / 10 : null,
+            ratedCount: rated[0]?.count || 0,
+            reports: {
+                teamsTotal: teams.length,
+                generated: [...reportByTeam.values()].map((r) => ({
+                    teamId: r.teamId._id, team: r.teamId.name, title: r.title, taskCount: r.taskCount,
+                    by: r.generatedBy?.name || "", at: r.createdAt,
+                })),
+                notGenerated: teams.filter((t) => !reportByTeam.has(String(t._id))).map((t) => ({ _id: t._id, name: t.name, lead: t.leadId?.name || null })),
+            },
+        },
+        upcoming: {
+            // Same title on the same day is one event (calendar has duplicates).
+            events: [...new Map(events.map((e) => [`${e.title}|${toISTDateString(new Date(e.date))}`, e])).values()]
+                .slice(0, 5).map((e) => ({ title: e.title, date: e.date, type: e.type })),
+            birthdays: birthdays.slice(0, 8),
+        },
+        recentAnnouncements: announcements.map((a) => ({ _id: a._id, title: a.title, category: a.category, date: a.publishedAt || a.createdAt })),
+    };
+};
 
 const getSummary = async (req, res) => {
     try {
@@ -56,6 +172,7 @@ const getSummary = async (req, res) => {
             { $sort: { _id: 1 } }
         ]);
         const attendanceTrend = attendanceTrendRaw.map(d => ({ date: d._id, present: d.present }));
+        const overview = await buildTodayOverview();
 
         return res.status(200).json({
             success: true,
@@ -64,7 +181,8 @@ const getSummary = async (req, res) => {
             totalSalary: totalSalaries[0]?.totalSalary || 0,
             leaveSummary,
             departmentBreakdown,
-            attendanceTrend
+            attendanceTrend,
+            ...overview,
         })
     }catch(error) {
         console.log(error.message)

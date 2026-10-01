@@ -26,6 +26,13 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
   bool _loading = true;
   Object? _error;
 
+  /// null = all, true = marked today, false = not marked today.
+  bool? _attFilter;
+
+  static bool _marked(Map t) =>
+      (t['attendanceToday'] as Map?)?['marked'] == true;
+  static bool _hasMembers(Map t) => ((t['members'] as List?)?.length ?? 0) > 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +44,14 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (const {'team', 'members', 'deleted'}.contains(e['kind'])) _load();
+    if (const {
+      'team',
+      'members',
+      'deleted',
+      'attendance',
+    }.contains(e['kind'])) {
+      _load();
+    }
   }
 
   @override
@@ -156,74 +170,181 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
                         ),
                       ],
                     )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(context.w(16)),
-                      itemCount: _teams.length,
-                      itemBuilder: (_, i) {
-                        final t = _teams[i];
-                        final lead = (t['leadId'] as Map?) ?? {};
-                        final memberCount =
-                            (t['members'] as List?)?.length ?? 0;
-                        return SimpleCard(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AdminTeamDetailScreen(
-                                id: t['_id'].toString(),
-                                name: t['name']?.toString() ?? 'Team',
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: context.r(40),
-                                height: context.r(40),
-                                decoration: BoxDecoration(
-                                  color: AppColors.brand50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  Icons.groups_outlined,
-                                  color: AppColors.brand600,
-                                  size: context.r(22),
-                                ),
-                              ),
-                              SizedBox(width: context.w(12)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                  : Builder(
+                      builder: (context) {
+                        final trackable = _teams.where(_hasMembers).toList();
+                        final markedCount = trackable.where(_marked).length;
+                        // "Not marked" only lists teams that have members.
+                        // Not marked first, then marked, then no members.
+                        int rank(Map t) =>
+                            !_hasMembers(t) ? 2 : (_marked(t) ? 1 : 0);
+                        final sorted = [..._teams]
+                          ..sort((x, y) => rank(x) - rank(y));
+                        final visible = _attFilter == null
+                            ? sorted
+                            : _attFilter!
+                            ? sorted.where(_marked).toList()
+                            : trackable.where((t) => !_marked(t)).toList();
+                        return ListView.builder(
+                          padding: EdgeInsets.all(context.w(16)),
+                          itemCount: visible.length + 1,
+                          itemBuilder: (_, i) {
+                            if (i == 0) {
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: context.h(12)),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
                                   children: [
-                                    Text(
-                                      t['name']?.toString() ?? '',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.ink,
+                                    for (final f in const <bool?>[
+                                      null,
+                                      true,
+                                      false,
+                                    ])
+                                      ChoiceChip(
+                                        label: Text(
+                                          f == null
+                                              ? 'All'
+                                              : f
+                                              ? 'Marked today ($markedCount)'
+                                              : 'Not marked (${trackable.length - markedCount})',
+                                        ),
+                                        selected: _attFilter == f,
+                                        onSelected: (_) =>
+                                            setState(() => _attFilter = f),
                                       ),
-                                    ),
-                                    SizedBox(height: context.h(2)),
-                                    Text(
-                                      'Lead: ${lead['name'] ?? '—'}  ·  $memberCount members',
-                                      style: TextStyle(
-                                        color: AppColors.inkMuted,
-                                        fontSize: context.sp(12),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: AppColors.danger,
+                              );
+                            }
+                            final t = visible[i - 1];
+                            final lead = (t['leadId'] as Map?) ?? {};
+                            final memberCount =
+                                (t['members'] as List?)?.length ?? 0;
+                            return SimpleCard(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => AdminTeamDetailScreen(
+                                    id: t['_id'].toString(),
+                                    name: t['name']?.toString() ?? 'Team',
+                                  ),
                                 ),
-                                onPressed: () => _delete(t),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: context.r(40),
+                                    height: context.r(40),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.brand50,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.groups_outlined,
+                                      color: AppColors.brand600,
+                                      size: context.r(22),
+                                    ),
+                                  ),
+                                  SizedBox(width: context.w(12)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          t['name']?.toString() ?? '',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.ink,
+                                          ),
+                                        ),
+                                        SizedBox(height: context.h(2)),
+                                        Text(
+                                          'Lead: ${lead['name'] ?? '—'}  ·  $memberCount members',
+                                          style: TextStyle(
+                                            color: AppColors.inkMuted,
+                                            fontSize: context.sp(12),
+                                          ),
+                                        ),
+                                        SizedBox(height: context.h(6)),
+                                        _AttendanceStatus(team: t),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: AppColors.danger,
+                                    ),
+                                    onPressed: () => _delete(t),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
             ),
+    );
+  }
+}
+
+/// Today's roll-call status for a team (mirrors web TeamList AttendanceStatus).
+class _AttendanceStatus extends StatelessWidget {
+  const _AttendanceStatus({required this.team});
+  final Map team;
+
+  static const _green = Color(0xFF15803D);
+
+  @override
+  Widget build(BuildContext context) {
+    if (((team['members'] as List?)?.length ?? 0) == 0) {
+      return Text(
+        'No members',
+        style: TextStyle(color: AppColors.inkFaint, fontSize: context.sp(12)),
+      );
+    }
+    final a = (team['attendanceToday'] as Map?) ?? {};
+    final marked = a['marked'] == true;
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: marked
+            ? AppColors.tint(const Color(0xFFF0FDF4))
+            : AppColors.warningBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        marked ? 'Marked' : 'Not marked',
+        style: TextStyle(
+          color: marked ? _green : AppColors.warning,
+          fontSize: context.sp(12),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+    if (!marked) return pill;
+    final at = DateTime.tryParse(a['markedAt']?.toString() ?? '')?.toLocal();
+    final by = a['markedBy']?.toString();
+    final detail = [
+      if (at != null) DateFormat('h:mm a').format(at),
+      if (by != null && by.isNotEmpty) by,
+    ].join(' · ');
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        pill,
+        if (detail.isNotEmpty)
+          Text(
+            detail,
+            style: TextStyle(
+              color: AppColors.inkMuted,
+              fontSize: context.sp(12),
+            ),
+          ),
+      ],
     );
   }
 }

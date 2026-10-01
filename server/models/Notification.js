@@ -28,6 +28,7 @@ const notificationSchema = new mongoose.Schema({
       'verification_completed',
       'checkout_reminder',
       'team_attendance_reminder',
+      'team_attendance_marked',
       'regularization_request',
       'regularization_approved',
       'regularization_rejected',
@@ -68,6 +69,10 @@ const notificationSchema = new mongoose.Schema({
 });
 
 notificationSchema.index({ recipientId: 1, createdAt: -1 });
+// Same notification to the same person within a 10-minute window is stored once,
+// even when several server processes run the same scheduled job.
+notificationSchema.add({ dedupeKey: { type: String } });
+notificationSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

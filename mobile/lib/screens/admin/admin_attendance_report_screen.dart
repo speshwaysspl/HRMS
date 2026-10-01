@@ -11,19 +11,33 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 class AdminAttendanceReportScreen extends StatefulWidget {
-  const AdminAttendanceReportScreen({super.key});
+  /// 'checked-in' | 'Leave' | 'not-checked-in' — preselected by the
+  /// admin dashboard tiles (mirrors web ?status=).
+  final String? initialFilter;
+  const AdminAttendanceReportScreen({super.key, this.initialFilter});
 
   @override
-  State<AdminAttendanceReportScreen> createState() => _AdminAttendanceReportScreenState();
+  State<AdminAttendanceReportScreen> createState() =>
+      _AdminAttendanceReportScreenState();
 }
 
-class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScreen> {
+class _AdminAttendanceReportScreenState
+    extends State<AdminAttendanceReportScreen> {
   final _service = AttendanceAdminService();
   DateTime _date = DateTime.now();
   List<Map<String, dynamic>> _rows = [];
   bool _loading = true;
   Object? _error;
   String _query = '';
+  late String? _filter = widget.initialFilter;
+
+  static const _notIn = {'Not Yet', 'Absent', 'Work from Home - Not Marked'};
+  static bool _matches(String? filter, String status) => switch (filter) {
+    null => true,
+    'checked-in' => !_notIn.contains(status) && status != 'Leave',
+    'not-checked-in' => _notIn.contains(status),
+    final f => status == f,
+  };
 
   @override
   void initState() {
@@ -68,12 +82,22 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
   }
 
   List<Map<String, dynamic>> get _visible {
-    if (_query.isEmpty) return _rows;
     final q = _query.toLowerCase();
-    return _rows.where((r) => (r['name'] ?? '').toString().toLowerCase().contains(q)).toList();
+    return _rows
+        .where((r) => _matches(_filter, (r['status'] ?? '').toString()))
+        .where(
+          (r) =>
+              q.isEmpty ||
+              (r['name'] ?? '').toString().toLowerCase().contains(q),
+        )
+        .toList();
   }
 
-  int _count(String status) => _rows.where((r) => (r['status'] ?? '') == status).length;
+  int _countGroup(String f) =>
+      _rows.where((r) => _matches(f, (r['status'] ?? '').toString())).length;
+
+  int _count(String status) =>
+      _rows.where((r) => (r['status'] ?? '') == status).length;
 
   @override
   Widget build(BuildContext context) {
@@ -82,13 +106,21 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(context.w(16), context.h(12), context.w(16), 0),
+            padding: EdgeInsets.fromLTRB(
+              context.w(16),
+              context.h(12),
+              context.w(16),
+              0,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _pickDate,
-                    icon: Icon(Icons.calendar_today_outlined, size: context.r(16)),
+                    icon: Icon(
+                      Icons.calendar_today_outlined,
+                      size: context.r(16),
+                    ),
                     label: Text(DateFormat('EEE, d MMM yyyy').format(_date)),
                   ),
                 ),
@@ -97,7 +129,12 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
           ),
           if (!_loading && _error == null)
             Padding(
-              padding: EdgeInsets.fromLTRB(context.w(16), context.h(8), context.w(16), 0),
+              padding: EdgeInsets.fromLTRB(
+                context.w(16),
+                context.h(8),
+                context.w(16),
+                0,
+              ),
               child: Row(
                 children: [
                   _tally('Present', _count('Present'), AppColors.accent600),
@@ -106,8 +143,45 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
                 ],
               ),
             ),
+          if (!_loading && _error == null)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.fromLTRB(
+                context.w(16),
+                context.h(8),
+                context.w(16),
+                0,
+              ),
+              child: Row(
+                children: [
+                  for (final f in const [
+                    (null, 'All'),
+                    ('checked-in', 'Checked in'),
+                    ('Leave', 'On leave'),
+                    ('not-checked-in', 'Not checked in'),
+                  ])
+                    Padding(
+                      padding: EdgeInsets.only(right: context.w(8)),
+                      child: ChoiceChip(
+                        label: Text(
+                          f.$1 == null
+                              ? f.$2
+                              : '${f.$2} (${_countGroup(f.$1!)})',
+                        ),
+                        selected: _filter == f.$1,
+                        onSelected: (_) => setState(() => _filter = f.$1),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           Padding(
-            padding: EdgeInsets.fromLTRB(context.w(16), context.h(8), context.w(16), context.h(4)),
+            padding: EdgeInsets.fromLTRB(
+              context.w(16),
+              context.h(8),
+              context.w(16),
+              context.h(4),
+            ),
             child: TextField(
               onChanged: (v) => setState(() => _query = v.trim()),
               decoration: const InputDecoration(
@@ -120,26 +194,38 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
             child: _loading
                 ? ListView(
                     padding: EdgeInsets.all(context.w(16)),
-                    children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+                    children: const [
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                      SkeletonListTile(),
+                    ],
                   )
                 : _error != null
-                    ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: _visible.isEmpty
-                            ? ListView(children: const [
-                                SizedBox(height: 100),
-                                EmptyStateView(icon: Icons.event_busy, title: 'No records for this day'),
-                              ])
-                            : Builder(builder: (context) {
-                                final rows = _visible;
-                                return ListView.builder(
-                                  padding: EdgeInsets.all(context.w(16)),
-                                  itemCount: rows.length,
-                                  itemBuilder: (_, i) => _row(rows[i]),
-                                );
-                              }),
-                      ),
+                ? buildErrorState(_error!, _load)
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: _visible.isEmpty
+                        ? ListView(
+                            children: const [
+                              SizedBox(height: 100),
+                              EmptyStateView(
+                                icon: Icons.event_busy,
+                                title: 'No records for this day',
+                              ),
+                            ],
+                          )
+                        : Builder(
+                            builder: (context) {
+                              final rows = _visible;
+                              return ListView.builder(
+                                padding: EdgeInsets.all(context.w(16)),
+                                itemCount: rows.length,
+                                itemBuilder: (_, i) => _row(rows[i]),
+                              );
+                            },
+                          ),
+                  ),
           ),
         ],
       ),
@@ -147,22 +233,35 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
   }
 
   Widget _tally(String label, int n, Color color) => Expanded(
-        child: Container(
-          margin: EdgeInsets.only(right: context.w(8)),
-          padding: EdgeInsets.symmetric(vertical: context.h(8)),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.surfaceSubtle),
+    child: Container(
+      margin: EdgeInsets.only(right: context.w(8)),
+      padding: EdgeInsets.symmetric(vertical: context.h(8)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.surfaceSubtle),
+      ),
+      child: Column(
+        children: [
+          Text(
+            '$n',
+            style: TextStyle(
+              fontSize: context.sp(18),
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-          child: Column(
-            children: [
-              Text('$n', style: TextStyle(fontSize: context.sp(18), fontWeight: FontWeight.w700, color: color)),
-              Text(label, style: TextStyle(fontSize: context.sp(11), color: AppColors.inkMuted)),
-            ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: context.sp(11),
+              color: AppColors.inkMuted,
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   Widget _row(Map<String, dynamic> r) {
     final status = (r['status'] ?? 'Not Yet').toString();
@@ -173,13 +272,21 @@ class _AdminAttendanceReportScreenState extends State<AdminAttendanceReportScree
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(r['name']?.toString() ?? '—',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                Text(
+                  r['name']?.toString() ?? '—',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
                 SizedBox(height: context.h(3)),
                 Text(
                   'In: ${r['inTime'] ?? '—'}   Out: ${r['outTime'] ?? '—'}'
                   '${r['isLate'] == true ? '   · late' : ''}',
-                  style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12)),
+                  style: TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: context.sp(12),
+                  ),
                 ),
               ],
             ),

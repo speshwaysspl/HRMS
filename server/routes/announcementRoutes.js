@@ -7,6 +7,7 @@ import {
   getAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
+  deleteAnnouncements,
 } from "../controllers/announcementController.js";
 import { uploadAnnouncementS3 } from "../middleware/uploadAnnouncementS3.js";
 import { createAnnouncementNotification } from "../controllers/notificationController.js";
@@ -38,6 +39,9 @@ router.post("/test-notification", verifyUser, async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Delete many announcements at once
+router.post("/bulk-delete", verifyUser, deleteAnnouncements);
 
 // Get announcement by ID
 router.get("/:id", verifyUser, getAnnouncement);
