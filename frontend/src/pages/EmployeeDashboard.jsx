@@ -5,6 +5,7 @@ import { useMemo, useState, Suspense } from 'react'
 import Sidebar from '../components/EmployeeDashboard/Sidebar'
 import MobileBottomNav from '../components/EmployeeDashboard/MobileBottomNav'
 import Navbar from '../components/dashboard/Navbar'
+import PageBackButton from '../components/dashboard/PageBackButton'
 import LoadingState from '../components/common/LoadingState'
 
 const EmployeeDashboard = () => {
@@ -34,6 +35,7 @@ const EmployeeDashboard = () => {
       <div className={`flex-1 min-w-0 transition-all duration-200 ${sidebarOpen ? 'md:ml-64' : 'md:ml-0'}`}>
         <Navbar onMenuClick={toggleSidebar} variant="employee" hideMobileBar={isHome} />
         <div className='p-4 md:p-6 pb-24 md:pb-6 min-h-screen max-w-[1800px] mx-auto w-full'>
+          <PageBackButton desktopOnly />
           <Suspense fallback={<LoadingState message="Loading…" />}>
             <Outlet context={{ toggleSidebar }} />
           </Suspense>

@@ -4,6 +4,7 @@ import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from 'react'
 import AdminSidebar from '../components/dashboard/AdminSidebar'
 import Navbar from '../components/dashboard/Navbar'
+import PageBackButton from '../components/dashboard/PageBackButton'
 import LoadingState from '../components/common/LoadingState'
 
 const AdminDashboard = () => {
@@ -26,6 +27,7 @@ const AdminDashboard = () => {
       <div className={`flex-1 min-w-0 transition-all duration-200 ${sidebarOpen ? 'md:ml-64' : 'md:ml-0'}`}>
         <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
         <div className='p-2 sm:p-4 md:p-6 pb-6 max-w-[1800px] mx-auto w-full'>
+          <PageBackButton />
           <Suspense fallback={<LoadingState message="Loading…" />}>
             <Outlet />
           </Suspense>
