@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { FiChevronLeft, FiChevronRight, FiUsers, FiCalendar } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiUsers, FiCalendar, FiHome } from "react-icons/fi";
 import { MdOutlineCelebration } from "react-icons/md";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
@@ -14,7 +14,8 @@ import ErrorState from "../common/ErrorState";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const TYPE_STYLE = {
-  holiday: { icon: MdOutlineCelebration, fg: "text-brand-600", bg: "bg-brand-50", dot: "bg-brand-600" },
+  holiday: { icon: MdOutlineCelebration, fg: "text-brand-600", bg: "bg-brand-50", dot: "bg-brand-600", label: "Holiday" },
+  wfh: { icon: FiHome, fg: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-600", label: "Work from home" },
   meeting: { icon: FiUsers, fg: "text-blue-600", bg: "bg-blue-50", dot: "bg-blue-600" },
   event: { icon: FiCalendar, fg: "text-accent-700", bg: "bg-accent-50", dot: "bg-accent-700" },
 };
@@ -83,8 +84,11 @@ const EmployeeCalendar = () => {
   const selectedEvents = selected ? byDay[selected] || [] : [];
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-xl md:text-2xl font-semibold text-ink mb-4">Calendar &amp; Holidays</h1>
+    <div className="p-4 md:p-6 max-w-6xl mx-auto">
+      <h1 className="text-xl md:text-2xl font-semibold text-ink">Calendar &amp; Holidays</h1>
+      <p className="mt-1 mb-5 text-sm text-ink-muted">Company holidays and work-from-home days. Pick a day to see what's on.</p>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(340px,440px)_1fr] lg:items-start">
 
       {/* Month card */}
       <section className="bg-white rounded-2xl border border-surface-subtle p-4 md:p-6">
@@ -139,10 +143,17 @@ const EmployeeCalendar = () => {
             );
           })}
         </div>
+
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-surface-subtle pt-3 text-[13px] text-ink-muted">
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-600" aria-hidden="true" /> Holiday</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600" aria-hidden="true" /> Work from home</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full ring-[1.5px] ring-accent-500" aria-hidden="true" /> Today</span>
+        </div>
       </section>
 
+      <div>
       {/* Selected day */}
-      <section className="mt-6" aria-live="polite">
+      <section aria-live="polite">
         <h2 className="text-sm font-bold text-ink mb-3">
           {selected
             ? `${selected === today ? "Today · " : ""}${fmt(selected, { day: "numeric", month: "long", year: "numeric" })}`
@@ -194,6 +205,8 @@ const EmployeeCalendar = () => {
           </ul>
         </section>
       )}
+      </div>
+      </div>
     </div>
   );
 };
@@ -217,6 +230,9 @@ const EventRow = ({ event, onClick }) => {
             {event.description ? ` · ${event.description}` : ""}
           </span>
         </span>
+        {styleFor(event.type).label && (
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${bg} ${fg}`}>{styleFor(event.type).label}</span>
+        )}
       </Tag>
     </li>
   );

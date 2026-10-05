@@ -81,6 +81,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     switch (type) {
       case 'holiday':
         return Icons.celebration_outlined;
+      case 'wfh':
+        return Icons.home_work_outlined;
       case 'meeting':
         return Icons.groups_outlined;
       default:
@@ -92,6 +94,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     switch (type) {
       case 'holiday':
         return AppColors.brand600;
+      case 'wfh':
+        return const Color(0xFF1D4ED8);
       case 'meeting':
         return const Color(0xFF2563EB);
       default:

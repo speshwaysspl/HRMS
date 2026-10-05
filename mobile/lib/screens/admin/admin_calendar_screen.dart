@@ -218,11 +218,18 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
                       _month = m;
                       _selected = null;
                     }),
+                    // A day with events filters the list; an empty day opens "add".
                     onDay: (k) {
-                      setState(() => _selected = k);
-                      _edit(null, DateTime.parse(k));
+                      if ((byDay[k] ?? const []).isNotEmpty) {
+                        setState(() => _selected = k);
+                      } else {
+                        setState(() => _selected = null);
+                        _edit(null, DateTime.parse(k));
+                      }
                     },
                   ),
+                  SizedBox(height: context.h(12)),
+                  _MonthSummary(month: _month, items: _items, dayKey: _dayKey),
                   SizedBox(height: context.h(16)),
                   Row(
                     children: [
@@ -267,24 +274,45 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
   Widget _eventCard(Map<String, dynamic> e) {
     final type = e['type']?.toString() ?? 'event';
     final c = _typeColor(type);
-    String date = '';
-    try {
-      date = DateFormat(
-        'EEEE dd MMM',
-      ).format(DateTime.parse(e['date'].toString()).toUtc());
-    } catch (_) {}
+    final d = DateTime.tryParse(e['date']?.toString() ?? '')?.toUtc();
+    final date = d == null ? '' : DateFormat('EEEE dd MMM').format(d);
+    final desc = e['description']?.toString() ?? '';
     return SimpleCard(
       onTap: () => _edit(e),
       child: Row(
         children: [
           Container(
-            width: context.r(40),
-            height: context.r(40),
+            width: context.r(48),
+            height: context.r(48),
             decoration: BoxDecoration(
               color: c.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(_iconFor(type), color: c, size: context.r(20)),
+            child: d == null
+                ? Icon(_iconFor(type), color: c, size: context.r(20))
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('EEE').format(d).toUpperCase(),
+                        style: TextStyle(
+                          color: c,
+                          fontSize: context.sp(10),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${d.day}',
+                        style: TextStyle(
+                          color: c,
+                          fontSize: context.sp(18),
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           SizedBox(width: context.w(12)),
           Expanded(
@@ -300,7 +328,10 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
                 ),
                 SizedBox(height: context.h(2)),
                 Text(
-                  '$date  ·  ${_typeLabel(type)}',
+                  [
+                    _typeLabel(type),
+                    if (desc.isNotEmpty) desc else date,
+                  ].join('  ·  '),
                   style: TextStyle(
                     color: AppColors.inkMuted,
                     fontSize: context.sp(12),
@@ -337,6 +368,89 @@ Color _typeColor(String t) => switch (t) {
 };
 
 const _weekendFg = Color(0xFFE11D48);
+
+/// Working days / holidays / WFH counts for the month (mirrors web AdminCalendar).
+class _MonthSummary extends StatelessWidget {
+  final DateTime month;
+  final List<Map<String, dynamic>> items;
+  final String Function(dynamic) dayKey;
+  const _MonthSummary({
+    required this.month,
+    required this.items,
+    required this.dayKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final prefix = DateFormat('yyyy-MM').format(month);
+    final holidayWeekdays = <String>{};
+    var holidays = 0, wfh = 0, weekdays = 0;
+    for (final e in items) {
+      final k = dayKey(e['date']);
+      if (!k.startsWith(prefix)) continue;
+      if (e['type'] == 'holiday') {
+        holidays++;
+        final wd = DateTime.parse(k).weekday;
+        if (wd != DateTime.saturday && wd != DateTime.sunday) {
+          holidayWeekdays.add(k);
+        }
+      } else if (e['type'] == 'wfh') {
+        wfh++;
+      }
+    }
+    final days = DateTime(month.year, month.month + 1, 0).day;
+    for (var i = 1; i <= days; i++) {
+      final wd = DateTime(month.year, month.month, i).weekday;
+      if (wd != DateTime.saturday && wd != DateTime.sunday) weekdays++;
+    }
+    Widget stat(String label, int v, Color c) => Expanded(
+      child: Semantics(
+        label: '$label: $v',
+        excludeSemantics: true,
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: context.sp(12),
+              ),
+            ),
+            SizedBox(height: context.h(2)),
+            Text(
+              '$v',
+              style: TextStyle(
+                color: c,
+                fontSize: context.sp(20),
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: context.h(12)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.surfaceSubtle),
+      ),
+      child: Row(
+        children: [
+          stat(
+            'Working days',
+            weekdays - holidayWeekdays.length,
+            AppColors.ink,
+          ),
+          stat('Holidays', holidays, AppColors.danger),
+          stat('WFH days', wfh, _typeColor('wfh')),
+        ],
+      ),
+    );
+  }
+}
 
 /// Month grid with tinted, dotted days (mirrors web AdminCalendar).
 class _MonthGrid extends StatelessWidget {
