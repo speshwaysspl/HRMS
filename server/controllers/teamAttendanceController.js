@@ -148,7 +148,13 @@ const buildWorkbook = async (teams, month) => {
   );
 
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(monthLabel, { views: [{ state: "frozen", xSplit: 1, ySplit: 1 }] });
+  const ws = wb.addWorksheet(monthLabel, {
+    // topLeftCell/activeCell are required: without them Excel draws the frozen panes
+    // out of sync. activeCell must sit inside the scrolling pane (not A1), or Excel
+    // renders a duplicated split view.
+    views: [{ state: "frozen", xSplit: 1, ySplit: 1, topLeftCell: "B2", activeCell: "B2" }],
+    properties: { defaultRowHeight: 20 },
+  });
   ws.getColumn(1).width = 34;
   for (let c = 2; c <= days + 1; c++) ws.getColumn(c).width = 13;
   ws.getColumn(days + 2).width = 10;
@@ -208,10 +214,11 @@ const buildWorkbook = async (teams, month) => {
         else cells.push(["", null]);
       }
       const row = ws.addRow([emp.userId?.name?.toUpperCase() || "-", ...cells.map((c) => c[0]), present, half, absent]);
+      row.height = 20;
       row.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.border = border;
         cell.font = { name: "Times New Roman", size: 10, bold: col === 1 };
-        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.alignment = { horizontal: col === 1 ? "left" : "center", vertical: "middle", indent: col === 1 ? 1 : 0 };
         const bg = cells[col - 2]?.[1];
         if (bg) cell.fill = fill(bg);
       });
