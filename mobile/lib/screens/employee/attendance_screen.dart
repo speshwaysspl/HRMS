@@ -39,7 +39,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   DateTime? _locationAt; // when _location was captured
   bool _locationLoading = false;
   String? _locationError;
-  bool _breakBusy = false;
 
   @override
   void initState() {
@@ -116,44 +115,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         _locationLoading = false;
       });
     }
-  }
-
-  List<Map<String, dynamic>> get _breaks => ((_today?['breaks'] as List?) ?? [])
-      .map((b) => Map<String, dynamic>.from(b as Map))
-      .toList();
-
-  bool get _hasOngoingBreak =>
-      _breaks.any((b) => b['end'] == null || b['end'] == '');
-
-  /// Re-reads today's breaks from the server first (the web app edits the
-  /// same record), applies [change], saves, then reloads.
-  Future<void> _updateBreaks(
-    List<Map<String, dynamic>> Function(List<Map<String, dynamic>>) change,
-  ) async {
-    setState(() => _breakBusy = true);
-    try {
-      final latest = await _service.getToday();
-      final current = ((latest?['breaks'] as List?) ?? [])
-          .map((b) => Map<String, dynamic>.from(b as Map))
-          .toList();
-      await _service.saveBreaks(date: _todayDate, breaks: change(current));
-      await _load(silent: true);
-    } catch (e) {
-      if (mounted) _toast(extractErrorMessage(e), isError: true);
-    } finally {
-      if (mounted) setState(() => _breakBusy = false);
-    }
-  }
-
-  bool _isOpen(Map<String, dynamic> b) => b['end'] == null || b['end'] == '';
-
-  Future<void> _startBreak() => _updateBreaks((breaks) =>
-      breaks.any(_isOpen) ? breaks : [...breaks, {'start': _nowTime, 'end': ''}]);
-
-  Future<void> _endBreak() {
-    final now = _nowTime;
-    return _updateBreaks((breaks) =>
-        breaks.map((b) => _isOpen(b) ? {...b, 'end': now} : b).toList());
   }
 
   /// No connection: keep the punch with the time it was made, show it on
@@ -325,7 +286,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     try {
       // Checking out ends the day — close any break still running at the
       // same moment instead of leaving it "Ongoing" forever.
-      final closedBreaks = _breaks.map((b) {
+      final closedBreaks = ((_today?['breaks'] as List?) ?? []).map((raw) {
+        final b = Map<String, dynamic>.from(raw as Map);
         final open = b['end'] == null || b['end'] == '';
         return open ? {...b, 'end': _nowTime} : b;
       }).toList();
@@ -401,8 +363,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   SizedBox(height: context.h(16)),
                   _buildSummaryCard(),
                   SizedBox(height: context.h(16)),
-                  _buildBreakCard(hasCheckedIn, hasCheckedOut),
-                  SizedBox(height: context.h(16)),
                   _buildLocationCard(),
                 ],
               ),
@@ -476,12 +436,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     : (hasCheckedIn ? 'Check Out' : 'Check In'),
               ),
               style: ElevatedButton.styleFrom(
+                // Solid, saturated fills so the action reads in dark mode:
+                // green to start the day, red to end it.
                 backgroundColor: hasCheckedOut
                     ? AppColors.surfaceSubtle
-                    : (hasCheckedIn ? AppColors.brand600 : AppColors.accent600),
+                    : (hasCheckedIn
+                          ? const Color(0xFFDC2626)
+                          : AppColors.accent500),
                 foregroundColor: hasCheckedOut
                     ? AppColors.inkMuted
                     : Colors.white,
+                disabledBackgroundColor: AppColors.surfaceSubtle,
+                disabledForegroundColor: AppColors.inkMuted,
+                minimumSize: Size.fromHeight(context.h(50)),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: TextStyle(
+                  fontSize: context.sp(15),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -504,213 +479,168 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 orElse: () => modes[0],
               )['label']
               as String;
+      final icon =
+          modes.firstWhere(
+                (m) => m['value'] == _workMode,
+                orElse: () => modes[0],
+              )['icon']
+              as IconData;
       return Row(
         children: [
           Text(
             'Work Mode',
             style: TextStyle(
               color: AppColors.inkMuted,
-              fontSize: context.sp(12),
-            ),
-          ),
-          SizedBox(width: context.w(8)),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.ink,
-              fontWeight: FontWeight.w700,
               fontSize: context.sp(13),
             ),
           ),
-          SizedBox(width: context.w(4)),
-          Icon(
-            Icons.lock_outline,
-            size: context.sp(13),
-            color: AppColors.inkMuted,
+          const Spacer(),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: context.w(12),
+              vertical: context.h(6),
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.accent50,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: AppColors.accent500.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: context.sp(15), color: AppColors.accent700),
+                SizedBox(width: context.w(6)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.accent700,
+                    fontWeight: FontWeight.w700,
+                    fontSize: context.sp(13),
+                  ),
+                ),
+                SizedBox(width: context.w(6)),
+                Icon(
+                  Icons.lock_rounded,
+                  size: context.sp(13),
+                  color: AppColors.accent700.withValues(alpha: 0.8),
+                ),
+              ],
+            ),
           ),
         ],
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Work Mode',
-              style: TextStyle(
-                color: AppColors.inkMuted,
-                fontSize: context.sp(12),
-              ),
-            ),
-            Text(
-              ' *',
-              style: TextStyle(
-                color: AppColors.danger,
-                fontSize: context.sp(12),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: context.h(8)),
-        Row(
-          children: modes.map((mode) {
-            final selected = _workMode == mode['value'];
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: mode == modes.first ? context.w(8) : 0,
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () =>
-                      setState(() => _workMode = mode['value'] as String),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: context.h(10)),
-                    decoration: BoxDecoration(
-                      // Solid fill when selected so it reads in both themes;
-                      // unselected keeps a visible outline on the card.
-                      color: selected ? AppColors.accent500 : AppColors.surface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.accent500
-                            : AppColors.inkFaint,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          selected
-                              ? Icons.check_circle_rounded
-                              : mode['icon'] as IconData,
-                          size: context.sp(16),
-                          color: selected ? Colors.white : AppColors.ink,
-                        ),
-                        SizedBox(width: context.w(6)),
-                        Text(
-                          mode['label'] as String,
-                          style: TextStyle(
-                            fontSize: context.sp(13),
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            color: selected ? Colors.white : AppColors.ink,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBreakCard(bool hasCheckedIn, bool hasCheckedOut) {
-    final breaks = _breaks;
-    final canStartBreak =
-        hasCheckedIn && !hasCheckedOut && !_hasOngoingBreak && !_breakBusy;
-
+    // Highlighted panel before check-in so picking a mode is the obvious
+    // first step — mirrors the web Attendance screen.
     return Container(
-      padding: EdgeInsets.all(context.w(18)),
+      padding: EdgeInsets.all(context.w(12)),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.panel),
-        border: Border.all(color: AppColors.surfaceSubtle),
+        color: AppColors.accent50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _workMode == null
+              ? AppColors.accent500
+              : AppColors.accent500.withValues(alpha: 0.4),
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            _workMode == null
+                ? 'Where are you working today?'
+                : 'Ready to check in',
+            style: TextStyle(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w700,
+              fontSize: context.sp(14),
+            ),
+          ),
+          SizedBox(height: context.h(4)),
           Row(
             children: [
-              Icon(
-                Icons.free_breakfast_outlined,
-                size: 16,
-                color: AppColors.brand600,
-              ),
-              SizedBox(width: context.w(6)),
               Text(
-                'Break Times',
+                'Work Mode',
                 style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                  fontSize: context.sp(14),
+                  color: AppColors.inkMuted,
+                  fontSize: context.sp(12),
+                ),
+              ),
+              Text(
+                ' *',
+                style: TextStyle(
+                  color: AppColors.danger,
+                  fontSize: context.sp(12),
                 ),
               ),
             ],
           ),
-          SizedBox(height: context.h(10)),
-          if (breaks.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: context.h(6)),
-              child: Text(
-                'No breaks logged yet today.',
-                style: TextStyle(
-                  color: AppColors.inkMuted,
-                  fontSize: context.sp(13),
-                ),
-              ),
-            )
-          else
-            ...breaks.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final b = entry.value;
-              final isOpen = b['end'] == null || b['end'] == '';
-              return Container(
-                margin: EdgeInsets.only(bottom: context.h(6)),
-                padding: EdgeInsets.symmetric(
-                  horizontal: context.w(12),
-                  vertical: context.h(8),
-                ),
-                decoration: BoxDecoration(
-                  color: isOpen ? AppColors.accent50 : AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isOpen
-                        ? AppColors.accent500.withValues(alpha: 0.4)
-                        : AppColors.surfaceSubtle,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Break ${idx + 1}: ${b['start'] ?? '--:--'} - ${isOpen ? 'Ongoing' : b['end']}',
-                        style: TextStyle(
-                          fontSize: context.sp(12.5),
-                          color: AppColors.ink,
+          SizedBox(height: context.h(8)),
+          // Segmented control: recessed track, selected segment is a solid
+          // raised pill — readable in both light and dark themes.
+          Container(
+            padding: EdgeInsets.all(context.w(4)),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.accent100),
+            ),
+            child: Row(
+              children: modes.map((mode) {
+                final selected = _workMode == mode['value'];
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () =>
+                          setState(() => _workMode = mode['value'] as String),
+                      child: AnimatedContainer(
+                        duration: MediaQuery.of(context).disableAnimations
+                            ? Duration.zero
+                            : const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
+                        constraints: BoxConstraints(minHeight: context.h(44)),
+                        padding: EdgeInsets.symmetric(vertical: context.h(10)),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.accent500
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              selected
+                                  ? Icons.check_circle_rounded
+                                  : mode['icon'] as IconData,
+                              size: context.sp(16),
+                              color: selected ? Colors.white : AppColors.ink,
+                            ),
+                            SizedBox(width: context.w(6)),
+                            Text(
+                              mode['label'] as String,
+                              style: TextStyle(
+                                fontSize: context.sp(13),
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: selected ? Colors.white : AppColors.ink,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    if (isOpen && !hasCheckedOut)
-                      TextButton(
-                        onPressed: _breakBusy ? null : _endBreak,
-                        child: Text(
-                          'End',
-                          style: TextStyle(
-                            fontSize: context.sp(12),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            }),
-          SizedBox(height: context.h(6)),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: canStartBreak ? _startBreak : null,
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Start Break'),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -882,27 +812,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
-  int get _totalBreakMinutes {
-    final outTime = _today?['outTime']?.toString();
-    final sessionEnd = (outTime != null && outTime.isNotEmpty)
-        ? outTime
-        : _nowTime;
-    var total = 0;
-    for (final b in _breaks) {
-      final start = b['start']?.toString();
-      if (start == null || start.isEmpty) continue;
-      final end = (b['end']?.toString().isNotEmpty ?? false)
-          ? b['end'].toString()
-          : sessionEnd;
-      try {
-        var mins = _toMinutes(end) - _toMinutes(start);
-        if (mins < 0) mins += 24 * 60;
-        total += mins;
-      } catch (_) {}
-    }
-    return total;
-  }
-
   String _formatDuration(int minutes) => '${minutes ~/ 60}h ${minutes % 60}m';
 
   // Mirrors Attendance.jsx's status: not final until checked out, then
@@ -913,7 +822,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (inTime == null || inTime.isEmpty) return 'Not Checked In';
     if (outTime == null || outTime.isEmpty) return 'Checked In';
     if (_workingMinutes >= 480) {
-      return _workingMinutes > 480 ? 'Present + OT' : 'Present';
+      return 'Present';
     }
     if (_workingMinutes >= 240) return 'Half-Day';
     return 'Absent';
@@ -974,13 +883,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             AppColors.tint(AppColors.tint(const Color(0xFFDBEAFE))),
             'Working Hours',
             _formatDuration(_workingMinutes),
-          ),
-          _summaryRow(
-            Icons.free_breakfast_outlined,
-            Color(0xFFEA580C),
-            AppColors.tint(AppColors.tint(const Color(0xFFFFEDD5))),
-            'Break Time',
-            '${_totalBreakMinutes}m',
           ),
           _summaryRow(
             Icons.badge_outlined,

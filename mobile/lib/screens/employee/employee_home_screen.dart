@@ -712,7 +712,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
 
     final norm = (serverStatus ?? '').toLowerCase();
     if (norm.contains('overtime')) {
-      statusText = 'Present + Overtime';
+      statusText = 'Present';
       statusTextColor = Color(0xFF16A34A);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7)));
       statusBorderColor = const Color(0xFFA7F3D0);
@@ -1354,14 +1354,6 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
       ),
       _PolicyItem(
         index: 4,
-        title: 'Break Time Recording',
-        description: 'It is mandatory to record break time on a daily basis.',
-        icon: Icons.coffee_outlined,
-        iconBg: AppColors.tint(const Color(0xFFF3E8FF)),
-        iconColor: Color(0xFF9333EA),
-      ),
-      _PolicyItem(
-        index: 5,
         title: 'Leave & WFH Requests',
         description:
             'Leave and Work From Home (WFH) requests must be submitted at least one day in advance.',

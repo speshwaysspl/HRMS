@@ -186,16 +186,15 @@ export const getAllAttendance = async (req, res) => {
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
-                attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+                attendanceStatus = "Work from Home - Present";
               } else if (workingHours >= 4) {
                 attendanceStatus = "Work from Home - Half Day";
-              } else if (workingHours > 0) {
-                attendanceStatus = "Work from Home - Incomplete";
               } else {
-                attendanceStatus = "Work from Home - Not Marked";
+                // Under 4 hours worked counts as Absent, same as office days.
+                attendanceStatus = "Absent";
               }
             } else if (record?.inTime && !record?.outTime) {
-              attendanceStatus = "Work from Home - Incomplete";
+              attendanceStatus = isPastDate(date) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
             } else {
               attendanceStatus = "Work from Home - Not Marked";
             }
@@ -216,7 +215,7 @@ export const getAllAttendance = async (req, res) => {
             
             // Determine status based on working hours
             if (workingHours >= 8) {
-              attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+              attendanceStatus = "Present";
             } else if (workingHours >= 4) {
               attendanceStatus = "Half-Day";
             } else {
@@ -326,16 +325,15 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
-              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+              attendanceStatus = "Work from Home - Present";
             } else if (workingHours >= 4) {
               attendanceStatus = "Work from Home - Half Day";
-            } else if (workingHours > 0) {
-              attendanceStatus = "Work from Home - Incomplete";
             } else {
-              attendanceStatus = "Work from Home - Not Marked";
+              // Under 4 hours worked counts as Absent, same as office days.
+              attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -356,7 +354,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
           
           // Determine status based on working hours
           if (workingHours >= 8) {
-            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+            attendanceStatus = "Present";
           } else if (workingHours >= 4) {
             attendanceStatus = "Half-Day";
           } else {
@@ -463,16 +461,15 @@ export const getMonthlyAttendance = async (req, res) => {
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
-              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+              attendanceStatus = "Work from Home - Present";
             } else if (workingHours >= 4) {
               attendanceStatus = "Work from Home - Half Day";
-            } else if (workingHours > 0) {
-              attendanceStatus = "Work from Home - Incomplete";
             } else {
-              attendanceStatus = "Work from Home - Not Marked";
+              // Under 4 hours worked counts as Absent, same as office days.
+              attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -493,7 +490,7 @@ export const getMonthlyAttendance = async (req, res) => {
           
           // Determine status based on working hours
           if (workingHours >= 8) {
-            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+            attendanceStatus = "Present";
           } else if (workingHours >= 4) {
             attendanceStatus = "Half-Day";
           } else {
@@ -581,16 +578,15 @@ export const exportAttendanceExcel = async (req, res) => {
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
-                attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+                attendanceStatus = "Work from Home - Present";
               } else if (workingHours >= 4) {
                 attendanceStatus = "Work from Home - Half Day";
-              } else if (workingHours > 0) {
-                attendanceStatus = "Work from Home - Incomplete";
               } else {
-                attendanceStatus = "Work from Home - Not Marked";
+                // Under 4 hours worked counts as Absent, same as office days.
+                attendanceStatus = "Absent";
               }
             } else if (record?.inTime && !record?.outTime) {
-              attendanceStatus = "Work from Home - Incomplete";
+              attendanceStatus = isPastDate(date) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
             } else {
               attendanceStatus = "Work from Home - Not Marked";
             }
@@ -611,7 +607,7 @@ export const exportAttendanceExcel = async (req, res) => {
             
             // Determine status based on working hours
             if (workingHours >= 8) {
-              attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+              attendanceStatus = "Present";
             } else if (workingHours >= 4) {
               attendanceStatus = "Half-Day";
             } else {
@@ -748,16 +744,15 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
-              attendanceStatus = workingHours > 8 ? "Work from Home + Overtime" : "Work from Home - Present";
+              attendanceStatus = "Work from Home - Present";
             } else if (workingHours >= 4) {
               attendanceStatus = "Work from Home - Half Day";
-            } else if (workingHours > 0) {
-              attendanceStatus = "Work from Home - Incomplete";
             } else {
-              attendanceStatus = "Work from Home - Not Marked";
+              // Under 4 hours worked counts as Absent, same as office days.
+              attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -778,7 +773,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
           
           // Determine status based on working hours
           if (workingHours >= 8) {
-            attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+            attendanceStatus = "Present";
           } else if (workingHours >= 4) {
             attendanceStatus = "Half-Day";
           } else {

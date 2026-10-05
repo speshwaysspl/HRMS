@@ -136,17 +136,20 @@ const AttendanceReport = () => {
               setWorkingHours(hours);
               // Combine WFH with time-based status
               if (hours >= 8) {
-                setAttendanceStatus(hours > 8 ? "Work from Home + Overtime" : "Work from Home - Present");
+                setAttendanceStatus("Work from Home - Present");
               } else if (hours >= 4) {
                 setAttendanceStatus("Work from Home - Half Day");
-              } else if (hours > 0) {
-                setAttendanceStatus("Work from Home - Incomplete");
               } else {
-                setAttendanceStatus("Work from Home - Not Marked");
+                setAttendanceStatus("Absent");
               }
               setAttendance(record);
             } else if (record?.inTime && !record?.outTime) {
-              setAttendanceStatus("Work from Home - Incomplete");
+              // Forgot to check out: Half Day once the day is over.
+              setAttendanceStatus(
+                selectedDate < toISTDateString(new Date())
+                  ? "Work from Home - Half Day"
+                  : "Work from Home - Incomplete"
+              );
               setAttendance(record);
             } else {
               setAttendanceStatus("Work from Home - Not Marked");
@@ -180,7 +183,7 @@ const AttendanceReport = () => {
 
             // Determine status based on working hours
             if (workingHoursValue >= 8) {
-              status = workingHoursValue > 8 ? "Present + Overtime" : "Present";
+              status = "Present";
             } else if (workingHoursValue >= 4) {
               status = "Half-Day";
             } else {

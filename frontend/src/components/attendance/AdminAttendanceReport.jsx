@@ -315,14 +315,12 @@ const AdminAttendanceReport = () => {
             <option value="checked-in">Checked in (any)</option>
             <option value="not-checked-in">Not checked in</option>
             <option value="Present">Present</option>
-            <option value="Present + Overtime">Present + Overtime</option>
             <option value="Half-Day">Half-Day</option>
             <option value="Absent">Absent</option>
             <option value="Not Yet">Not Yet</option>
             <option value="Leave">Leave</option>
             <option value="Incomplete">Incomplete</option>
             <option value="Work from Home - Present">Work from Home - Present</option>
-            <option value="Work from Home + Overtime">Work from Home + Overtime</option>
             <option value="Work from Home - Half Day">Work from Home - Half Day</option>
             <option value="Work from Home - Incomplete">Work from Home - Incomplete</option>
             <option value="Work from Home - Not Marked">Work from Home - Not Marked</option>

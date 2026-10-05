@@ -237,7 +237,7 @@ const getEmployeeDashboardStats = async (req, res) => {
                 
                 // Determine status based on working hours
                 if (workingHours >= 8) {
-                    attendanceStatus = workingHours > 8 ? "Present + Overtime" : "Present";
+                    attendanceStatus = "Present";
                 } else if (workingHours >= 4) {
                     attendanceStatus = "Half Day";
                 } else {
@@ -330,12 +330,8 @@ const getEmployeeDashboardStats = async (req, res) => {
                 console.log('OutTime parsed:', outTime);
                 console.log('Raw working hours:', workingHours);
 
-                // Subtract break time if available
-                if (attendance.breakTime) {
-                    const breakHours = attendance.breakTime / 60; // Convert minutes to hours
-                    workingHours -= breakHours;
-                    console.log('Break time subtracted:', breakHours, 'Final working hours:', workingHours);
-                }
+                if (workingHours < 0) workingHours += 24; // overnight shift
+                // Breaks never reduce working hours — plain check-in → check-out span.
 
                 // Round working hours
                 workingHours = Math.round(workingHours * 100) / 100;
@@ -343,13 +339,7 @@ const getEmployeeDashboardStats = async (req, res) => {
 
                 // Determine status based on working hours
                 if (workingHours >= 8) {
-                    if (workingHours > 8) {
-                        console.log('Marking as overtime day');
-                        overtimeDays++;
-                    } else {
-                        console.log('Marking as present day');
-                        presentDays++;
-                    }
+                    presentDays++;
                 } else if (workingHours >= 4) {
                     console.log('Marking as half day');
                     halfDays++;
@@ -358,9 +348,10 @@ const getEmployeeDashboardStats = async (req, res) => {
                     absentDays++;
                 }
             } else if (attendance.inTime) {
-                // Only in-time marked, consider as incomplete/absent for monthly stats
-                console.log('Only inTime marked, marking as absent');
-                absentDays++;
+                // Forgot to check out: Half-Day once the day is over; today is
+                // still in progress, so it isn't counted yet.
+                if (attendanceDate < toISTDateString(new Date())) halfDays++;
+                else notYetDays++;
             } else {
                 // No attendance marked
                 console.log('No attendance marked, marking as absent');

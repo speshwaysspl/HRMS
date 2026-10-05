@@ -8,7 +8,6 @@ import {
   FaChevronRight,
   FaClipboardList,
   FaCalendarCheck,
-  FaCoffee,
   FaSignInAlt,
   FaSignOutAlt,
   FaChartBar,
@@ -43,7 +42,7 @@ const announcementCategoryStyle = (category) =>
 // Same 5-color palette + status vocabulary as the Flutter mobile app's
 // employee home screen — kept in sync intentionally, see MEMORY.md.
 const STATUS_STYLES = {
-  'present + overtime': { text: '#16A34A', bg: '#DCFCE7', border: '#A7F3D0', label: 'Present + Overtime' },
+  'present + overtime': { text: '#16A34A', bg: '#DCFCE7', border: '#A7F3D0', label: 'Present' },
   present: { text: '#16A34A', bg: '#DCFCE7', border: '#A7F3D0', label: 'Present' },
   'half day': { text: '#D97706', bg: '#FEF3C7', border: '#FDE68A', label: 'Half Day' },
   leave: { text: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', label: 'On Leave' },
@@ -291,13 +290,6 @@ const Summary = () => {
       description: 'Attendance of less than four (4) hours will be treated as absent, while four (4) hours or more will be considered a half day.',
       iconBg: '#FFEDD5',
       iconColor: '#EA580C'
-    },
-    {
-      icon: <FaCoffee />,
-      title: 'Break Time Recording',
-      description: 'It is mandatory to record break time on a daily basis.',
-      iconBg: '#F3E8FF',
-      iconColor: '#9333EA'
     },
     {
       icon: <FaCalendarAlt />,

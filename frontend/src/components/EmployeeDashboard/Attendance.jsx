@@ -21,7 +21,6 @@ import {
   FiClock,
   FiBriefcase,
   FiCheckCircle,
-  FiChevronDown,
   FiLock,
 } from "react-icons/fi";
 
@@ -65,7 +64,7 @@ const MiniStat = ({ icon: Icon, label, value, sub }) => (
 );
 
 const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onClick, disabled }) => (
-  <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-5 flex flex-col items-center text-center">
+  <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-4 sm:p-5 flex flex-col items-center text-center">
     <span
       className={`flex h-14 w-14 items-center justify-center rounded-full mb-3 ${
         tone === "out" ? "bg-red-50 text-red-500" : "bg-accent-50 text-accent-600"
@@ -74,14 +73,14 @@ const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onCli
       <Icon size={22} />
     </span>
     <p className="font-semibold text-ink text-lg">{title}</p>
-    <p className="text-ink-faint text-xs mt-1">{subtitle}</p>
-    <p className="font-mono text-2xl font-semibold text-ink mt-4" aria-live="polite">
+    <p className="hidden sm:block text-ink-faint text-xs mt-1">{subtitle}</p>
+    <p className="font-mono text-xl sm:text-2xl font-semibold text-ink mt-3 sm:mt-4" aria-live="polite">
       {time || "--:-- --"}
     </p>
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`mt-5 w-full py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`mt-4 sm:mt-5 w-full min-h-[44px] py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
         tone === "out" ? "bg-red-500 hover:bg-red-600" : "bg-accent-600 hover:bg-accent-700"
       }`}
     >
@@ -591,7 +590,7 @@ const Attendance = () => {
     : !tracker.outTime
     ? "Checked In"
     : workingMinutes >= 480
-    ? (workingMinutes > 480 ? "Present + Overtime" : "Present")
+    ? "Present"
     : workingMinutes >= 240
     ? "Half-Day"
     : "Absent";
@@ -646,10 +645,9 @@ const Attendance = () => {
 
         {/* Greeting + Check In / Check Out */}
         <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-4">
-          <div className="relative overflow-hidden bg-gradient-to-br from-accent-50 via-white to-white rounded-xl border border-accent-100 shadow-card p-6">
-            <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-accent-100/70 blur-2xl" aria-hidden="true" />
+          <div className="relative overflow-hidden bg-white rounded-xl border border-surface-subtle shadow-card p-4 sm:p-6">
             <p className="relative text-accent-700 font-medium text-sm">Good {greeting},</p>
-            <p className="relative text-2xl font-bold text-ink mt-0.5">
+            <p className="relative text-xl sm:text-2xl font-bold text-ink mt-0.5 leading-tight break-words">
               {user?.name || "Employee"} <span aria-hidden="true">👋</span>
             </p>
             <p className="relative text-ink-muted text-sm mt-1">
@@ -660,48 +658,65 @@ const Attendance = () => {
                 : "Great work today — you're checked out."}
             </p>
 
-            <div className="relative mt-6 pt-5 border-t border-accent-100/70 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-surface-subtle text-brand-700">
-                  <FiBriefcase size={15} />
+            {/* Work mode: full-width row so the switch is easy to tap on phones */}
+            <div
+              className={`relative mt-5 ${
+                todayRecord?.inTime
+                  ? "pt-4 border-t border-surface-subtle"
+                  : `p-3 sm:p-4 rounded-xl bg-accent-50 border-2 ${tracker.workMode ? "border-accent-500/40" : "border-accent-500"}`
+              }`}
+            >
+              {!todayRecord?.inTime && (
+                <p className="text-ink font-semibold text-sm mb-1">
+                  {tracker.workMode ? "Ready to check in" : "Where are you working today?"}
+                </p>
+              )}
+              <div className="flex items-center justify-between gap-3">
+                <span id="work-mode" className="flex items-center gap-2 text-ink-muted text-sm font-medium">
+                  <FiBriefcase size={15} className="text-brand-700" />
+                  Work Mode {!todayRecord?.inTime && <span className="text-red-500">*</span>}
                 </span>
-                <div className="min-w-0">
-                  <label htmlFor="work-mode" className="block text-ink-faint text-[11px] font-medium uppercase tracking-wide leading-none">
-                    Work Mode {!todayRecord?.inTime && <span className="text-red-500">*</span>}
-                  </label>
-                  {todayRecord?.inTime ? (
-                    <p className="flex items-center gap-1.5 text-ink font-semibold text-sm mt-1">
-                      {tracker.workMode === "home" ? "Home" : "Office"}
-                      <FiLock size={11} className="text-ink-faint" title="Locked after check-in" />
-                    </p>
-                  ) : (
-                    <div className="relative inline-flex items-center mt-1 rounded-md hover:bg-white/70 -ml-1 pl-1 pr-5 transition-colors">
-                      <select
-                        id="work-mode"
-                        value={tracker.workMode}
-                        onChange={(e) => setTracker((prev) => ({ ...prev, workMode: e.target.value }))}
-                        className={`font-semibold text-sm bg-transparent border-none py-0.5 pl-0 pr-0 focus:outline-none cursor-pointer appearance-none ${
-                          tracker.workMode ? "text-ink" : "text-ink-faint"
+                {todayRecord?.inTime && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-50 border border-accent-500/50 text-accent-700 font-semibold text-sm">
+                    {tracker.workMode === "home" ? "Home" : "Office"}
+                    <FiLock size={12} title="Locked after check-in" />
+                  </span>
+                )}
+              </div>
+              {!todayRecord?.inTime && (
+                <div
+                  role="radiogroup"
+                  aria-labelledby="work-mode"
+                  className="mt-2.5 grid grid-cols-2 gap-1 p-1 rounded-xl bg-white border border-accent-100"
+                >
+                  {[["office", "Office"], ["home", "Home"]].map(([value, label]) => {
+                    const selected = tracker.workMode === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setTracker((prev) => ({ ...prev, workMode: value }))}
+                        className={`min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
+                          selected ? "bg-accent-500 text-white shadow-sm" : "text-ink hover:bg-white"
                         }`}
                       >
-                        <option value="" disabled>
-                          Select mode
-                        </option>
-                        <option value="office">Office</option>
-                        <option value="home">Home</option>
-                      </select>
-                      <FiChevronDown size={13} className="absolute right-1 text-ink-faint pointer-events-none" />
-                    </div>
-                  )}
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
+            </div>
 
+            <div className="relative mt-4 grid grid-cols-2 gap-3">
               <MiniStat icon={FiClock} label="Working Hours" value={formatDuration(workingMinutes)} sub="Today" />
               <MiniStat icon={FiCheckCircle} label="Status" value={statusLabel} />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <CheckCard
               icon={FiLogIn}
               title="Check In"
@@ -724,8 +739,8 @@ const Attendance = () => {
           </div>
         </div>
 
-        {/* Location / Break Times / Today's Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Location / Today's Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Location */}
           <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-5">
             <h3 className="text-sm font-semibold mb-3 text-ink flex items-center gap-2">
@@ -793,56 +808,6 @@ const Attendance = () => {
             )}
           </div>
 
-          {/* Break Times */}
-          <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-5">
-            <h3 className="text-sm font-semibold mb-3 text-ink flex items-center gap-2">
-              <FiCoffee size={15} className="text-brand-700" /> Break Times
-            </h3>
-
-            {tracker.breaks.length === 0 ? (
-              <div className="py-6 text-center">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-faint mb-2">
-                  <FiCoffee size={16} />
-                </span>
-                <p className="text-sm text-ink-muted">No breaks logged yet today.</p>
-                <p className="text-xs text-ink-faint mt-0.5">Take breaks to stay fresh and productive!</p>
-              </div>
-            ) : (
-              <ul className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                {tracker.breaks.map((b, idx) => (
-                  <li
-                    key={idx}
-                    className={`flex items-center justify-between gap-2 p-2.5 rounded-lg border text-sm ${
-                      b.end ? 'bg-surface-muted border-surface-subtle' : 'bg-amber-50 border-amber-200'
-                    }`}
-                  >
-                    <span className="text-ink flex items-center gap-2 min-w-0">
-                      {!b.end && <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500 animate-pulse" aria-hidden="true" />}
-                      <span className="truncate">Break {idx + 1}: {b.start} – {b.end || "Ongoing"}</span>
-                    </span>
-                    {!b.end && (
-                      <button
-                        onClick={handleEndBreak}
-                        disabled={!!todayRecord?.outTime || loading || breakBusy}
-                        className="px-2.5 py-1.5 bg-accent-600 hover:bg-accent-700 text-white text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-                      >
-                        End
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <button
-              onClick={handleStartBreak}
-              disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading || breakBusy || !!ongoingBreak}
-              className="mt-3 w-full px-4 py-2.5 bg-white border border-surface-subtle hover:bg-surface-muted text-ink text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + Start Break
-            </button>
-          </div>
-
           {/* Today's Summary */}
           <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-5">
             <h3 className="text-sm font-semibold mb-4 text-ink flex items-center gap-2">
@@ -860,10 +825,6 @@ const Attendance = () => {
               <li className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-ink-muted"><FiClock size={14} className="text-brand-600" /> Working Hours</span>
                 <span className="text-ink font-medium">{formatDuration(workingMinutes)}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-ink-muted"><FiCoffee size={14} className="text-amber-600" /> Break Time</span>
-                <span className="text-ink font-medium">{totalBreakMinutes}m</span>
               </li>
               <li className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-ink-muted"><FiBriefcase size={14} className="text-brand-600" /> Work Mode</span>
