@@ -9,8 +9,10 @@ import useMeta from "../../utils/useMeta";
 import PageHeader from "../common/PageHeader";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveData } from "../../context/NotificationContext";
 
 const DepartmentList = () => {
+  useLiveData(["department", "employee"], () => { fetchDepartments(); });
   useMeta({
     title: "Departments — Speshway HRMS",
     description: "Manage and search departments.",

@@ -35,6 +35,10 @@ class RealtimeService {
         AppEvents.leaveChanged.value++;
       }
     });
+    // Generic live-refresh hint for every other screen (see LiveRefresh).
+    socket.on('data:changed', (data) {
+      if (data is Map) AppEvents.dataChanged.value = Map<String, dynamic>.from(data);
+    });
     socket.onConnectError((e) => debugPrint('Realtime connect error: $e'));
     socket.connect();
     _socket = socket;

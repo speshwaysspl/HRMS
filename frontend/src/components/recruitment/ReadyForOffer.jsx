@@ -8,8 +8,10 @@ import { toast } from "react-toastify";
 import { FaEye, FaPaperPlane, FaCheck } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const ReadyForOffer = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const { list: candidates, loading: candidatesLoading } = useSelector((state) => state.candidates);
   const { list: offers, loading: offersLoading } = useSelector((state) => state.offers);
@@ -109,7 +111,7 @@ const ReadyForOffer = () => {
       }
     };
     fetchDeptsAndManagers();
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   const eligibleCandidates = candidates.filter(candidate => {
     const docs = candidateDocs[candidate._id];

@@ -19,6 +19,7 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/leave_details_sheet.dart';
 
+import '../../services/live_refresh.dart';
 class LeavesScreen extends StatefulWidget {
   const LeavesScreen({super.key});
 
@@ -26,7 +27,13 @@ class LeavesScreen extends StatefulWidget {
   State<LeavesScreen> createState() => _LeavesScreenState();
 }
 
-class _LeavesScreenState extends State<LeavesScreen> {
+class _LeavesScreenState extends State<LeavesScreen> with LiveRefresh<LeavesScreen> {
+  @override
+  List<String> get liveResources => const ['leave', 'leave-types'];
+
+  @override
+  void onLiveRefresh() => _load(silent: true);
+
   final _service = LeaveService();
   List<Map<String, dynamic>> _leaves = [];
   List<Map<String, dynamic>> _leaveTypes = [];

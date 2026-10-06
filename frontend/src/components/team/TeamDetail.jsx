@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { proofsOf } from "../task/WorkProofField";
 import { useSocketEvent } from "../../context/NotificationContext";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
@@ -32,6 +33,7 @@ const TeamDetail = () => {
   const [team, setTeam] = useState(null);
   const [memberStats, setMemberStats] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("milestones"); // 'tasks' = one milestone's tasks // 'tasks' or 'team'
   // Live refresh when anyone changes this team's tasks, members or details.
@@ -66,6 +68,19 @@ const TeamDetail = () => {
   const [newTaskStatus, setNewTaskStatus] = useState("");
   const [newTaskRemark, setNewTaskRemark] = useState("");
   const [newTaskRating, setNewTaskRating] = useState(0);
+  // ?task=<id> (from a submission notification): open that task's review dialog once loaded.
+  const linkedTaskId = searchParams.get("task");
+  useEffect(() => {
+    if (!linkedTaskId || !tasks.length) return;
+    const task = tasks.find((t) => t._id === linkedTaskId && !t.isDeleted);
+    if (task) {
+      setEditingTask(task);
+      setNewTaskStatus(task.status);
+      setNewTaskRemark(task.remark || "");
+      setNewTaskRating(task.rating || 0);
+    }
+    setSearchParams((p) => { p.delete("task"); return p; }, { replace: true });
+  }, [linkedTaskId, tasks]); // eslint-disable-line react-hooks/exhaustive-deps
   const [searchTerm, setSearchTerm] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -762,7 +777,7 @@ const TeamDetail = () => {
                                                             title={task.workProofName || "Employee's work proof"}
                                                             className="bg-brand-700 text-white text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 hover:bg-brand-800 transition-colors"
                                                         >
-                                                            <FaEye aria-hidden="true" /> Work proof
+                                                            <FaEye aria-hidden="true" /> Work proof{proofsOf(task).length > 1 ? ` (${proofsOf(task).length})` : ""}
                                                         </a>
                                                     )}
                                                     {task.reference && (
@@ -1396,19 +1411,19 @@ const TeamDetail = () => {
                     <div className="mb-4">
                         <label className="block text-sm font-medium mb-2 text-ink">Task Title</label>
                         <p className="p-3 bg-surface-muted rounded-lg text-ink text-sm border border-surface-subtle">{editingTask.title}</p>
-                        {editingTask.workProof && (
-                            <p className="mt-2 text-sm">
+                        {proofsOf(editingTask).length > 0 && (
+                            <div className="mt-2 text-sm">
                                 <span className="font-medium text-ink">Employee's work proof: </span>
-                                <a
-                                    href={editingTask.workProof.startsWith("http") ? editingTask.workProof : `${API_BASE}/${editingTask.workProof}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-brand-600 hover:underline font-medium"
-                                >
-                                    View Attached File
-                                </a>
-
-                            </p>
+                                <ul className="mt-1 space-y-1">
+                                    {proofsOf(editingTask).map((p) => (
+                                        <li key={p.url}>
+                                            <a href={getDocumentUrl(p.url)} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline font-medium break-all">
+                                                {p.name || "View attached file"}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         )}
                     </div>
                     <div className="mb-4">
@@ -1777,17 +1792,23 @@ const TeamDetail = () => {
                         {viewTask.rating ? <StarRating value={viewTask.rating} /> : <p className="text-sm text-ink-muted">Not rated yet</p>}
                     </div>
 
-                    {viewTask.workProof && (
+                    {proofsOf(viewTask).length > 0 && (
                         <div>
                             <label className="text-xs font-medium text-ink-muted uppercase block mb-1">Work Proof</label>
-                            <a
-                                href={getDocumentUrl(viewTask.workProof)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-brand-600 hover:text-brand-700 font-medium inline-flex items-center gap-1"
-                            >
-                                <FaEye /> View Attached Document
-                            </a>
+                            <ul className="space-y-1">
+                                {proofsOf(viewTask).map((p) => (
+                                    <li key={p.url}>
+                                        <a
+                                            href={getDocumentUrl(p.url)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-brand-600 hover:text-brand-700 font-medium inline-flex items-center gap-1 break-all"
+                                        >
+                                            <FaEye aria-hidden="true" /> {p.name || "View attached document"}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
                 </div>

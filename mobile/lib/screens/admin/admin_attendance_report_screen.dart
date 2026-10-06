@@ -10,6 +10,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminAttendanceReportScreen extends StatefulWidget {
   /// 'checked-in' | 'Leave' | 'not-checked-in' — preselected by the
   /// admin dashboard tiles (mirrors web ?status=).
@@ -22,7 +23,13 @@ class AdminAttendanceReportScreen extends StatefulWidget {
 }
 
 class _AdminAttendanceReportScreenState
-    extends State<AdminAttendanceReportScreen> {
+    extends State<AdminAttendanceReportScreen> with LiveRefresh<AdminAttendanceReportScreen> {
+  @override
+  List<String> get liveResources => const ['attendance', 'leave'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = AttendanceAdminService();
   DateTime _date = DateTime.now();
   List<Map<String, dynamic>> _rows = [];

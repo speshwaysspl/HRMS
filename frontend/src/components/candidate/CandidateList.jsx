@@ -11,8 +11,10 @@ import { toast } from "react-toastify";
 import { FaSearch, FaFilter, FaPlus, FaEye, FaTrash, FaEdit, FaChevronLeft, FaChevronRight, FaUserFriends, FaBuilding } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const CandidateList = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { list, loading, error, pagination } = useSelector((state) => state.candidates);
@@ -59,7 +61,7 @@ const CandidateList = () => {
   // Fetch candidates on state or page change
   useEffect(() => {
     dispatch(fetchCandidates({ page, search, status, department }));
-  }, [dispatch, page, search, status, department]);
+  }, [dispatch, page, search, status, department, liveTick]);
 
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete candidate ${name}?`)) {

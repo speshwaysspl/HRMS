@@ -25,6 +25,10 @@ class AppEvents {
   /// task screens listen and re-fetch. `at` makes every event a new value.
   static final ValueNotifier<Map<String, dynamic>?> teamChanged = ValueNotifier<Map<String, dynamic>?>(null);
 
+  /// Last `data:changed` hint from the server ({resource, at}): any write under
+  /// `/api/<resource>`. Screens mix in [LiveRefresh] to re-fetch.
+  static final ValueNotifier<Map<String, dynamic>?> dataChanged = ValueNotifier<Map<String, dynamic>?>(null);
+
   static void bumpAttendance() => attendanceChanged.value++;
   static void bumpLeave() => leaveChanged.value++;
   static void switchToTab(int index) {

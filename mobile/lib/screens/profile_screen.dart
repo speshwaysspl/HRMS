@@ -13,6 +13,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/state_views.dart';
 import '../widgets/hrms_app_bar.dart';
 
+import '../services/live_refresh.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -20,7 +21,13 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with LiveRefresh<ProfileScreen> {
+  @override
+  List<String> get liveResources => const ['employee'];
+
+  @override
+  void onLiveRefresh() => _fetchProfile(silent: true);
+
   final _employeeService = EmployeeService();
   Map<String, dynamic>? _employeeData;
   bool _loading = true;

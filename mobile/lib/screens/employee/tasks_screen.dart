@@ -396,8 +396,8 @@ class _TaskUpdateSheet extends StatefulWidget {
 
 class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
   bool _saving = false;
-  String? _filePath;
-  bool _removeSaved = false; // saved proof marked for removal on submit
+  List<String> _filePaths = [];
+  Set<String> _removeSaved = {}; // saved proof URLs marked for removal on submit
 
   String _fmt(dynamic v) {
     try {
@@ -415,8 +415,8 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
       await widget.service.updateStatus(
         widget.task['_id'].toString(),
         'Review',
-        filePath: _filePath,
-        removeWorkProof: _removeSaved,
+        filePaths: _filePaths,
+        removeWorkProofs: _removeSaved.toList(),
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -469,10 +469,7 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
     final assignedBy = t['assignedBy'] is Map
         ? (t['assignedBy']['name']?.toString() ?? '-')
         : '-';
-    final savedUrl = (t['workProof'] ?? '').toString();
-    final savedName = (t['workProofName'] ?? '').toString().isNotEmpty
-        ? t['workProofName'].toString()
-        : savedUrl.split('/').last;
+    final saved = proofsOf(t);
 
     final Widget action;
     if (status == 'Completed') {
@@ -484,7 +481,7 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
             'Your team lead marked this task completed.',
             AppColors.accent700,
           ),
-          if (savedUrl.isNotEmpty) ...[
+          if (saved.isNotEmpty) ...[
             SizedBox(height: context.h(14)),
             Text(
               'Your work proof',
@@ -495,12 +492,11 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
             ),
             SizedBox(height: context.h(8)),
             WorkProofField(
-              existingUrl: savedUrl,
-              existingName: savedName,
-              pickedPath: null,
-              removed: false,
+              existing: saved,
+              pickedPaths: const [],
+              removed: const {},
               editable: false,
-              onPicked: (_) {},
+              onPickedChanged: (_) {},
               onRemovedChanged: (_) {},
             ),
           ],
@@ -525,12 +521,11 @@ class _TaskUpdateSheetState extends State<_TaskUpdateSheet> {
           ),
           SizedBox(height: context.h(8)),
           WorkProofField(
-            existingUrl: savedUrl.isEmpty ? null : savedUrl,
-            existingName: savedName,
-            pickedPath: _filePath,
+            existing: saved,
+            pickedPaths: _filePaths,
             removed: _removeSaved,
             enabled: !_saving,
-            onPicked: (path) => setState(() => _filePath = path),
+            onPickedChanged: (paths) => setState(() => _filePaths = paths),
             onRemovedChanged: (v) => setState(() => _removeSaved = v),
           ),
           SizedBox(height: context.h(16)),

@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiCheckCircle, FiClock, FiFlag, FiChevronRight } from "react-icons/fi";
-import WorkProofField from "./WorkProofField";
+import WorkProofField, { proofsOf } from "./WorkProofField";
 import { ReferenceView } from "./TaskReference";
 
 
@@ -43,8 +43,8 @@ const TaskList = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState("");
-  const [proofFile, setProofFile] = useState(null);
-  const [proofRemoved, setProofRemoved] = useState(false);
+  const [proofFiles, setProofFiles] = useState([]);
+  const [proofRemoved, setProofRemoved] = useState([]); // saved proof URLs to delete
   const [openGroups, setOpenGroups] = useState(() => new Set()); // milestones start collapsed
   const toggleGroup = (key) =>
     setOpenGroups((prev) => {
@@ -105,8 +105,8 @@ const TaskList = () => {
       setUpdateError("");
       const formData = new FormData();
       formData.append("status", "Review");
-      if (proofFile) formData.append("file", proofFile);
-      else if (proofRemoved) formData.append("removeWorkProof", "true");
+      proofFiles.forEach((f) => formData.append("files", f));
+      if (proofRemoved.length) formData.append("removeWorkProofs", JSON.stringify(proofRemoved));
       const response = await axios.put(
         `${API_BASE}/api/task/${selectedTask._id}`,
         formData,
@@ -202,8 +202,8 @@ const TaskList = () => {
                         onClick={() => {
                           setSelectedTask(task);
                           setUpdateError("");
-                          setProofFile(null);
-                          setProofRemoved(false);
+                          setProofFiles([]);
+                          setProofRemoved([]);
                         }}
                       >
                         <span className="min-w-0">
@@ -261,18 +261,10 @@ const TaskList = () => {
                     <p><span className="font-medium text-ink-muted">Start Date:</span> {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleDateString() : "N/A"}</p>
                     <p><span className="font-medium text-ink-muted">Deadline:</span> {formatDateOrNA(selectedTask.deadline)}</p>
                     <p><span className="font-medium text-ink-muted">Assigned By:</span> {selectedTask.assignedBy?.name || "Team Lead"}</p>
-                    {selectedTask.workProof && (
+                    {proofsOf(selectedTask).length > 0 && (
                       <p>
                         <span className="font-medium text-ink">Work Proof:</span>{" "}
-                        <a
-                          href={selectedTask.workProof.startsWith("http") ? selectedTask.workProof : `${API_BASE}/${selectedTask.workProof}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand-600 hover:underline font-medium"
-                        >
-
-                          View Attached File
-                        </a>
+                        {proofsOf(selectedTask).length} file{proofsOf(selectedTask).length > 1 ? "s" : ""} attached
                       </p>
                     )}
                   </div>
@@ -301,10 +293,10 @@ const TaskList = () => {
                       <FiCheckCircle className="text-accent-700 text-lg shrink-0" aria-hidden="true" />
                       Your team lead marked this task completed.
                     </p>
-                    {selectedTask.workProof && (
+                    {proofsOf(selectedTask).length > 0 && (
                       <div>
                         <p className="block text-sm font-medium text-ink mb-1.5">Your work proof</p>
-                        <WorkProofField existingUrl={selectedTask.workProof} existingName={selectedTask.workProofName} editable={false} />
+                        <WorkProofField existing={proofsOf(selectedTask)} editable={false} />
                       </div>
                     )}
                   </div>
@@ -325,10 +317,9 @@ const TaskList = () => {
                         Work proof <span className="font-normal text-ink-muted">(optional)</span>
                       </p>
                       <WorkProofField
-                        existingUrl={selectedTask.workProof}
-                        existingName={selectedTask.workProofName}
-                        file={proofFile}
-                        onFileChange={setProofFile}
+                        existing={proofsOf(selectedTask)}
+                        files={proofFiles}
+                        onFilesChange={setProofFiles}
                         removed={proofRemoved}
                         onRemovedChange={setProofRemoved}
                         editable

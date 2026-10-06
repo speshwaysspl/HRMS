@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import { useSocketEvent } from "../../context/NotificationContext";
+import { useSocketEvent, useLiveData } from "../../context/NotificationContext";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatDMY } from "../../utils/dateUtils";
@@ -87,6 +87,7 @@ const ProofActions = ({ leave, onChanged }) => {
 };
 
 const List = () => {
+  useLiveData(["leave"], () => { fetchLeaves(); });
   const [leaves, setLeaves] = useState(null);
   let sno = 1;
   const { id } = useParams();

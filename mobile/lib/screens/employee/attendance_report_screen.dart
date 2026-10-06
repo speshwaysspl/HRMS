@@ -13,6 +13,7 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/summary_card.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AttendanceReportScreen extends StatefulWidget {
   const AttendanceReportScreen({super.key});
 
@@ -20,7 +21,13 @@ class AttendanceReportScreen extends StatefulWidget {
   State<AttendanceReportScreen> createState() => _AttendanceReportScreenState();
 }
 
-class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
+class _AttendanceReportScreenState extends State<AttendanceReportScreen> with LiveRefresh<AttendanceReportScreen> {
+  @override
+  List<String> get liveResources => const ['attendance'];
+
+  @override
+  void onLiveRefresh() => _load(silent: true);
+
   final _service = AttendanceService();
   DateTime _currentMonth = DateTime.now();
   List<Map<String, dynamic>> _monthlyLogs = [];
@@ -338,7 +345,6 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
       log['inTime']?.toString(),
       log['outTime']?.toString(),
     );
-    final breaks = (log['breaks'] as List?)?.length ?? 0;
 
     return SimpleCard(
       child: Column(
@@ -412,22 +418,6 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              if (breaks > 0) ...[
-                SizedBox(width: context.w(12)),
-                Icon(
-                  Icons.coffee_outlined,
-                  size: context.r(14),
-                  color: AppColors.warning,
-                ),
-                SizedBox(width: context.w(4)),
-                Text(
-                  '$breaks ${breaks == 1 ? 'Break' : 'Breaks'}',
-                  style: TextStyle(
-                    fontSize: context.sp(11),
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
             ],
           ),
         ],

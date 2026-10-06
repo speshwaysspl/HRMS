@@ -7,8 +7,10 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const View = () => {
+  const liveTick = useLiveTick(["employee"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
@@ -48,7 +50,7 @@ const View = () => {
     };
 
     fetchEmployee();
-  }, [id]);
+  }, [id, liveTick]);
   if (loading) {
     return (
       <div className='min-h-screen bg-surface-muted p-4 md:p-6'>

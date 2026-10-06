@@ -13,6 +13,7 @@ import '../../widgets/leave_reject_dialog.dart';
 import '../../widgets/work_proof_field.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../services/live_refresh.dart';
 class AdminLeaveDetailScreen extends StatefulWidget {
   final String id;
   const AdminLeaveDetailScreen({super.key, required this.id});
@@ -21,7 +22,13 @@ class AdminLeaveDetailScreen extends StatefulWidget {
   State<AdminLeaveDetailScreen> createState() => _AdminLeaveDetailScreenState();
 }
 
-class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> {
+class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> with LiveRefresh<AdminLeaveDetailScreen> {
+  @override
+  List<String> get liveResources => const ['leave'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = LeaveService();
   Map<String, dynamic>? _leave;
   bool _loading = true;

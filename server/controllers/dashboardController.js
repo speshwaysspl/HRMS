@@ -301,7 +301,6 @@ const getEmployeeDashboardStats = async (req, res) => {
         let halfDays = 0;
         let absentDays = 0;
         let leaveDays = 0;
-        let overtimeDays = 0;
         let notYetDays = 0;
 
         // Process each attendance record
@@ -331,7 +330,7 @@ const getEmployeeDashboardStats = async (req, res) => {
                 console.log('Raw working hours:', workingHours);
 
                 if (workingHours < 0) workingHours += 24; // overnight shift
-                // Breaks never reduce working hours — plain check-in → check-out span.
+                // Working hours = plain check-in → check-out span.
 
                 // Round working hours
                 workingHours = Math.round(workingHours * 100) / 100;
@@ -393,15 +392,14 @@ const getEmployeeDashboardStats = async (req, res) => {
             }
         }
 
-        // Calculate total present days (including overtime and half days for percentage)
-        const totalPresentDays = presentDays + overtimeDays + halfDays;
+        // Calculate total present days (including half days for percentage)
+        const totalPresentDays = presentDays + halfDays;
         
         console.log('\n=== FINAL MONTHLY STATISTICS ===');
         console.log('Present days:', presentDays);
         console.log('Half days:', halfDays);
         console.log('Absent days:', absentDays);
         console.log('Leave days:', leaveDays);
-        console.log('Overtime days:', overtimeDays);
         console.log('Not yet days:', notYetDays);
         console.log('Total present days (for percentage):', totalPresentDays);
 
@@ -464,7 +462,6 @@ const getEmployeeDashboardStats = async (req, res) => {
                     halfDays: halfDays,
                     absentDays: absentDays + leaveDays, // Combined absent days (actual absent + leaves)
                     leaveDays: leaveDays, // Keep separate for detailed tracking if needed
-                    overtimeDays: overtimeDays,
                     notYetDays: notYetDays,
                     totalPresentDays: totalPresentDays,
                     totalWorkingDays: totalWorkingDays,

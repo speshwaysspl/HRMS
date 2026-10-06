@@ -11,6 +11,13 @@ class TaskService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  /// Which team a task belongs to and how the caller relates to it
+  /// (for notification deep links): {teamId, teamName, isLead, isAdmin, isAssignee}.
+  Future<Map<String, dynamic>> locate(String taskId) async {
+    final res = await _dio.get('/api/task/$taskId/locate');
+    return Map<String, dynamic>.from(res.data as Map);
+  }
+
   /// Team lead/admin: assign a task to one or more team members.
   Future<void> assignTask({
     required String teamId,
@@ -44,17 +51,19 @@ class TaskService {
     String? comments,
     String? remark,
     int? rating,
-    String? filePath,
-    bool removeWorkProof = false,
+    List<String> filePaths = const [], // work proofs to add
+    List<String> removeWorkProofs = const [], // saved proof URLs to delete
   }) async {
     final form = FormData.fromMap({
       'status': status,
-      if (removeWorkProof && filePath == null) 'removeWorkProof': 'true',
+      if (removeWorkProofs.isNotEmpty) 'removeWorkProofs': jsonEncode(removeWorkProofs),
       'comments': ?comments,
       'remark': ?remark,
       'rating': ?rating,
-      if (filePath != null) 'file': await MultipartFile.fromFile(filePath),
     });
+    for (final p in filePaths) {
+      form.files.add(MapEntry('files', await MultipartFile.fromFile(p)));
+    }
     await _dio.put('/api/task/$taskId', data: form);
   }
 

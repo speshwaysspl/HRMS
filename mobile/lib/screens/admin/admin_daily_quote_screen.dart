@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminDailyQuoteScreen extends StatefulWidget {
   const AdminDailyQuoteScreen({super.key});
 
@@ -17,7 +18,13 @@ class AdminDailyQuoteScreen extends StatefulWidget {
   State<AdminDailyQuoteScreen> createState() => _AdminDailyQuoteScreenState();
 }
 
-class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> {
+class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> with LiveRefresh<AdminDailyQuoteScreen> {
+  @override
+  List<String> get liveResources => const ['daily-quote'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = DailyQuoteService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

@@ -8,8 +8,10 @@ import { toast } from "react-toastify";
 import { FaPlus, FaPaperPlane, FaTimes, FaUndo, FaEye, FaCalendarAlt, FaBuilding, FaUserTie, FaMoneyBillWave } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const OfferManagement = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   
   const { list: offers, loading: offersLoading } = useSelector((state) => state.offers);
@@ -94,7 +96,7 @@ const OfferManagement = () => {
       }
     };
     fetchDeptsAndManagers();
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

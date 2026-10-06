@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 const _statuses = ['Pending', 'In Review', 'Resolved', 'Closed'];
 
 class AdminFeedbackScreen extends StatefulWidget {
@@ -19,7 +20,13 @@ class AdminFeedbackScreen extends StatefulWidget {
   State<AdminFeedbackScreen> createState() => _AdminFeedbackScreenState();
 }
 
-class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
+class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> with LiveRefresh<AdminFeedbackScreen> {
+  @override
+  List<String> get liveResources => const ['feedback'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = FeedbackService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;

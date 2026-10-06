@@ -10,6 +10,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminLeaveTypesScreen extends StatefulWidget {
   const AdminLeaveTypesScreen({super.key});
 
@@ -17,7 +18,13 @@ class AdminLeaveTypesScreen extends StatefulWidget {
   State<AdminLeaveTypesScreen> createState() => _AdminLeaveTypesScreenState();
 }
 
-class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> {
+class _AdminLeaveTypesScreenState extends State<AdminLeaveTypesScreen> with LiveRefresh<AdminLeaveTypesScreen> {
+  @override
+  List<String> get liveResources => const ['leave-types'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = LeaveTypeService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

@@ -24,8 +24,10 @@ import {
 } from "react-icons/fa";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const CandidateDetail = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -50,7 +52,7 @@ const CandidateDetail = () => {
   useEffect(() => {
     dispatch(fetchCandidateById(id));
     dispatch(fetchCandidateDocuments(id));
-  }, [dispatch, id]);
+  }, [dispatch, id, liveTick]);
 
   const handleAddNote = async (e) => {
     e.preventDefault();

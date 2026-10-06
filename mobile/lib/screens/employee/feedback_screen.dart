@@ -9,6 +9,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 const _categories = [
   'General',
   'Work Environment',
@@ -28,7 +29,13 @@ class FeedbackScreen extends StatefulWidget {
   State<FeedbackScreen> createState() => _FeedbackScreenState();
 }
 
-class _FeedbackScreenState extends State<FeedbackScreen> {
+class _FeedbackScreenState extends State<FeedbackScreen> with LiveRefresh<FeedbackScreen> {
+  @override
+  List<String> get liveResources => const ['feedback'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = FeedbackService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

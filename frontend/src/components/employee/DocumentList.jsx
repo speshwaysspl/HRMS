@@ -5,10 +5,12 @@ import { useAuth } from "../../context/AuthContext";
 import { FaFilePdf, FaFileImage, FaFileWord, FaEye, FaUpload, FaTrash, FaFolderOpen, FaEdit } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveData } from "../../context/NotificationContext";
 
 const DOCUMENT_TYPES = ["ID Proof", "Educational Certificate", "Offer Letter", "Contract", "Other"];
 
 const DocumentList = () => {
+  useLiveData(["document"], () => { fetchDocuments(); });
   const { user } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);

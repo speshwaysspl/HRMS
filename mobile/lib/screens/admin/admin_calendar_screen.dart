@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 const _eventTypes = ['holiday', 'wfh'];
 
 class AdminCalendarScreen extends StatefulWidget {
@@ -19,7 +20,13 @@ class AdminCalendarScreen extends StatefulWidget {
   State<AdminCalendarScreen> createState() => _AdminCalendarScreenState();
 }
 
-class _AdminCalendarScreenState extends State<AdminCalendarScreen> {
+class _AdminCalendarScreenState extends State<AdminCalendarScreen> with LiveRefresh<AdminCalendarScreen> {
+  @override
+  List<String> get liveResources => const ['events', 'leave'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = EventService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

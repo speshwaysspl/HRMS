@@ -7,10 +7,12 @@ import EmptyState from "../common/EmptyState";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
 import ActionIconButton from "../common/ActionIconButton";
+import { useLiveData } from "../../context/NotificationContext";
 
 const emptyForm = { name: "", monthlyQuota: 1, requiresApproval: true };
 
 const LeaveTypeSettings = () => {
+  useLiveData(["leave-types"], () => { fetchLeaveTypes(); });
   useMeta({
     title: "Leave Types — Speshway HRMS",
     description: "Configure leave types and monthly quotas.",

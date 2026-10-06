@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { API_BASE } from "../utils/apiConfig";
+import { unregisterWebPush } from "../utils/webPush";
 
 const userContext = createContext();
 
@@ -43,6 +44,7 @@ const authContext = ({ children }) => {
   };
 
   const logout = () => {
+    unregisterWebPush(); // reads the auth token synchronously before it's cleared below
     setUser(null);
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");

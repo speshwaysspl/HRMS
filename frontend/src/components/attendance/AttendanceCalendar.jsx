@@ -26,7 +26,7 @@ export const dayCategory = (key, rec, isHoliday = false) => {
   if (status === "Leave") return "leave";
   if (isWeekend(key) && !punched(rec)) return "weekend";
   if (status.includes("Half")) return "half";
-  if (status.includes("Present") || status.includes("Overtime")) return "present";
+  if (status.includes("Present")) return "present";
   if (status === "Absent") return "absent";
   return "none";
 };

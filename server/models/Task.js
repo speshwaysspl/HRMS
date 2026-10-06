@@ -17,12 +17,25 @@ const taskSchema = new Schema({
   referenceName: { type: String },
   workProof: { type: String }, // URL to uploaded file
   workProofName: { type: String }, // original file name, for display
+  // All work-proof files (up to 10). workProof/workProofName mirror the first one
+  // so older clients and single-file views keep working.
+  workProofs: [{ _id: false, url: { type: String, required: true }, name: { type: String } }],
   remark: { type: String }, // Team lead / admin review note (separate from description)
   rating: { type: Number, min: 1, max: 10 }, // Team lead / admin rating of the work
   isDeleted: { type: Boolean, default: false }, // Soft delete flag
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+
+// Tasks saved before multi-upload only have workProof; expose it as a one-item list.
+const withProofList = (_doc, ret) => {
+  if ((!ret.workProofs || ret.workProofs.length === 0) && ret.workProof) {
+    ret.workProofs = [{ url: ret.workProof, name: ret.workProofName }];
+  }
+  return ret;
+};
+taskSchema.set("toJSON", { transform: withProofList });
+taskSchema.set("toObject", { transform: withProofList });
 
 // Indexes for faster queries
 taskSchema.index({ teamId: 1 });

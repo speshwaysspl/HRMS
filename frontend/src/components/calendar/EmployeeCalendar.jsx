@@ -6,6 +6,7 @@ import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import { useLiveData } from "../../context/NotificationContext";
 
 // Employee "Calendar & Holidays" — same layout as the mobile
 // CalendarScreen (mobile/lib/screens/employee/calendar_screen.dart):
@@ -31,6 +32,7 @@ const daysAway = (key, today) => {
 const fmt = (key, opts) => new Date(`${key}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", ...opts });
 
 const EmployeeCalendar = () => {
+  useLiveData(["events", "leave"], () => { load(); });
   const today = toISTDateString(new Date());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);

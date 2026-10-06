@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminAnnouncementsScreen extends StatefulWidget {
   const AdminAnnouncementsScreen({super.key});
 
@@ -18,7 +19,13 @@ class AdminAnnouncementsScreen extends StatefulWidget {
       _AdminAnnouncementsScreenState();
 }
 
-class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
+class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> with LiveRefresh<AdminAnnouncementsScreen> {
+  @override
+  List<String> get liveResources => const ['announcement'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = AnnouncementService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

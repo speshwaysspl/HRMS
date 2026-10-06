@@ -12,6 +12,7 @@ import '../../widgets/simple_list_tile.dart';
 import 'admin_payslip_generator_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminPayslipsScreen extends StatefulWidget {
   const AdminPayslipsScreen({super.key});
 
@@ -19,7 +20,13 @@ class AdminPayslipsScreen extends StatefulWidget {
   State<AdminPayslipsScreen> createState() => _AdminPayslipsScreenState();
 }
 
-class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> {
+class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> with LiveRefresh<AdminPayslipsScreen> {
+  @override
+  List<String> get liveResources => const ['payslip'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = PayslipService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;

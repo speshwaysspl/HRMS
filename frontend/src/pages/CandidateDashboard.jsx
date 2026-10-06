@@ -30,6 +30,7 @@ import OnboardingDocsUpload from "../components/candidate/OnboardingDocsUpload";
 import OfferLetterPortal from "../components/offer/OfferLetterPortal";
 import LoadingState from "../components/common/LoadingState";
 import brandLogo from "../assets/logo.jpg";
+import { useLiveTick } from "../context/NotificationContext";
 
 const getMissingFields = (candidate) => {
   if (!candidate) return [];
@@ -101,6 +102,7 @@ const getMissingFields = (candidate) => {
 };
 
 const CandidateDashboard = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const { logout } = useAuth();
   const { candidate, offer, appointment, documents, loading, error } = useSelector((state) => state.onboarding);
@@ -111,7 +113,7 @@ const CandidateDashboard = () => {
 
   useEffect(() => {
     dispatch(fetchCandidateProfile());
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   // Handle first-login password change
   const handlePasswordChangeSubmit = async (e) => {

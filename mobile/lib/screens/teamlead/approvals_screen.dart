@@ -8,6 +8,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 
+import '../../services/live_refresh.dart';
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
 
@@ -15,7 +16,13 @@ class ApprovalsScreen extends StatefulWidget {
   State<ApprovalsScreen> createState() => _ApprovalsScreenState();
 }
 
-class _ApprovalsScreenState extends State<ApprovalsScreen> {
+class _ApprovalsScreenState extends State<ApprovalsScreen> with LiveRefresh<ApprovalsScreen> {
+  @override
+  List<String> get liveResources => const ['leave', 'attendance-regularization'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = RegularizationService();
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;

@@ -33,7 +33,6 @@ class AttendanceService {
       'date': date,
       'inTime': inTime,
       'workMode': workMode,
-      'breaks': [],
       if (location != null) 'inLocation': location.toJson(),
     });
     return Map<String, dynamic>.from(res.data as Map);
@@ -42,28 +41,12 @@ class AttendanceService {
   Future<Map<String, dynamic>> checkOut({
     required String date,
     required String outTime,
-    // Any break left running gets closed out at check-out time before
-    // saving — mirrors the web Attendance page.
-    List<Map<String, dynamic>>? breaks,
     LocationFix? location,
   }) async {
     final res = await _dio.post('/api/attendance', data: {
       'date': date,
       'outTime': outTime,
-      'breaks': ?breaks,
       if (location != null) 'outLocation': location.toJson(),
-    });
-    return Map<String, dynamic>.from(res.data as Map);
-  }
-
-  /// Persists the current breaks list (used for Start Break / End Break).
-  Future<Map<String, dynamic>> saveBreaks({
-    required String date,
-    required List<Map<String, dynamic>> breaks,
-  }) async {
-    final res = await _dio.post('/api/attendance', data: {
-      'date': date,
-      'breaks': breaks,
     });
     return Map<String, dynamic>.from(res.data as Map);
   }

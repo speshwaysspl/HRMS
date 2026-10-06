@@ -26,6 +26,7 @@ import RoleBaseRoutes from "./utils/RoleBaseRoutes";
 const TeamList = lazy(() => import("./components/team/TeamList"));
 const CreateTeam = lazy(() => import("./components/team/CreateTeam"));
 const TeamDetail = lazy(() => import("./components/team/TeamDetail"));
+const TaskLink = lazy(() => import("./components/task/TaskLink"));
 const TaskList = lazy(() => import("./components/task/TaskList"));
  
 // Admin Components (lazy-loaded)
@@ -181,6 +182,7 @@ function App() {
           <Route path="create-team" element={<CreateTeam />} />
           <Route path="edit-team/:id" element={<CreateTeam />} />
           <Route path="team/:id" element={<TeamDetail />} />
+          <Route path="task-link/:taskId" element={<TaskLink base="/admin-dashboard" />} />
           <Route path="documents" element={<DocumentList />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
@@ -229,6 +231,7 @@ function App() {
           {/* Team Lead sections */}
           <Route path="team/teams" element={<TeamList />} />
           <Route path="team/:id" element={<TeamDetail />} />
+          <Route path="task-link/:taskId" element={<TaskLink base="/employee-dashboard" />} />
         </Route>
 
         {/* HR Dashboard */}

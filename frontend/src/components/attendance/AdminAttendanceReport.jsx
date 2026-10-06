@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
@@ -7,6 +7,7 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import { FiCalendar } from "react-icons/fi";
 import PageHeader from "../common/PageHeader";
+import { useLiveData } from "../../context/NotificationContext";
 
 // Grouped filters used by the admin dashboard tiles (?status=checked-in, etc.).
 const NOT_IN = ["Not Yet", "Absent", "Work from Home - Not Marked"];
@@ -16,6 +17,7 @@ const STATUS_GROUPS = {
 };
 
 const AdminAttendanceReport = () => {
+  useLiveData(["attendance", "leave"], () => { lastFetch.current && fetchData(...lastFetch.current); });
   const [searchParams] = useSearchParams();
   useMeta({
     title: "Admin Attendance Report — Speshway HRMS",
@@ -37,7 +39,10 @@ const AdminAttendanceReport = () => {
   const [errorMsg, setErrorMsg] = useState("");
  
   // 🔹 Common fetch function
+  // Last report shown, so a live update re-runs the same query.
+  const lastFetch = useRef(null);
   const fetchData = async (url, errorMessage, status = statusFilter) => {
+    lastFetch.current = [url, errorMessage, status];
     setLoading(true);
     setErrorMsg("");
     setAttendanceData([]);
@@ -349,8 +354,6 @@ const AdminAttendanceReport = () => {
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       att.status === "Present"
                         ? "bg-accent-100 text-accent-700"
-                        : att.status === "Present + Overtime"
-                        ? "bg-accent-100 text-accent-700"
                         : att.status === "Half-Day"
                         ? "bg-amber-100 text-amber-700"
                         : att.status === "Incomplete"
@@ -373,20 +376,6 @@ const AdminAttendanceReport = () => {
                     <div className="col-span-2">
                       <span className="font-medium">Location:</span> {att.inLocation || 'N/A'}
                     </div>
-                    <div className="col-span-2">
-                      <span className="font-medium">Breaks (IST):</span>
-                      {att.breaks?.length > 0 ? (
-                        <div className="mt-1 space-y-1">
-                          {att.breaks.map((b, idx) => (
-                            <div key={idx} className="text-xs bg-surface-muted p-1 rounded">
-                              Break {idx + 1}: {b.start} - {b.end || 'Ongoing'}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        'No breaks'
-                      )}
-                    </div>
                   </div>
                 </div>
               ))}
@@ -406,7 +395,6 @@ const AdminAttendanceReport = () => {
                     <th className="px-3 py-2 text-left text-sm font-medium">Work Mode</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">In Location</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Out Location</th>
-                    <th className="px-3 py-2 text-left text-sm font-medium">Breaks (IST)</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Status</th>
                   </tr>
                 </thead>
@@ -425,23 +413,8 @@ const AdminAttendanceReport = () => {
                       <td className="px-3 py-2 text-sm text-ink">{att.workMode}</td>
                       <td className="px-3 py-2 text-sm text-ink">{att.inLocation || 'N/A'}</td>
                       <td className="px-3 py-2 text-sm text-ink">{att.outLocation || 'N/A'}</td>
-                      <td className="px-3 py-2 text-sm text-ink">
-                        {att.breaks?.length > 0 ? (
-                          <div className="space-y-1">
-                            {att.breaks.map((b, idx) => (
-                              <div key={idx} className="text-xs">
-                                Break {idx + 1}: {b.start} - {b.end || 'Ongoing'}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          'No breaks'
-                        )}
-                      </td>
                       <td className="px-3 py-2 text-sm">
                         <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${att.status === "Present"
-                          ? "bg-accent-100 text-accent-700"
-                          : att.status === "Present + Overtime"
                           ? "bg-accent-100 text-accent-700"
                           : att.status === "Half-Day"
                           ? "bg-amber-100 text-amber-700"

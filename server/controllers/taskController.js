@@ -130,21 +130,42 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(400).json({ success: false, error: "This task is already completed" });
     }
 
-    // Work proof is the employee's: upload replaces the current file; removeWorkProof=true
-    // deletes it. Leads/admins only review it, so their uploads are ignored.
-    const dropOldProof = async () => {
-      if (!task.workProof) return;
-      try { await deleteFile(getFileKeyFromUrl(task.workProof)); } catch { /* keep going */ }
-    };
-    if (req.file && !isReviewer) {
-      const uploadResult = await saveFile(req.file, "tasks");
-      await dropOldProof();
-      task.workProof = uploadResult.url;
-      task.workProofName = req.file.originalname;
-    } else if (!isReviewer && String(req.body.removeWorkProof) === "true") {
-      await dropOldProof();
-      task.workProof = undefined;
-      task.workProofName = undefined;
+    // Work proof is the employee's (up to MAX_PROOFS files). New clients send "files" to
+    // add and removeWorkProofs (JSON list of URLs) to delete; legacy clients send one
+    // "file" that replaces everything, or removeWorkProof=true to delete everything.
+    // Leads/admins only review proof, so their uploads are ignored.
+    if (!isReviewer) {
+      const MAX_PROOFS = 10;
+      let proofs = (task.workProofs?.length ? task.workProofs.map((p) => ({ url: p.url, name: p.name }))
+        : task.workProof ? [{ url: task.workProof, name: task.workProofName }] : []);
+      const drop = async (urls) => {
+        for (const u of urls) {
+          try { await deleteFile(getFileKeyFromUrl(u)); } catch { /* keep going */ }
+        }
+      };
+      const legacyFile = req.files?.file?.[0];
+      const added = req.files?.files || [];
+      let toRemove = [];
+      if (legacyFile || String(req.body.removeWorkProof) === "true") {
+        toRemove = proofs.map((p) => p.url);
+      } else if (req.body.removeWorkProofs) {
+        try {
+          const list = JSON.parse(req.body.removeWorkProofs);
+          if (Array.isArray(list)) toRemove = proofs.map((p) => p.url).filter((u) => list.includes(u));
+        } catch { /* ignore malformed list */ }
+      }
+      const kept = proofs.filter((p) => !toRemove.includes(p.url));
+      const incoming = legacyFile ? [legacyFile] : added;
+      if (kept.length + incoming.length > MAX_PROOFS) {
+        return res.status(400).json({ success: false, error: `You can attach up to ${MAX_PROOFS} files` });
+      }
+      const uploaded = [];
+      for (const f of incoming) uploaded.push({ url: (await saveFile(f, "tasks")).url, name: f.originalname });
+      await drop(toRemove);
+      proofs = [...kept, ...uploaded];
+      task.workProofs = proofs;
+      task.workProof = proofs[0]?.url;
+      task.workProofName = proofs[0]?.name;
     }
 
     // Employees can't edit the task itself. They can attach/replace/remove their
@@ -191,6 +212,26 @@ export const updateTaskStatus = async (req, res) => {
     }
 
     res.status(200).json({ success: true, task: isReviewerRole(req.user.role) ? task : hideReview(task) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Locate a task's team (for notification deep links). Reviewers (team lead / admin)
+// get the team to open; the assignee is told to use My Tasks.
+export const locateTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id).select("teamId assignedTo isDeleted");
+    if (!task || task.isDeleted) return res.status(404).json({ success: false, error: "This task no longer exists" });
+    const team = await Team.findById(task.teamId).select("name leadId");
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+    const roles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isLead = String(team.leadId) === String(req.user._id);
+    const isAdmin = roles.includes("admin");
+    const me = await Employee.findOne({ userId: req.user._id }).select("_id");
+    const isAssignee = !!me && String(task.assignedTo) === String(me._id);
+    if (!isLead && !isAdmin && !isAssignee) return res.status(403).json({ success: false, error: "Not authorized" });
+    res.status(200).json({ success: true, taskId: task._id, teamId: team._id, teamName: team.name, isLead, isAdmin, isAssignee });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

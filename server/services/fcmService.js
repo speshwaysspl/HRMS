@@ -84,6 +84,15 @@ const sendNotification = async (registrationToken, title, body, data = {}) => {
   }
 };
 
+// Browser pushes: app logo, and clicking opens the web app (FCM requires an https link).
+const webpushOptions = () => {
+  const appUrl = (process.env.CLIENT_URL || '').split(',')[0].trim().replace(/\/$/, '');
+  return {
+    notification: { icon: '/images/Logo.jpg' },
+    ...(appUrl.startsWith('https://') ? { fcmOptions: { link: `${appUrl}/` } } : {}),
+  };
+};
+
 const sendMulticastNotification = async (registrationTokens, title, body, data = {}) => {
   if (!isInitialized) {
     console.warn('sendMulticastNotification: FCM not initialized');
@@ -123,6 +132,7 @@ const sendMulticastNotification = async (registrationTokens, title, body, data =
       },
     },
     apns: { payload: { aps: { sound: 'default' } } },
+    webpush: webpushOptions(),
     tokens: registrationTokens,
   };
 

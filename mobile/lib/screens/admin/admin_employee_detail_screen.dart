@@ -12,6 +12,7 @@ import '../employee/payslips_screen.dart';
 import 'admin_employee_form_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminEmployeeDetailScreen extends StatefulWidget {
   final String id;
   const AdminEmployeeDetailScreen({super.key, required this.id});
@@ -20,7 +21,13 @@ class AdminEmployeeDetailScreen extends StatefulWidget {
   State<AdminEmployeeDetailScreen> createState() => _AdminEmployeeDetailScreenState();
 }
 
-class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> {
+class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> with LiveRefresh<AdminEmployeeDetailScreen> {
+  @override
+  List<String> get liveResources => const ['employee', 'salary'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = EmployeeService();
   Map<String, dynamic>? _emp;
   bool _loading = true;

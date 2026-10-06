@@ -22,6 +22,7 @@ import 'feedback_screen.dart';
 import 'leaves_screen.dart';
 import 'payslips_screen.dart';
 import 'tasks_screen.dart';
+import '../teamlead/task_link.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -234,7 +235,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    // 3. Tasks
+    // 3. Tasks — an employee's submission goes to the lead/admin: open that
+    // team with the task's review sheet, not the reviewer's own task list.
+    if (type == 'task_submitted' && (n['relatedId'] ?? '').toString().isNotEmpty) {
+      await openSubmittedTask(
+        Navigator.of(context),
+        n['relatedId'].toString(),
+        messenger: ScaffoldMessenger.of(context),
+      );
+      return;
+    }
     if (type.contains('task') ||
         title.contains('task') ||
         message.contains('task')) {

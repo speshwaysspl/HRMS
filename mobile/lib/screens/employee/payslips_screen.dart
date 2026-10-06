@@ -11,6 +11,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class PayslipsScreen extends StatefulWidget {
   final String employeeCode;
   const PayslipsScreen({super.key, required this.employeeCode});
@@ -19,7 +20,13 @@ class PayslipsScreen extends StatefulWidget {
   State<PayslipsScreen> createState() => _PayslipsScreenState();
 }
 
-class _PayslipsScreenState extends State<PayslipsScreen> {
+class _PayslipsScreenState extends State<PayslipsScreen> with LiveRefresh<PayslipsScreen> {
+  @override
+  List<String> get liveResources => const ['payslip', 'salary'];
+
+  @override
+  void onLiveRefresh() => _load(silent: true);
+
   final _service = PayslipService();
   final _inr = NumberFormat.currency(
     locale: 'en_IN',

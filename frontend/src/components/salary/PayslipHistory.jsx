@@ -9,6 +9,7 @@ import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
 import { FiDownload, FiEye } from "react-icons/fi";
+import { useLiveData } from "../../context/NotificationContext";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
@@ -22,6 +23,7 @@ const MONTHS = [
 ];
 
 const PayslipHistory = () => {
+  useLiveData(["payslip"], () => { loadPayslips(); });
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/payslip-history`, []);
   useMeta({
     title: "Payslip History — Speshway HRMS",

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { FaFilter, FaSearch, FaEye, FaCheck, FaTimes, FaUserCircle, FaTimes as FaClose } from "react-icons/fa";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const getStatusColor = (statusVal) => {
   switch (statusVal) {
@@ -22,6 +23,7 @@ const getGroupStatus = (docs) => {
 };
 
 const DocumentVerificationList = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const { documents, loading } = useSelector((state) => state.onboarding);
 
@@ -33,7 +35,7 @@ const DocumentVerificationList = () => {
 
   useEffect(() => {
     dispatch(fetchCandidateDocuments());
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   const handleVerify = async (docId, status) => {
     const comment = commentText[docId] || "";

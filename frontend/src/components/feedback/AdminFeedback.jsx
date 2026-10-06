@@ -51,7 +51,9 @@ import axios from 'axios';
 import { API_BASE } from '../../utils/apiConfig';
 import { formatDMYWithTime } from '../../utils/dateUtils';
 import useMeta from '../../utils/useMeta';
+import { useLiveData } from "../../context/NotificationContext";
 const AdminFeedback = () => {
+  useLiveData(["feedback"], () => { fetchFeedbacks(); });
   useMeta({
     title: 'Admin Feedback — Speshway HRMS',
     description: 'Review and respond to employee feedback.',

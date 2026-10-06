@@ -10,8 +10,10 @@ import useMeta from "../../utils/useMeta";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit, Trash2, CheckCircle, Plus, X } from "lucide-react";
 import EmptyState from "../common/EmptyState";
+import { useLiveData } from "../../context/NotificationContext";
 
 const PayrollTemplateManager = () => {
+  useLiveData(["payroll-template"], () => { loadTemplates(); });
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/salary/template-manager`, []);
   
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);

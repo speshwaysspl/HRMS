@@ -40,7 +40,7 @@ _Cat _category(String key, Map<String, dynamic>? rec, bool holiday) {
   if (status == 'Leave') return _Cat.leave;
   if (_isWeekend(key) && !_punched(rec)) return _Cat.weekend;
   if (status.contains('Half')) return _Cat.half;
-  if (status.contains('Present') || status.contains('Overtime')) return _Cat.present;
+  if (status.contains('Present')) return _Cat.present;
   if (status == 'Absent') return _Cat.absent;
   return _Cat.none;
 }

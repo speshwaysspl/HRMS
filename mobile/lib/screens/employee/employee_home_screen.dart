@@ -20,6 +20,7 @@ import 'announcements_screen.dart';
 import 'notifications_screen.dart';
 import 'payslips_screen.dart';
 
+import '../../services/live_refresh.dart';
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
 
@@ -27,7 +28,13 @@ class EmployeeHomeScreen extends StatefulWidget {
   State<EmployeeHomeScreen> createState() => _EmployeeHomeScreenState();
 }
 
-class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
+class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with LiveRefresh<EmployeeHomeScreen> {
+  @override
+  List<String> get liveResources => const ['dashboard', 'attendance', 'leave', 'announcement', 'events', 'task'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = DashboardService();
   Timer? _tick;
   final _announcementService = AnnouncementService();
@@ -711,12 +718,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     Color statusBorderColor;
 
     final norm = (serverStatus ?? '').toLowerCase();
-    if (norm.contains('overtime')) {
-      statusText = 'Present';
-      statusTextColor = Color(0xFF16A34A);
-      statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7)));
-      statusBorderColor = const Color(0xFFA7F3D0);
-    } else if (norm.contains('present') && !norm.contains('absent')) {
+    if (norm.contains('present') && !norm.contains('absent')) {
       statusText = 'Present';
       statusTextColor = Color(0xFF16A34A);
       statusBgColor = AppColors.tint(AppColors.tint(const Color(0xFFDCFCE7)));

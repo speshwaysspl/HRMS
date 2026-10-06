@@ -8,28 +8,52 @@ import '../env.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 
-/// Work-proof attachment for a task (mirrors web `WorkProofField.jsx`): shows the
-/// saved file or a newly picked one with a preview, and lets the user open,
-/// replace or delete it. Nothing is uploaded until the parent saves.
+/// A saved work-proof file on a task.
+class ProofFile {
+  const ProofFile(this.url, this.name);
+  final String url;
+  final String name;
+}
+
+/// Saved proofs of a task — `workProofs`, falling back to the legacy single `workProof`.
+List<ProofFile> proofsOf(Map task) {
+  String nameOr(dynamic name, String url) =>
+      (name ?? '').toString().isNotEmpty ? name.toString() : WorkProofField.nameFromUrl(url);
+  final list = task['workProofs'];
+  if (list is List && list.isNotEmpty) {
+    return [
+      for (final p in list)
+        if (p is Map && (p['url'] ?? '').toString().isNotEmpty)
+          ProofFile(p['url'].toString(), nameOr(p['name'], p['url'].toString())),
+    ];
+  }
+  final url = (task['workProof'] ?? '').toString();
+  return url.isEmpty ? const [] : [ProofFile(url, nameOr(task['workProofName'], url))];
+}
+
+/// Work-proof attachments for a task (mirrors web `WorkProofField.jsx`): lists
+/// saved files (open / delete with undo) and newly picked ones (discard), with an
+/// "Add files" picker. Nothing is uploaded until the parent saves.
 class WorkProofField extends StatelessWidget {
   const WorkProofField({
     super.key,
-    required this.existingUrl,
-    this.existingName,
-    required this.pickedPath,
+    required this.existing,
+    required this.pickedPaths,
     required this.removed,
-    required this.onPicked,
+    required this.onPickedChanged,
     required this.onRemovedChanged,
     this.editable = true,
     this.enabled = true,
   });
 
-  final String? existingUrl;
-  final String? existingName;
-  final String? pickedPath;
-  final bool removed;
-  final ValueChanged<String?> onPicked;
-  final ValueChanged<bool> onRemovedChanged;
+  static const maxFiles = 10;
+  static const _maxBytes = 10 * 1024 * 1024;
+
+  final List<ProofFile> existing;
+  final List<String> pickedPaths;
+  final Set<String> removed; // saved URLs marked for deletion
+  final ValueChanged<List<String>> onPickedChanged;
+  final ValueChanged<Set<String>> onRemovedChanged;
   final bool editable;
   final bool enabled;
 
@@ -44,79 +68,155 @@ class WorkProofField extends StatelessWidget {
     return last.replaceFirst(RegExp(r'^\d{10,}[-_]'), '');
   }
 
+  int get _room => maxFiles - existing.where((p) => !removed.contains(p.url)).length - pickedPaths.length;
+
   Future<void> _pick(BuildContext context) async {
     final r = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'],
     );
-    final path = r?.files.single.path;
-    if (path == null) return;
-    if (await File(path).length() > 10 * 1024 * 1024) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('That file is over 10 MB. Pick a smaller one.')),
-        );
+    if (r == null) return;
+    final ok = <String>[];
+    var tooBig = 0;
+    for (final f in r.files) {
+      final path = f.path;
+      if (path == null) continue;
+      if (await File(path).length() > _maxBytes) {
+        tooBig++;
+      } else {
+        ok.add(path);
       }
-      return;
     }
-    onPicked(path);
-    onRemovedChanged(false);
+    final room = _room;
+    final dropped = ok.length > room ? ok.length - room : 0;
+    final added = ok.take(room < 0 ? 0 : room).toList();
+    final msgs = [
+      if (tooBig > 0) '$tooBig file${tooBig > 1 ? 's are' : ' is'} over 10 MB.',
+      if (dropped > 0) 'Only $maxFiles files allowed; $dropped not added.',
+    ];
+    if (msgs.isNotEmpty && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msgs.join(' '))));
+    }
+    if (added.isNotEmpty) onPickedChanged([...pickedPaths, ...added]);
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasExisting = (existingUrl ?? '').isNotEmpty;
-    final isNew = pickedPath != null;
+    if (!editable && existing.isEmpty) {
+      return Text('No file attached.', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)));
+    }
+    final room = _room;
+    final gap = SizedBox(height: context.h(8));
 
-    if (!isNew && (!hasExisting || removed)) {
-      if (removed && hasExisting) {
-        return Container(
-          padding: EdgeInsets.all(context.w(12)),
-          decoration: BoxDecoration(
-            color: AppColors.danger.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text('The attached file will be deleted when you submit.',
-                    style: TextStyle(color: AppColors.danger, fontSize: context.sp(13))),
-              ),
-              TextButton(onPressed: enabled ? () => onRemovedChanged(false) : null, child: const Text('Undo')),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final p in existing) ...[
+          _row(
+            context,
+            name: p.name,
+            path: p.url,
+            networkUrl: absUrl(p.url),
+            meta: removed.contains(p.url) ? 'Will be deleted when you submit' : 'Saved',
+            tone: removed.contains(p.url) ? _Tone.removed : _Tone.saved,
+            actions: [
+              if (!removed.contains(p.url))
+                TextButton.icon(
+                  onPressed: () => launchUrl(Uri.parse(absUrl(p.url)), mode: LaunchMode.externalApplication),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('Open'),
+                ),
+              if (editable && removed.contains(p.url))
+                TextButton.icon(
+                  onPressed: enabled && room > 0 ? () => onRemovedChanged({...removed}..remove(p.url)) : null,
+                  icon: const Icon(Icons.undo, size: 18),
+                  label: const Text('Undo'),
+                ),
+              if (editable && !removed.contains(p.url))
+                TextButton.icon(
+                  onPressed: enabled ? () => onRemovedChanged({...removed, p.url}) : null,
+                  style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Delete'),
+                ),
             ],
           ),
-        );
-      }
-      if (!editable) {
-        return Text('No file attached.', style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13)));
-      }
-      return OutlinedButton.icon(
-        onPressed: enabled ? () => _pick(context) : null,
-        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-        icon: const Icon(Icons.upload_file_rounded),
-        label: const Text('Attach work proof (max 10 MB)'),
-      );
-    }
+          gap,
+        ],
+        for (final path in pickedPaths) ...[
+          _row(
+            context,
+            name: path.split(Platform.pathSeparator).last,
+            path: path,
+            localPath: path,
+            meta: 'Not uploaded yet',
+            tone: _Tone.added,
+            actions: [
+              TextButton.icon(
+                onPressed: enabled ? () => onPickedChanged([...pickedPaths]..remove(path)) : null,
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Discard'),
+              ),
+            ],
+          ),
+          gap,
+        ],
+        if (editable && room > 0)
+          OutlinedButton.icon(
+            onPressed: enabled ? () => _pick(context) : null,
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+            icon: const Icon(Icons.upload_file_rounded),
+            label: Text(existing.length + pickedPaths.length - removed.length > 0
+                ? 'Add more files'
+                : 'Attach work proof (up to $maxFiles, 10 MB each)'),
+          ),
+        if (editable && room <= 0)
+          Text("You've reached the $maxFiles-file limit.",
+              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(12))),
+      ],
+    );
+  }
 
-    final name = isNew ? pickedPath!.split(Platform.pathSeparator).last : (existingName ?? nameFromUrl(existingUrl!));
-    final isImage = _imageRe.hasMatch(isNew ? pickedPath! : existingUrl!);
-    final isPdf = _pdfRe.hasMatch(isNew ? pickedPath! : existingUrl!);
-    final url = isNew ? null : absUrl(existingUrl!);
-
-    final Widget thumb = isImage
+  Widget _row(
+    BuildContext context, {
+    required String name,
+    required String path,
+    String? networkUrl,
+    String? localPath,
+    required String meta,
+    required _Tone tone,
+    required List<Widget> actions,
+  }) {
+    final isImage = _imageRe.hasMatch(path);
+    final isPdf = _pdfRe.hasMatch(path);
+    final Widget thumb = isImage && tone != _Tone.removed
         ? ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: isNew
-                ? Image.file(File(pickedPath!), width: 64, height: 64, fit: BoxFit.cover)
-                : Image.network(url!, width: 64, height: 64, fit: BoxFit.cover,
+            child: localPath != null
+                ? Image.file(File(localPath), width: 56, height: 56, fit: BoxFit.cover)
+                : Image.network(networkUrl!, width: 56, height: 56, fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => const _IconThumb(Icons.image_outlined)),
           )
         : _IconThumb(isPdf ? Icons.picture_as_pdf_outlined : Icons.insert_drive_file_outlined);
+    final color = switch (tone) {
+      _Tone.added => AppColors.accent700,
+      _Tone.removed => AppColors.danger,
+      _Tone.saved => AppColors.inkMuted,
+    };
 
     return Container(
-      padding: EdgeInsets.all(context.w(12)),
+      padding: EdgeInsets.all(context.w(10)),
       decoration: BoxDecoration(
-        border: Border.all(color: isNew ? AppColors.accent600 : AppColors.surfaceSubtle),
+        color: tone == _Tone.removed ? AppColors.danger.withValues(alpha: 0.06) : null,
+        border: Border.all(
+          color: switch (tone) {
+            _Tone.added => AppColors.accent600,
+            _Tone.removed => AppColors.danger.withValues(alpha: 0.4),
+            _Tone.saved => AppColors.surfaceSubtle,
+          },
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -130,54 +230,37 @@ class WorkProofField extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
-                    Text(isNew ? 'Not uploaded yet' : 'Saved',
-                        style: TextStyle(color: isNew ? AppColors.accent700 : AppColors.inkMuted, fontSize: context.sp(12))),
+                    Text(name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: tone == _Tone.removed ? AppColors.danger : AppColors.ink,
+                          decoration: tone == _Tone.removed ? TextDecoration.lineThrough : null,
+                        )),
+                    Text(meta, style: TextStyle(color: color, fontSize: context.sp(12))),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: context.h(6)),
-          Wrap(
-            spacing: 4,
-            children: [
-              if (url != null)
-                TextButton.icon(
-                  onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Open'),
-                ),
-              if (editable)
-                TextButton.icon(
-                  onPressed: enabled ? () => _pick(context) : null,
-                  icon: const Icon(Icons.swap_horiz, size: 18),
-                  label: Text(isNew ? 'Change' : 'Replace'),
-                ),
-              if (editable)
-                TextButton.icon(
-                  onPressed: enabled ? () => isNew ? onPicked(null) : onRemovedChanged(true) : null,
-                  style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: Text(isNew ? 'Discard' : 'Delete'),
-                ),
-            ],
-          ),
+          if (actions.isNotEmpty) Wrap(spacing: 4, children: actions),
         ],
       ),
     );
   }
 }
 
+enum _Tone { saved, added, removed }
+
 class _IconThumb extends StatelessWidget {
   const _IconThumb(this.icon);
   final IconData icon;
   @override
   Widget build(BuildContext context) => Container(
-        width: 64,
-        height: 64,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: AppColors.inkMuted, size: 28),
+        child: Icon(icon, color: AppColors.inkMuted, size: 26),
       );
 }

@@ -11,6 +11,7 @@ import '../../widgets/simple_list_tile.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminPayrollTemplatesScreen extends StatefulWidget {
   const AdminPayrollTemplatesScreen({super.key});
 
@@ -18,7 +19,13 @@ class AdminPayrollTemplatesScreen extends StatefulWidget {
   State<AdminPayrollTemplatesScreen> createState() => _AdminPayrollTemplatesScreenState();
 }
 
-class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScreen> {
+class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScreen> with LiveRefresh<AdminPayrollTemplatesScreen> {
+  @override
+  List<String> get liveResources => const ['payroll-template'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = PayrollTemplateService();
   final _inr = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
   List<Map<String, dynamic>> _all = [];

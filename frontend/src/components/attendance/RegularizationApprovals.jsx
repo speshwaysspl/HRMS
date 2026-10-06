@@ -7,8 +7,10 @@ import useMeta from "../../utils/useMeta";
 import EmptyState from "../common/EmptyState";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import { useLiveData } from "../../context/NotificationContext";
 
 const RegularizationApprovals = () => {
+  useLiveData(["attendance-regularization"], () => { fetchRequests(); });
   useMeta({
     title: "Attendance Correction Approvals — Speshway HRMS",
     description: "Review and approve attendance correction requests.",

@@ -8,8 +8,10 @@ import { motion } from "framer-motion";
 
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const AnnouncementView = () => {
+  const liveTick = useLiveTick(["announcement"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const [announcement, setAnnouncement] = useState(null);
@@ -63,7 +65,7 @@ const AnnouncementView = () => {
       }
     };
     fetchAnnouncement();
-  }, [id]);
+  }, [id, liveTick]);
 
   if (errorMsg)
     return (

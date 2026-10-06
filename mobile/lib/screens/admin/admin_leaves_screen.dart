@@ -14,6 +14,7 @@ import 'admin_leave_detail_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/leave_reject_dialog.dart';
 
+import '../../services/live_refresh.dart';
 class AdminLeavesScreen extends StatefulWidget {
   const AdminLeavesScreen({super.key});
 
@@ -21,7 +22,13 @@ class AdminLeavesScreen extends StatefulWidget {
   State<AdminLeavesScreen> createState() => _AdminLeavesScreenState();
 }
 
-class _AdminLeavesScreenState extends State<AdminLeavesScreen> {
+class _AdminLeavesScreenState extends State<AdminLeavesScreen> with LiveRefresh<AdminLeavesScreen> {
+  @override
+  List<String> get liveResources => const ['leave'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = LeaveService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;

@@ -48,6 +48,7 @@ import {
 import EmptyState from "../common/EmptyState";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const PIE_COLORS = ["#2c3968", "#337038", "#8898cd", "#5da562", "#c9a227", "#b0bbdf"];
 
@@ -79,6 +80,7 @@ const StatCard = ({ icon: Icon, title, count, colorClass, onClick }) => {
 };
 
 const HRSummary = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -142,7 +144,7 @@ const HRSummary = () => {
   useEffect(() => {
     dispatch(fetchHRDashboardSummary());
     fetchCandidatesForOnboarding();
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   const handleDateClick = (dateStr) => {
     setOnboardingDate(dateStr);

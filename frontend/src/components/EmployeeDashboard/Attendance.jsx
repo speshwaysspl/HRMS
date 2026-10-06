@@ -9,7 +9,6 @@ import { useAuth } from "../../context/AuthContext";
 import {
   FiLogIn,
   FiLogOut,
-  FiCoffee,
   FiMapPin,
   FiExternalLink,
   FiCopy,
@@ -23,6 +22,7 @@ import {
   FiCheckCircle,
   FiLock,
 } from "react-icons/fi";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const OFFLINE_PUNCH_KEY = "offlinePunch";
 
@@ -90,9 +90,10 @@ const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onCli
 );
 
 const Attendance = () => {
+  const liveTick = useLiveTick(["attendance", "shifts", "setting"]);
   useMeta({
     title: "Attendance — Speshway HRMS",
-    description: "Mark in/out, track breaks and view current location.",
+    description: "Mark in/out and view current location.",
     keywords: "attendance, HRMS",
     image: "/images/Logo.jpg",
     url: `${window.location.origin}/employee-dashboard/attendance`,
@@ -110,7 +111,6 @@ const Attendance = () => {
     inTime: "",
     outTime: "",
     workMode: "",
-    breaks: [],
     latitude: null,
     longitude: null,
     area: "",
@@ -327,34 +327,13 @@ const Attendance = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Breaks come from the server only — the mobile app edits the same
-        // record, so a locally cached break would go stale.
-        localStorage.removeItem("ongoingBreak");
-        let breaks = res.data?.breaks || [];
-
-        // Self-heal: a day that's already checked out should never still
-        // have a break marked "Ongoing" (can happen from a checkout saved
-        // before this was auto-closed). Close it out at the check-out time
-        // and persist the fix.
-        if (res.data?.outTime && breaks.some((b) => !b.end)) {
-          breaks = breaks.map((b) => (b.end ? b : { ...b, end: res.data.outTime }));
-          axios
-            .post(
-              `${API_BASE}/api/attendance`,
-              { date: toISTDateString(new Date()), breaks },
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-            .catch(() => {});
-        }
-
         if (res.data) {
-          setTodayRecord({ ...res.data, breaks });
+          setTodayRecord(res.data);
           setTracker((prev) => ({
             ...prev,
             inTime: res.data.inTime || "",
             outTime: res.data.outTime || "",
             workMode: res.data.workMode || prev.workMode,
-            breaks: breaks,
             latitude: res.data.inLocation?.latitude || prev.latitude,
             longitude: res.data.inLocation?.longitude || prev.longitude,
             area: res.data.inLocation?.area || prev.area,
@@ -365,7 +344,7 @@ const Attendance = () => {
       }
     };
     fetchToday();
-  }, []);
+  }, [liveTick]);
 
   // Send a punch saved while offline as soon as the connection is back.
   useEffect(() => {
@@ -417,33 +396,6 @@ const Attendance = () => {
 
   const getCurrentTime = () => toISTTimeString();
 
-  const [breakBusy, setBreakBusy] = useState(false);
-
-  // Start/End Break: re-read today's breaks from the server (the mobile app
-  // may have changed them), apply the change, save, and show what was saved.
-  const updateBreaks = async (change) => {
-    const token = sessionStorage.getItem("token");
-    if (!token) return;
-    const headers = { Authorization: `Bearer ${token}` };
-    setBreakBusy(true);
-    setBanner(null);
-    try {
-      const { data: latest } = await axios.get(`${API_BASE}/api/attendance/today`, { headers });
-      const breaks = change((latest?.breaks || []).map((b) => ({ start: b.start, end: b.end || "" })));
-      const { data: saved } = await axios.post(
-        `${API_BASE}/api/attendance`,
-        { date: toISTDateString(new Date()), breaks },
-        { headers }
-      );
-      setTodayRecord(saved);
-      setTracker((prev) => ({ ...prev, breaks: saved.breaks || breaks }));
-    } catch (err) {
-      setBanner({ type: "error", message: err.response?.data?.message || "Couldn't save the break. Please try again." });
-    } finally {
-      setBreakBusy(false);
-    }
-  };
-
   const handleSubmit = async (type) => {
     if (type === "inTime" && !tracker.workMode) {
       setBanner({ type: "error", message: "Please select a work mode before checking in." });
@@ -457,9 +409,6 @@ const Attendance = () => {
       updatedTracker.inTime = now;
     } else if (type === "outTime") {
       updatedTracker.outTime = now;
-      // Checking out ends the day — any break left running gets closed
-      // out at the same moment instead of staying "Ongoing" forever.
-      updatedTracker.breaks = updatedTracker.breaks.map((b) => (b.end ? b : { ...b, end: now }));
     }
 
     setTracker(updatedTracker);
@@ -480,7 +429,6 @@ const Attendance = () => {
         inTime: updatedTracker.inTime,
         outTime: updatedTracker.outTime || "",
         workMode: updatedTracker.workMode,
-        breaks: updatedTracker.breaks,
         inLocation: {
           latitude: updatedTracker.latitude,
           longitude: updatedTracker.longitude,
@@ -527,16 +475,6 @@ const Attendance = () => {
     }
   };
 
-  const handleStartBreak = () =>
-    updateBreaks((breaks) =>
-      breaks.some((b) => !b.end) ? breaks : [...breaks, { start: getCurrentTime(), end: "" }]
-    );
-
-  const handleEndBreak = () => {
-    const now = getCurrentTime();
-    updateBreaks((breaks) => breaks.map((b) => (b.end ? b : { ...b, end: now })));
-  };
-
   const handleCopyCoordinates = () => {
     navigator.clipboard.writeText(`${tracker.latitude}, ${tracker.longitude}`);
     setCopied(true);
@@ -557,22 +495,9 @@ const Attendance = () => {
       });
   };
 
-  const ongoingBreak = tracker.breaks.find((b) => !b.end);
-
-  // Derived, render-time values for the summary tiles. Once checked out,
-  // "now" for any still-open break is the check-out time, not the live
-  // clock — otherwise a break left unclosed at logout would keep eating
-  // into the working-hours total for as long as the page stays open.
+  // Once checked out, the day ends at check-out; until then, at "now".
   const sessionEnd = tracker.outTime || getCurrentTime();
-  const totalBreakMinutes = tracker.breaks.reduce((sum, b) => {
-    if (!b.start) return sum;
-    let dur = toMinutes(b.end || sessionEnd) - toMinutes(b.start);
-    if (dur < 0) dur += 24 * 60;
-    return sum + dur;
-  }, 0);
-
-  // Working Hours is the plain check-in → check-out span; Break Time is
-  // shown as its own row rather than deducted from this figure.
+  // Working Hours is the plain check-in → check-out span.
   const workingMinutes = tracker.inTime
     ? (() => {
         let total = toMinutes(sessionEnd) - toMinutes(tracker.inTime);
@@ -608,7 +533,7 @@ const Attendance = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold text-ink tracking-tight">Attendance Tracker</h1>
             <p className="text-ink-muted mt-1 text-sm md:text-base">
-              Mark your check-in and check-out, track breaks, and confirm your location.
+              Mark your check-in and check-out and confirm your location.
             </p>
           </div>
 

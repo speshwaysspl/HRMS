@@ -5,8 +5,10 @@ import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const Detail = () => {
+  const liveTick = useLiveTick(["leave"]);
   const { id } = useParams();
   const [leave, setLeave] = useState(null);
   const navigate = useNavigate()
@@ -43,7 +45,7 @@ const Detail = () => {
     };
 
     fetchLeave();
-  }, []);
+  }, [liveTick]);
 
   const [rejecting, setRejecting] = useState(false);
   const [remark, setRemark] = useState("");

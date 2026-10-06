@@ -18,7 +18,7 @@ export const saveAttendance = async (req, res) => {
     const employee = await Employee.findOne({ userId: req.user._id });
     if (!employee) return res.status(404).json({ message: "Employee profile not found" });
 
-    const { inTime, outTime, workMode, breaks, inLocation, outLocation } = req.body;
+    const { inTime, outTime, workMode, inLocation, outLocation } = req.body;
     // The day is decided by the server (IST), never the client. A screen left
     // open overnight would otherwise carry yesterday's check-in into today and
     // "check out" against it the next morning (e.g. 10:35 → 07:22 = 20h47m).
@@ -41,14 +41,6 @@ export const saveAttendance = async (req, res) => {
     }
     let attendance = await Attendance.findOne({ userId: employee._id, date });
 
-    // Validate breaks: only one ongoing break (without end) allowed
-    if (Array.isArray(breaks)) {
-      const ongoingCount = breaks.filter(b => b && !b.end).length;
-      if (ongoingCount > 1) {
-        return res.status(400).json({ message: "Only one active break is allowed. End current break before starting another." });
-      }
-    }
-
     if (!attendance) {
       // A new day always starts with a check-in. Yesterday's open check-in is
       // closed as Half-Day by isPastDate(); it can't be checked out today.
@@ -63,7 +55,6 @@ export const saveAttendance = async (req, res) => {
         date,
         inTime: stamp,
         workMode,
-        breaks: breaks || [],
         inLocation,
         outTime: "",
         outLocation: null,
@@ -75,14 +66,6 @@ export const saveAttendance = async (req, res) => {
         if (stamp < attendance.inTime) return res.status(400).json({ message: "Check-out can't be before check-in" });
         attendance.outTime = stamp;
         attendance.outLocation = outLocation;
-      }
-      // Update breaks if provided
-      if (breaks) {
-        // If already logged out, do not allow starting/keeping an ongoing break
-        if (attendance.outTime && breaks.some(b => b && !b.end)) {
-          return res.status(400).json({ message: "Cannot start or keep an active break after logout." });
-        }
-        attendance.breaks = breaks;
       }
       // Update work mode if provided
       if (workMode) {
@@ -182,7 +165,6 @@ export const getAllAttendance = async (req, res) => {
               workingHours = (outHour - inHour) + (outMin - inMin) / 60;
               if (workingHours < 0) workingHours += 24;
               
-              // Breaks are tracked separately and no longer deducted from Working Hours.
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
@@ -211,7 +193,6 @@ export const getAllAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24; // Handle overnight shifts
             
-            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Determine status based on working hours
             if (workingHours >= 8) {
@@ -246,8 +227,7 @@ export const getAllAttendance = async (req, res) => {
           workMode: record?.workMode || "N/A",
           inLocation: record?.inLocation?.area || "N/A",
           outLocation: record?.outLocation?.area || "N/A",
-          breaks: record?.breaks || [],
-          status: attendanceStatus,
+            status: attendanceStatus,
           shiftName: emp.shiftId?.name || null,
           isLate,
         };
@@ -321,7 +301,6 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -350,7 +329,6 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -385,7 +363,6 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
         workMode: record?.workMode || "N/A",
         inLocation: record?.inLocation?.area || "N/A",
         outLocation: record?.outLocation?.area || "N/A",
-        breaks: record?.breaks || [],
         status: attendanceStatus,
         workingHours: workingHours.toFixed(2)
       });
@@ -457,7 +434,6 @@ export const getMonthlyAttendance = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -486,7 +462,6 @@ export const getMonthlyAttendance = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -524,7 +499,6 @@ export const getMonthlyAttendance = async (req, res) => {
         workMode: record?.workMode || "N/A",
         inLocation: record?.inLocation?.area || "N/A",
         outLocation: record?.outLocation?.area || "N/A",
-        breaks: record?.breaks || [],
         status: attendanceStatus,
       });
     }
@@ -574,7 +548,6 @@ export const exportAttendanceExcel = async (req, res) => {
               workingHours = (outHour - inHour) + (outMin - inMin) / 60;
               if (workingHours < 0) workingHours += 24;
               
-              // Breaks are tracked separately and no longer deducted from Working Hours.
               
               // Combine WFH with time-based status
               if (workingHours >= 8) {
@@ -603,7 +576,6 @@ export const exportAttendanceExcel = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24; // Handle overnight shifts
             
-            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Determine status based on working hours
             if (workingHours >= 8) {
@@ -629,8 +601,7 @@ export const exportAttendanceExcel = async (req, res) => {
           workMode: record?.workMode || "N/A",
           inLocation: record?.inLocation?.area || "N/A",
           outLocation: record?.outLocation?.area || "N/A",
-          breaks: record?.breaks || [],
-          status: attendanceStatus,
+            status: attendanceStatus,
         };
       })
     );
@@ -652,7 +623,6 @@ export const exportAttendanceExcel = async (req, res) => {
       { header: "Work Mode", key: "workMode", width: 20 },
       { header: "In Location", key: "inLocation", width: 25 },
       { header: "Out Location", key: "outLocation", width: 25 },
-      { header: "Breaks", key: "breaks", width: 30 },
       { header: "Status", key: "status", width: 15 },
     ];
     sheet.addRows(attendanceData);
@@ -740,7 +710,6 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
             workingHours = (outHour - inHour) + (outMin - inMin) / 60;
             if (workingHours < 0) workingHours += 24;
             
-            // Breaks are tracked separately and no longer deducted from Working Hours.
             
             // Combine WFH with time-based status
             if (workingHours >= 8) {
@@ -769,7 +738,6 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
           workingHours = (outHour - inHour) + (outMin - inMin) / 60;
           if (workingHours < 0) workingHours += 24; // Handle overnight shifts
           
-          // Breaks are tracked separately and no longer deducted from Working Hours.
           
           // Determine status based on working hours
           if (workingHours >= 8) {
@@ -790,10 +758,6 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
         continue;
       }
      
-      const breaksText = record?.breaks?.length > 0 
-        ? record.breaks.map((b, idx) => `Break ${idx + 1}: ${b.start} - ${b.end || 'Ongoing'}`).join('; ')
-        : 'No breaks';
-      
       sheet.addRow({
         employeeId: employee.employeeId,
         name: employee.userId?.name || "N/A",
@@ -804,7 +768,6 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
         workMode: record?.workMode || "N/A",
         inLocation: record?.inLocation?.area || "N/A",
         outLocation: record?.outLocation?.area || "N/A",
-        breaks: breaksText,
         status: attendanceStatus,
       });
     }

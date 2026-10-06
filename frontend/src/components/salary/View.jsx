@@ -9,8 +9,10 @@ import useMeta from "../../utils/useMeta";
 import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
 import { FiDownload, FiEye, FiShare2 } from "react-icons/fi";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const View = () => {
+  const liveTick = useLiveTick(["salary", "payslip"]);
   const [salaries, setSalaries] = useState([]);
 
   const [selectedSalary, setSelectedSalary] = useState(null);
@@ -69,7 +71,7 @@ const View = () => {
     if (user) {
       fetchSalaries();
     }
-  }, [id, user]);
+  }, [id, user, liveTick]);
 
 
 

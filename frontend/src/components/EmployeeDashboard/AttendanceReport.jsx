@@ -10,18 +10,17 @@ import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
 import AttendanceCalendar from "../attendance/AttendanceCalendar";
-import { FiCalendar, FiClock, FiLogIn, FiLogOut, FiMapPin, FiCoffee, FiSun, FiMoon } from "react-icons/fi";
+import { FiCalendar, FiClock, FiLogIn, FiLogOut, FiMapPin, FiSun, FiMoon } from "react-icons/fi";
+import { useLiveTick } from "../../context/NotificationContext";
 
 // Single source of truth for status → badge color, instead of repeating the
 // same ternary chain in three places.
 const STATUS_STYLES = {
   "Present": "bg-accent-100 text-accent-700",
-  "Present + Overtime": "bg-accent-100 text-accent-700",
   "Half-Day": "bg-amber-100 text-amber-700",
   "Incomplete": "bg-amber-100 text-amber-700",
   "Leave": "bg-brand-100 text-brand-700",
   "Work from Home - Present": "bg-brand-100 text-brand-700",
-  "Work from Home + Overtime": "bg-brand-100 text-brand-700",
   "Work from Home - Half Day": "bg-brand-100 text-brand-700",
   "Work from Home - Incomplete": "bg-amber-100 text-amber-700",
   "Work from Home - Not Marked": "bg-surface-muted text-ink-muted",
@@ -46,6 +45,7 @@ const StatTile = ({ icon: Icon, label, value }) => (
 );
 
 const AttendanceReport = () => {
+  const liveTick = useLiveTick(["attendance"]);
   useMeta({
     title: "Attendance Report — Speshway HRMS",
     description: "View daily and monthly attendance summaries.",
@@ -72,7 +72,7 @@ const AttendanceReport = () => {
 
   // Memoized monthly summary counts to avoid repeated filtering
   const monthlySummary = useMemo(() => {
-    const present = monthlyData.filter(d => d.status === "Present" || d.status === "Present + Overtime").length;
+    const present = monthlyData.filter(d => d.status === "Present").length;
     // Weekends with no punch are days off, not absences.
     const offDay = (d) => [0, 6].includes(new Date(`${d.date}T00:00:00Z`).getUTCDay()) && (!d.inTime || d.inTime === "Not Marked");
     const absent = monthlyData.filter(d => (d.status === "Absent" && !offDay(d)) || d.status === "Leave").length;
@@ -88,8 +88,7 @@ const AttendanceReport = () => {
     return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
   };
 
-  // Plain check-in → check-out span. Breaks are tracked and shown
-  // separately, not deducted from Working Hours.
+  // Plain check-in → check-out span.
   const computeWorkingHours = (record) => {
     if (!record?.inTime || !record?.outTime) return null;
     const [inHour, inMin] = record.inTime.split(":").map(Number);
@@ -209,7 +208,7 @@ const AttendanceReport = () => {
       }
     };
     fetchAttendance();
-  }, [selectedDate, viewMode]);
+  }, [selectedDate, viewMode, liveTick]);
 
   // Fetch monthly attendance data
   const fetchMonthlyAttendance = async () => {
@@ -377,27 +376,12 @@ const AttendanceReport = () => {
                 </div>
 
                 {(attendance.inLocation || attendance.outLocation) && (
-                  <div className="px-6 pb-2">
+                  <div className="px-6 pb-6">
                     {renderLocation(attendance.inLocation, "In", FiMapPin)}
                     {renderLocation(attendance.outLocation, "Out", FiMapPin)}
                   </div>
                 )}
 
-                {attendance.breaks?.length > 0 && (
-                  <div className="px-6 pb-6 pt-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-ink-faint mb-2 flex items-center gap-2">
-                      <FiCoffee size={14} /> Breaks
-                    </p>
-                    <ul className="space-y-1.5">
-                      {attendance.breaks.map((b, idx) => (
-                        <li key={idx} className="text-sm text-ink-muted flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          Break {idx + 1}: {b.start} – {b.end || "Ongoing"} (IST)
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             )}
           </>

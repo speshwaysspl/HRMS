@@ -7,6 +7,7 @@ import { FaPlus, FaDownload, FaRegCalendarAlt, FaHome, FaTrashAlt, FaTimes } fro
 import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
 import MonthCalendar from "./MonthCalendar";
+import { useLiveData } from "../../context/NotificationContext";
 
 const auth = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } });
 
@@ -78,6 +79,7 @@ const NewEventModal = ({ form, setForm, onClose, onSubmit, saving }) => {
 };
 
 const AdminCalendar = () => {
+  useLiveData(["events", "leave"], () => { load(); });
   useMeta({
     title: "Calendar — Speshway HRMS",
     description: "Mark holidays and work-from-home days for employees.",

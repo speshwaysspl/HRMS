@@ -28,7 +28,7 @@ import {
 import { API_BASE } from "../../utils/apiConfig";
 import { getAdminDailyMessage, getISTGreeting } from "../../utils/greetingUtils";
 import useMeta from "../../utils/useMeta";
-import { useSocketEvent } from "../../context/NotificationContext";
+import { useSocketEvent, useLiveData } from "../../context/NotificationContext";
 import EmptyState from "../common/EmptyState";
 import { useAuth } from "../../context/AuthContext";
 
@@ -114,6 +114,7 @@ const Skeleton = () => (
 );
 
 const AdminSummary = () => {
+  useLiveData(["dashboard", "attendance", "leave", "employee", "task", "events", "announcement"], () => { fetchSummary(); });
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();

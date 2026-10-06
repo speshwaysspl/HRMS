@@ -26,6 +26,7 @@ import useMeta from '../../utils/useMeta'
 import NotificationBell from '../notifications/NotificationBell'
 import ErrorState from '../common/ErrorState'
 import CelebrationsAndHoliday from './CelebrationsAndHoliday'
+import { useLiveTick } from "../../context/NotificationContext";
 
 // Same category labels/colors as the Announcements list page — kept in
 // sync intentionally (see AnnouncementDetails.jsx / EmployeeAnnouncements.jsx).
@@ -42,7 +43,6 @@ const announcementCategoryStyle = (category) =>
 // Same 5-color palette + status vocabulary as the Flutter mobile app's
 // employee home screen — kept in sync intentionally, see MEMORY.md.
 const STATUS_STYLES = {
-  'present + overtime': { text: '#16A34A', bg: '#DCFCE7', border: '#A7F3D0', label: 'Present' },
   present: { text: '#16A34A', bg: '#DCFCE7', border: '#A7F3D0', label: 'Present' },
   'half day': { text: '#D97706', bg: '#FEF3C7', border: '#FDE68A', label: 'Half Day' },
   leave: { text: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', label: 'On Leave' },
@@ -54,7 +54,6 @@ const STATUS_STYLES = {
 
 const getStatusStyle = (status, inTime, outTime) => {
   const norm = (status || '').toLowerCase()
-  if (norm.includes('overtime')) return STATUS_STYLES['present + overtime']
   if (norm.includes('present') && !norm.includes('absent')) return STATUS_STYLES.present
   if (norm.includes('half')) return STATUS_STYLES['half day']
   if (norm.includes('wfh')) return STATUS_STYLES.wfh
@@ -139,6 +138,7 @@ const HoursGauge = ({ progress, label, sublabel }) => {
 }
 
 const Summary = () => {
+  const liveTick = useLiveTick(["dashboard", "attendance", "leave", "announcement", "events", "task"]);
   const { user } = useAuth()
   const navigate = useNavigate()
   // Provided by EmployeeDashboard.jsx via <Outlet context={{ toggleSidebar }} />
@@ -193,7 +193,7 @@ const Summary = () => {
     }
 
     if (user) load()
-  }, [user])
+  }, [user, liveTick])
 
   // Tick every 30s so the "Worked" gauge counts up live while checked in.
   const [nowTick, setNowTick] = useState(() => Date.now())

@@ -7,10 +7,12 @@ import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveData } from "../../context/NotificationContext";
 
 
 //
 const Table = () => {
+  useLiveData(["leave"], () => { fetchLeaves(); });
   useMeta({
     title: "Leaves — Speshway HRMS",
     description: "Manage leave requests and statuses.",

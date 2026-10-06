@@ -10,6 +10,7 @@ import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
 import ErrorState from "../common/ErrorState";
 import { FiBell, FiChevronRight } from "react-icons/fi";
+import { useLiveTick } from "../../context/NotificationContext";
 
 // Purposeful, stable label + color per announcement category — used instead
 // of a decorative icon badge on every row.
@@ -23,6 +24,7 @@ const CATEGORY_STYLE = {
 const categoryStyle = (category) => CATEGORY_STYLE[category] || { label: "Announcement", className: "text-ink-faint" };
 
 const EmployeeAnnouncements = () => {
+  const liveTick = useLiveTick(["announcement"]);
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -58,7 +60,7 @@ const EmployeeAnnouncements = () => {
       }
     };
     loadData();
-  }, []);
+  }, [liveTick]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

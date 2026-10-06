@@ -12,6 +12,7 @@ import 'admin_employee_detail_screen.dart';
 import 'admin_employee_form_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AdminEmployeesScreen extends StatefulWidget {
   const AdminEmployeesScreen({super.key});
 
@@ -19,7 +20,13 @@ class AdminEmployeesScreen extends StatefulWidget {
   State<AdminEmployeesScreen> createState() => _AdminEmployeesScreenState();
 }
 
-class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> {
+class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> with LiveRefresh<AdminEmployeesScreen> {
+  @override
+  List<String> get liveResources => const ['employee', 'department'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = EmployeeService();
   List<Map<String, dynamic>> _all = [];
   bool _loading = true;

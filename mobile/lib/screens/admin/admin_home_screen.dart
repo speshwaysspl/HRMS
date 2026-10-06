@@ -21,6 +21,7 @@ import 'admin_leaves_screen.dart';
 import 'admin_team_detail_screen.dart';
 import 'admin_teams_screen.dart';
 
+import '../../services/live_refresh.dart';
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
 
@@ -28,7 +29,13 @@ class AdminHomeScreen extends StatefulWidget {
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
-class _AdminHomeScreenState extends State<AdminHomeScreen> {
+class _AdminHomeScreenState extends State<AdminHomeScreen> with LiveRefresh<AdminHomeScreen> {
+  @override
+  List<String> get liveResources => const ['dashboard', 'attendance', 'leave', 'employee', 'task', 'events', 'announcement'];
+
+  @override
+  void onLiveRefresh() => _load();
+
   final _service = DashboardService();
   Map<String, dynamic>? _summary;
   bool _loading = true;

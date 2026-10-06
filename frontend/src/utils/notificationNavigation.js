@@ -72,9 +72,12 @@ export const getNotificationTarget = (notification, user) => {
       if (isEmployee) return "/employee-dashboard/tasks";
       return null;
 
-    case "task_submitted":
-      if (isAdmin) return "/admin-dashboard/teams";
-      return "/employee-dashboard/tasks";
+    case "task_submitted": {
+      const taskId = notification.relatedId?._id || notification.relatedId;
+      const dash = isAdmin ? "/admin-dashboard" : "/employee-dashboard";
+      if (taskId) return `${dash}/task-link/${taskId}`;
+      return isAdmin ? "/admin-dashboard/teams" : "/employee-dashboard/team/teams";
+    }
 
     case "feedback_submitted":
       if (isAdmin) return "/admin-dashboard/feedback";

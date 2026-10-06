@@ -16,8 +16,10 @@ import {
 } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const InterviewScheduler = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const { list: candidates, loading } = useSelector((state) => state.candidates);
 
@@ -32,7 +34,7 @@ const InterviewScheduler = () => {
   // Fetch all candidates without status filter so we can do tab filtering locally
   useEffect(() => {
     dispatch(fetchCandidates({ page: 1, limit: 100, search: "" }));
-  }, [dispatch]);
+  }, [dispatch, liveTick]);
 
   const handleOpenScheduleModal = (candidate) => {
     setSelectedCandidate(candidate);

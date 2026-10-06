@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddlware.js";
-import { assignTask, updateTaskStatus, getTasks, deleteTask, editTask } from "../controllers/taskController.js";
+import { assignTask, updateTaskStatus, getTasks, deleteTask, editTask, locateTask } from "../controllers/taskController.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -16,8 +16,10 @@ const router = express.Router();
 
 router.post("/assign", authMiddleware, upload.single("file"), assignTask);
 router.put("/:id/details", authMiddleware, upload.single("file"), editTask);
-router.put("/:id", authMiddleware, upload.single("file"), updateTaskStatus);
+// "file" = legacy single proof (replaces all); "files" = new proofs to add (multi-upload).
+router.put("/:id", authMiddleware, upload.fields([{ name: "file", maxCount: 1 }, { name: "files", maxCount: 10 }]), updateTaskStatus);
 router.get("/", authMiddleware, getTasks);
+router.get("/:id/locate", authMiddleware, locateTask);
 router.delete("/:id", authMiddleware, deleteTask);
 
 export default router;

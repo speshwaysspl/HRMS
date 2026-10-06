@@ -8,6 +8,7 @@ import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
 import useMeta from "../../utils/useMeta";
 import { ANNOUNCEMENT_CATEGORIES, CATEGORY_ICONS } from "./AnnouncementAdd";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const AUDIENCE = {
   all: "All employees",
@@ -20,6 +21,7 @@ const isScheduled = (a) => a.published === false;
 const fmtDateTime = (d) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
 
 const AnnouncementList = () => {
+  const liveTick = useLiveTick(["announcement"]);
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ const AnnouncementList = () => {
       setItems(await fetchAnnouncements());
       setLoading(false);
     })();
-  }, []);
+  }, [liveTick]);
 
   const scheduledCount = items.filter(isScheduled).length;
   const q = search.trim().toLowerCase();

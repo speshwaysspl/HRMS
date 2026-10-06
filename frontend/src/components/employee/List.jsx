@@ -12,9 +12,11 @@ import useMeta from '../../utils/useMeta'
 import LoadingState from '../common/LoadingState'
 import EmptyState from '../common/EmptyState'
 import PageHeader from '../common/PageHeader'
+import { useLiveTick } from "../../context/NotificationContext";
 
 
 const List = () => {
+  const liveTick = useLiveTick(["employee", "department"]);
   useMeta({
       title: 'Employees — Speshway HRMS',
       description: 'Browse and manage employee records.',
@@ -105,7 +107,7 @@ const List = () => {
         };
     
         fetchEmployees();
-      }, [handleDelete]);
+      }, [handleDelete, liveTick]);
 
       const handleFilter = useCallback((e) => {
         setSearchQuery(e.target.value);

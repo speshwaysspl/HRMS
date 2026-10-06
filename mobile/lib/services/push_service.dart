@@ -1,3 +1,4 @@
+import '../screens/teamlead/task_link.dart';
 import '../screens/admin/admin_teams_screen.dart';
 import 'dart:convert';
 
@@ -248,6 +249,14 @@ class PushService {
         title.contains('festival') ||
         title.contains('birthday')) {
       target = const AnnouncementsScreen();
+    } else if (type == 'task_submitted' &&
+        (data['relatedId'] ?? '').toString().isNotEmpty) {
+      openSubmittedTask(
+        nav,
+        data['relatedId'].toString(),
+        messenger: ScaffoldMessenger.maybeOf(context),
+      );
+      return;
     } else if (type.contains('task') || title.contains('task')) {
       target = const TasksScreen();
     } else if (type.contains('feedback') || title.contains('feedback')) {

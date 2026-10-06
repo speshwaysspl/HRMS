@@ -34,6 +34,7 @@ import Leave from "./models/Leave.js";
 import Feedback from "./models/Feedback.js";
 import connectToDatabase from "./db/db.js";
 import { createServer } from "http";
+import { liveDataMiddleware } from "./utils/realtime.js";
 import { Server as SocketIOServer } from "socket.io";
 import notificationRouter from "./routes/notification.js";
 import feedbackRouter from "./routes/feedback.js";
@@ -123,6 +124,8 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(express.json());
+// Live-refresh hint after every successful write (see utils/realtime.js).
+app.use("/api", liveDataMiddleware(io));
 
 
 app.use("/uploads", express.static(path.resolve("public", "uploads"), {

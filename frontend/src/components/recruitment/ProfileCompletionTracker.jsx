@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { FaSearch, FaFilter, FaEye, FaChevronLeft, FaChevronRight, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { SkeletonRow } from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import { useLiveTick } from "../../context/NotificationContext";
 
 const ProfileCompletionTracker = () => {
+  const liveTick = useLiveTick(["candidates", "recruitment", "onboarding", "offers", "appointments", "hr-dashboard", "document"]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { list: candidates, loading, pagination } = useSelector((state) => state.candidates);
@@ -17,7 +19,7 @@ const ProfileCompletionTracker = () => {
 
   useEffect(() => {
     dispatch(fetchCandidates({ page, search, status, limit: 10 }));
-  }, [dispatch, page, search, status]);
+  }, [dispatch, page, search, status, liveTick]);
 
   const getProgressColor = (percent) => {
     if (percent === 100) return "bg-accent-500";

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/apiConfig';
+import { registerWebPush } from '../utils/webPush';
 
 // Add notification sound
 const notificationSound = new Audio('/notification-sound.mp3');
@@ -126,7 +127,7 @@ export const NotificationProvider = ({ children }) => {
     const title = notification.title || "New Notification";
     const options = {
       body: notification.message || "",
-      icon: "/images/logo.png", // Corrected path to notification icon
+      icon: "/images/Logo.jpg",
       tag: notification._id, // Unique identifier for the notification
       requireInteraction: true, // Keep notification visible until user interacts with it
       silent: false // Ensure browser plays its own sound too
@@ -274,12 +275,23 @@ export const NotificationProvider = ({ children }) => {
     }, 5000);
   };
 
-  // Fetch initial notifications
+  // Fetch initial notifications and register this browser for push
   useEffect(() => {
     if (user && user._id) {
       fetchNotifications();
+      registerWebPush();
     }
   }, [user]);
+
+  // A push notification clicked while a tab is open: open the bell dropdown.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onMessage = (e) => {
+      if (e.data?.type === 'open-notifications') window.dispatchEvent(new Event('triggerNotificationBell'));
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, []);
 
   const fetchNotifications = async () => {
     try {
@@ -404,4 +416,27 @@ export const useSocketEvent = (event, handler) => {
   const ref = useRef(handler);
   ref.current = handler;
   useEffect(() => subscribe(event, (...args) => ref.current(...args)), [event, subscribe]);
+};
+
+// Re-runs `refetch` when the server reports a write to any of `resources`
+// (e.g. ["leave", "attendance"]). Bursts are collapsed into one refetch.
+export const useLiveData = (resources, refetch, delay = 600) => {
+  const ref = useRef(refetch);
+  ref.current = refetch;
+  const timer = useRef(null);
+  const key = [].concat(resources).join(",");
+  useEffect(() => () => clearTimeout(timer.current), []);
+  useSocketEvent("data:changed", (e) => {
+    if (!e?.resource || !key.split(",").includes(e.resource)) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => ref.current?.(), delay);
+  });
+};
+
+// Same trigger as useLiveData, as a counter — add it to a useEffect's deps when
+// the loader lives inside that effect.
+export const useLiveTick = (resources) => {
+  const [tick, setTick] = useState(0);
+  useLiveData(resources, () => setTick((t) => t + 1));
+  return tick;
 };

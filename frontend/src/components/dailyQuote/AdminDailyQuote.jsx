@@ -17,8 +17,10 @@ import {
   Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLiveData } from "../../context/NotificationContext";
 
 const AdminDailyQuote = () => {
+  useLiveData(["daily-quote"], () => { refreshAll(); });
   const [currentQuote, setCurrentQuote] = useState(null);
   const [loadingCurrent, setLoadingCurrent] = useState(true);
   const [history, setHistory] = useState([]);

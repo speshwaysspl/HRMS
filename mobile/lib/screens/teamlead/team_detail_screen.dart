@@ -17,6 +17,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/star_rating.dart';
+import '../../widgets/work_proof_field.dart' show ProofFile, proofsOf;
 import '../../widgets/state_views.dart';
 import 'milestones_tab.dart';
 import 'team_attendance_tab.dart';
@@ -26,7 +27,9 @@ import 'team_attendance_tab.dart';
 class TeamDetailScreen extends StatefulWidget {
   final String id;
   final String name;
-  const TeamDetailScreen({super.key, required this.id, required this.name});
+  /// Opens this task's update sheet once loaded (from a notification).
+  final String? openTaskId;
+  const TeamDetailScreen({super.key, required this.id, required this.name, this.openTaskId});
 
   @override
   State<TeamDetailScreen> createState() => _TeamDetailScreenState();
@@ -92,6 +95,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         _loading = false;
         _error = null;
       });
+      _openPendingTask();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -99,6 +103,21 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         _loading = false;
       });
     }
+  }
+
+  bool _pendingOpened = false;
+  void _openPendingTask() {
+    final id = widget.openTaskId;
+    if (id == null || _pendingOpened) return;
+    _pendingOpened = true;
+    final task = _taskList.where((t) => t['_id'].toString() == id).firstOrNull;
+    if (task == null) {
+      _toast('That task is no longer available');
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateTask(task);
+    });
   }
 
   Future<void> _loadMilestones() async {
@@ -276,7 +295,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
       ((t['assignedTo'] as Map?)?['userId'] as Map?)?['name']?.toString() ??
       'Unassigned';
 
-  bool _hasProof(Map t) => (t['workProof']?.toString() ?? '').isNotEmpty;
+  bool _hasProof(Map t) => proofsOf(t).isNotEmpty;
 
   Future<void> _openMember(Map stat) async {
     final member = stat['member'] as Map? ?? {};
@@ -497,7 +516,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
             SizedBox(height: context.h(8)),
             _SubmissionCard(
               comment: comment,
-              proof: task['workProof']?.toString() ?? '',
+              proofs: proofsOf(task),
               onOpen: _openDoc,
             ),
             SizedBox(height: context.h(20)),
@@ -939,7 +958,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
           ],
           if (_hasProof(t)) ...[
             SizedBox(height: context.h(10)),
-            _ProofButton(onTap: () => _openDoc(t['workProof'].toString())),
+            _ProofButton(proofs: proofsOf(t), onOpen: _openDoc),
           ],
           if ((t['reference'] ?? '').toString().isNotEmpty) ...[
             SizedBox(height: context.h(4)),
@@ -1644,17 +1663,10 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
             widget.task['title']?.toString() ?? '',
             style: TextStyle(color: AppColors.inkMuted),
           ),
-          if ((widget.task['workProof'] ?? '').toString().isNotEmpty &&
-              widget.onOpenProof != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () =>
-                    widget.onOpenProof!(widget.task['workProof'].toString()),
-                icon: const Icon(Icons.visibility_outlined, size: 18),
-                label: const Text("View employee's work proof"),
-              ),
-            ),
+          if (proofsOf(widget.task).isNotEmpty && widget.onOpenProof != null) ...[
+            SizedBox(height: context.h(8)),
+            _ProofButton(proofs: proofsOf(widget.task), onOpen: widget.onOpenProof!),
+          ],
           SizedBox(height: context.h(12)),
           DropdownButtonFormField<String>(
             initialValue: _status,
@@ -1748,8 +1760,46 @@ class _StatusPill extends StatelessWidget {
 
 /// Prominent "employee sent a file" row so leads don't miss submissions.
 class _ProofButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ProofButton({required this.onTap});
+  final List<ProofFile> proofs;
+  final void Function(String path) onOpen;
+  const _ProofButton({required this.proofs, required this.onOpen});
+
+  // One file opens directly; several open a picker sheet.
+  void _onTap(BuildContext context) {
+    if (proofs.length == 1) return onOpen(proofs.first.url);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(context.w(16), 0, context.w(16), context.h(8)),
+              child: Text('Work proof (${proofs.length} files)',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+            ),
+            for (final p in proofs)
+              ListTile(
+                leading: Icon(
+                  RegExp(r'\.pdf(\?|$)', caseSensitive: false).hasMatch(p.url)
+                      ? Icons.picture_as_pdf_outlined
+                      : RegExp(r'\.(png|jpe?g|gif|webp|heic)(\?|$)', caseSensitive: false).hasMatch(p.url)
+                          ? Icons.image_outlined
+                          : Icons.insert_drive_file_outlined,
+                ),
+                title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: const Icon(Icons.open_in_new, size: 18),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onOpen(p.url);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1759,7 +1809,7 @@ class _ProofButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
+        onTap: () => _onTap(context),
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: context.w(12),
@@ -1771,7 +1821,9 @@ class _ProofButton extends StatelessWidget {
               SizedBox(width: context.w(8)),
               Expanded(
                 child: Text(
-                  'Work proof submitted',
+                  proofs.length > 1
+                      ? 'Work proof submitted (${proofs.length} files)'
+                      : 'Work proof submitted',
                   style: TextStyle(
                     color: fg,
                     fontWeight: FontWeight.w600,
@@ -1798,17 +1850,17 @@ class _ProofButton extends StatelessWidget {
 
 class _SubmissionCard extends StatelessWidget {
   final String comment;
-  final String proof;
+  final List<ProofFile> proofs;
   final Future<void> Function(String) onOpen;
   const _SubmissionCard({
     required this.comment,
-    required this.proof,
+    required this.proofs,
     required this.onOpen,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (comment.isEmpty && proof.isEmpty) {
+    if (comment.isEmpty && proofs.isEmpty) {
       return Container(
         width: double.infinity,
         padding: EdgeInsets.all(context.w(14)),
@@ -1839,7 +1891,7 @@ class _SubmissionCard extends StatelessWidget {
               style: TextStyle(color: AppColors.ink, fontSize: context.sp(13)),
             ),
           ),
-        if (proof.isNotEmpty) _ProofButton(onTap: () => onOpen(proof)),
+        if (proofs.isNotEmpty) _ProofButton(proofs: proofs, onOpen: onOpen),
       ],
     );
   }
@@ -2310,7 +2362,7 @@ class _MemberSheet extends StatelessWidget {
                 header: _groupHeader(context, g.title, g.meta),
                 children: g.tasks.map((t) {
                   final deleted = t['isDeleted'] == true;
-                  final proof = t['workProof']?.toString() ?? '';
+                  final proofs = proofsOf(t);
                   return Container(
                     margin: EdgeInsets.only(bottom: context.h(10)),
                     padding: EdgeInsets.all(context.w(14)),
@@ -2379,9 +2431,9 @@ class _MemberSheet extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (proof.isNotEmpty) ...[
+                        if (proofs.isNotEmpty) ...[
                           SizedBox(height: context.h(10)),
-                          _ProofButton(onTap: () => openDoc(proof)),
+                          _ProofButton(proofs: proofs, onOpen: openDoc),
                         ],
                       ],
                     ),

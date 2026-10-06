@@ -15,6 +15,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
+import '../../services/live_refresh.dart';
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -23,7 +24,13 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LiveRefresh<AttendanceScreen> {
+  @override
+  List<String> get liveResources => const ['attendance', 'shifts', 'setting'];
+
+  @override
+  void onLiveRefresh() => _load(silent: true);
+
   final _service = AttendanceService();
   Map<String, dynamic>? _today;
   bool _loading = true;
@@ -263,7 +270,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           {
             'inTime': time,
             'workMode': _workMode,
-            'breaks': [],
             'inLocation': loc.toJson(),
           },
           time,
@@ -284,13 +290,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _checkOut() async {
     setState(() => _submitting = true);
     try {
-      // Checking out ends the day — close any break still running at the
-      // same moment instead of leaving it "Ongoing" forever.
-      final closedBreaks = ((_today?['breaks'] as List?) ?? []).map((raw) {
-        final b = Map<String, dynamic>.from(raw as Map);
-        final open = b['end'] == null || b['end'] == '';
-        return open ? {...b, 'end': _nowTime} : b;
-      }).toList();
       final loc = await _punchLocation();
       final time = _nowTime;
       final Map<String, dynamic> saved;
@@ -298,7 +297,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         saved = await _service.checkOut(
           date: _todayDate,
           outTime: time,
-          breaks: closedBreaks,
           location: loc,
         );
       } catch (e) {
@@ -306,11 +304,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         await _saveOffline(
           {
             'outTime': time,
-            'breaks': closedBreaks,
             if (loc != null) 'outLocation': loc.toJson(),
           },
           time,
-          {'outTime': time, 'breaks': closedBreaks},
+          {'outTime': time},
         );
         return;
       }
@@ -796,8 +793,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   // Working Hours = plain check-in -> check-out span (or check-in -> now
-  // while still checked in), same rule as the web Attendance page —
-  // breaks are shown separately, not deducted from this figure.
+  // while still checked in), same rule as the web Attendance page.
   int get _workingMinutes {
     final inTime = _today?['inTime']?.toString();
     if (inTime == null || inTime.isEmpty) return 0;
