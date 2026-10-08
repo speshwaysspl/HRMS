@@ -168,6 +168,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> with LiveRefr
     final raw = p['netSalary'];
     if (raw is num) net = raw;
     if (raw is String) net = num.tryParse(raw) ?? 0;
+    net = net.round(); // whole rupees, like the PDF
 
     return SimpleCard(
       onTap: () => _download(p),

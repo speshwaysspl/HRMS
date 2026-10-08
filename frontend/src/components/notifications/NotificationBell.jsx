@@ -20,6 +20,8 @@ const NotificationBell = () => {
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
   );
   const dropdownRef = useRef(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => { if (!isOpen) setConfirmClear(false); }, [isOpen]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications();
@@ -189,7 +191,7 @@ const NotificationBell = () => {
               )}
               {notifications.length > 0 && (
                 <button
-                  onClick={clearAllNotifications}
+                  onClick={() => setConfirmClear(true)}
                   className="text-xs font-medium text-ink-muted hover:text-ink flex items-center gap-1"
                   title="Clear all notifications"
                 >
@@ -205,6 +207,32 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
+
+          {confirmClear && notifications.length > 0 && (
+            <div role="alertdialog" aria-labelledby="clear-all-title" className="px-4 py-3 border-b border-surface-subtle bg-red-50 flex-shrink-0">
+              <p id="clear-all-title" className="text-sm font-semibold text-ink">
+                {notifications.length === 1 ? 'Delete 1 notification?' : `Delete all ${notifications.length} notifications?`}
+              </p>
+              <p className="mt-0.5 text-xs text-ink-muted">They'll be removed here and on the mobile app. This can't be undone.</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => { setConfirmClear(false); clearAllNotifications(); }}
+                  className="min-h-[36px] flex-1 rounded-lg bg-red-600 px-3 text-sm font-semibold text-white hover:bg-red-700 outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1"
+                >
+                  Delete all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(false)}
+                  className="min-h-[36px] flex-1 rounded-lg border border-surface-subtle bg-white px-3 text-sm font-semibold text-ink hover:bg-surface-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {pushState !== 'granted' && (
             <div className="px-4 py-2.5 border-b border-surface-subtle bg-surface-muted text-xs text-ink-muted flex-shrink-0">

@@ -262,10 +262,10 @@ const PayslipPreview = ({ payslip, onClose, onSendEmail, onGenerate, loading }) 
           {/* Net Pay Section - matching PDF */}
           <div className="mb-4">
             <div className="text-sm font-bold mb-2">
-              Net Pay for the month: {formatCurrency(netPay)}
+              Net Pay for the month: INR {Math.round(netPay)}
             </div>
             <div className="text-sm italic">
-              ({numberToWords(Math.floor(netPay)).replace(/\b\w/g, c => c.toUpperCase())} Rupees Only)
+              ({numberToWords(Math.round(netPay)).replace(/\b\w/g, c => c.toUpperCase())} Rupees Only)
             </div>
           </div>
 

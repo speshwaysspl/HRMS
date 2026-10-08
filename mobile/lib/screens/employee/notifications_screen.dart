@@ -90,27 +90,102 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _confirmDeleteAll() async {
-    final confirmed = await showDialog<bool>(
+    final count = _items.length;
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete all notifications?'),
-        content: const Text(
-          'Are you sure you want to clear all notifications? This action cannot be undone.',
+      showDragHandle: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.w(20),
+            0,
+            context.w(20),
+            context.h(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.dangerBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.danger,
+                  size: 24,
+                ),
+              ),
+              SizedBox(height: context.h(14)),
+              Text(
+                count == 1
+                    ? 'Delete 1 notification?'
+                    : 'Delete all $count notifications?',
+                style: TextStyle(
+                  fontSize: context.sp(18),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+              SizedBox(height: context.h(6)),
+              Text(
+                "They'll be removed from this device and the web. This can't be undone.",
+                style: TextStyle(
+                  fontSize: context.sp(14),
+                  height: 1.45,
+                  color: AppColors.inkMuted,
+                ),
+              ),
+              SizedBox(height: context.h(22)),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: TextStyle(
+                      fontSize: context.sp(15),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Delete all'),
+                ),
+              ),
+              SizedBox(height: context.h(10)),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    side: BorderSide(color: AppColors.surfaceSubtle),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: TextStyle(
+                      fontSize: context.sp(15),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete All'),
-          ),
-        ],
       ),
     );
 

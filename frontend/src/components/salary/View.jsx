@@ -273,8 +273,8 @@ const View = () => {
             {/* Net Pay Section */}
             <div className="border border-black border-t-0 p-2">
               <div className="mb-4" style={{marginTop: '10px'}}>
-                <p className="italic" style={{fontFamily: 'Times, serif', fontSize: '12px', fontStyle: 'italic'}}>Net Pay for the month: {formatCurrencyINR(netPay)}</p>
-                <p className="italic" style={{fontFamily: 'Times, serif', fontSize: '10px', fontStyle: 'italic', marginTop: '5px'}}>({numberToWords(Math.floor(netPay))} Rupees Only)</p>
+                <p className="italic" style={{fontFamily: 'Times, serif', fontSize: '12px', fontStyle: 'italic'}}>Net Pay for the month: INR {Math.round(netPay)}</p>
+                <p className="italic" style={{fontFamily: 'Times, serif', fontSize: '10px', fontStyle: 'italic', marginTop: '5px'}}>({numberToWords(Math.round(netPay))} Rupees Only)</p>
               </div>
               
               <div className="text-center" style={{marginTop: '40px'}}>

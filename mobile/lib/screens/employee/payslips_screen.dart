@@ -221,7 +221,7 @@ class _PayslipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final net = num.tryParse(payslip['netSalary']?.toString() ?? '') ?? 0;
+    final net = (num.tryParse(payslip['netSalary']?.toString() ?? '') ?? 0).round();
     final basic = num.tryParse(payslip['basicSalary']?.toString() ?? '') ?? 0;
     final ded = num.tryParse(payslip['deductions']?.toString() ?? '') ?? 0;
     final emp = payslip['employeeId'];
@@ -453,7 +453,7 @@ class _PayslipPreviewSheet extends StatelessWidget {
       'Other Deductions': _n(payslip['deductions']),
     };
     final totalDeductions = deductions.values.fold<num>(0, (a, b) => a + b);
-    final netPay = _n(payslip['netSalary']);
+    final netPay = _n(payslip['netSalary']).round(); // whole rupees, like the PDF
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,

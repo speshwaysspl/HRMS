@@ -220,12 +220,12 @@ const generateSalaryPDFContent = (doc, salary) => {
   doc
     .font("Times-Bold")
     .fontSize(11)
-    .text(`Net Pay for the month: ${formatCurrency(netPay)}`, 25, cursorY);
+    .text(`Net Pay for the month: INR ${Math.round(netPay)}`, 25, cursorY);
     
   doc
     .font("Times-Italic")
     .fontSize(10)
-    .text(`(${toWords(Math.floor(netPay)).replace(/\b\w/g, (c) => c.toUpperCase())} Rupees Only)`, 25, cursorY + 15);
+    .text(`(${toWords(Math.round(netPay)).replace(/\b\w/g, (c) => c.toUpperCase())} Rupees Only)`, 25, cursorY + 15);
 
   cursorY += 50;
 
