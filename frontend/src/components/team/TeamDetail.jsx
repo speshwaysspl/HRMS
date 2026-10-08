@@ -768,19 +768,20 @@ const TeamDetail = () => {
                                         </td>
 
                                         <td className="p-3">
-                                            {task.workProof || task.reference ? (
+                                            {proofsOf(task).length || task.reference ? (
                                                 <div className="flex flex-col items-start gap-1">
-                                                    {task.workProof && (
+                                                    {proofsOf(task).map((p, i, all) => (
                                                         <a
-                                                            href={getDocumentUrl(task.workProof)}
+                                                            key={p.url}
+                                                            href={getDocumentUrl(p.url)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            title={task.workProofName || "Employee's work proof"}
+                                                            title={p.name || "Employee's work proof"}
                                                             className="bg-brand-700 text-white text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 hover:bg-brand-800 transition-colors"
                                                         >
-                                                            <FaEye aria-hidden="true" /> Work proof{proofsOf(task).length > 1 ? ` (${proofsOf(task).length})` : ""}
+                                                            <FaEye aria-hidden="true" /> Work proof{all.length > 1 ? ` ${i + 1}` : ""}
                                                         </a>
-                                                    )}
+                                                    ))}
                                                     {task.reference && (
                                                         <a
                                                             href={getDocumentUrl(task.reference)}
@@ -889,15 +890,21 @@ const TeamDetail = () => {
                                         </div>
                                     )}
                                 </div>
-                                {task.workProof && (
-                                    <a
-                                        href={getDocumentUrl(task.workProof)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-3 inline-block text-brand-600 font-medium"
-                                    >
-                                        View Doc
-                                    </a>
+                                {proofsOf(task).length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                                        {proofsOf(task).map((p, i, all) => (
+                                            <a
+                                                key={p.url}
+                                                href={getDocumentUrl(p.url)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={p.name || "Employee's work proof"}
+                                                className="inline-block py-2 text-brand-600 font-medium"
+                                            >
+                                                Work proof{all.length > 1 ? ` ${i + 1}` : ""}
+                                            </a>
+                                        ))}
+                                    </div>
                                 )}
                                 <div className="flex justify-end gap-3 mt-3 border-t border-surface-subtle pt-3">
                                     <button
