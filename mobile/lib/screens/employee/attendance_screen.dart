@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 import '../../main.dart';
 import '../../services/api_client.dart';
 import '../../services/app_events.dart';
@@ -700,66 +698,33 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ],
             )
           else if (_location != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  // OpenStreetMap tiles via flutter_map — same map source as
-                  // the web Attendance page's OSM embed, and (unlike a
-                  // static-map image URL) works on Android, iOS and web.
-                  child: SizedBox(
-                    height: context.h(150),
-                    width: double.infinity,
-                    child: FlutterMap(
-                      options: MapOptions(
-                        initialCenter: LatLng(
-                          _location!.latitude,
-                          _location!.longitude,
-                        ),
-                        initialZoom: 16.5,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.none,
+            // Address only — no map (coordinates resolve to the area text).
+            _location!.area.startsWith('Locating')
+                ? Row(
+                    children: [
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: context.w(8)),
+                      Text(
+                        'Finding your address…',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: context.sp(13),
                         ),
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.speshway.hrms',
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: LatLng(
-                                _location!.latitude,
-                                _location!.longitude,
-                              ),
-                              width: 36,
-                              height: 36,
-                              alignment: Alignment.topCenter,
-                              child: const Icon(
-                                Icons.location_on,
-                                color: Color(0xFFDC2626),
-                                size: 36,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    ],
+                  )
+                : Text(
+                    _location!.area,
+                    style: TextStyle(
+                      color: AppColors.ink,
+                      fontSize: context.sp(14),
+                      height: 1.4,
                     ),
-                  ),
-                ),
-                SizedBox(height: context.h(10)),
-                Text(
-                  _location!.area,
-                  style: TextStyle(
-                    color: AppColors.ink,
-                    fontSize: context.sp(13),
-                  ),
-                ),
-              ],
-            )
+                  )
           else
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
