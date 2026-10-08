@@ -401,6 +401,13 @@ const Attendance = () => {
       setBanner({ type: "error", message: "Please select a work mode before checking in." });
       return;
     }
+    if (type === "inTime" && tracker.workMode === "office" && (tracker.latitude == null || tracker.longitude == null)) {
+      setBanner({
+        type: "error",
+        message: "Location is required for office check-in. Turn on location, allow permission and try again.",
+      });
+      return;
+    }
 
     const now = getCurrentTime();
     const updatedTracker = { ...tracker };

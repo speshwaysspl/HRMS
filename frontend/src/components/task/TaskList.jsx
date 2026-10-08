@@ -53,7 +53,7 @@ const TaskList = () => {
       return next;
     });
   useSocketEvent("team:updated", (e) => {
-    if (e?.kind === "tasks") fetchTasks();
+    if (e?.kind === "tasks" || e?.kind === "resync") fetchTasks();
   });
 
   const userRoles = user?.role ? (Array.isArray(user.role) ? user.role : [user.role]) : [];

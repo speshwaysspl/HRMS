@@ -49,6 +49,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
       'members',
       'deleted',
       'attendance',
+      'resync',
     }.contains(e['kind'])) {
       _load();
     }

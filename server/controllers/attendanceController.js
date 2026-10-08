@@ -50,6 +50,19 @@ export const saveAttendance = async (req, res) => {
           message: "A new day has started. Please check in for today.",
         });
       }
+      // Office check-ins must carry where they were made.
+      const hasCoords = Number.isFinite(Number(inLocation?.latitude)) && Number.isFinite(Number(inLocation?.longitude))
+        && inLocation?.latitude != null && inLocation?.longitude != null;
+      if (workMode === "office" && !hasCoords) {
+        return res.status(400).json({
+          code: "LOCATION_REQUIRED",
+          message: "Location is required for office check-in. Turn on location, allow permission and try again.",
+        });
+      }
+      // Reverse geocoding can fail; keep the coordinates visible in reports.
+      if (hasCoords && !inLocation.area) {
+        inLocation.area = `${Number(inLocation.latitude).toFixed(5)}, ${Number(inLocation.longitude).toFixed(5)}`;
+      }
       attendance = new Attendance({
         userId: employee._id,
         date,

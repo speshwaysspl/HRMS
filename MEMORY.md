@@ -32,6 +32,9 @@ MERN stack + Flutter mobile app.
 
 - **Breaks and overtime fully removed (2026-10-06)**: no "+ Overtime" statuses or `overtimeDays`; no break UI/logic on web, mobile, admin report or Excel export; `saveAttendance` ignores `breaks`. `Attendance.breaks` schema field kept only so old records load. Don't reintroduce.
 
+- **Live refresh across server processes (2026-10-08)**: deployed server, local `npm run dev` etc. share one MongoDB, and the release APK always hits `backend.speshwayhrms.com` while local web hits `localhost:5001` — so a socket emit only reached clients of the process that handled the write ("mobile actions don't update web"). Fix: `attachSharedAdapter(io)` in `server/utils/realtime.js` uses `@socket.io/mongo-adapter` (capped collection `socket_io_events`) so every emit reaches all processes. **The deployed server needs this code too** for prod→local relay. Clients also resync after socket reconnect / tab or app resume: `data:changed {resource:'*'}` (accepted by `useLiveData` / mobile `LiveRefresh`) + `team:updated {kind:'resync'}` (every team listener accepts it). New team listeners must handle `resync`.
+- **Office check-in requires location (2026-10-08)**: server rejects `workMode: "office"` check-in without lat/lng (`LOCATION_REQUIRED`); web blocks before submit; mobile already required a fix for every check-in. Missing reverse-geocoded area is stored as `"lat, lng"` instead of N/A.
+
 - **Dropdowns on web**: use `components/common/SelectMenu.jsx` (`name/value/onChange/options/placeholder/required`, fires a fake `{target:{name,value}}` event) instead of a native `<select>` for user-facing forms.
 
 ## 6. Current Work

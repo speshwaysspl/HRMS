@@ -25,6 +25,26 @@ export const NotificationProvider = ({ children }) => {
   // Other screens subscribe to live data events (e.g. "team:updated") through useSocketEvent.
   const listenersRef = useRef(new Map());
 
+  // Fire the live-refresh listeners as if everything changed ("*" = every
+  // resource, kind "resync" = every team).
+  const resyncAll = () => {
+    const at = Date.now();
+    listenersRef.current.get('data:changed')?.forEach((fn) => fn({ resource: '*', at }));
+    listenersRef.current.get('team:updated')?.forEach((fn) => fn({ kind: 'resync', at }));
+  };
+
+  // A tab left in the background long enough may have missed signals even
+  // without a visible disconnect; catch up when it's shown again.
+  useEffect(() => {
+    let hiddenAt = 0;
+    const onVisibility = () => {
+      if (document.hidden) hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt > 30000) resyncAll();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
   // Initialize socket connection
   useEffect(() => {
     let isMounted = true;
@@ -43,11 +63,15 @@ export const NotificationProvider = ({ children }) => {
           listenersRef.current.get(event)?.forEach((fn) => fn(...args));
         });
 
+        let connectedBefore = false;
         socket.on('connect', () => {
           if (!isMounted) return;
           setIsConnected(true);
           // Join user's personal notification room
           socket.emit('join', user._id);
+          // Signals sent while disconnected are lost: refresh every open screen once.
+          if (connectedBefore) resyncAll();
+          connectedBefore = true;
         });
 
         socket.on('disconnect', () => {
@@ -414,7 +438,7 @@ export const useLiveData = (resources, refetch, delay = 600) => {
   const key = [].concat(resources).join(",");
   useEffect(() => () => clearTimeout(timer.current), []);
   useSocketEvent("data:changed", (e) => {
-    if (!e?.resource || !key.split(",").includes(e.resource)) return;
+    if (!e?.resource || (e.resource !== "*" && !key.split(",").includes(e.resource))) return;
     clearTimeout(timer.current);
     timer.current = setTimeout(() => ref.current?.(), delay);
   });

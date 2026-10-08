@@ -51,7 +51,7 @@ class _TasksScreenState extends State<TasksScreen> {
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (e['kind'] == 'tasks') _load(silent: true);
+    if (e['kind'] == 'tasks' || e['kind'] == 'resync') _load(silent: true);
   }
 
   @override

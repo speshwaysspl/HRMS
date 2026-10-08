@@ -92,7 +92,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     });
     try {
       // Map first (fast GPS / cached fix), address fills in right after.
-      final quick = await _locationService.getQuickFix();
+      // Bounded: a permission / "turn on location" prompt that never answers
+      // must not leave the card spinning forever.
+      final quick = await _locationService.getQuickFix().timeout(
+        const Duration(seconds: 25),
+      );
       if (!mounted) return;
       setState(() {
         _location = quick;
@@ -222,6 +226,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         setState(() {
           _location = fix;
           _locationAt = DateTime.now();
+          _locationLoading = false;
+          _locationError = null;
         });
       }
       return fix;
@@ -675,7 +681,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             ],
           ),
           SizedBox(height: context.h(10)),
-          if (_locationLoading)
+          if (_locationLoading && _location == null)
             Row(
               children: [
                 const SizedBox(

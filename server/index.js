@@ -34,7 +34,7 @@ import Leave from "./models/Leave.js";
 import Feedback from "./models/Feedback.js";
 import connectToDatabase from "./db/db.js";
 import { createServer } from "http";
-import { liveDataMiddleware } from "./utils/realtime.js";
+import { liveDataMiddleware, attachSharedAdapter } from "./utils/realtime.js";
 import { Server as SocketIOServer } from "socket.io";
 import notificationRouter from "./routes/notification.js";
 import feedbackRouter from "./routes/feedback.js";
@@ -57,6 +57,7 @@ import { metricsMiddleware, metricsEndpoint } from "./middleware/metrics.js";
 dotenv.config({ quiet: true });
 connectToDatabase().then(() => {
   seedHolidaysInternal();
+  attachSharedAdapter(io);
 }).catch((err) => {
   console.error("❌ Failed to connect to MongoDB. Please check your connection string and ensure your IP is whitelisted in MongoDB Atlas.");
   console.error(err);

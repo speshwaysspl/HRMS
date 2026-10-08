@@ -42,7 +42,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (e['teamId'] == widget.id) _load();
+    if (e['teamId'] == widget.id || e['kind'] == 'resync') _load();
   }
 
   @override

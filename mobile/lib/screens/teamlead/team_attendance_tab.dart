@@ -140,7 +140,10 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (e['teamId'] == widget.teamId && e['kind'] == 'attendance') _load();
+    if (e['kind'] == 'resync' ||
+        (e['teamId'] == widget.teamId && e['kind'] == 'attendance')) {
+      _load();
+    }
   }
 
   @override

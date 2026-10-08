@@ -81,6 +81,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
+    if (e['kind'] == 'resync') {
+      _load();
+      _loadMilestones();
+      return;
+    }
     if (e['teamId'] != widget.id) return;
     if (e['kind'] != 'milestones') _load();
     if (e['kind'] == 'milestones' || e['kind'] == 'tasks') _loadMilestones();

@@ -147,7 +147,7 @@ const AdminSummary = () => {
 
   useEffect(() => { fetchSummary(); }, [fetchSummary]);
   // A lead marking attendance updates the "not marked" list live.
-  useSocketEvent("team:updated", (e) => { if (e?.kind === "attendance") fetchSummary(); });
+  useSocketEvent("team:updated", (e) => { if (e?.kind === "attendance" || e?.kind === "resync") fetchSummary(); });
 
   if (error && !summary) {
     return (

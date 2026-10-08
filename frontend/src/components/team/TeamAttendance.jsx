@@ -31,7 +31,7 @@ const TeamAttendance = ({ teamId, members }) => {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   useSocketEvent("team:updated", (e) => {
-    if (e?.teamId === teamId && e.kind === "attendance") setReloadKey((k) => k + 1);
+    if (e?.kind === "resync" || (e?.teamId === teamId && e.kind === "attendance")) setReloadKey((k) => k + 1);
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);

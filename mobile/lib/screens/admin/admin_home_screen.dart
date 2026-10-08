@@ -54,7 +54,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with LiveRefresh<Admi
   }
 
   void _onTeamChanged() {
-    if (mounted && AppEvents.teamChanged.value?['kind'] == 'attendance') {
+    final kind = AppEvents.teamChanged.value?['kind'];
+    if (mounted && (kind == 'attendance' || kind == 'resync')) {
       _load();
     }
   }

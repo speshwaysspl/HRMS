@@ -54,7 +54,7 @@ const TeamList = () => {
   // "" | "marked" | "not_marked" — today's team roll call.
   const [attFilter, setAttFilter] = useState("");
   useSocketEvent("team:updated", (e) => {
-    if (["team", "members", "deleted", "attendance"].includes(e?.kind)) fetchTeams();
+    if (["team", "members", "deleted", "attendance", "resync"].includes(e?.kind)) fetchTeams();
   });
 
   useEffect(() => {

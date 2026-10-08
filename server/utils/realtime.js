@@ -1,5 +1,26 @@
+import mongoose from "mongoose";
+import { createAdapter } from "@socket.io/mongo-adapter";
 import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
+
+// Several server processes share one database (deployed server, local dev, …).
+// Without this, a write handled by one process only reaches sockets connected
+// to that same process: e.g. a check-in from the mobile app (deployed server)
+// never refreshed a web page served by another. The Mongo adapter relays every
+// emit through a capped collection so all processes deliver it.
+export const attachSharedAdapter = async (io) => {
+  try {
+    const db = mongoose.connection.db;
+    const name = "socket_io_events";
+    const exists = await db.listCollections({ name }).hasNext();
+    if (!exists) await db.createCollection(name, { capped: true, size: 1e6 });
+    io.adapter(createAdapter(db.collection(name)));
+    console.log("🔁 Socket.IO events shared across server processes");
+  } catch (err) {
+    // Single-process delivery still works; only cross-process relay is lost.
+    console.error("Socket.IO Mongo adapter failed:", err.message);
+  }
+};
 
 // Live-refresh signals for team screens (task list, members, attendance, team list).
 // Clients join `user_<id>` on connect; admins additionally join `role_admin` (see index.js).

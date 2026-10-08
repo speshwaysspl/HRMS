@@ -21,7 +21,8 @@ mixin LiveRefresh<T extends StatefulWidget> on State<T> {
 
   void _onDataChanged() {
     final r = AppEvents.dataChanged.value?['resource'];
-    if (r == null || !liveResources.contains(r)) return;
+    // `*` = resync after a reconnect / app resume (see RealtimeService).
+    if (r == null || (r != '*' && !liveResources.contains(r))) return;
     _liveTimer?.cancel();
     _liveTimer = Timer(const Duration(milliseconds: 600), () {
       if (mounted) onLiveRefresh();

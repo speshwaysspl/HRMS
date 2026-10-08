@@ -38,6 +38,7 @@ const TeamDetail = () => {
   const [activeTab, setActiveTab] = useState("milestones"); // 'tasks' = one milestone's tasks // 'tasks' or 'team'
   // Live refresh when anyone changes this team's tasks, members or details.
   useSocketEvent("team:updated", (e) => {
+    if (e?.kind === "resync") { fetchTeamDetail(); fetchMilestones(); return; }
     if (e?.teamId !== id) return;
     if (e.kind === "milestones") fetchMilestones();
     else {

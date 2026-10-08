@@ -34,7 +34,7 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (const {'team', 'members', 'deleted'}.contains(e['kind'])) _load();
+    if (const {'team', 'members', 'deleted', 'resync'}.contains(e['kind'])) _load();
   }
 
   @override
