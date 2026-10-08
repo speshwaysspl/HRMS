@@ -14,6 +14,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -271,11 +272,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       } catch (e) {
         if (!OfflinePunchService.isOfflineError(e)) rethrow;
         await _saveOffline(
-          {
-            'inTime': time,
-            'workMode': _workMode,
-            'inLocation': loc.toJson(),
-          },
+          {'inTime': time, 'workMode': _workMode, 'inLocation': loc.toJson()},
           time,
           {'inTime': time, 'workMode': _workMode, 'outTime': ''},
         );
@@ -306,10 +303,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       } catch (e) {
         if (!OfflinePunchService.isOfflineError(e)) rethrow;
         await _saveOffline(
-          {
-            'outTime': time,
-            if (loc != null) 'outLocation': loc.toJson(),
-          },
+          {'outTime': time, if (loc != null) 'outLocation': loc.toJson()},
           time,
           {'outTime': time},
         );
@@ -363,8 +357,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   _buildCheckCard(hasCheckedIn, hasCheckedOut),
                   SizedBox(height: context.h(16)),
                   _buildSummaryCard(),
-                  SizedBox(height: context.h(16)),
-                  _buildLocationCard(),
+                  // Location is fetched silently for the punches; this only
+                  // appears when it's off / denied and a punch is still due.
+                  if (_locationError != null && !hasCheckedOut) ...[
+                    SizedBox(height: context.h(16)),
+                    _buildLocationCard(),
+                  ],
                 ],
               ),
             ),
@@ -669,7 +667,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
               SizedBox(width: context.w(6)),
               Text(
-                'Current Location',
+                'Location needed',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppColors.ink,
@@ -679,80 +677,33 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             ],
           ),
           SizedBox(height: context.h(10)),
-          if (_locationLoading && _location == null)
-            Row(
-              children: [
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _locationError ?? 'Location not available.',
+                style: TextStyle(
+                  color: AppColors.danger,
+                  fontSize: context.sp(12.5),
                 ),
-                SizedBox(width: context.w(8)),
-                Text(
-                  'Getting your location…',
-                  style: TextStyle(
-                    color: AppColors.inkMuted,
-                    fontSize: context.sp(13),
-                  ),
+              ),
+              SizedBox(height: context.h(8)),
+              // Only a permanently denied permission needs app settings;
+              // otherwise retry, which shows the in-app prompts.
+              if ((_locationError ?? '').contains('permanently denied'))
+                OutlinedButton.icon(
+                  onPressed: LocationService.openSettings,
+                  icon: const Icon(Icons.settings_outlined, size: 16),
+                  label: const Text('Allow in app settings'),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: _locationLoading ? null : _fetchLocation,
+                  icon: const Icon(Icons.my_location_rounded, size: 16),
+                  label: const Text('Turn on location'),
                 ),
-              ],
-            )
-          else if (_location != null)
-            // Address only — no map (coordinates resolve to the area text).
-            _location!.area.startsWith('Locating')
-                ? Row(
-                    children: [
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: context.w(8)),
-                      Text(
-                        'Finding your address…',
-                        style: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: context.sp(13),
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    _location!.area,
-                    style: TextStyle(
-                      color: AppColors.ink,
-                      fontSize: context.sp(14),
-                      height: 1.4,
-                    ),
-                  )
-          else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _locationError ?? 'Location not available.',
-                  style: TextStyle(
-                    color: AppColors.danger,
-                    fontSize: context.sp(12.5),
-                  ),
-                ),
-                SizedBox(height: context.h(8)),
-                // Only a permanently denied permission needs app settings;
-                // otherwise retry, which shows the in-app prompts.
-                if ((_locationError ?? '').contains('permanently denied'))
-                  OutlinedButton.icon(
-                    onPressed: LocationService.openSettings,
-                    icon: const Icon(Icons.settings_outlined, size: 16),
-                    label: const Text('Allow in app settings'),
-                  )
-                else
-                  FilledButton.icon(
-                    onPressed: _locationLoading ? null : _fetchLocation,
-                    icon: const Icon(Icons.my_location_rounded, size: 16),
-                    label: const Text('Turn on location'),
-                  ),
-              ],
-            ),
+            ],
+          ),
         ],
       ),
     );
