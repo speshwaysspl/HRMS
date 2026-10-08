@@ -121,7 +121,9 @@ app.get("/metrics", metricsEndpoint);
 
 app.use(cors({
   origin: corsOrigin,
-  credentials: true
+  credentials: true,
+  // Let the web app read download filenames (e.g. payslip PDFs) cross-origin.
+  exposedHeaders: ["Content-Disposition"]
 }));
 app.use(compression());
 app.use(express.json());

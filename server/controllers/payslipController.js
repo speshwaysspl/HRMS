@@ -6,7 +6,7 @@ import PayrollTemplate from "../models/PayrollTemplate.js";
 import Department from "../models/Department.js";
 import Candidate from "../models/Candidate.js";
 import Offer from "../models/Offer.js";
-import { generateSalaryPDF, generateSalaryPDFBuffer } from "../utils/pdfGenerator.js";
+import { generateSalaryPDF, generateSalaryPDFBuffer, payslipFileName } from "../utils/pdfGenerator.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 import { createPayslipNotification } from "./notificationController.js";
 
@@ -1178,7 +1178,7 @@ export const sendPayslipEmail = async (req, res) => {
     const employeeIdForFilename = pdfPayslipData?.employeeId || 'Unknown';
     const attachments = [
       {
-        filename: `Payslip_${employeeIdForFilename}_${pdfPayslipData.month}_${pdfPayslipData.year}.pdf`,
+        filename: payslipFileName({ ...pdfPayslipData, employeeId: { employeeId: employeeIdForFilename } }),
         content: pdfBuffer,
         contentType: 'application/pdf'
       }

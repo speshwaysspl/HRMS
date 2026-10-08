@@ -32,15 +32,44 @@ class PayslipService {
     return Map<String, dynamic>.from(res.data as Map);
   }
 
+  static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  /// "Payslip_Aug-2026_Ravi-Kumar_9617.pdf" — the name people see when the
+  /// PDF is shared or saved. Same scheme as the server (payslipFileName in
+  /// server/utils/pdfGenerator.js); ASCII letters/digits/-/_ only.
+  static String fileNameFor(Map<String, dynamic> p) {
+    String clean(Object? s) => (s == null || s.toString() == 'N/A' ? '' : s)
+        .toString()
+        .replaceAll(RegExp(r'[^A-Za-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    final m = (p['month'] ?? p['monthName'] ?? '').toString().trim();
+    final asNum = int.tryParse(m);
+    final idx = asNum != null
+        ? asNum - 1
+        : _months.indexWhere((x) => m.toLowerCase().startsWith(x.toLowerCase()));
+    final month = idx >= 0 && idx < 12 ? _months[idx] : clean(m);
+    final period = [month, clean(p['year'])].where((s) => s.isNotEmpty).join('-');
+    final emp = p['employeeId'];
+    final empNo = emp is Map ? emp['employeeId'] : (p['employeeCode'] ?? p['empId'] ?? emp);
+    final name = p['name'] ?? (emp is Map ? emp['name'] : null);
+    final parts = ['Payslip', period, clean(name), clean(empNo)].where((s) => s.isNotEmpty);
+    return '${parts.join('_')}.pdf';
+  }
+
   /// Downloads the payslip PDF (auth header applied via ApiClient's
-  /// interceptor) and saves it to the app's temp directory.
-  Future<File> downloadPayslip(String salaryId) async {
+  /// interceptor) and saves it to the app's temp directory under a readable
+  /// name (see [fileNameFor]).
+  Future<File> downloadPayslip(Map<String, dynamic> payslip) async {
+    final salaryId = payslip['_id'].toString();
     final response = await _dio.get<List<int>>(
       '/api/payslip/download/$salaryId',
       options: Options(responseType: ResponseType.bytes),
     );
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/payslip_$salaryId.pdf');
+    // Own folder per payslip: two different payslips can never overwrite
+    // each other even if their readable names were to match.
+    final dir = await Directory('${(await getTemporaryDirectory()).path}/payslips/$salaryId')
+        .create(recursive: true);
+    final file = File('${dir.path}/${fileNameFor(payslip)}');
     await file.writeAsBytes(response.data!);
     return file;
   }

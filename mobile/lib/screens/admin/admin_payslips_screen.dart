@@ -67,7 +67,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> with LiveRefr
 
   Future<void> _download(Map<String, dynamic> p) async {
     try {
-      final file = await _service.downloadPayslip(p['_id'].toString());
+      final file = await _service.downloadPayslip(p);
       await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {

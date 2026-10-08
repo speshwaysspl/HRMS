@@ -85,7 +85,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> with LiveRefresh<Paysli
     final id = p['_id'].toString();
     setState(() => _downloadingId = id);
     try {
-      final file = await _service.downloadPayslip(id);
+      final file = await _service.downloadPayslip(p);
       final result = await OpenFilex.open(file.path, type: 'application/pdf');
       if (result.type != ResultType.done && mounted) {
         final msg = result.type == ResultType.noAppToOpen
@@ -112,7 +112,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> with LiveRefresh<Paysli
     final id = p['_id'].toString();
     setState(() => _downloadingId = id);
     try {
-      final file = await _service.downloadPayslip(id);
+      final file = await _service.downloadPayslip(p);
       final label = '${p['monthName']} ${p['year']}';
       await SharePlus.instance.share(
         ShareParams(

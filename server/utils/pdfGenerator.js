@@ -276,14 +276,22 @@ const generateSalaryPDFContent = (doc, salary) => {
 /**
  * Generate PDF and stream to response
  */
+// "Payslip_Aug-2026_Ravi-Kumar_9617.pdf" — same scheme as the mobile app
+// (payslip_service.dart). ASCII letters/digits/-/_ only, so it survives
+// headers, WhatsApp and file managers.
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const payslipFileName = (salary) => {
+  const clean = (s) => String(s == null || s === "N/A" ? "" : s).normalize("NFKD").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const m = String(salary?.month ?? "").trim();
+  const idx = /^\d+$/.test(m) ? Number(m) - 1 : MONTHS_SHORT.findIndex((x) => m.toLowerCase().startsWith(x.toLowerCase()));
+  const period = [MONTHS_SHORT[idx] || clean(m), clean(salary?.year)].filter(Boolean).join("-");
+  const empNo = typeof salary?.employeeId === "object" ? salary.employeeId?.employeeId : "";
+  const name = salary?.name || (typeof salary?.employeeId === "object" ? salary.employeeId?.name : "");
+  return ["Payslip", period, clean(name), clean(empNo)].filter(Boolean).join("_") + ".pdf";
+};
+
 export const generateSalaryPDF = async (res, salary) => {
-  // Build a safe filename even if some fields are missing (Lambda-safe)
-  const employeePart = salary?.employeeId?.employeeId || salary?.employeeId || "Unknown";
-  const dateInput = salary?.payDate ? new Date(salary.payDate) : new Date();
-  const datePart = isNaN(dateInput.getTime())
-    ? new Date().toISOString().split("T")[0]
-    : dateInput.toISOString().split("T")[0];
-  const fileName = `Payslip_${employeePart}_${datePart}.pdf`;
+  const fileName = payslipFileName(salary);
 
   // Generate into a Buffer to avoid streaming issues on Lambda/API Gateway
   const doc = new PDFDocument({ size: "A4", margin: 20 });
