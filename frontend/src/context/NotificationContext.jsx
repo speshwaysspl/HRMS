@@ -64,10 +64,6 @@ export const NotificationProvider = ({ children }) => {
           // Show popup notification
           showPopupNotification(notification);
           
-          // Request notification permission on first notification if not already set
-          if (("Notification" in window) && Notification.permission === "default") {
-            Notification.requestPermission();
-          }
         });
 
         socket.on('connect_error', (error) => {
@@ -106,18 +102,9 @@ export const NotificationProvider = ({ children }) => {
     if (Notification.permission === "granted") {
       createNotification(notification);
     } 
-    // Otherwise, request permission
-    else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          createNotification(notification);
-        } else {
-          // Fall back to in-app notification if permission denied
-          showInAppNotification(notification);
-        }
-      });
-    } else {
-      // Fall back to in-app notification if permission denied
+    // Not allowed yet: show it in-app. (Permission is asked from the bell's
+    // "Turn on" button — browsers ignore prompts that don't come from a click.)
+    else {
       showInAppNotification(notification);
     }
   };

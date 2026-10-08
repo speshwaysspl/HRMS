@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import path from 'path';
 import fs from 'fs';
+import User from '../models/User.js';
 
 let isInitialized = false;
 
@@ -149,6 +150,15 @@ const sendMulticastNotification = async (registrationTokens, title, body, data =
         }
       });
       console.log('Failed tokens:', failedTokens);
+      // Tokens of uninstalled apps / cleared browsers never come back: drop them.
+      const dead = registrationTokens.filter((_, idx) => {
+        const code = response.responses[idx].error?.code;
+        return code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token';
+      });
+      if (dead.length) {
+        await User.updateMany({ fcmTokens: { $in: dead } }, { $pull: { fcmTokens: { $in: dead } } }).catch(() => {});
+        console.log(`Removed ${dead.length} dead FCM token(s)`);
+      }
     }
     
     return response;

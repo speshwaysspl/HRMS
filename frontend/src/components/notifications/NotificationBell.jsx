@@ -7,9 +7,12 @@ import { useAuth } from '../../context/AuthContext';
 import { formatDMY } from '../../utils/dateUtils';
 import { getNotificationTarget } from '../../utils/notificationNavigation';
 import { getDashboardBasePath } from '../../utils/roleRoutes';
+import { pushPermission, registerWebPush } from '../../utils/webPush';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [pushState, setPushState] = useState(pushPermission);
+  const enablePush = async () => setPushState(await registerWebPush({ askPermission: true }));
   // Below md the panel is a bottom sheet (slides up from the screen edge);
   // at md and up it's a small dropdown anchored under the bell (fades in
   // place) — tracked so the two use different, sensible entry motions.
@@ -202,6 +205,27 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
+
+          {pushState !== 'granted' && (
+            <div className="px-4 py-2.5 border-b border-surface-subtle bg-surface-muted text-xs text-ink-muted flex-shrink-0">
+              {pushState === 'default' ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span>Get alerts even when HRMS is closed.</span>
+                  <button
+                    type="button"
+                    onClick={enablePush}
+                    className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 font-medium text-white hover:bg-brand-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  >
+                    Turn on
+                  </button>
+                </div>
+              ) : pushState === 'denied' ? (
+                <span>Desktop alerts are blocked. Allow notifications from the lock icon in the address bar, then reload.</span>
+              ) : (
+                <span>Desktop alerts aren't available in this browser window (private/incognito windows don't support them).</span>
+              )}
+            </div>
+          )}
 
           {/* Notifications List */}
           <div className="flex-1 overflow-y-auto md:max-h-80 md:flex-none">

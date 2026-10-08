@@ -34,29 +34,39 @@ const messagingOrNull = async () => {
   return getMessaging(app);
 };
 
-/** Ask permission (if not decided yet), get this browser's token and save it for the user. */
-export const registerWebPush = async () => {
+/** "granted" | "default" | "denied" | "unsupported" (no API, or private/incognito window). */
+export const pushPermission = () => ("Notification" in window ? Notification.permission : "unsupported");
+
+/**
+ * Get this browser's token and save it for the user. Browsers ignore permission
+ * prompts that don't come from a click, so pass askPermission only from a click handler.
+ */
+export const registerWebPush = async ({ askPermission = false } = {}) => {
   try {
-    const messaging = await messagingOrNull();
-    if (!messaging) return;
+    if (!("Notification" in window)) return "unsupported";
     let permission = Notification.permission;
-    if (permission === "default") permission = await Notification.requestPermission();
-    if (permission !== "granted") return;
+    if (permission === "default" && askPermission) permission = await Notification.requestPermission();
+    if (permission !== "granted") return permission;
+    const messaging = await messagingOrNull();
+    if (!messaging) return permission;
 
     const registration = await navigator.serviceWorker.register(
       // The worker is a static file, so it gets the config through its URL.
       `/firebase-messaging-sw.js?config=${encodeURIComponent(JSON.stringify(firebaseConfig))}`
     );
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
-    if (!token) return;
+    if (!token) return "unsupported";
     await fetch(`${API_BASE}/api/notifications/fcm-token`, {
       method: "POST",
       headers: authHeader(),
       body: JSON.stringify({ token }),
     });
     localStorage.setItem(TOKEN_KEY, token);
+    return "granted";
   } catch (err) {
+    // Incognito windows have no push service: getToken fails there.
     console.warn("Web push registration failed:", err);
+    return "unsupported";
   }
 };
 
