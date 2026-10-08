@@ -8,7 +8,7 @@ import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
-import { FiDownload, FiEye } from "react-icons/fi";
+import { FiDownload, FiEye, FiX } from "react-icons/fi";
 import { useLiveData } from "../../context/NotificationContext";
 
 // Get auth headers helper
@@ -188,6 +188,34 @@ const PayslipHistory = () => {
   };
 
   
+
+  // View: show the same PDF the employee gets, on this page.
+  const [viewing, setViewing] = useState(null);
+  const closeView = () =>
+    setViewing((v) => {
+      if (v?.url) window.URL.revokeObjectURL(v.url);
+      return null;
+    });
+  const openView = async (payslip) => {
+    const title = `${payslip.name || "Payslip"} · ${payslip.month ? `${MONTHS[payslip.month - 1]} ` : ""}${payslip.year || ""}`.trim();
+    setViewing({ id: payslip._id, payslip, title, url: null, error: false });
+    try {
+      const response = await axios.get(`${API_BASE}/api/payslip/download/${payslip._id}`, {
+        headers: getAuthHeaders(),
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      setViewing((v) => (v?.id === payslip._id ? { ...v, url } : (window.URL.revokeObjectURL(url), v)));
+    } catch {
+      setViewing((v) => (v?.id === payslip._id ? { ...v, error: true } : v));
+    }
+  };
+  useEffect(() => {
+    if (!viewing) return;
+    const onKey = (e) => e.key === "Escape" && closeView();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewing]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -392,9 +420,9 @@ const PayslipHistory = () => {
                         Download
                       </button>
                       <button
-                        onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)}
+                        onClick={() => openView(payslip)}
                         className="text-accent-600 hover:text-accent-700 text-sm font-medium transition-colors"
-                        title="View Employee Salary Details"
+                        title="View payslip"
                       >
                         View
                       </button>
@@ -414,9 +442,6 @@ const PayslipHistory = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Period
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                      Department
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
                       Basic Salary
@@ -455,9 +480,6 @@ const PayslipHistory = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
-                        {payslip.department}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {formatCurrency(payslip.basicSalary)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
@@ -479,7 +501,7 @@ const PayslipHistory = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <ActionIconButton icon={FiDownload} label="Download PDF" color="brand" onClick={() => downloadPayslip(payslip._id)} />
-                        <ActionIconButton icon={FiEye} label="View Employee Salary Details" color="accent" onClick={() => navigate(`/admin-dashboard/employees/salary/${payslip.employeeId}`)} />
+                        <ActionIconButton icon={FiEye} label="View payslip" color="accent" onClick={() => openView(payslip)} />
                       </td>
                     </tr>
                   ))}
@@ -490,10 +512,62 @@ const PayslipHistory = () => {
         )}
       </div>
 
-      
-
-      
-
+      {viewing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4"
+          onClick={closeView}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payslip-view-title"
+            className="flex h-full w-full flex-col bg-white sm:h-[90vh] sm:max-w-4xl sm:rounded-xl shadow-panel overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-surface-subtle px-4 py-3">
+              <h2 id="payslip-view-title" className="truncate text-base font-semibold text-ink">
+                {viewing.title}
+              </h2>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadPayslip(viewing.id)}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-sm font-medium text-white hover:bg-brand-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
+                >
+                  <FiDownload aria-hidden="true" /> Download
+                </button>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={closeView}
+                  aria-label="Close"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                >
+                  <FiX size={20} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 bg-surface-muted">
+              {viewing.error ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+                  <p className="text-sm text-ink">Couldn't load this payslip.</p>
+                  <button
+                    type="button"
+                    onClick={() => openView(viewing.payslip)}
+                    className="min-h-[40px] rounded-lg border border-surface-subtle bg-white px-4 text-sm font-medium text-ink hover:bg-surface-muted"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : viewing.url ? (
+                <iframe title={viewing.title} src={viewing.url} className="h-full w-full border-0" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-ink-muted">Loading payslip…</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
