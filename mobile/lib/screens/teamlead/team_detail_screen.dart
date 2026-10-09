@@ -177,6 +177,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
+  String _teamStartDate() {
+    final raw = (_detail?['team'] as Map?)?['startDate']?.toString();
+    final d = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
+    return d == null ? '-' : DateFormat('dd-MM-yyyy').format(d);
+  }
+
   Future<void> _downloadPdf() async {
     final ms = _milestoneFilter;
     String ddmmyyyy(dynamic v) {
@@ -258,9 +264,18 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
               ],
             ),
             pw.SizedBox(height: 4),
-            pw.Text(
-              'Team: ${(_detail?['team'] as Map?)?['name']?.toString() ?? '-'}',
-              style: const pw.TextStyle(fontSize: 12),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Team: ${(_detail?['team'] as Map?)?['name']?.toString() ?? '-'}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+                pw.Text(
+                  'Project Start Date: ${_teamStartDate()}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+              ],
             ),
             pw.SizedBox(height: 10),
             pw.TableHelper.fromTextArray(

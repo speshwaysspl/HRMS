@@ -454,6 +454,7 @@ const TeamDetail = () => {
       const d = new Date(v);
       return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
     };
+    doc.text(`Project Start Date: ${ddmmyyyy(team?.startDate)}`, doc.internal.pageSize.getWidth() - 15, 23, { align: "right" });
 
     // Only this milestone's live tasks, lowest rating first (unrated last)
     const rows = tasks
