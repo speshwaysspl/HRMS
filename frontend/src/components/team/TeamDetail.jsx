@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { proofsOf } from "../task/WorkProofField";
 import { useSocketEvent } from "../../context/NotificationContext";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -116,6 +116,51 @@ const TeamDetail = () => {
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       })
       .catch(() => {});
+  };
+  // Work proof shown in the same in-page preview: { url, name, blobUrl, isImage, loading, error }.
+  // The storage server sends files as attachments (download), so we fetch the bytes and
+  // re-wrap them with the right MIME type to display them inline.
+  const [proofPreview, setProofPreview] = useState(null);
+  const MIME_BY_EXT = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", bmp: "image/bmp", svg: "image/svg+xml", txt: "text/plain" };
+  const proofFileName = (url, name) => name || decodeURIComponent(url.split("/").pop().split("?")[0]) || "work-proof";
+  const openProofPreview = async (url, name) => {
+    setProofPreview({ url, name, loading: true });
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error();
+      const raw = await res.blob();
+      const ext = proofFileName(url, name).split(".").pop().toLowerCase();
+      const type = MIME_BY_EXT[ext] || (raw.type && raw.type !== "application/octet-stream" ? raw.type : "application/pdf");
+      const blob = new Blob([raw], { type });
+      const blobUrl = URL.createObjectURL(blob);
+      // Browsers can't show Word/Excel/PowerPoint; .docx is rendered by docx-preview below.
+      const kind = ext === "docx" ? "docx"
+        : ["doc", "xls", "xlsx", "ppt", "pptx", "zip", "rar"].includes(ext) ? "unsupported"
+        : type.startsWith("image/") ? "image" : "frame";
+      setProofPreview((p) => (p && p.url === url ? { ...p, blob, blobUrl, kind, loading: false } : p));
+    } catch {
+      setProofPreview((p) => (p && p.url === url ? { ...p, loading: false, error: true } : p));
+    }
+  };
+  const docxRef = useRef(null);
+  useEffect(() => {
+    if (proofPreview?.kind !== "docx" || !docxRef.current) return;
+    const el = docxRef.current;
+    import("docx-preview")
+      .then(({ renderAsync }) => renderAsync(proofPreview.blob, el, undefined, { inWrapper: true }))
+      .catch(() => setProofPreview((p) => (p ? { ...p, kind: "unsupported" } : p)));
+  }, [proofPreview?.kind, proofPreview?.blob]);
+  const closeProofPreview = () => {
+    if (proofPreview?.blobUrl) URL.revokeObjectURL(proofPreview.blobUrl);
+    setProofPreview(null);
+  };
+  const saveProofPreview = () => {
+    const { url, name, blobUrl } = proofPreview;
+    if (!blobUrl) return window.open(url, "_blank", "noopener");
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = proofFileName(url, name);
+    a.click();
   };
   const [docsModal, setDocsModal] = useState({ open: false, documents: [], employeeName: "" });
   const [docsLoading, setDocsLoading] = useState(false);
@@ -772,16 +817,15 @@ const TeamDetail = () => {
                                             {proofsOf(task).length || task.reference ? (
                                                 <div className="flex flex-col items-start gap-1">
                                                     {proofsOf(task).map((p, i, all) => (
-                                                        <a
+                                                        <button
+                                                            type="button"
                                                             key={p.url}
-                                                            href={getDocumentUrl(p.url)}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                            onClick={() => openProofPreview(getDocumentUrl(p.url), p.name)}
                                                             title={p.name || "Employee's work proof"}
                                                             className="bg-brand-700 text-white text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 hover:bg-brand-800 transition-colors"
                                                         >
                                                             <FaEye aria-hidden="true" /> Work proof{all.length > 1 ? ` ${i + 1}` : ""}
-                                                        </a>
+                                                        </button>
                                                     ))}
                                                     {task.reference && (
                                                         <a
@@ -894,16 +938,15 @@ const TeamDetail = () => {
                                 {proofsOf(task).length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
                                         {proofsOf(task).map((p, i, all) => (
-                                            <a
+                                            <button
+                                                type="button"
                                                 key={p.url}
-                                                href={getDocumentUrl(p.url)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                                onClick={() => openProofPreview(getDocumentUrl(p.url), p.name)}
                                                 title={p.name || "Employee's work proof"}
                                                 className="inline-block py-2 text-brand-600 font-medium"
                                             >
                                                 Work proof{all.length > 1 ? ` ${i + 1}` : ""}
-                                            </a>
+                                            </button>
                                         ))}
                                     </div>
                                 )}
@@ -1867,6 +1910,64 @@ const TeamDetail = () => {
               </button>
             </div>
             <iframe title="PDF preview" src={pdfPreview.url} className="flex-1 w-full bg-surface-muted" />
+          </div>
+        </div>
+      )}
+
+      {/* Work proof preview */}
+      {proofPreview && (
+        <div
+          className="fixed inset-0 bg-brand-950/60 flex justify-center items-center z-[60] p-2 sm:p-4"
+          onClick={closeProofPreview}
+          onKeyDown={(e) => e.key === "Escape" && closeProofPreview()}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="proof-preview-title"
+            className="bg-white rounded-xl shadow-panel w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-subtle">
+              <h3 id="proof-preview-title" className="flex-1 min-w-0 truncate font-semibold text-ink">
+                {proofPreview.name || "Work proof"}
+              </h3>
+              <button
+                onClick={saveProofPreview}
+                autoFocus
+                className="bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+              >
+                <FaFilePdf /> Download
+              </button>
+              <button
+                onClick={closeProofPreview}
+                aria-label="Close preview"
+                className="p-2.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            {proofPreview.loading ? (
+              <div className="flex-1 flex items-center justify-center bg-surface-muted text-ink-muted">Loading preview…</div>
+            ) : proofPreview.error ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-surface-muted text-ink-muted p-4 text-center">
+                <p>Couldn't load a preview of this file.</p>
+                <a href={proofPreview.url} target="_blank" rel="noopener noreferrer" className="text-brand-600 font-medium underline">Open in new tab</a>
+              </div>
+            ) : proofPreview.kind === "docx" ? (
+              <div ref={docxRef} className="flex-1 overflow-auto bg-surface-muted" />
+            ) : proofPreview.kind === "unsupported" ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 bg-surface-muted text-ink-muted p-4 text-center">
+                <p>This file type can't be previewed in the browser.</p>
+                <p>Use Download to open it.</p>
+              </div>
+            ) : proofPreview.kind === "image" ? (
+              <div className="flex-1 overflow-auto bg-surface-muted flex items-center justify-center p-4">
+                <img src={proofPreview.blobUrl} alt={proofPreview.name || "Work proof"} className="max-w-full max-h-full object-contain" />
+              </div>
+            ) : (
+              <iframe title="Work proof preview" src={proofPreview.blobUrl} className="flex-1 w-full bg-surface-muted" />
+            )}
           </div>
         </div>
       )}
