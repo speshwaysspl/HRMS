@@ -7,6 +7,8 @@ import Department from "../models/Department.js";
 import Candidate from "../models/Candidate.js";
 import Offer from "../models/Offer.js";
 import { generateSalaryPDF, generateSalaryPDFBuffer, payslipFileName } from "../utils/pdfGenerator.js";
+import numberToWords from "number-to-words";
+const { toWords } = numberToWords;
 import { enqueueEmail } from "../utils/emailQueue.js";
 import { createPayslipNotification } from "./notificationController.js";
 
@@ -1054,6 +1056,26 @@ export const sendPayslipEmail = async (req, res) => {
       return res.status(400).json({ success: false, error: "Employee email not found" });
     }
     
+    // Normalize so the email body matches the PDF / in-app preview. Callers
+    // that send raw form data (e.g. Generate by Days) pass a numeric month and
+    // no netSalary — only a netPayOverride — so derive both here.
+    if (typeof payslip?.toObject === "function") payslip = payslip.toObject();
+    payslip = { ...payslip };
+    if (/^\d+$/.test(String(payslip.month ?? "").trim())) {
+      payslip.month = payslip.monthName || getMonthName(Number(payslip.month));
+    }
+    const n = (v) => (v === undefined || v === null || v === "" || isNaN(Number(v)) ? 0 : Number(v));
+    const totalEarnings = n(payslip.basicSalary) + n(payslip.da) + n(payslip.hra) + n(payslip.conveyance) + n(payslip.medicalallowances) + n(payslip.specialallowances);
+    const totalDeductions = n(payslip.pf) + n(payslip.proftax) + n(payslip.deductions) + n(payslip.lopamount);
+    const hasOverride = payslip.netPayOverride !== undefined && payslip.netPayOverride !== null && payslip.netPayOverride !== "" && !isNaN(Number(payslip.netPayOverride));
+    if (payslip.netSalary === undefined || payslip.netSalary === null || payslip.netSalary === "" || isNaN(Number(payslip.netSalary))) {
+      payslip.netSalary = Number(Math.max(0, hasOverride ? Number(payslip.netPayOverride) : totalEarnings - totalDeductions).toFixed(2));
+    }
+    const netPay = Math.round(Number(payslip.netSalary));
+    const empNo = typeof payslip.employeeId === "object" && payslip.employeeId ? payslip.employeeId.employeeId : payslip.employeeId;
+    const words = toWords(netPay).replace(/,/g, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const r = (v) => Math.round(n(v));
+
     // Create email content
     const subject = `Payslip for ${payslip.month} ${payslip.year} - ${payslip.name}`;
     const htmlContent = `
@@ -1068,11 +1090,11 @@ export const sendPayslipEmail = async (req, res) => {
           <h4 style="color: #374151; margin: 0 0 15px 0;">Employee Details</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div><strong>Name:</strong> ${payslip.name}</div>
-            <div><strong>Employee ID:</strong> ${payslip.employeeId}</div>
+            <div><strong>Employee ID:</strong> ${empNo || 'N/A'}</div>
             <div><strong>Designation:</strong> ${payslip.designation || 'N/A'}</div>
             <div><strong>Department:</strong> ${payslip.department || 'N/A'}</div>
-            <div><strong>Working Days:</strong> ${payslip.workingdays || 0}</div>
-            <div><strong>LOP Days:</strong> ${payslip.lopDays || 0}</div>
+            <div><strong>Working Days:</strong> ${n(payslip.workingdays)}</div>
+            <div><strong>LOP Days:</strong> ${n(payslip.lopDays)}</div>
           </div>
         </div>
         
@@ -1080,15 +1102,14 @@ export const sendPayslipEmail = async (req, res) => {
           <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px;">
             <h4 style="color: #065f46; margin: 0 0 10px 0;">Earnings</h4>
             <div style="font-size: 14px; line-height: 1.6;">
-              <div>Basic Salary: ₹${payslip.basicSalary || 0}</div>
-              <div>DA: ₹${payslip.da || 0}</div>
-              <div>HRA: ₹${payslip.hra || 0}</div>
-              <div>Conveyance: ₹${payslip.conveyance || 0}</div>
-              <div>Medical Allowances: ₹${payslip.medicalallowances || 0}</div>
-              <div>Special Allowances: ₹${payslip.specialallowances || 0}</div>
-              
+              <div>Basic Salary: ₹${r(payslip.basicSalary)}</div>
+              <div>DA: ₹${r(payslip.da)}</div>
+              <div>HRA: ₹${r(payslip.hra)}</div>
+              <div>Conveyance: ₹${r(payslip.conveyance)}</div>
+              <div>Medical Allowances: ₹${r(payslip.medicalallowances)}</div>
+              <div>Special Allowances: ₹${r(payslip.specialallowances)}</div>
               <div style="border-top: 1px solid #065f46; margin-top: 8px; padding-top: 8px; font-weight: bold;">
-                Total Earnings: ₹${payslip.totalEarnings || (Number(payslip.basicSalary || 0) + Number(payslip.da || 0) + Number(payslip.hra || 0) + Number(payslip.conveyance || 0) + Number(payslip.medicalallowances || 0) + Number(payslip.specialallowances || 0))}
+                Total Earnings: ₹${totalEarnings.toFixed(2)}
               </div>
             </div>
           </div>
@@ -1096,19 +1117,20 @@ export const sendPayslipEmail = async (req, res) => {
           <div style="background-color: #fef2f2; padding: 15px; border-radius: 6px;">
             <h4 style="color: #991b1b; margin: 0 0 10px 0;">Deductions</h4>
             <div style="font-size: 14px; line-height: 1.6;">
-              <div>PF: ₹${payslip.pf || 0}</div>
-              <div>Professional Tax: ₹${payslip.proftax || 0}</div>
-              <div>Other Deductions: ₹${payslip.deductions || 0}</div>
-              <div>LOP Amount: ₹${payslip.lopamount || 0}</div>
+              <div>PF: ₹${r(payslip.pf)}</div>
+              <div>Professional Tax: ₹${r(payslip.proftax)}</div>
+              <div>Other Deductions: ₹${r(payslip.deductions)}</div>
+              <div>LOP Amount: ₹${r(payslip.lopamount)}</div>
               <div style="border-top: 1px solid #991b1b; margin-top: 8px; padding-top: 8px; font-weight: bold;">
-                Total Deductions: ₹${payslip.totalDeductions || (Number(payslip.pf || 0) + Number(payslip.proftax || 0) + Number(payslip.deductions || 0) + Number(payslip.lopamount || 0))}
+                Total Deductions: ₹${totalDeductions.toFixed(2)}
               </div>
             </div>
           </div>
         </div>
         
         <div style="background-color: #dbeafe; padding: 20px; border-radius: 6px; text-align: center; margin-bottom: 20px;">
-          <h3 style="color: #1e40af; margin: 0;">Net Salary: ₹${payslip.netSalary || 0}</h3>
+          <h3 style="color: #1e40af; margin: 0;">Net Salary: ₹${netPay}</h3>
+          <p style="color: #1e40af; margin: 6px 0 0 0; font-size: 13px; font-style: italic;">(${words} Rupees Only)</p>
         </div>
         
         ${customMessage ? `<div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><p style="margin: 0; color: #374151;">${customMessage}</p></div>` : ''}
