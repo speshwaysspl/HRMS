@@ -93,3 +93,6 @@ MERN-Stack-Employee-MS-main/
 server/public/uploads/*
 !server/public/uploads/default-profile.png
 
+
+# Firebase service account key (secret)
+server/service_account.json
