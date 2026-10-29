@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_client.dart';
 import '../../services/milestone_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
-import '../../widgets/state_views.dart';
+import 'team_palette.dart';
 
 final _ymd = DateFormat('yyyy-MM-dd');
 final _pretty = DateFormat('EEE, d MMM');
@@ -118,109 +119,101 @@ class _MilestonesTabState extends State<MilestonesTab> {
         .toList();
     final shown = _showClosed ? closed : open;
     final showUnplanned = !_showClosed && widget.unplannedCount > 0;
+    final total = open.length + closed.length;
+    final pad = context.w(16);
 
-    return Column(
+    final summary = Row(
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            context.w(16),
-            context.h(8),
-            context.w(16),
-            context.h(4),
-          ),
-          child: SegmentedButton<bool>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: false,
-                icon: const Icon(Icons.flag_outlined),
-                label: Text('${open.length} Open'),
-              ),
-              ButtonSegment(
-                value: true,
-                icon: const Icon(Icons.check_circle_outline),
-                label: Text('${closed.length} Closed'),
-              ),
-            ],
-            selected: {_showClosed},
-            onSelectionChanged: (s) => setState(() => _showClosed = s.first),
-          ),
+        _SummaryToggle(
+          icon: Icons.flag_rounded,
+          count: open.length,
+          label: 'Open',
+          share: total == 0 ? 0 : open.length / total,
+          selected: !_showClosed,
+          onTap: () => setState(() => _showClosed = false),
         ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: widget.onChanged,
-            child: shown.isEmpty && !showUnplanned
-                ? ListView(
-                    children: [
-                      const SizedBox(height: 60),
-                      EmptyStateView(
-                        icon: Icons.flag_outlined,
-                        title: _showClosed
-                            ? 'No closed milestones yet'
-                            : 'No open milestones',
-                        subtitle: _showClosed
-                            ? 'Close a milestone when its week is done.'
-                            : widget.canManage
-                            ? 'Plan the week: tap New milestone, open it and add its tasks.'
-                            : "Your team lead hasn't planned a milestone yet.",
-                      ),
-                    ],
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                      context.w(16),
-                      context.h(4),
-                      context.w(16),
-                      context.h(96),
-                    ),
-                    itemCount: shown.length + (showUnplanned ? 1 : 0),
-                    itemBuilder: (_, i) => i < shown.length
-                        ? _card(shown[i], closed: _showClosed)
-                        : SimpleCard(
-                            onTap: () => widget.onViewTasks('none'),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Unplanned tasks',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Tasks not in any milestone',
-                                        style: TextStyle(
-                                          color: AppColors.inkMuted,
-                                          fontSize: context.sp(12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${widget.unplannedCount}',
-                                  style: TextStyle(
-                                    color: AppColors.inkMuted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: AppColors.inkFaint,
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-          ),
+        SizedBox(width: context.w(10)),
+        _SummaryToggle(
+          icon: Icons.check_circle_rounded,
+          count: closed.length,
+          label: 'Closed',
+          share: total == 0 ? 0 : closed.length / total,
+          selected: _showClosed,
+          onTap: () => setState(() => _showClosed = true),
         ),
       ],
     );
+
+    return RefreshIndicator(
+      onRefresh: widget.onChanged,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(pad, context.h(12), pad, context.h(96)),
+        children: [
+          summary,
+          SizedBox(height: context.h(4)),
+          if (shown.isEmpty && !showUnplanned)
+            _MilestonesEmpty(closed: _showClosed, canManage: widget.canManage),
+          for (final m in shown) _card(m, closed: _showClosed),
+          if (showUnplanned)
+            Padding(
+              padding: EdgeInsets.only(top: context.h(12)),
+              child: SimpleCard(
+                onTap: () => widget.onViewTasks('none'),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Unplanned tasks',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          Text(
+                            'Tasks not in any milestone',
+                            style: TextStyle(
+                              color: AppColors.inkMuted,
+                              fontSize: context.sp(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${widget.unplannedCount}',
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: AppColors.inkFaint),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// "Week-3" -> "W3", "Auth screens" -> "AS", "Sprint" -> "S".
+  static String _badge(String title) {
+    final week = RegExp(
+      r'week\s*[-_ ]?\s*(\d+)',
+      caseSensitive: false,
+    ).firstMatch(title);
+    if (week != null) return 'W${week.group(1)}';
+    final words = title
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) return words.first[0].toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
   Widget _card(Map<String, dynamic> m, {required bool closed}) {
@@ -229,145 +222,265 @@ class _MilestonesTabState extends State<MilestonesTab> {
     final late = dueText.startsWith('Past due');
     final desc = (m['description'] ?? '').toString();
     final id = m['_id'].toString();
+    final title = m['title']?.toString() ?? '';
+    final done = (m['completedTasks'] as num?)?.toInt() ?? 0;
+    final openTasks = (m['openTasks'] as num?)?.toInt() ?? 0;
+    final overdue = (m['overdueTasks'] as num?)?.toInt() ?? 0;
+    final badgeColor = AppColors.brand500;
+    final (chipLabel, chipIcon, chipColor) = closed
+        ? ('Closed', Icons.check_rounded, TeamPalette.ok)
+        : late
+        ? ('Overdue', Icons.schedule_rounded, TeamPalette.bad)
+        : ('Open', Icons.flag_outlined, AppColors.brand500);
 
-    return SimpleCard(
-      onTap: () => widget.onViewTasks(id),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(top: context.h(4)),
-                  child: Text(
-                    m['title']?.toString() ?? '',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: context.sp(16),
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ),
-              ),
-              if (widget.canManage)
-                PopupMenuButton<String>(
-                  tooltip: 'Milestone actions',
-                  onSelected: (a) {
-                    switch (a) {
-                      case 'edit':
-                        _openForm(m);
-                      case 'close':
-                        _run(
-                          () => _service.setState(id, 'closed'),
-                          'Milestone closed',
-                        );
-                      case 'reopen':
-                        _run(
-                          () => _service.setState(id, 'open'),
-                          'Milestone reopened',
-                        );
-                      case 'delete':
-                        _delete(m);
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Edit'),
+    return Padding(
+      padding: EdgeInsets.only(top: context.h(12)),
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(context.r(18)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(context.r(18)),
+          onTap: () => widget.onViewTasks(id),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(
+              context.w(14),
+              context.h(14),
+              context.w(4),
+              context.h(14),
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(context.r(18)),
+              border: Border.all(color: AppColors.surfaceSubtle),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: context.r(24),
+                      backgroundColor: AppColors.brand50,
+                      child: Text(
+                        _badge(title),
+                        style: TextStyle(
+                          color: badgeColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: context.sp(14),
+                        ),
                       ),
                     ),
-                    closed
-                        ? const PopupMenuItem(
-                            value: 'reopen',
-                            child: ListTile(
-                              leading: Icon(Icons.replay),
-                              title: Text('Reopen'),
-                            ),
-                          )
-                        : const PopupMenuItem(
-                            value: 'close',
-                            child: ListTile(
-                              leading: Icon(Icons.check_circle_outline),
-                              title: Text('Close'),
+                    SizedBox(width: context.w(12)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: context.sp(16),
+                              color: AppColors.ink,
                             ),
                           ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.delete_outline,
-                          color: AppColors.danger,
-                        ),
-                        title: Text(
-                          'Delete',
-                          style: TextStyle(color: AppColors.danger),
-                        ),
+                          SizedBox(height: context.h(4)),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.event_outlined,
+                                size: context.r(15),
+                                color: late
+                                    ? AppColors.danger
+                                    : AppColors.inkMuted,
+                              ),
+                              SizedBox(width: context.w(5)),
+                              Flexible(
+                                child: Text(
+                                  dueText,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: context.sp(12.5),
+                                    color: late
+                                        ? AppColors.danger
+                                        : AppColors.inkMuted,
+                                    fontWeight: late
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.w(10),
+                        vertical: context.h(5),
+                      ),
+                      decoration: BoxDecoration(
+                        color: TeamPalette.soft(chipColor),
+                        borderRadius: BorderRadius.circular(context.r(20)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(chipIcon, size: context.r(14), color: chipColor),
+                          SizedBox(width: context.w(4)),
+                          Text(
+                            chipLabel,
+                            style: TextStyle(
+                              color: chipColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: context.sp(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (widget.canManage)
+                      _menu(m, id, closed)
+                    else
+                      SizedBox(width: context.w(10)),
                   ],
                 ),
-            ],
-          ),
-          Row(
-            children: [
-              Icon(
-                Icons.event_outlined,
-                size: context.r(14),
-                color: late ? AppColors.danger : AppColors.inkFaint,
-              ),
-              SizedBox(width: context.w(4)),
-              Text(
-                dueText,
-                style: TextStyle(
-                  fontSize: context.sp(12),
-                  color: late ? AppColors.danger : AppColors.inkMuted,
-                  fontWeight: late ? FontWeight.w600 : FontWeight.w400,
+                if (desc.isNotEmpty) ...[
+                  SizedBox(height: context.h(10)),
+                  Padding(
+                    padding: EdgeInsets.only(right: context.w(10)),
+                    child: Text(
+                      desc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: context.sp(13),
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: context.h(12)),
+                Padding(
+                  padding: EdgeInsets.only(right: context.w(10)),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Semantics(
+                          label: '$progress percent complete',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: progress / 100,
+                              minHeight: 7,
+                              backgroundColor: AppColors.surfaceSubtle,
+                              color: TeamPalette.ok,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: context.w(10)),
+                      Text(
+                        '$progress%',
+                        style: TextStyle(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w600,
+                          fontSize: context.sp(12.5),
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (desc.isNotEmpty) ...[
-            SizedBox(height: context.h(6)),
-            Text(
-              desc,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.inkMuted,
-                fontSize: context.sp(13),
-              ),
-            ),
-          ],
-          SizedBox(height: context.h(12)),
-          Semantics(
-            label: '$progress percent complete',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress / 100,
-                minHeight: 6,
-                backgroundColor: AppColors.surfaceSubtle,
-                color: AppColors.accent600,
-              ),
-            ),
-          ),
-          SizedBox(height: context.h(6)),
-          Text(
-            '$progress% complete · ${m['openTasks'] ?? 0} open · ${m['completedTasks'] ?? 0} done',
-            style: TextStyle(
-              color: AppColors.inkMuted,
-              fontSize: context.sp(12),
-              fontFeatures: const [FontFeature.tabularFigures()],
+                SizedBox(height: context.h(12)),
+                Padding(
+                  padding: EdgeInsets.only(right: context.w(10)),
+                  child: Row(
+                    children: [
+                      _MiniStat(
+                        icon: Icons.check_circle_rounded,
+                        value: done,
+                        label: 'Done',
+                        color: TeamPalette.ok,
+                      ),
+                      SizedBox(width: context.w(8)),
+                      _MiniStat(
+                        icon: Icons.format_list_bulleted_rounded,
+                        value: openTasks,
+                        label: 'Open',
+                        color: AppColors.brand500,
+                      ),
+                      SizedBox(width: context.w(8)),
+                      _MiniStat(
+                        icon: Icons.schedule_rounded,
+                        value: overdue,
+                        label: 'Overdue',
+                        color: TeamPalette.bad,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+
+  Widget _menu(Map<String, dynamic> m, String id, bool closed) =>
+      PopupMenuButton<String>(
+        tooltip: 'Milestone actions',
+        icon: const Icon(Icons.more_vert_rounded),
+        onSelected: (a) {
+          switch (a) {
+            case 'edit':
+              _openForm(m);
+            case 'close':
+              _run(() => _service.setState(id, 'closed'), 'Milestone closed');
+            case 'reopen':
+              _run(() => _service.setState(id, 'open'), 'Milestone reopened');
+            case 'delete':
+              _delete(m);
+          }
+        },
+        itemBuilder: (_) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: ListTile(
+              leading: Icon(Icons.edit_outlined),
+              title: Text('Edit'),
+            ),
+          ),
+          closed
+              ? const PopupMenuItem(
+                  value: 'reopen',
+                  child: ListTile(
+                    leading: Icon(Icons.replay),
+                    title: Text('Reopen'),
+                  ),
+                )
+              : const PopupMenuItem(
+                  value: 'close',
+                  child: ListTile(
+                    leading: Icon(Icons.check_circle_outline),
+                    title: Text('Close'),
+                  ),
+                ),
+          PopupMenuItem(
+            value: 'delete',
+            child: ListTile(
+              leading: const Icon(
+                Icons.delete_outline,
+                color: AppColors.danger,
+              ),
+              title: Text('Delete', style: TextStyle(color: AppColors.danger)),
+            ),
+          ),
+        ],
+      );
 
   Future<void> _openForm([Map<String, dynamic>? m]) async {
     final ok = await showModalBottomSheet<bool>(
@@ -380,6 +493,282 @@ class _MilestonesTabState extends State<MilestonesTab> {
       _toast(m == null ? 'Milestone created' : 'Milestone saved');
       await widget.onChanged();
     }
+  }
+}
+
+/// Open / Closed summary card that also switches the list.
+class _SummaryToggle extends StatelessWidget {
+  const _SummaryToggle({
+    required this.icon,
+    required this.count,
+    required this.label,
+    required this.share,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData icon;
+  final int count;
+  final String label;
+  final double share;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(context.r(16));
+    final accent = AppColors.brand500;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: '$count $label milestones',
+        excludeSemantics: true,
+        child: Material(
+          color: selected ? AppColors.brand50 : AppColors.surface,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.all(context.w(12)),
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: selected ? accent : AppColors.surfaceSubtle,
+                  width: selected ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: context.r(40),
+                        height: context.r(40),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.surface
+                              : AppColors.brand50,
+                          borderRadius: BorderRadius.circular(context.r(12)),
+                        ),
+                        child: Icon(icon, color: accent, size: context.r(20)),
+                      ),
+                      SizedBox(width: context.w(10)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$count',
+                              style: TextStyle(
+                                fontSize: context.sp(20),
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                                height: 1.1,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '$label milestones',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: context.sp(12.5),
+                                color: AppColors.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: context.h(10)),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: share.clamp(0.0, 1.0),
+                      minHeight: 4,
+                      color: accent,
+                      backgroundColor: AppColors.surfaceSubtle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+  final IconData icon;
+  final int value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Semantics(
+        label: '$value $label',
+        excludeSemantics: true,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(10),
+            vertical: context.h(10),
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(context.r(12)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: context.r(20)),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$value',
+                      style: TextStyle(
+                        fontSize: context.sp(16),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: context.sp(12),
+                          color: AppColors.inkMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty milestone list: a flag "box", the message and the three-step plan.
+class _MilestonesEmpty extends StatelessWidget {
+  const _MilestonesEmpty({required this.closed, required this.canManage});
+  final bool closed;
+  final bool canManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = closed ? 'No closed milestones yet' : 'No open milestones';
+    final subtitle = closed
+        ? 'Close a milestone when its week is done.'
+        : canManage
+        ? 'Plan the week: tap New Milestone, open it and add its tasks.'
+        : "Your team lead hasn't planned a milestone yet.";
+
+    Widget step(IconData icon, String label) => Expanded(
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: context.r(26),
+            backgroundColor: AppColors.brand50,
+            child: Icon(icon, color: AppColors.brand500, size: context.r(22)),
+          ),
+          SizedBox(height: context.h(8)),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: context.sp(13),
+              color: AppColors.inkMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(top: context.h(36)),
+      child: Column(
+        children: [
+          if (closed)
+            Container(
+              width: context.r(132),
+              height: context.r(132),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.brand50,
+              ),
+              child: Icon(
+                Icons.check_circle_rounded,
+                size: context.r(48),
+                color: TeamPalette.ok,
+              ),
+            )
+          else
+            ExcludeSemantics(
+              child: SvgPicture.asset(
+                'assets/empty_milestones.svg',
+                width: context.w(280),
+              ),
+            ),
+          SizedBox(height: context.h(20)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: context.sp(20),
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
+          SizedBox(height: context.h(6)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.w(16)),
+            child: Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: context.sp(14),
+                color: AppColors.inkMuted,
+              ),
+            ),
+          ),
+          if (!closed && canManage) ...[
+            SizedBox(height: context.h(28)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                step(Icons.flag_outlined, 'Create\na milestone'),
+                step(Icons.playlist_add_check_rounded, 'Add\ntasks'),
+                step(Icons.insights_rounded, 'Track\nprogress'),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

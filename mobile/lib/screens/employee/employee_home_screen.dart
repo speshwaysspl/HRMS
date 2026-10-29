@@ -21,6 +21,7 @@ import 'notifications_screen.dart';
 import 'payslips_screen.dart';
 
 import '../../services/live_refresh.dart';
+
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
 
@@ -28,9 +29,17 @@ class EmployeeHomeScreen extends StatefulWidget {
   State<EmployeeHomeScreen> createState() => _EmployeeHomeScreenState();
 }
 
-class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with LiveRefresh<EmployeeHomeScreen> {
+class _EmployeeHomeScreenState extends State<EmployeeHomeScreen>
+    with LiveRefresh<EmployeeHomeScreen> {
   @override
-  List<String> get liveResources => const ['dashboard', 'attendance', 'leave', 'announcement', 'events', 'task'];
+  List<String> get liveResources => const [
+    'dashboard',
+    'attendance',
+    'leave',
+    'announcement',
+    'events',
+    'task',
+  ];
 
   @override
   void onLiveRefresh() => _load();
@@ -261,9 +270,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with LiveRefres
   }) {
     final designation = employee['designation']?.toString().trim();
     final department = employee['department']?.toString().trim();
-    final roleSub = (designation != null && designation.isNotEmpty)
-        ? '$designation${(department != null && department.isNotEmpty) ? ' · $department' : ''}'
-        : 'Senior Java Developer · Engineering';
+    // From the employee record; nothing made up when a field isn't set.
+    final roleSub = [
+      designation,
+      department,
+    ].where((v) => v != null && v.isNotEmpty).join(' · ');
 
     final todayFormatted = DateFormat('EEE, d MMM yyyy').format(DateTime.now());
     const textShadow = [
@@ -323,18 +334,20 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with LiveRefres
                         Text('👋', style: TextStyle(fontSize: context.sp(15))),
                       ],
                     ),
-                    SizedBox(height: context.h(2)),
-                    Text(
-                      roleSub,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: context.sp(11.5),
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w400,
-                        shadows: textShadow,
+                    if (roleSub.isNotEmpty) ...[
+                      SizedBox(height: context.h(2)),
+                      Text(
+                        roleSub,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: context.sp(11.5),
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w400,
+                          shadows: textShadow,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

@@ -21,15 +21,23 @@ import '../../widgets/work_proof_field.dart' show ProofFile, proofsOf;
 import '../../widgets/state_views.dart';
 import 'milestones_tab.dart';
 import 'team_attendance_tab.dart';
+import 'team_members_tab.dart';
+import 'team_palette.dart';
 
 /// Team detail for team leads — mirrors web TeamDetail.jsx: a "Task List"
 /// tab (add / update / view tasks) and a "Team Members" tab (per-member stats).
 class TeamDetailScreen extends StatefulWidget {
   final String id;
   final String name;
+
   /// Opens this task's update sheet once loaded (from a notification).
   final String? openTaskId;
-  const TeamDetailScreen({super.key, required this.id, required this.name, this.openTaskId});
+  const TeamDetailScreen({
+    super.key,
+    required this.id,
+    required this.name,
+    this.openTaskId,
+  });
 
   @override
   State<TeamDetailScreen> createState() => _TeamDetailScreenState();
@@ -48,6 +56,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
   final _tasks = TaskService();
   final _milestoneService = MilestoneService();
   late final TabController _tabs = TabController(length: 3, vsync: this);
+  bool _fabTab = true;
   List<Map<String, dynamic>> _milestones = [];
   // Tasks live inside milestones: null shows the milestone list, 'none' the
   // unplanned tasks, otherwise that milestone's tasks.
@@ -65,6 +74,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     // Rebuild on tab change so Add Task only shows on the task list.
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) setState(() {});
+    });
+    // Hide the Milestones FAB as soon as a swipe leaves that tab, not only
+    // when the swipe settles, so it never floats over Attendance's Save.
+    _tabs.animation?.addListener(() {
+      final onFirst = (_tabs.animation?.value ?? 0) < 0.5;
+      if (onFirst != _fabTab) setState(() => _fabTab = onFirst);
     });
     _load();
     _loadMilestones();
@@ -993,136 +1008,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
     );
   }
 
-  Widget _membersTab() {
-    final stats = ((_detail?['memberStats'] as List?) ?? [])
-        .whereType<Map>()
-        .toList();
-    if (stats.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          children: const [
-            SizedBox(height: 100),
-            EmptyStateView(
-              icon: Icons.person_outline,
-              title: 'No members in this team yet',
-            ),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: EdgeInsets.all(context.w(16)),
-        children: stats.map((m) {
-          final member = m['member'] as Map? ?? {};
-          final user = member['userId'] as Map? ?? {};
-          final progress = ((m['progress'] as num?) ?? 0).toDouble();
-          final name = user['name']?.toString() ?? 'Unknown';
-          return SimpleCard(
-            onTap: () => _openMember(m),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: context.r(18),
-                      backgroundColor: AppColors.brand100,
-                      child: Text(
-                        (name.isNotEmpty ? name[0] : '?').toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.brand700,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: context.w(12)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                          Text(
-                            member['employeeId']?.toString() ?? '',
-                            style: TextStyle(
-                              color: AppColors.inkMuted,
-                              fontSize: context.sp(12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      'Total: ${m['totalTasks'] ?? 0}',
-                      style: TextStyle(
-                        color: AppColors.inkMuted,
-                        fontSize: context.sp(12),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: context.h(10)),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: (progress / 100).clamp(0.0, 1.0),
-                    minHeight: context.h(6),
-                    color: AppColors.accent600,
-                    backgroundColor: AppColors.surfaceSubtle,
-                  ),
-                ),
-                SizedBox(height: context.h(6)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Completed ${m['completed'] ?? 0}',
-                      style: TextStyle(
-                        color: AppColors.accent600,
-                        fontSize: context.sp(11),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      'Pending ${m['pending'] ?? 0}',
-                      style: TextStyle(
-                        color: AppColors.warning,
-                        fontSize: context.sp(11),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      'Overdue ${m['overdue'] ?? 0}',
-                      style: TextStyle(
-                        color: AppColors.danger,
-                        fontSize: context.sp(11),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      '${progress.round()}%',
-                      style: TextStyle(
-                        color: AppColors.inkMuted,
-                        fontSize: context.sp(11),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+  Widget _membersTab() => TeamMembersTab(
+    stats: ((_detail?['memberStats'] as List?) ?? []).whereType<Map>().toList(),
+    onRefresh: _load,
+    onOpen: _openMember,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1153,20 +1043,74 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
                 ),
               )
             : HrmsAppBar(
-                title: Text(widget.name),
-                bottom: TabBar(
-                  controller: _tabs,
-                  indicatorColor: Colors.white,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white70,
-                  tabs: const [
-                    Tab(text: 'Milestones'),
-                    Tab(text: 'Attendance'),
-                    Tab(text: 'Members'),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(widget.name, overflow: TextOverflow.ellipsis),
+                    if (!_loading && _error == null)
+                      Text(
+                        'Lead: $leadName',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: context.sp(12.5),
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
                   ],
                 ),
+                bottom: PreferredSize(
+                  preferredSize: Size.fromHeight(context.h(56)),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      context.w(12),
+                      0,
+                      context.w(12),
+                      context.h(8),
+                    ),
+                    child: TabBar(
+                      controller: _tabs,
+                      dividerColor: Colors.transparent,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(context.r(24)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+                      tabs: const [
+                        Tab(
+                          height: 44,
+                          icon: Icon(Icons.flag_outlined, size: 20),
+                          iconMargin: EdgeInsets.zero,
+                          child: FittedBox(child: Text('Milestones')),
+                        ),
+                        Tab(
+                          height: 44,
+                          icon: Icon(Icons.event_note_outlined, size: 20),
+                          iconMargin: EdgeInsets.zero,
+                          child: FittedBox(child: Text('Attendance')),
+                        ),
+                        Tab(
+                          height: 44,
+                          icon: Icon(Icons.groups_outlined, size: 20),
+                          iconMargin: EdgeInsets.zero,
+                          child: FittedBox(child: Text('Members')),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-        floatingActionButton: _loading || _error != null || _tabs.index != 0
+        floatingActionButton:
+            _loading ||
+                _error != null ||
+                (!_inMilestone && (_tabs.index != 0 || !_fabTab))
             ? null
             : _milestoneFilter == 'none'
             ? null
@@ -1178,8 +1122,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
               )
             : FloatingActionButton.extended(
                 onPressed: _newMilestone,
+                backgroundColor: TeamPalette.fill,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
                 icon: const Icon(Icons.flag_outlined),
-                label: const Text('New milestone'),
+                label: const Text('New Milestone'),
               ),
         body: _loading
             ? ListView(
@@ -1203,20 +1150,6 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
             ? _taskTab()
             : Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: context.w(16),
-                      vertical: context.h(10),
-                    ),
-                    child: Text(
-                      'Lead: $leadName',
-                      style: TextStyle(
-                        color: AppColors.ink,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                   Expanded(
                     child: TabBarView(
                       controller: _tabs,
@@ -1683,9 +1616,13 @@ class _UpdateTaskSheetState extends State<_UpdateTaskSheet> {
             widget.task['title']?.toString() ?? '',
             style: TextStyle(color: AppColors.inkMuted),
           ),
-          if (proofsOf(widget.task).isNotEmpty && widget.onOpenProof != null) ...[
+          if (proofsOf(widget.task).isNotEmpty &&
+              widget.onOpenProof != null) ...[
             SizedBox(height: context.h(8)),
-            _ProofButton(proofs: proofsOf(widget.task), onOpen: widget.onOpenProof!),
+            _ProofButton(
+              proofs: proofsOf(widget.task),
+              onOpen: widget.onOpenProof!,
+            ),
           ],
           SizedBox(height: context.h(12)),
           DropdownButtonFormField<String>(
@@ -1795,20 +1732,37 @@ class _ProofButton extends StatelessWidget {
           shrinkWrap: true,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(context.w(16), 0, context.w(16), context.h(8)),
-              child: Text('Work proof (${proofs.length} files)',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+              padding: EdgeInsets.fromLTRB(
+                context.w(16),
+                0,
+                context.w(16),
+                context.h(8),
+              ),
+              child: Text(
+                'Work proof (${proofs.length} files)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
             ),
             for (final p in proofs)
               ListTile(
                 leading: Icon(
                   RegExp(r'\.pdf(\?|$)', caseSensitive: false).hasMatch(p.url)
                       ? Icons.picture_as_pdf_outlined
-                      : RegExp(r'\.(png|jpe?g|gif|webp|heic)(\?|$)', caseSensitive: false).hasMatch(p.url)
-                          ? Icons.image_outlined
-                          : Icons.insert_drive_file_outlined,
+                      : RegExp(
+                          r'\.(png|jpe?g|gif|webp|heic)(\?|$)',
+                          caseSensitive: false,
+                        ).hasMatch(p.url)
+                      ? Icons.image_outlined
+                      : Icons.insert_drive_file_outlined,
                 ),
-                title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  p.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 trailing: const Icon(Icons.open_in_new, size: 18),
                 onTap: () {
                   Navigator.pop(ctx);

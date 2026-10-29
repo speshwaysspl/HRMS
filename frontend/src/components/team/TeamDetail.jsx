@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../utils/apiConfig";
-import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit, FaPen, FaTrash, FaUserPlus, FaTimes, FaCheck } from "react-icons/fa";
+import { FaFilePdf, FaEye, FaTasks, FaUser, FaInfoCircle, FaCalendarAlt, FaStickyNote, FaExpandAlt, FaEdit, FaPen, FaTrash, FaUserPlus, FaTimes, FaCheck, FaSearch, FaFilter, FaUsers, FaFlag, FaRegCalendarCheck } from "react-icons/fa";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -84,6 +84,7 @@ const TeamDetail = () => {
   }, [linkedTaskId, tasks]); // eslint-disable-line react-hooks/exhaustive-deps
   const [searchTerm, setSearchTerm] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
+  const [memberFilter, setMemberFilter] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -567,9 +568,9 @@ const TeamDetail = () => {
   const openMilestoneTasks = (mid) => { setMilestoneFilter(String(mid)); setActiveTab('tasks'); };
   const backToMilestones = () => { setActiveTab('milestones'); setMilestoneFilter(''); setFilterFrom(''); setFilterTo(''); };
   const tabs = [
-    { key: 'milestones', label: 'Milestones', count: openMilestones.length },
-    ...(canTakeAttendance ? [{ key: 'attendance', label: 'Attendance' }] : []),
-    { key: 'team', label: 'Members', count: memberStats.length },
+    { key: 'milestones', label: 'Milestones', count: openMilestones.length, Icon: FaFlag },
+    ...(canTakeAttendance ? [{ key: 'attendance', label: 'Attendance', Icon: FaRegCalendarCheck }] : []),
+    { key: 'team', label: 'Members', count: memberStats.length, Icon: FaUsers },
   ];
 
   return (
@@ -585,7 +586,8 @@ const TeamDetail = () => {
       {/* Phone: dark header with the team name + tabs, like the app's HrmsAppBar with TabBar. */}
       <div className="sm:hidden mb-3 rounded-xl bg-gradient-to-b from-brand-900 to-brand-800 text-white overflow-hidden">
         <h1 className="px-4 pt-4 text-lg font-bold break-words">{team.name}</h1>
-        <div role="tablist" aria-label="Team sections" className="flex mt-2">
+        <p className="px-4 text-sm text-white/85">Lead: {team.leadId?.name || "N/A"}</p>
+        <div role="tablist" aria-label="Team sections" className="flex gap-1 p-2 mt-2">
           {tabs.map(t => {
             const active = activeTab === t.key || (t.key === 'milestones' && activeTab === 'tasks');
             return (
@@ -594,15 +596,15 @@ const TeamDetail = () => {
                 role="tab"
                 aria-selected={active}
                 onClick={() => (t.key === 'milestones' ? backToMilestones() : setActiveTab(t.key))}
-                className={`flex-1 min-h-[48px] text-sm font-semibold border-b-[3px] transition-colors outline-none focus-visible:bg-white/10 ${active ? 'border-white text-white' : 'border-transparent text-white/70'}`}
+                className={`flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white ${active ? 'border-white/40 bg-white/15 text-white' : 'border-transparent text-white/70 hover:text-white'}`}
               >
+                <t.Icon aria-hidden="true" />
                 {t.label}
               </button>
             );
           })}
         </div>
       </div>
-      <p className="sm:hidden px-1 mb-3 text-sm font-semibold text-ink">Lead: {team.leadId?.name || "N/A"}</p>
 
       <header className="hidden sm:block bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 mb-5">
         <h1 className="text-xl sm:text-2xl font-semibold text-brand-800 break-words">{team.name}</h1>
@@ -631,6 +633,7 @@ const TeamDetail = () => {
               onClick={() => (t.key === 'milestones' ? backToMilestones() : setActiveTab(t.key))}
               className={`shrink-0 flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-t ${active ? 'border-accent-600 text-accent-700' : 'border-transparent text-ink-muted hover:text-ink'}`}
             >
+              <t.Icon aria-hidden="true" />
               {t.label}
               {t.count !== undefined && (
                 <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${active ? 'bg-accent-100 text-accent-800' : 'bg-surface-subtle text-ink-muted'}`}>{t.count}</span>
@@ -1025,8 +1028,17 @@ const TeamDetail = () => {
             const selected = employees.filter(emp => selectedEmployees.includes(emp._id));
             const mq = memberSearch.trim().toLowerCase();
             const shownMembers = memberStats.filter(s =>
-                !mq || s.member?.userId?.name?.toLowerCase().includes(mq) || s.member?.employeeId?.toLowerCase().includes(mq)
+                (!mq || s.member?.userId?.name?.toLowerCase().includes(mq) || s.member?.employeeId?.toLowerCase().includes(mq)) &&
+                (memberFilter === 'all' ||
+                    (memberFilter === 'overdue' && s.overdue > 0) ||
+                    (memberFilter === 'pending' && s.pending > 0) ||
+                    (memberFilter === 'complete' && s.totalTasks > 0 && s.completed === s.totalTasks))
             );
+            const totals = memberStats.reduce((t, s) => ({
+                completed: t.completed + (s.completed || 0),
+                pending: t.pending + (s.pending || 0),
+                overdue: t.overdue + (s.overdue || 0),
+            }), { completed: 0, pending: 0, overdue: 0 });
             const initials = (name) => {
                 const parts = (name || '').trim().split(/\s+/).filter(Boolean);
                 if (parts.length === 0) return '?';
@@ -1044,33 +1056,72 @@ const TeamDetail = () => {
                 transition={{ duration: 0.2 }}
                 className="mb-8"
             >
-            <section className="bg-white rounded-xl shadow-card border border-surface-subtle" aria-labelledby="members-heading">
-                <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-surface-subtle">
-                    <h3 id="members-heading" className="text-lg font-semibold text-ink mr-auto">
-                        Members <span className="text-ink-muted font-normal tabular-nums">· {memberStats.length}</span>
-                    </h3>
-                    {memberStats.length > 3 && (
+            <section aria-labelledby="members-heading">
+                <h3 id="members-heading" className="sr-only">Members</h3>
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="relative flex-1 min-w-[12rem]">
+                        <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
                         <input
                             type="search"
                             aria-label="Search members"
-                            placeholder="Search members..."
+                            placeholder="Search member by name or ID..."
                             value={memberSearch}
                             onChange={(e) => setMemberSearch(e.target.value)}
-                            className="w-full sm:w-64 order-last sm:order-none border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
+                            className="w-full min-h-[44px] rounded-xl border border-surface-subtle bg-white pl-10 pr-3 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
                         />
-                    )}
+                    </div>
+                    <label className="relative inline-flex min-h-[44px] items-center">
+                        <span className="sr-only">Filter members</span>
+                        <FaFilter className={`pointer-events-none absolute left-3.5 ${memberFilter !== 'all' ? 'text-brand-700' : 'text-ink-muted'}`} aria-hidden="true" />
+                        <select
+                            value={memberFilter}
+                            onChange={(e) => setMemberFilter(e.target.value)}
+                            className={`min-h-[44px] rounded-xl border pl-10 pr-8 text-sm outline-none focus:ring-2 focus:ring-accent-500 ${memberFilter !== 'all' ? 'border-brand-500 bg-brand-50 text-brand-800' : 'border-surface-subtle bg-white text-ink'}`}
+                        >
+                            <option value="all">All members</option>
+                            <option value="overdue">Has overdue tasks</option>
+                            <option value="pending">Has pending tasks</option>
+                            <option value="complete">All tasks completed</option>
+                        </select>
+                    </label>
                     {isAdmin && (
                         <button
                             onClick={() => setAddOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none transition-colors"
+                            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent-600 px-4 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none transition-colors"
                         >
                             <FaUserPlus aria-hidden="true" /> Add members
                         </button>
                     )}
                 </div>
 
+                {memberStats.length > 0 && (
+                    <div className="mb-4 grid gap-4 rounded-2xl border border-surface-subtle bg-white p-4 shadow-card sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                                <FaUsers aria-hidden="true" />
+                            </span>
+                            <span>
+                                <span className="block font-semibold text-ink tabular-nums">{memberStats.length} member{memberStats.length === 1 ? '' : 's'}</span>
+                                <span className="block text-xs text-ink-muted">Task progress across the team</span>
+                            </span>
+                        </div>
+                        <dl className="grid grid-cols-3 divide-x divide-surface-subtle border-t border-surface-subtle pt-3 text-center sm:border-t-0 sm:pt-0">
+                            {[
+                                ['Completed', totals.completed, 'text-green-700'],
+                                ['Pending', totals.pending, 'text-amber-700'],
+                                ['Overdue', totals.overdue, 'text-red-700'],
+                            ].map(([label, v, c]) => (
+                                <div key={label} className="px-4 sm:px-6">
+                                    <dd className={`text-xl font-bold tabular-nums ${c}`}>{v}</dd>
+                                    <dt className="text-xs text-ink-muted">{label}</dt>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                )}
+
                 {memberStats.length === 0 ? (
-                    <div className="px-6 py-16 text-center">
+                    <div className="rounded-2xl border border-surface-subtle bg-white px-6 py-16 text-center shadow-card">
                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-700">
                             <FaUser className="text-xl" aria-hidden="true" />
                         </div>
@@ -1088,77 +1139,55 @@ const TeamDetail = () => {
                         )}
                     </div>
                 ) : shownMembers.length === 0 ? (
-                    <p className="px-6 py-10 text-center text-sm text-ink-muted">No members match "{memberSearch}".</p>
+                    <p className="rounded-2xl border border-surface-subtle bg-white px-6 py-10 text-center text-sm text-ink-muted">No members match this search or filter.</p>
                 ) : (
-                    <>
-                    <div className="hidden md:grid grid-cols-[minmax(0,1fr)_repeat(4,5rem)_10rem_2.75rem] gap-4 px-5 py-2.5 bg-surface-muted text-xs font-medium text-ink-muted">
-                        <span>Member</span>
-                        <span className="text-right">Tasks</span>
-                        <span className="text-right">Done</span>
-                        <span className="text-right">Pending</span>
-                        <span className="text-right">Overdue</span>
-                        <span>Progress</span>
-                        <span className="sr-only">Actions</span>
-                    </div>
-                    <ul className="divide-y divide-surface-subtle">
+                    <ul className="grid gap-3 lg:grid-cols-2">
                         {shownMembers.map((stat) => {
-                            const name = stat.member?.userId?.name || 'Unknown';
+                            const name = (stat.member?.userId?.name || 'Unknown').trim();
                             return (
-                            <li key={stat.member._id} className="group relative grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_repeat(4,5rem)_10rem_2.75rem] items-center gap-x-4 gap-y-2 px-5 py-3.5 hover:bg-surface-muted transition-colors">
-                                <button
-                                    onClick={() => setSelectedMember(stat)}
-                                    className="flex min-w-0 items-center gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-lg after:absolute after:inset-0"
-                                    aria-label={`View ${name}'s tasks`}
-                                >
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 text-sm font-semibold text-accent-800">
-                                        {initials(name)}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block font-medium text-ink truncate">{name}</span>
-                                        <span className="block text-xs text-ink-muted tabular-nums">
-                                            {stat.member?.employeeId}
-                                            {stat.member?.designation ? ` · ${stat.member.designation}` : ''}
-                                        </span>
-                                    </span>
-                                </button>
-
-                                {/* Desktop columns */}
-                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.totalTasks}</span>
-                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.completed}</span>
-                                <span className="hidden md:block text-right text-sm tabular-nums text-ink">{stat.pending}</span>
-                                <span className={`hidden md:block text-right text-sm tabular-nums ${stat.overdue > 0 ? 'font-semibold text-red-700' : 'text-ink-muted'}`}>{stat.overdue}</span>
-                                <div className="hidden md:flex items-center gap-2">
-                                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={stat.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${name} progress`}>
-                                        <div className="h-full rounded-full bg-accent-600" style={{ width: `${stat.progress}%` }} />
-                                    </div>
-                                    <span className="w-9 text-right text-xs tabular-nums text-ink-muted">{stat.progress}%</span>
-                                </div>
-
-                                {/* Remove */}
-                                {isAdmin ? (
+                            <li key={stat.member._id} className="group relative rounded-2xl border border-surface-subtle bg-white p-4 shadow-card transition-colors hover:border-brand-200">
+                                <div className="flex items-center gap-3">
                                     <button
-                                        onClick={() => removeMember(stat)}
-                                        className="relative z-10 justify-self-end rounded-lg p-2.5 text-ink-muted md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition"
-                                        title="Remove from team"
-                                        aria-label={`Remove ${name} from team`}
+                                        onClick={() => setSelectedMember(stat)}
+                                        className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-lg after:absolute after:inset-0 after:rounded-2xl"
+                                        aria-label={`View ${name}'s tasks`}
                                     >
-                                        <FaTrash aria-hidden="true" />
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-base font-bold text-brand-700">
+                                            {(name[0] || '?').toUpperCase()}
+                                        </span>
+                                        <span className="min-w-0">
+                                            <span className="block font-semibold text-ink truncate">{name}</span>
+                                            <span className="block text-xs text-ink-muted tabular-nums">
+                                                {stat.member?.employeeId}
+                                                {stat.member?.designation ? ` · ${stat.member.designation}` : ''}
+                                            </span>
+                                        </span>
                                     </button>
-                                ) : <span className="hidden md:block" />}
-
-                                {/* Mobile summary */}
-                                <div className="col-span-2 md:hidden flex items-center gap-3 pl-[3.25rem] text-xs text-ink-muted tabular-nums">
-                                    <span>{stat.completed}/{stat.totalTasks} done</span>
-                                    {stat.overdue > 0 && <span className="font-medium text-red-700">{stat.overdue} overdue</span>}
-                                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-subtle">
-                                        <div className="h-full rounded-full bg-accent-600" style={{ width: `${stat.progress}%` }} />
-                                    </div>
+                                    <span className="shrink-0 text-sm text-ink-muted tabular-nums">Total: {stat.totalTasks}</span>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => removeMember(stat)}
+                                            className="relative z-10 rounded-lg p-2.5 text-ink-muted md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition"
+                                            title="Remove from team"
+                                            aria-label={`Remove ${name} from team`}
+                                        >
+                                            <FaTrash aria-hidden="true" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={stat.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${name} progress`}>
+                                    <div className="h-full rounded-full bg-green-700" style={{ width: `${stat.progress}%` }} />
+                                </div>
+                                <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold tabular-nums">
+                                    <span className="inline-flex items-center gap-1.5 text-green-700"><span className="h-2 w-2 rounded-full bg-green-700" aria-hidden="true" />Completed {stat.completed}</span>
+                                    <span className="inline-flex items-center gap-1.5 text-amber-700"><span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />Pending {stat.pending}</span>
+                                    <span className="inline-flex items-center gap-1.5 text-red-700"><span className="h-2 w-2 rounded-full bg-red-600" aria-hidden="true" />Overdue {stat.overdue}</span>
+                                    <span className="ml-auto text-ink-muted">{stat.progress}%</span>
                                 </div>
                             </li>
                             );
                         })}
                     </ul>
-                    </>
                 )}
             </section>
 

@@ -24,6 +24,7 @@ const fail = (res, [code, error]) => res.status(code).json({ success: false, err
 
 const withCounts = async (milestones) => {
   const ids = milestones.map((m) => m._id);
+  const now = new Date();
   const counts = ids.length
     ? await Task.aggregate([
         { $match: { milestoneId: { $in: ids }, isDeleted: { $ne: true } } },
@@ -32,19 +33,40 @@ const withCounts = async (milestones) => {
             _id: "$milestoneId",
             total: { $sum: 1 },
             completed: { $sum: { $cond: [{ $eq: ["$status", "Completed"] }, 1, 0] } },
+            // Not completed and either flagged Overdue or past its deadline.
+            overdue: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ["$status", "Completed"] },
+                      {
+                        $or: [
+                          { $eq: ["$status", "Overdue"] },
+                          { $and: [{ $ne: [{ $ifNull: ["$deadline", null] }, null] }, { $lt: ["$deadline", now] }] },
+                        ],
+                      },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
           },
         },
       ])
     : [];
   const byId = new Map(counts.map((c) => [String(c._id), c]));
   return milestones.map((m) => {
-    const c = byId.get(String(m._id)) || { total: 0, completed: 0 };
+    const c = byId.get(String(m._id)) || { total: 0, completed: 0, overdue: 0 };
     const obj = m.toObject ? m.toObject() : m;
     return {
       ...obj,
       totalTasks: c.total,
       completedTasks: c.completed,
       openTasks: c.total - c.completed,
+      overdueTasks: c.overdue,
       progress: c.total ? Math.round((c.completed / c.total) * 100) : 0,
     };
   });

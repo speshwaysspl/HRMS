@@ -18,6 +18,15 @@ const memberNames = (team) =>
 const validMemberCount = (team) =>
   (team?.members || []).filter((m) => m.employeeId).length;
 
+// "Devops KT 8" -> "D8", "Platform team" -> "PT".
+const teamBadge = (name = "") => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  const num = /\d+$/.exec(words[words.length - 1])?.[0];
+  if (num && num.length <= 3) return `${words[0][0].toUpperCase()}${num}`;
+  return (words[0][0] + (words[1]?.[0] || "")).toUpperCase();
+};
+
 const initials = (name) => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
@@ -424,7 +433,17 @@ const TeamList = () => {
             </div>
           </div>
         )}
-        <ul className="space-y-3">
+        {teams.length > 0 && (
+          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-surface-subtle bg-white p-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-500"><FiUsers aria-hidden="true" /></span>
+            <span className="flex-1 font-bold text-ink">{isAdmin ? "All teams" : "Teams you lead"}</span>
+            <dl className="flex divide-x divide-surface-subtle text-center">
+              <div className="px-3"><dd className="text-xl font-bold text-ink tabular-nums">{teams.length}</dd><dt className="text-xs text-ink-muted">{teams.length === 1 ? "Team" : "Teams"}</dt></div>
+              <div className="px-3"><dd className="text-xl font-bold text-ink tabular-nums">{teams.reduce((a, t) => a + memberNames(t).length, 0)}</dd><dt className="text-xs text-ink-muted">Members</dt></div>
+            </dl>
+          </div>
+        )}
+        <ul className="space-y-2.5">
           {visibleTeams.map((team) => {
             const names = memberNames(team);
             const count = names.length;
@@ -443,10 +462,14 @@ const TeamList = () => {
                       openTeam(team);
                     }
                   }}
-                  className="block bg-white rounded-xl border border-surface-subtle p-4 cursor-pointer active:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                  className="block bg-white rounded-2xl border border-surface-subtle p-3.5 cursor-pointer active:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
                 >
-                  <div className="flex items-start gap-1">
-                    <h3 className="flex-1 min-w-0 text-base font-bold text-ink line-clamp-2">{team.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-bold text-brand-500" aria-hidden="true">{teamBadge(team.name)}</span>
+                    <span className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-ink truncate">{team.name}</h3>
+                      {team.leadId?.name && <span className="block truncate text-[13px] text-ink-muted">Lead: {team.leadId.name}</span>}
+                    </span>
                     {isAdmin && (
                       <>
                         <button
@@ -472,17 +495,17 @@ const TeamList = () => {
                       <AttendanceStatus team={team} />
                     </div>
                   )}
-                  {description && <p className="mt-1 text-[13px] leading-snug text-ink-muted line-clamp-2">{description}</p>}
-                  <div className="mt-3.5 flex items-center gap-2.5">
+                  {description && <p className="mt-2.5 text-[13px] leading-snug text-ink-muted line-clamp-2">{description}</p>}
+                  <div className="mt-3 flex items-center gap-3 border-t border-surface-subtle pt-3">
                     {shown.length > 0 && (
-                      <div className="flex -space-x-2" aria-hidden="true">
+                      <div className="flex -space-x-1.5" aria-hidden="true">
                         {shown.map((n, i) => (
-                          <span key={i} className="grid h-[30px] w-[30px] place-items-center rounded-full border-2 border-white bg-brand-50 text-[11px] font-bold text-brand-500">
+                          <span key={i} className="grid h-[34px] w-[34px] place-items-center rounded-full border-2 border-white bg-brand-50 text-[11px] font-bold text-brand-500">
                             {initials(n)}
                           </span>
                         ))}
                         {count > MAX_AVATARS && (
-                          <span className="grid h-[30px] w-[30px] place-items-center rounded-full border-2 border-white bg-surface-subtle text-[11px] font-bold text-ink-muted">
+                          <span className="grid h-[34px] w-[34px] place-items-center rounded-full border-2 border-white bg-surface-subtle text-[11px] font-bold text-ink-muted">
                             +{count - MAX_AVATARS}
                           </span>
                         )}

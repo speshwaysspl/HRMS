@@ -11,6 +11,10 @@ import ActionIconButton from "../common/ActionIconButton";
 import { FiDownload, FiEye, FiShare2 } from "react-icons/fi";
 import { useLiveTick } from "../../context/NotificationContext";
 
+// Total deductions for a payslip; `deductions` alone is only "Other Deductions".
+const totalDeductionsOf = (s) =>
+  Number(s.proftax || 0) + Number(s.pf || 0) + Number(s.lopamount || 0) + Number(s.deductions || 0);
+
 const View = () => {
   const liveTick = useLiveTick(["salary", "payslip"]);
   const [salaries, setSalaries] = useState([]);
@@ -423,7 +427,7 @@ const View = () => {
                     })()}
                   </td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.basicSalary).toFixed(2)}</td>
-                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.deductions).toFixed(2)}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{totalDeductionsOf(salary).toFixed(2)}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center font-medium text-accent-700">{Number(salary.netSalary).toFixed(2)}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap">{salary.month ? `${salary.month} ${salary.year}` : '-'}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center">
@@ -504,7 +508,7 @@ const View = () => {
                     </div>
                     <div>
                       <div className="text-ink-faint">Deduction</div>
-                      <div className="font-medium text-ink truncate tabular-nums">{inr(salary.deductions)}</div>
+                      <div className="font-medium text-ink truncate tabular-nums">{inr(totalDeductionsOf(salary))}</div>
                     </div>
                   </div>
 

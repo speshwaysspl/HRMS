@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { FiFlag, FiCalendar, FiEdit2, FiTrash2, FiCheckCircle, FiRotateCcw, FiX, FiPlus } from "react-icons/fi";
+import { FiFlag, FiCalendar, FiEdit2, FiTrash2, FiCheckCircle, FiRotateCcw, FiX, FiCheck, FiClock, FiList, FiMoreVertical, FiTrendingUp } from "react-icons/fi";
 import { API_BASE } from "../../utils/apiConfig";
+import emptyMilestones from "../../assets/empty_milestones.svg";
 
 const auth = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } });
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -30,6 +31,15 @@ const dueLabel = (m) => {
   return { text: `Due by ${fmt(m.dueDate)}`, tone: "text-ink-muted" };
 };
 
+// "Week-3" -> "W3", "Auth screens" -> "AS", "Sprint" -> "S".
+const badge = (title = "") => {
+  const week = /week\s*[-_ ]?\s*(\d+)/i.exec(title);
+  if (week) return `W${week[1]}`;
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  return (words[0][0] + (words[1]?.[0] || "")).toUpperCase();
+};
+
 const fieldCls = "w-full border border-surface-subtle rounded-lg px-3 py-2.5 text-sm text-ink bg-white placeholder:text-ink-faint focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none";
 
 /**
@@ -45,6 +55,7 @@ const MilestonesPanel = ({ teamId, milestones, canManage, onChanged, onViewTasks
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [rowError, setRowError] = useState("");
+  const [menuId, setMenuId] = useState(null);
 
   const open = milestones.filter((m) => m.state === "open");
   const closed = milestones.filter((m) => m.state === "closed");
@@ -98,132 +109,194 @@ const MilestonesPanel = ({ teamId, milestones, canManage, onChanged, onViewTasks
 
   const quickWeek = (offset) => setForm((f) => ({ ...f, ...weekRange(offset) }));
 
+  const total = open.length + closed.length;
+  const summary = [
+    { key: "open", label: "Open milestones", count: open.length, Icon: FiFlag },
+    { key: "closed", label: "Closed milestones", count: closed.length, Icon: FiCheckCircle },
+  ];
+
   return (
-    <section className="bg-white rounded-xl shadow-card border border-surface-subtle" aria-labelledby="ms-heading">
-      <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-surface-subtle">
-        <h3 id="ms-heading" className="sr-only">Milestones</h3>
-        <div role="tablist" aria-label="Milestone state" className="flex items-center gap-1 mr-auto">
-          {[
-            ["open", "Open", open.length, FiFlag],
-            ["closed", "Closed", closed.length, FiCheckCircle],
-          ].map(([key, label, count, Icon]) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={view === key}
-              onClick={() => setView(key)}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent-500 transition-colors ${view === key ? "bg-surface-muted text-ink" : "text-ink-muted hover:text-ink"}`}
-            >
-              <Icon aria-hidden="true" /> <span className="tabular-nums">{count}</span> {label}
-            </button>
-          ))}
+    <section aria-labelledby="ms-heading">
+      <h3 id="ms-heading" className="sr-only">Milestones</h3>
+      <div className="flex flex-wrap items-stretch gap-3 mb-4">
+        <div role="tablist" aria-label="Milestone state" className="grid flex-1 grid-cols-2 gap-3 min-w-[16rem]">
+          {summary.map(({ key, label, count, Icon }) => {
+            const on = view === key;
+            return (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setView(key)}
+                className={`rounded-2xl border p-3 sm:p-4 text-left shadow-card transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${on ? "border-brand-500 bg-brand-50 ring-1 ring-brand-500" : "border-surface-subtle bg-white hover:border-brand-200"}`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg text-brand-700 ${on ? "bg-white" : "bg-brand-50"}`}>
+                    <Icon aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-2xl font-bold text-ink tabular-nums">{count}</span>
+                    <span className="block truncate text-sm text-ink-muted">{label}</span>
+                  </span>
+                </span>
+                <span className="mt-3 block h-1 overflow-hidden rounded-full bg-surface-subtle" aria-hidden="true">
+                  <span className="block h-full rounded-full bg-brand-600" style={{ width: `${total ? Math.round((count / total) * 100) : 0}%` }} />
+                </span>
+              </button>
+            );
+          })}
         </div>
         {canManage && (
           <button
             onClick={startNew}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none transition-colors"
+            className="inline-flex min-h-[44px] items-center gap-2 self-center rounded-full bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none transition-colors"
           >
-            <FiPlus aria-hidden="true" /> New milestone
+            <FiFlag aria-hidden="true" /> New Milestone
           </button>
         )}
       </div>
 
-      {rowError && <p role="alert" className="px-5 pt-3 text-sm text-red-700">{rowError}</p>}
+      {rowError && <p role="alert" className="mb-3 text-sm text-red-700">{rowError}</p>}
 
       {shown.length === 0 ? (
-        <div className="px-6 py-14 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-50 text-accent-700">
-            <FiFlag className="text-xl" aria-hidden="true" />
-          </div>
-          <p className="font-semibold text-ink">{view === "open" ? "No open milestones" : "No closed milestones yet"}</p>
-          <p className="mt-1 text-sm text-ink-muted max-w-sm mx-auto">
+        <div className="rounded-2xl border border-surface-subtle bg-white px-6 py-12 text-center shadow-card">
+          {view === "open" ? (
+            <img src={emptyMilestones} alt="" className="mx-auto mb-4 w-full max-w-[280px]" />
+          ) : (
+            <div className="mx-auto mb-5 flex h-32 w-32 items-center justify-center rounded-full bg-brand-50">
+              <FiCheckCircle className="text-5xl text-green-700" aria-hidden="true" />
+            </div>
+          )}
+          <p className="text-xl font-bold text-ink">{view === "open" ? "No open milestones" : "No closed milestones yet"}</p>
+          <p className="mt-1.5 text-sm text-ink-muted max-w-sm mx-auto">
             {view === "open"
               ? canManage
-                ? "Plan the week: create a milestone, open it and add its tasks."
+                ? "Plan the week: tap New Milestone, open it and add its tasks."
                 : "Your team lead hasn't planned a milestone yet."
               : "Close a milestone when its week is done to keep this list tidy."}
           </p>
           {view === "open" && canManage && (
-            <button
-              onClick={startNew}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none"
-            >
-              <FiPlus aria-hidden="true" /> New milestone
-            </button>
+            <ol className="mx-auto mt-8 grid max-w-md grid-cols-3 gap-2">
+              {[
+                ["Create a milestone", FiFlag],
+                ["Add tasks", FiList],
+                ["Track progress", FiTrendingUp],
+              ].map(([label, Icon]) => (
+                <li key={label} className="flex flex-col items-center gap-2">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-lg text-brand-700"><Icon aria-hidden="true" /></span>
+                  <span className="text-sm text-ink-muted">{label}</span>
+                </li>
+              ))}
+            </ol>
           )}
         </div>
       ) : (
-        <ul className="divide-y divide-surface-subtle">
+        <ul className="grid gap-3 lg:grid-cols-2">
           {shown.map((m) => {
             const due = dueLabel(m);
             const busy = busyId === m._id;
+            const late = m.state === "open" && due.text.startsWith("Past due");
+            const chip = m.state === "closed"
+              ? { label: "Closed", Icon: FiCheck, cls: "bg-green-50 text-green-700" }
+              : late
+                ? { label: "Overdue", Icon: FiClock, cls: "bg-red-50 text-red-700" }
+                : { label: "Open", Icon: FiFlag, cls: "bg-brand-50 text-brand-700" };
             return (
               <li
                 key={m._id}
                 onClick={() => onViewTasks(m._id)}
-                className="grid cursor-pointer gap-4 px-5 py-4 transition-colors hover:bg-surface-muted md:grid-cols-[minmax(0,1fr)_16rem]"
+                className="relative cursor-pointer rounded-2xl border border-surface-subtle bg-white p-4 shadow-card transition-colors hover:border-brand-200"
               >
-                <div className="min-w-0">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onViewTasks(m._id); }}
-                    className="text-left text-lg font-semibold text-ink hover:text-accent-700 hover:underline outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded"
-                  >
-                    {m.title}
-                  </button>
-                  <p className={`mt-1 flex flex-wrap items-center gap-x-2 text-sm ${due.tone}`}>
-                    <FiCalendar aria-hidden="true" className="shrink-0" />
-                    {due.text}
-                    {m.startDate && m.state === "open" && (
-                      <span className="text-ink-muted font-normal">· starts {fmt(m.startDate)}</span>
-                    )}
-                  </p>
-                  {m.description && <p className="mt-2 text-sm text-ink-muted line-clamp-2 max-w-prose">{m.description}</p>}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={m.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.title} progress`}>
-                    <div className="h-full rounded-full bg-accent-600 transition-[width]" style={{ width: `${m.progress}%` }} />
+                <div className="flex items-start gap-3">
+                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold bg-brand-50 text-brand-700`}>{badge(m.title)}</span>
+                  <div className="min-w-0 flex-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onViewTasks(m._id); }}
+                      className="text-left text-lg font-bold text-ink hover:text-brand-700 outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded"
+                    >
+                      {m.title}
+                    </button>
+                    <p className={`mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm ${due.tone}`}>
+                      <FiCalendar aria-hidden="true" className="shrink-0" />
+                      {due.text}
+                    </p>
                   </div>
-                  <p className="mt-1.5 flex flex-wrap gap-x-3 text-sm text-ink-muted tabular-nums">
-                    <span><span className="font-semibold text-ink">{m.progress}%</span> complete</span>
-                    <span><span className="font-semibold text-ink">{m.openTasks}</span> open</span>
-                    <span><span className="font-semibold text-ink">{m.completedTasks}</span> done</span>
-                  </p>
-
+                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${chip.cls}`}>
+                    <chip.Icon aria-hidden="true" /> {chip.label}
+                  </span>
                   {canManage && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                    {confirmDelete === m._id ? (
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-ink">Delete? Tasks stay, unlinked.</span>
-                        <button onClick={() => remove(m)} disabled={busy} className="rounded-lg bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none disabled:opacity-60">
-                          {busy ? "Deleting..." : "Delete"}
-                        </button>
-                        <button onClick={() => setConfirmDelete(null)} className="rounded-lg px-3 py-1.5 font-medium text-ink hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-accent-500 outline-none">
-                          Keep
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-2 flex flex-wrap gap-x-1 text-sm">
-                        <button onClick={() => startEdit(m)} className="inline-flex items-center gap-1.5 rounded px-2 py-1.5 font-medium text-accent-700 hover:bg-accent-50 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none">
-                          <FiEdit2 aria-hidden="true" /> Edit
-                        </button>
-                        {m.state === "open" ? (
-                          <button onClick={() => setState(m, "closed")} disabled={busy} className="inline-flex items-center gap-1.5 rounded px-2 py-1.5 font-medium text-accent-700 hover:bg-accent-50 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none disabled:opacity-60">
-                            <FiCheckCircle aria-hidden="true" /> Close
-                          </button>
-                        ) : (
-                          <button onClick={() => setState(m, "open")} disabled={busy} className="inline-flex items-center gap-1.5 rounded px-2 py-1.5 font-medium text-accent-700 hover:bg-accent-50 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none disabled:opacity-60">
-                            <FiRotateCcw aria-hidden="true" /> Reopen
-                          </button>
-                        )}
-                        <button onClick={() => setConfirmDelete(m._id)} className="inline-flex items-center gap-1.5 rounded px-2 py-1.5 font-medium text-red-700 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 outline-none">
-                          <FiTrash2 aria-hidden="true" /> Delete
-                        </button>
-                      </div>
-                    )}
+                    <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setMenuId(menuId === m._id ? null : m._id)}
+                        aria-label={`Actions for ${m.title}`}
+                        aria-haspopup="menu"
+                        aria-expanded={menuId === m._id}
+                        className="-mr-1 -mt-1 rounded-lg p-2.5 text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                      >
+                        <FiMoreVertical aria-hidden="true" />
+                      </button>
+                      {menuId === m._id && (
+                        <>
+                          <button aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenuId(null)} />
+                          <div role="menu" onKeyDown={(e) => e.key === "Escape" && setMenuId(null)} className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-surface-subtle bg-white py-1 shadow-panel">
+                            <button role="menuitem" autoFocus onClick={() => { setMenuId(null); startEdit(m); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-surface-muted focus-visible:bg-surface-muted outline-none">
+                              <FiEdit2 aria-hidden="true" /> Edit
+                            </button>
+                            {m.state === "open" ? (
+                              <button role="menuitem" disabled={busy} onClick={() => { setMenuId(null); setState(m, "closed"); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-surface-muted focus-visible:bg-surface-muted outline-none disabled:opacity-60">
+                                <FiCheckCircle aria-hidden="true" /> Close
+                              </button>
+                            ) : (
+                              <button role="menuitem" disabled={busy} onClick={() => { setMenuId(null); setState(m, "open"); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-surface-muted focus-visible:bg-surface-muted outline-none disabled:opacity-60">
+                                <FiRotateCcw aria-hidden="true" /> Reopen
+                              </button>
+                            )}
+                            <button role="menuitem" onClick={() => { setMenuId(null); setConfirmDelete(m._id); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-red-700 hover:bg-red-50 focus-visible:bg-red-50 outline-none">
+                              <FiTrash2 aria-hidden="true" /> Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
+
+                {m.description && <p className="mt-3 text-sm text-ink-muted line-clamp-2">{m.description}</p>}
+
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={m.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.title} progress`}>
+                    <div className="h-full rounded-full bg-green-700 transition-[width]" style={{ width: `${m.progress}%` }} />
+                  </div>
+                  <span className="text-sm font-semibold text-ink tabular-nums">{m.progress}%</span>
+                </div>
+
+                <dl className="mt-3 grid grid-cols-3 gap-2">
+                  {[
+                    ["Done", m.completedTasks ?? 0, FiCheckCircle, "text-green-700"],
+                    ["Open", m.openTasks ?? 0, FiList, "text-brand-700"],
+                    ["Overdue", m.overdueTasks ?? 0, FiClock, "text-red-700"],
+                  ].map(([label, v, Icon, c]) => (
+                    <div key={label} className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2.5">
+                      <Icon className={`shrink-0 text-lg ${c}`} aria-hidden="true" />
+                      <span className="min-w-0">
+                        <dd className="text-base font-bold text-ink tabular-nums leading-tight">{v}</dd>
+                        <dt className="text-xs text-ink-muted">{label}</dt>
+                      </span>
+                    </div>
+                  ))}
+                </dl>
+
+                {canManage && confirmDelete === m._id && (
+                  <div onClick={(e) => e.stopPropagation()} className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm">
+                    <span className="text-ink">Delete? Tasks stay, unlinked.</span>
+                    <button onClick={() => remove(m)} disabled={busy} className="rounded-lg bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none disabled:opacity-60">
+                      {busy ? "Deleting..." : "Delete"}
+                    </button>
+                    <button onClick={() => setConfirmDelete(null)} className="rounded-lg px-3 py-1.5 font-medium text-ink hover:bg-white focus-visible:ring-2 focus-visible:ring-accent-500 outline-none">
+                      Keep
+                    </button>
+                  </div>
+                )}
               </li>
             );
           })}
@@ -233,7 +306,7 @@ const MilestonesPanel = ({ teamId, milestones, canManage, onChanged, onViewTasks
       {view === "open" && unplannedCount > 0 && (
         <button
           onClick={() => onViewTasks("none")}
-          className="flex w-full items-center justify-between gap-3 border-t border-surface-subtle px-5 py-3.5 text-left text-sm hover:bg-surface-muted outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500"
+          className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-surface-subtle bg-white px-5 py-3.5 text-left text-sm shadow-card hover:bg-surface-muted outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
         >
           <span>
             <span className="font-medium text-ink">Unplanned tasks</span>

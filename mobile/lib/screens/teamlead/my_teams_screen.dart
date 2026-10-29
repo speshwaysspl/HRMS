@@ -9,6 +9,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import 'team_attendance_tab.dart';
 import 'team_detail_screen.dart';
+import 'team_palette.dart';
 
 class MyTeamsScreen extends StatefulWidget {
   const MyTeamsScreen({super.key});
@@ -22,6 +23,7 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
   List<Map<String, dynamic>> _teams = [];
   bool _loading = true;
   Object? _error;
+  String _query = '';
 
   @override
   void initState() {
@@ -34,7 +36,9 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
   void _onTeamChanged() {
     final e = AppEvents.teamChanged.value;
     if (e == null || !mounted) return;
-    if (const {'team', 'members', 'deleted', 'resync'}.contains(e['kind'])) _load();
+    if (const {'team', 'members', 'deleted', 'resync'}.contains(e['kind'])) {
+      _load();
+    }
   }
 
   @override
@@ -64,15 +68,40 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
     }
   }
 
+  void _open(Map<String, dynamic> t) => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => TeamDetailScreen(
+        id: t['_id'].toString(),
+        name: t['name']?.toString() ?? 'Team',
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
+    final q = _query.trim().toLowerCase();
+    final visible = q.isEmpty
+        ? _teams
+        : _teams
+              .where(
+                (t) =>
+                    (t['name']?.toString().toLowerCase() ?? '').contains(q) ||
+                    _leadName(t).toLowerCase().contains(q),
+              )
+              .toList();
+    final totalMembers = _teams.fold<int>(
+      0,
+      (a, t) => a + _memberNames(t).length,
+    );
+    final pad = context.w(16);
+
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('My Teams')),
       // Tab root gets the menu; when pushed, keep the back arrow.
       drawer: Navigator.of(context).canPop() ? null : const AppDrawer(),
       body: _loading
           ? ListView(
-              padding: EdgeInsets.all(context.w(16)),
+              padding: EdgeInsets.all(pad),
               children: const [
                 SkeletonListTile(),
                 SkeletonListTile(),
@@ -96,57 +125,104 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
                     )
                   : ListView(
                       padding: EdgeInsets.fromLTRB(
-                        context.w(16),
-                        context.h(4),
-                        context.w(16),
+                        pad,
+                        context.h(12),
+                        pad,
                         context.h(24),
                       ),
                       children: [
                         Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                'Your teams · ${_teams.length}',
-                                style: TextStyle(
-                                  color: AppColors.inkMuted,
-                                  fontSize: context.sp(13),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () =>
-                                  downloadAllTeamsAttendance(context),
-                              icon: Icon(
-                                Icons.table_view_outlined,
-                                size: context.r(20),
-                              ),
-                              label: const Text('Attendance'),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: context.h(4)),
-                        ..._teams.map(
-                          (t) => Padding(
-                            padding: EdgeInsets.only(bottom: context.h(12)),
-                            child: _TeamCard(
-                              team: t,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => TeamDetailScreen(
-                                    id: t['_id'].toString(),
-                                    name: t['name']?.toString() ?? 'Team',
+                              child: TextField(
+                                onChanged: (v) => setState(() => _query = v),
+                                textInputAction: TextInputAction.search,
+                                decoration: InputDecoration(
+                                  hintText: 'Search team or lead...',
+                                  prefixIcon: const Icon(Icons.search_rounded),
+                                  filled: true,
+                                  fillColor: AppColors.surface,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: context.h(12),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.r(14),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.surfaceSubtle,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.r(14),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.surfaceSubtle,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                            SizedBox(width: context.w(10)),
+                            Tooltip(
+                              message: 'Download all teams attendance (Excel)',
+                              child: Material(
+                                color: AppColors.brand50,
+                                borderRadius: BorderRadius.circular(
+                                  context.r(14),
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(
+                                    context.r(14),
+                                  ),
+                                  onTap: () =>
+                                      downloadAllTeamsAttendance(context),
+                                  child: SizedBox(
+                                    width: context.r(50),
+                                    height: context.r(50),
+                                    child: Icon(
+                                      Icons.description_outlined,
+                                      color: AppColors.brand500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        SizedBox(height: context.h(12)),
+                        _SummaryCard(
+                          teams: _teams.length,
+                          members: totalMembers,
+                        ),
+                        if (visible.isEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: context.h(32),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'No team matches "$_query".',
+                                style: TextStyle(color: AppColors.inkMuted),
+                              ),
+                            ),
+                          ),
+                        for (final t in visible)
+                          Padding(
+                            padding: EdgeInsets.only(top: context.h(10)),
+                            child: _TeamCard(team: t, onTap: () => _open(t)),
+                          ),
                       ],
                     ),
             ),
     );
   }
+}
+
+String _leadName(Map<String, dynamic> team) {
+  final lead = team['leadId'];
+  return lead is Map ? (lead['name']?.toString().trim() ?? '') : '';
 }
 
 List<String> _memberNames(Map<String, dynamic> team) {
@@ -155,8 +231,8 @@ List<String> _memberNames(Map<String, dynamic> team) {
     if (m is Map) {
       final e = m['employeeId'];
       final u = e is Map ? e['userId'] : m['userId'];
-      if (u is Map && u['name'] != null) return u['name'].toString();
-      if (m['name'] != null) return m['name'].toString();
+      if (u is Map && u['name'] != null) return u['name'].toString().trim();
+      if (m['name'] != null) return m['name'].toString().trim();
     }
     return '';
   }).toList();
@@ -173,6 +249,78 @@ String _initials(String name) {
   return (parts.first[0] + parts.last[0]).toUpperCase();
 }
 
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.teams, required this.members});
+  final int teams;
+  final int members;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget stat(int v, String label) => Expanded(
+      child: Semantics(
+        label: '$v $label',
+        excludeSemantics: true,
+        child: Column(
+          children: [
+            Text(
+              '$v',
+              style: TextStyle(
+                fontSize: context.sp(20),
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: context.sp(12.5),
+                color: AppColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Container(
+      padding: EdgeInsets.all(context.w(14)),
+      decoration: TeamPalette.card(context.r(16)),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(context.w(10)),
+            decoration: BoxDecoration(
+              color: AppColors.brand50,
+              borderRadius: BorderRadius.circular(context.r(12)),
+            ),
+            child: Icon(Icons.groups_rounded, color: AppColors.brand500),
+          ),
+          SizedBox(width: context.w(12)),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Teams you lead',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: context.sp(15),
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+          stat(teams, teams == 1 ? 'Team' : 'Teams'),
+          Container(
+            width: 1,
+            height: context.h(32),
+            color: AppColors.surfaceSubtle,
+          ),
+          stat(members, 'Members'),
+        ],
+      ),
+    );
+  }
+}
+
 class _TeamCard extends StatelessWidget {
   final Map<String, dynamic> team;
   final VoidCallback onTap;
@@ -180,59 +328,103 @@ class _TeamCard extends StatelessWidget {
 
   static const _maxAvatars = 4;
 
+  /// "Devops KT 8" -> "D8", "Devops 23" -> "D23", "Platform" -> "P".
+  static String _badge(String name) {
+    final words = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    final number = RegExp(r'\d+$').firstMatch(words.last)?.group(0);
+    if (number != null && number.length <= 3) {
+      return '${words.first[0].toUpperCase()}$number';
+    }
+    if (words.length == 1) return words.first[0].toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final name = team['name']?.toString() ?? 'Team';
+    final name = team['name']?.toString().trim() ?? 'Team';
+    final lead = _leadName(team);
     final description = team['description']?.toString().trim() ?? '';
     final names = _memberNames(team);
     final count = names.length;
     final shown = names.take(_maxAvatars).toList();
     final overflow = count > _maxAvatars;
-    final size = context.r(30);
-    final step = size * 0.7;
-    final radius = BorderRadius.circular(AppRadius.card);
+    final size = context.r(34);
+    final step = size * 0.78;
+    final radius = BorderRadius.circular(context.r(16));
 
     return Semantics(
       button: true,
-      label: '$name, $count ${count == 1 ? 'member' : 'members'}',
+      label:
+          '$name${lead.isNotEmpty ? ', lead $lead' : ''}, $count ${count == 1 ? 'member' : 'members'}',
       excludeSemantics: true,
       child: Material(
         color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(color: AppColors.surfaceSubtle),
-        ),
+        borderRadius: radius,
         child: InkWell(
           onTap: onTap,
           borderRadius: radius,
-          child: Padding(
-            padding: EdgeInsets.all(context.w(16)),
+          child: Container(
+            padding: EdgeInsets.all(context.w(14)),
+            decoration: TeamPalette.card(context.r(16)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Expanded(
+                    CircleAvatar(
+                      radius: context.r(22),
+                      backgroundColor: AppColors.brand50,
                       child: Text(
-                        name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        _badge(name),
                         style: TextStyle(
+                          color: AppColors.brand500,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                          fontSize: context.sp(16),
+                          fontSize: context.sp(13.5),
                         ),
                       ),
                     ),
+                    SizedBox(width: context.w(12)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                              fontSize: context.sp(16),
+                            ),
+                          ),
+                          if (lead.isNotEmpty)
+                            Text(
+                              'Lead: $lead',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.inkMuted,
+                                fontSize: context.sp(12.5),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                     Icon(
-                      Icons.chevron_right,
+                      Icons.chevron_right_rounded,
                       color: AppColors.inkFaint,
-                      size: context.r(22),
+                      size: context.r(24),
                     ),
                   ],
                 ),
                 if (description.isNotEmpty) ...[
-                  SizedBox(height: context.h(4)),
+                  SizedBox(height: context.h(10)),
                   Text(
                     description,
                     maxLines: 2,
@@ -244,7 +436,10 @@ class _TeamCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                SizedBox(height: context.h(14)),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: context.h(12)),
+                  child: Divider(height: 1, color: AppColors.surfaceSubtle),
+                ),
                 Row(
                   children: [
                     if (shown.isNotEmpty) ...[
@@ -275,7 +470,7 @@ class _TeamCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(width: context.w(10)),
+                      SizedBox(width: context.w(12)),
                     ],
                     Expanded(
                       child: Text(
@@ -316,12 +511,18 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.surface, width: 2),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: size * 0.36,
-          fontWeight: FontWeight.w700,
-          color: muted ? AppColors.inkMuted : AppColors.brand500,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: size * 0.34,
+              fontWeight: FontWeight.w700,
+              color: muted ? AppColors.inkMuted : AppColors.brand500,
+            ),
+          ),
         ),
       ),
     );

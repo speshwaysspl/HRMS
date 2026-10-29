@@ -4,7 +4,7 @@ import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import { useAuth } from "../../context/AuthContext";
 import { FaFileExcel, FaSave } from "react-icons/fa";
-import { FiCalendar, FiGrid } from "react-icons/fi";
+import { FiCalendar, FiChevronDown, FiSearch, FiUsers, FiUserX, FiClock } from "react-icons/fi";
 
 const todayStr = () => {
   const d = new Date();
@@ -13,7 +13,7 @@ const todayStr = () => {
 
 // `short` = the app's compact segment labels (P / Half / A) used on phones.
 const STATUSES = [
-  { value: "present", label: "Present", short: "P", on: "bg-accent-100 text-accent-800" },
+  { value: "present", label: "Present", short: "P", on: "bg-green-100 text-green-800" },
   { value: "half", label: "Half day", short: "Half", on: "bg-amber-100 text-amber-800" },
   { value: "absent", label: "Absent", short: "A", on: "bg-red-100 text-red-700" },
 ];
@@ -37,6 +37,7 @@ const TeamAttendance = ({ teamId, members }) => {
   const [message, setMessage] = useState(null);
   const [month, setMonth] = useState(todayStr().slice(0, 7));
   const [exporting, setExporting] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -122,194 +123,195 @@ const TeamAttendance = ({ teamId, members }) => {
   const halfCount = members.filter((m) => half.has(m._id)).length;
 
   const isToday = date === todayStr();
-  const prettyDate = new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
+
+  // Until the day is saved, unchosen members are "not marked"; once saved
+  // they count as absent.
+  const rest = members.length - presentCount - halfCount;
+  const absentCount = marked ? rest : 0;
+  const notMarkedCount = marked ? 0 : rest;
+  const q = query.trim().toLowerCase();
+  const visible = q
+    ? members.filter((m) => (m.userId?.name || "").toLowerCase().includes(q) || (m.employeeId || "").toLowerCase().includes(q))
+    : members;
+  const initials = (name) => {
+    const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  };
+  const tiles = [
+    { label: "Present", value: presentCount, Icon: FiUsers, cls: "text-green-700" },
+    { label: "Half Day", value: halfCount, Icon: FiClock, cls: "text-amber-700" },
+    { label: "Absent", value: absentCount, Icon: FiUserX, cls: "text-red-700" },
+    { label: "Not Marked", value: notMarkedCount, Icon: FiUsers, cls: "text-ink" },
+  ];
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-      {/* Roll call */}
-      <section className="bg-white rounded-xl shadow-card border border-surface-subtle min-w-0" aria-labelledby="rollcall-heading">
-        {/* Phone: two equal outlined buttons, like the app (date picker · Excel). */}
-        <div className="sm:hidden grid grid-cols-2 gap-2.5 p-3">
-          <label className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-surface-subtle text-sm font-semibold text-brand-700 focus-within:ring-2 focus-within:ring-accent-500">
-            <FiCalendar size={16} aria-hidden="true" />
-            {new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-            <input
-              type="date"
-              aria-label="Attendance date"
-              max={todayStr()}
-              value={date}
-              disabled={saving}
-              onClick={(e) => e.currentTarget.showPicker?.()}
-              onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </label>
-          <label className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-surface-subtle text-sm font-semibold text-brand-700 focus-within:ring-2 focus-within:ring-accent-500">
-            <FiGrid size={16} aria-hidden="true" />
-            {exporting ? "Preparing..." : "Excel"}
-            <input
-              type="month"
-              aria-label="Download attendance Excel for month"
-              max={todayStr().slice(0, 7)}
-              value={month}
-              disabled={exporting}
-              onClick={(e) => e.currentTarget.showPicker?.()}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                setMonth(e.target.value);
-                exportExcel(e.target.value);
-              }}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </label>
-        </div>
+    <section className="mx-auto max-w-3xl min-w-0" aria-labelledby="rollcall-heading">
+      <h3 id="rollcall-heading" className="sr-only">Mark attendance</h3>
 
-        <div className="hidden sm:flex flex-wrap items-end justify-between gap-3 px-4 sm:px-5 py-4 border-b border-surface-subtle">
-          <div className="min-w-0">
-            <h3 id="rollcall-heading" className="text-lg font-semibold text-ink">Mark attendance</h3>
-            <p className="text-sm text-ink-muted">{prettyDate}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="sr-only" htmlFor="ta-date">Date</label>
-            <input
-              id="ta-date"
-              type="date"
-              max={todayStr()}
-              value={date}
-              onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
-            />
-            {!isToday && (
-              <button
-                onClick={() => setDate(todayStr())}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50"
-              >
-                Today
-              </button>
-            )}
-          </div>
-        </div>
-
-        <p className="sm:hidden px-4 pb-3 text-[13px] leading-relaxed text-ink-muted tabular-nums">
-          {marked ? "Marked" : "Not marked yet"} ·{" "}
-          <span className="font-semibold text-green-600">{presentCount} present</span> ·{" "}
-          <span className="font-semibold text-amber-700">{halfCount} half day</span> ·{" "}
-          <span className="font-semibold text-red-600">{members.length - presentCount - halfCount} absent</span>
-          {!editable && " · View only (today only)"}
-          {editable && !isToday && <span className="font-semibold text-amber-700"> · Editing a past date</span>}
-        </p>
-
-        <div className="hidden sm:flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 text-sm">
-          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${marked ? "bg-accent-100 text-accent-800" : "bg-amber-100 text-amber-800"}`}>
-            {marked ? "Marked" : "Not marked yet"}
+      {/* Date + Excel */}
+      <div className="flex items-center gap-2 rounded-2xl border border-surface-subtle bg-white p-2.5 shadow-card">
+        <label className="relative flex min-h-[52px] min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl p-1 hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent-500">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <FiCalendar aria-hidden="true" />
           </span>
-          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-accent-700 tabular-nums">{presentCount} present</span>
-          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-amber-700 tabular-nums">{halfCount} half day</span>
-          <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-red-700 tabular-nums">{members.length - presentCount - halfCount} absent</span>
-          {!editable && (
-            <span className="text-xs text-ink-muted">View only. Attendance can be changed for today only.</span>
-          )}
-          {editable && !isToday && (
-            <span className="text-xs font-medium text-amber-700">Editing a past date (admin).</span>
-          )}
-        </div>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-ink">
+              {new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+            <span className="block text-xs text-ink-muted">{new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { weekday: "long" })}</span>
+          </span>
+          <FiChevronDown aria-hidden="true" className="text-ink-muted" />
+          <input
+            type="date"
+            aria-label="Attendance date"
+            max={todayStr()}
+            value={date}
+            disabled={saving}
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
+        {!isToday && (
+          <button onClick={() => setDate(todayStr())} className="hidden sm:inline-flex min-h-[44px] items-center rounded-full px-3 text-sm font-medium text-brand-700 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-accent-500 outline-none">
+            Today
+          </button>
+        )}
+        <span className="h-9 w-px bg-surface-subtle" aria-hidden="true" />
+        <label className="relative inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-full bg-brand-50 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-100 focus-within:ring-2 focus-within:ring-accent-500">
+          <FaFileExcel aria-hidden="true" />
+          {exporting ? "Preparing..." : "Excel"}
+          <input
+            type="month"
+            aria-label="Download attendance Excel for month"
+            max={todayStr().slice(0, 7)}
+            value={month}
+            disabled={exporting}
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setMonth(e.target.value);
+              exportExcel(e.target.value);
+            }}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
+      </div>
 
-        {loading ? (
-          <div className="px-5 py-12 text-center text-sm text-ink-muted">Loading attendance...</div>
-        ) : members.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <p className="font-semibold text-ink">No members in this team</p>
-            <p className="mt-1 text-sm text-ink-muted">Add members from the Members tab to start taking attendance.</p>
+      {/* Counts */}
+      <dl className="mt-3 grid grid-cols-4 gap-2">
+        {tiles.map(({ label, value, Icon, cls }) => (
+          <div key={label} className="flex flex-col items-center rounded-2xl border border-surface-subtle bg-white px-1 py-3 shadow-card">
+            <Icon aria-hidden="true" className={`text-lg ${cls}`} />
+            <dd className={`mt-1 text-xl font-bold tabular-nums ${cls}`}>{value}</dd>
+            <dt className="text-xs text-center text-ink-muted">{label}</dt>
           </div>
-        ) : (
-          <ul className="border-t border-surface-subtle divide-y divide-surface-subtle">
-            <li>
-              <label className={`flex items-center gap-3 px-4 sm:px-5 py-3 bg-surface-muted ${editable ? "cursor-pointer" : "cursor-default"}`}>
-                <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={!editable} className="h-5 w-5 rounded text-accent-600" />
-                <span className="text-sm font-medium text-ink">Mark all present</span>
-              </label>
-            </li>
-            {members.map((m) => {
-              const status = statusOf(m._id);
-              const name = m.userId?.name || "Unknown";
-              return (
-                <li key={m._id} className="flex items-center gap-3 px-4 sm:px-5 py-3 min-h-[60px]">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink truncate">{name}</div>
-                    <div className="text-xs text-ink-muted">{m.employeeId}</div>
-                  </div>
-                  <div role="radiogroup" aria-label={`Attendance for ${name}`} className="inline-flex shrink-0 rounded-lg border border-surface-subtle p-0.5">
-                    {STATUSES.map((s) => {
-                      const selected = status === s.value;
-                      return (
-                        <button
-                          key={s.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          disabled={!editable}
-                          onClick={() => setStatus(m._id, s.value)}
-                          aria-label={s.label}
-                          className={`min-h-[40px] min-w-[40px] sm:min-w-0 rounded-md px-2.5 sm:px-3 text-sm sm:text-xs font-semibold sm:font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:cursor-default ${
-                            selected ? s.on : `text-ink-muted ${editable ? "hover:bg-surface-muted" : ""}`
-                          }`}
-                        >
-                          <span className="sm:hidden">{s.short}</span>
-                          <span className="hidden sm:inline">{s.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        ))}
+      </dl>
+      {!editable && <p className="mt-2 text-sm text-ink-muted">View only — attendance can be changed for today only.</p>}
+      {editable && !isToday && <p className="mt-2 text-sm font-semibold text-amber-700">Editing a past date.</p>}
 
-        {message && (
-          <p role="status" className={`px-4 sm:px-5 pt-3 text-sm ${message.type === "error" ? "text-red-700" : "text-accent-700"}`}>
-            {message.text}
-          </p>
-        )}
-
-        {editable && members.length > 0 && (
-          <div className="sticky bottom-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-3 mt-2 border-t border-surface-subtle bg-white rounded-b-xl">
-            <span className="text-sm text-ink-muted hidden sm:inline">Set each member to Present, Half day or Absent.</span>
-            <button
-              onClick={save}
-              disabled={saving || loading}
-              className="w-full sm:w-auto bg-accent-600 hover:bg-accent-700 text-white rounded-lg px-5 py-2.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              <FaSave /> {saving ? "Saving..." : marked ? "Update Attendance" : "Save Attendance"}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* Monthly report */}
-      <aside className="hidden sm:block bg-white rounded-xl shadow-card border border-surface-subtle p-4 sm:p-5 self-start" aria-labelledby="report-heading">
-        <h3 id="report-heading" className="text-base font-semibold text-ink">Monthly report</h3>
-        <p className="mt-1 text-sm text-ink-muted">Download the attendance register for a whole month as Excel.</p>
-        <label className="block text-xs font-medium text-ink-muted mt-4 mb-1" htmlFor="ta-month">Month</label>
+      {/* Search */}
+      <div className="relative mt-3">
+        <FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
         <input
-          id="ta-month"
-          type="month"
-          value={month}
-          max={todayStr().slice(0, 7)}
-          onChange={(e) => setMonth(e.target.value)}
-          className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
+          type="search"
+          aria-label="Search members"
+          placeholder="Search member by name or ID..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full min-h-[48px] rounded-full border-0 bg-surface-subtle/60 pl-11 pr-4 text-sm text-ink focus:ring-2 focus:ring-accent-500 outline-none"
         />
-        <button
-          onClick={() => exportExcel(month)}
-          disabled={exporting || !month}
-          className="mt-3 w-full border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-        >
-          <FaFileExcel className="text-accent-700" /> {exporting ? "Exporting..." : "Download Excel"}
-        </button>
-      </aside>
-    </div>
+      </div>
+
+      {loading ? (
+        <div className="mt-3 rounded-2xl bg-white px-5 py-12 text-center text-sm text-ink-muted shadow-card">Loading attendance...</div>
+      ) : members.length === 0 ? (
+        <div className="mt-3 rounded-2xl bg-white px-6 py-14 text-center shadow-card">
+          <p className="font-semibold text-ink">No members in this team</p>
+          <p className="mt-1 text-sm text-ink-muted">Add members from the Members tab to start taking attendance.</p>
+        </div>
+      ) : (
+        <>
+          <label className={`mt-3 flex min-h-[52px] items-center gap-3 rounded-2xl bg-brand-50 px-4 ${editable ? "cursor-pointer" : "cursor-default"}`}>
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={!editable || saving} className="h-5 w-5 rounded text-brand-700" />
+            <span className="flex-1 text-sm font-bold text-brand-800">Mark all present</span>
+            <span className="text-xs text-ink-muted tabular-nums">Total: {members.length} members</span>
+          </label>
+
+          {visible.length === 0 ? (
+            <p className="py-8 text-center text-sm text-ink-muted">No member matches "{query}".</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {visible.map((m) => {
+                const status = statusOf(m._id);
+                const name = (m.userId?.name || "Unknown").trim();
+                return (
+                  <li key={m._id} className="flex items-center gap-3 rounded-2xl border border-surface-subtle bg-white px-3 py-3 sm:px-4">
+                    <input
+                      type="checkbox"
+                      aria-label={`Mark ${name} present`}
+                      checked={status === "present"}
+                      disabled={!editable || saving}
+                      onChange={(e) => setStatus(m._id, e.target.checked ? "present" : "absent")}
+                      className="h-5 w-5 shrink-0 rounded text-brand-700"
+                    />
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold bg-brand-50 text-brand-700`} aria-hidden="true">
+                      {initials(name)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-ink line-clamp-2">{name}</span>
+                      <span className="block text-xs text-ink-muted tabular-nums">{m.employeeId}</span>
+                    </span>
+                    <span role="radiogroup" aria-label={`Attendance for ${name}`} className="inline-flex shrink-0 overflow-hidden rounded-full border border-surface-subtle">
+                      {STATUSES.map((s, i) => {
+                        const selected = status === s.value;
+                        return (
+                          <button
+                            key={s.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            aria-label={s.label}
+                            disabled={!editable || saving}
+                            onClick={() => setStatus(m._id, s.value)}
+                            className={`min-h-[40px] min-w-[44px] px-2.5 sm:px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500 disabled:cursor-default ${i > 0 ? "border-l border-surface-subtle" : ""} ${
+                              selected ? `${s.on} font-bold` : `text-ink ${editable ? "hover:bg-surface-muted" : ""}`
+                            }`}
+                          >
+                            <span className="sm:hidden">{s.short}</span>
+                            <span className="hidden sm:inline">{s.label}</span>
+                          </button>
+                        );
+                      })}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+
+      {message && (
+        <p role="status" className={`mt-3 text-sm ${message.type === "error" ? "text-red-700" : "text-green-700"}`}>
+          {message.text}
+        </p>
+      )}
+
+      {editable && members.length > 0 && (
+        <div className="sticky bottom-0 -mx-1 mt-3 bg-gradient-to-t from-surface-muted via-surface-muted to-transparent px-1 pb-3 pt-4">
+          <button
+            onClick={save}
+            disabled={saving || loading}
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-brand-700 px-5 text-base font-semibold text-white hover:bg-brand-800 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none disabled:opacity-60"
+          >
+            <FaSave aria-hidden="true" /> {saving ? "Saving..." : marked ? "Update Attendance" : "Save Attendance"}
+          </button>
+        </div>
+      )}
+    </section>
   );
 };
 

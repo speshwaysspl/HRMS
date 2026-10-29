@@ -223,7 +223,14 @@ class _PayslipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final net = (num.tryParse(payslip['netSalary']?.toString() ?? '') ?? 0).round();
     final basic = num.tryParse(payslip['basicSalary']?.toString() ?? '') ?? 0;
-    final ded = num.tryParse(payslip['deductions']?.toString() ?? '') ?? 0;
+    // Total deductions, same as the preview sheet: the `deductions` field is
+    // only "Other Deductions".
+    num n(dynamic v) => num.tryParse(v?.toString() ?? '') ?? 0;
+    final ded =
+        n(payslip['proftax']) +
+        n(payslip['pf']) +
+        n(payslip['lopamount']) +
+        n(payslip['deductions']);
     final emp = payslip['employeeId'];
     final empId = emp is Map
         ? (emp['employeeId']?.toString() ?? 'N/A')
