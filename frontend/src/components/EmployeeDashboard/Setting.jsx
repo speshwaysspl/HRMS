@@ -160,6 +160,7 @@ const Setting = () => {
           </Card>
         </section>
 
+        {!isAdmin && (
         <section aria-labelledby="sec-account">
           <SectionLabel id="sec-account">Account</SectionLabel>
           <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -175,6 +176,7 @@ const Setting = () => {
             </Link>
           </Card>
         </section>
+        )}
 
         <p className="pb-4 text-center text-xs text-ink-muted">© {new Date().getFullYear()} Speshway Solutions Private Limited</p>
       </div>

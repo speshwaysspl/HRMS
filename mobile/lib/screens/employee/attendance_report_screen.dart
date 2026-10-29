@@ -12,6 +12,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/summary_card.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/month_picker_dialog.dart';
 
 import '../../services/live_refresh.dart';
 class AttendanceReportScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> with Li
   final _service = AttendanceService();
   DateTime _currentMonth = DateTime.now();
   List<Map<String, dynamic>> _monthlyLogs = [];
+  AttendanceCounts? _calendarCounts;
   bool _loading = true;
   String? _error;
   Object? _lastError;
@@ -125,30 +127,12 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> with Li
 
   @override
   Widget build(BuildContext context) {
-    final presentCount = _monthlyLogs.where((l) {
-      final s = (l['status'] ?? '').toString().toLowerCase();
-      return s.contains('present');
-    }).length;
-
-    // A weekend with no punch is a day off, not an absence (the server
-    // marks every unrecorded past day "Absent").
-    bool offDay(Map<String, dynamic> l) {
-      final d = DateTime.tryParse((l['date'] ?? '').toString());
-      final punched =
-          (l['inTime'] ?? '').toString().isNotEmpty &&
-          l['inTime'] != 'Not Marked';
-      return d != null && d.weekday >= DateTime.saturday && !punched;
-    }
-
-    final absentCount = _monthlyLogs.where((l) {
-      final s = (l['status'] ?? '').toString().toLowerCase();
-      return (s.contains('absent') && !offDay(l)) || s == 'leave';
-    }).length;
-
-    final halfDayCount = _monthlyLogs.where((l) {
-      final s = (l['status'] ?? '').toString().toLowerCase();
-      return s.contains('half');
-    }).length;
+    // Present / absent / half-day come from the calendar's classification so
+    // the cards match its legend (holidays, weekends and future days excluded).
+    final c = _calendarCounts;
+    final presentCount = c?.present ?? 0;
+    final absentCount = (c?.absent ?? 0) + (c?.leave ?? 0);
+    final halfDayCount = c?.half ?? 0;
 
     final wfhCount = _monthlyLogs.where((l) {
       final m = (l['workMode'] ?? '').toString().toLowerCase();
@@ -193,23 +177,49 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> with Li
                     onPressed: _prevMonth,
                     tooltip: 'Previous Month',
                   ),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_month,
-                        color: AppColors.brand600,
-                        size: context.r(20),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showHrmsMonthPicker(
+                        context,
+                        initial: _currentMonth,
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() => _currentMonth = picked);
+                        _load();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.w(8),
+                        vertical: context.h(4),
                       ),
-                      SizedBox(width: context.w(8)),
-                      Text(
-                        DateFormat('MMMM yyyy').format(_currentMonth),
-                        style: TextStyle(
-                          fontSize: context.sp(16),
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_month,
+                            color: AppColors.brand600,
+                            size: context.r(20),
+                          ),
+                          SizedBox(width: context.w(8)),
+                          Text(
+                            DateFormat('MMMM yyyy').format(_currentMonth),
+                            style: TextStyle(
+                              fontSize: context.sp(16),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          SizedBox(width: context.w(4)),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.inkMuted,
+                            size: context.r(18),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                   IconButton(
                     icon: Icon(
@@ -282,6 +292,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> with Li
                 month: _currentMonth,
                 days: _monthlyLogs,
                 onChanged: () => _load(silent: true),
+                onCounts: (c) => setState(() => _calendarCounts = c),
               ),
               SizedBox(height: context.h(20)),
 

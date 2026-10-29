@@ -428,6 +428,10 @@ const saveFcmToken = async (req, res) => {
         return res.status(404).json({ success: false, error: 'User not found' });
     }
 
+    // A device token belongs to whoever is logged in on it now; drop it from
+    // any other account so that phone doesn't get both users' alerts.
+    await User.updateMany({ _id: { $ne: user._id }, fcmTokens: token }, { $pull: { fcmTokens: token } });
+
     if (!user.fcmTokens.includes(token)) {
       user.fcmTokens.push(token);
       await user.save();

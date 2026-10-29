@@ -105,8 +105,10 @@ const TeamAttendance = ({ teamId, members }) => {
       const a = document.createElement("a");
       a.href = url;
       a.download = `team_attendance_${forMonth}.xlsx`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setMessage({ type: "error", text: "Failed to export Excel" });
     } finally {
@@ -300,7 +302,7 @@ const TeamAttendance = ({ teamId, members }) => {
           className="w-full border border-surface-subtle rounded-lg px-3 py-2 text-sm text-ink bg-white focus:ring-2 focus:ring-accent-500 outline-none"
         />
         <button
-          onClick={exportExcel}
+          onClick={() => exportExcel(month)}
           disabled={exporting || !month}
           className="mt-3 w-full border border-surface-subtle bg-white text-ink hover:bg-surface-muted rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
         >

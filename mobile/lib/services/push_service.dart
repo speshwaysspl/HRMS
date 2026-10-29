@@ -68,8 +68,11 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   final body = data['body'] ?? message.notification?.body ?? '';
   if (body.isEmpty && title == 'Speshway') return;
 
+  // Keyed by the server's notification id: if the same notification arrives
+  // twice (old + new FCM token on this phone), the second replaces the first.
+  final notificationId = data['notificationId']?.toString() ?? '';
   await _localNotifications.show(
-    message.hashCode,
+    notificationId.isNotEmpty ? notificationId.hashCode : message.hashCode,
     title,
     body,
     const NotificationDetails(
@@ -170,17 +173,23 @@ class PushService {
         _lastRegisteredToken = token;
       }
 
-      messaging.onTokenRefresh.listen((newToken) async {
-        try {
-          await _notificationService.registerFcmToken(newToken);
-          _lastRegisteredToken = newToken;
-        } catch (e) {
-          debugPrint('FCM token refresh registration failed: $e');
-        }
-      });
-
       if (!_messageHandlersBound) {
         _messageHandlersBound = true;
+
+        // Swap, don't add: leaving the old token on the server means this
+        // phone receives every push twice.
+        messaging.onTokenRefresh.listen((newToken) async {
+          try {
+            final old = _lastRegisteredToken;
+            await _notificationService.registerFcmToken(newToken);
+            _lastRegisteredToken = newToken;
+            if (old != null && old != newToken) {
+              await _notificationService.unregisterFcmToken(old);
+            }
+          } catch (e) {
+            debugPrint('FCM token refresh registration failed: $e');
+          }
+        });
 
         FirebaseMessaging.onMessage.listen(_showLocalNotification);
         FirebaseMessaging.onMessageOpenedApp.listen((m) => _handleOpen(m.data));

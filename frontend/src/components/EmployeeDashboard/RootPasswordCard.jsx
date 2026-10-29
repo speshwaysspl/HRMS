@@ -107,20 +107,6 @@ const RootPasswordCard = () => {
           </button>
         </div>
       )}
-
-      {info?.recentLogins?.length > 0 && (
-        <details className="mt-5 border-t border-surface-subtle pt-4">
-          <summary className="cursor-pointer text-sm font-medium text-accent-700">Recent root logins ({info.recentLogins.length})</summary>
-          <ul className="mt-2 divide-y divide-surface-subtle text-sm">
-            {info.recentLogins.map((l, i) => (
-              <li key={i} className="flex justify-between gap-3 py-2">
-                <span className="truncate text-ink">{l.email}</span>
-                <span className="shrink-0 text-ink-muted tabular-nums">{fmt(l.at)}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
     </section>
   );
 };

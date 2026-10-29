@@ -10,7 +10,13 @@ import { FiChevronRight, FiGrid, FiUsers } from "react-icons/fi";
 
 // Same helpers as mobile my_teams_screen.dart.
 const memberNames = (team) =>
-  (team.members || []).map((m) => m.employeeId?.userId?.name || m.name || "");
+  (team.members || [])
+    .filter((m) => m.employeeId)
+    .map((m) => m.employeeId?.userId?.name || m.name || "")
+    .filter(Boolean);
+
+const validMemberCount = (team) =>
+  (team?.members || []).filter((m) => m.employeeId).length;
 
 const initials = (name) => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -25,7 +31,7 @@ const timeOf = (v) => new Date(v).toLocaleTimeString([], { hour: "numeric", minu
 
 // Today's roll-call status for a team (admin view).
 const AttendanceStatus = ({ team }) => {
-  if (!team.members?.length) return <span className="text-sm text-ink-faint">No members</span>;
+  if (!validMemberCount(team)) return <span className="text-sm text-ink-faint">No members</span>;
   const a = team.attendanceToday;
   return a?.marked ? (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -105,17 +111,17 @@ const TeamList = () => {
     (t) =>
       (!leadFilter || t.leadId?._id === leadFilter) &&
       (!attFilter ||
-        (attFilter === "marked" ? !!t.attendanceToday?.marked : !t.attendanceToday?.marked && t.members?.length > 0)) &&
+        (attFilter === "marked" ? !!t.attendanceToday?.marked : !t.attendanceToday?.marked && validMemberCount(t) > 0)) &&
       (!q || [t.name, t.leadId?.name, t.leadId?.email].some((v) => v?.toLowerCase().includes(q)))
   );
 
   // Teams with no members have no roll call to take, so they're not "pending".
-  const trackable = teams.filter((t) => t.members?.length);
+  const trackable = teams.filter((t) => validMemberCount(t) > 0);
   const markedCount = trackable.filter((t) => t.attendanceToday?.marked).length;
   const pendingCount = trackable.length - markedCount;
 
   // Not marked first, then marked, then teams with no members.
-  const attRank = (t) => (!t.members?.length ? 2 : t.attendanceToday?.marked ? 1 : 0);
+  const attRank = (t) => (!validMemberCount(t) ? 2 : t.attendanceToday?.marked ? 1 : 0);
   if (isAdmin) visibleTeams.sort((x, y) => attRank(x) - attRank(y));
 
   const toggleLead = (id) =>
@@ -338,7 +344,7 @@ const TeamList = () => {
                 >
                   <td className="px-5 py-4 font-medium text-ink">{team.name}</td>
                   <td className="px-5 py-4 text-ink-muted">{team.leadId?.name || "N/A"}</td>
-                  <td className="px-5 py-4 text-ink-muted">{team.members?.length || 0}</td>
+                  <td className="px-5 py-4 text-ink-muted">{validMemberCount(team)}</td>
                   {isAdmin && (
                     <td className="px-5 py-4">
                       <AttendanceStatus team={team} />

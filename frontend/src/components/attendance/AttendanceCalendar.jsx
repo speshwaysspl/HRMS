@@ -45,7 +45,7 @@ const LEGEND = ["present", "half", "absent", "leave", "holiday"];
 
 const authHeaders = () => ({ Authorization: `Bearer ${sessionStorage.getItem("token")}` });
 
-const AttendanceCalendar = ({ month, days, onChanged }) => {
+const AttendanceCalendar = ({ month, days, onChanged, onCounts }) => {
   const [holidays, setHolidays] = useState({});
   const [requests, setRequests] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -93,6 +93,11 @@ const AttendanceCalendar = ({ month, days, onChanged }) => {
     }
     return c;
   }, [byDate, holidays, month, daysInMonth, today]);
+
+  // Let the page's summary cards show the same numbers as the legend.
+  useEffect(() => {
+    onCounts?.(counts);
+  }, [counts, onCounts]);
 
   return (
     <div className="px-4 sm:px-6 pb-6">

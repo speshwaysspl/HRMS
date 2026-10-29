@@ -207,20 +207,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          SizedBox(height: context.h(24)),
-          _sectionLabel(context, 'Account'),
-          _Card(
-            child: _Row(
-              icon: Icons.delete_outline_rounded,
-              title: 'Request account deletion',
-              subtitle: 'HR/Admin will verify and process your request',
-              onTap: () => showAccountDeletionSheet(context),
-              trailing: Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.inkFaint,
+          // Admins manage deletions; they don't request their own.
+          if (user?.isAdmin != true) ...[
+            SizedBox(height: context.h(24)),
+            _sectionLabel(context, 'Account'),
+            _Card(
+              child: _Row(
+                icon: Icons.delete_outline_rounded,
+                title: 'Request account deletion',
+                subtitle: 'HR/Admin will verify and process your request',
+                onTap: () => showAccountDeletionSheet(context),
+                trailing: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.inkFaint,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -644,7 +647,6 @@ class _RootPasswordSheetState extends State<_RootPasswordSheet> {
   @override
   Widget build(BuildContext context) {
     final isSet = _info?['isSet'] == true;
-    final logins = (_info?['recentLogins'] as List?) ?? const [];
     final by = _info?['updatedBy'];
     return Padding(
       padding: EdgeInsets.only(
@@ -738,38 +740,6 @@ class _RootPasswordSheetState extends State<_RootPasswordSheet> {
                         )
                       : const Text('Save'),
                 ),
-                if (logins.isNotEmpty) ...[
-                  SizedBox(height: context.h(16)),
-                  Text(
-                    'Recent root logins',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  for (final l in logins.whereType<Map>())
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: context.h(6)),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l['email']?.toString() ?? '',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: AppColors.ink),
-                            ),
-                          ),
-                          Text(
-                            _fmt(l['at']),
-                            style: TextStyle(
-                              color: AppColors.inkMuted,
-                              fontSize: context.sp(12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
                 SizedBox(height: context.h(8)),
               ],
             ),

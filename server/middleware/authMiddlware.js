@@ -14,7 +14,15 @@ const verifyUser = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Login sessions don't expire (they end on logout), so older login
+      // tokens issued with a 7-day expiry are still honoured. Other tokens
+      // signed with this secret (e.g. password reset, payload { id }) keep
+      // their expiry.
+      decoded = jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true });
+      const isLoginToken = !!decoded._id && !!decoded.role;
+      if (!isLoginToken && decoded.exp && decoded.exp * 1000 < Date.now()) {
+        return res.status(401).json({ success: false, error: "Token expired" });
+      }
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({ success: false, error: "Token expired" });

@@ -10,11 +10,31 @@ import '../theme/responsive.dart';
 /// Month grid of attendance, colour-coded by status, with a day sheet that
 /// lets the employee request a correction (e.g. forgot to check out).
 /// Mirrors frontend/src/components/attendance/AttendanceCalendar.jsx.
+/// The calendar's day counts (holidays, weekends and future days excluded),
+/// so a screen's summary cards can match the legend.
+class AttendanceCounts {
+  final int present, half, absent, leave, holiday;
+  const AttendanceCounts(this.present, this.half, this.absent, this.leave, this.holiday);
+
+  @override
+  bool operator ==(Object other) =>
+      other is AttendanceCounts &&
+      other.present == present &&
+      other.half == half &&
+      other.absent == absent &&
+      other.leave == leave &&
+      other.holiday == holiday;
+
+  @override
+  int get hashCode => Object.hash(present, half, absent, leave, holiday);
+}
+
 class AttendanceCalendar extends StatefulWidget {
   final DateTime month;
   final List<Map<String, dynamic>> days;
   final VoidCallback? onChanged;
-  const AttendanceCalendar({super.key, required this.month, required this.days, this.onChanged});
+  final ValueChanged<AttendanceCounts>? onCounts;
+  const AttendanceCalendar({super.key, required this.month, required this.days, this.onChanged, this.onCounts});
 
   @override
   State<AttendanceCalendar> createState() => _AttendanceCalendarState();
@@ -70,6 +90,7 @@ Color _catColor(_Cat c) {
 class _AttendanceCalendarState extends State<AttendanceCalendar> {
   final _attendance = AttendanceService();
   Map<String, String> _holidays = {};
+  AttendanceCounts? _lastCounts;
   Map<String, Map<String, dynamic>> _requests = {};
 
   @override
@@ -113,6 +134,14 @@ class _AttendanceCalendarState extends State<AttendanceCalendar> {
       if (k.compareTo(today) > 0) break;
       final c = _category(k, byDate[k], _holidays.containsKey(k));
       if (counts.containsKey(c)) counts[c] = counts[c]! + 1;
+    }
+    final summary = AttendanceCounts(counts[_Cat.present] ?? 0, counts[_Cat.half] ?? 0,
+        counts[_Cat.absent] ?? 0, counts[_Cat.leave] ?? 0, counts[_Cat.holiday] ?? 0);
+    if (widget.onCounts != null && summary != _lastCounts) {
+      _lastCounts = summary;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onCounts!(summary);
+      });
     }
 
     return Container(

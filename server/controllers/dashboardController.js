@@ -347,9 +347,9 @@ const getEmployeeDashboardStats = async (req, res) => {
                     absentDays++;
                 }
             } else if (attendance.inTime) {
-                // Forgot to check out: Half-Day once the day is over; today is
+                // Forgot to check out: Present once the day is over; today is
                 // still in progress, so it isn't counted yet.
-                if (attendanceDate < toISTDateString(new Date())) halfDays++;
+                if (attendanceDate < toISTDateString(new Date())) presentDays++;
                 else notYetDays++;
             } else {
                 // No attendance marked

@@ -7,6 +7,7 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import { FiCalendar } from "react-icons/fi";
 import PageHeader from "../common/PageHeader";
+import MonthPicker from "../common/MonthPicker";
 import { useLiveData } from "../../context/NotificationContext";
 
 // Grouped filters used by the admin dashboard tiles (?status=checked-in, etc.).
@@ -270,12 +271,14 @@ const AdminAttendanceReport = () => {
           <h3 className="text-lg font-semibold text-brand-700 mb-3">Monthly Report</h3>
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="flex-1 p-2 border border-surface-subtle rounded-lg text-sm text-ink focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none"
-              />
+              <div className="flex-1">
+                <MonthPicker
+                  value={selectedMonth}
+                  onChange={setSelectedMonth}
+                  placeholder="Select month"
+                  className="w-full"
+                />
+              </div>
               <input
                 type="text"
                 placeholder="Employee ID"

@@ -7,7 +7,7 @@ import { toISTDateString, toISTTimeString, getCurrentISTDateTime } from "../util
 
 // A day's shift is only "closed out" once that calendar day (IST) has
 // fully elapsed. Used to turn a check-in with no check-out into a
-// Half-Day once the day is over, instead of leaving it "Incomplete" forever.
+// Present day once the day is over, instead of leaving it "Incomplete" forever.
 const isPastDate = (dateStr) => dateStr < toISTDateString(new Date());
 
 /**
@@ -27,7 +27,7 @@ export const saveAttendance = async (req, res) => {
 
     // A punch queued while offline carries the time it was actually made.
     // Accept it only for today and never in the future; a punch queued on an
-    // earlier day is dropped (that day is already closed as Half-Day).
+    // earlier day is dropped (that day is already closed as Present).
     const { offlineDate, offlineTime } = req.body;
     let stamp = nowTime;
     if (offlineDate || offlineTime) {
@@ -43,7 +43,7 @@ export const saveAttendance = async (req, res) => {
 
     if (!attendance) {
       // A new day always starts with a check-in. Yesterday's open check-in is
-      // closed as Half-Day by isPastDate(); it can't be checked out today.
+      // closed as Present by isPastDate(); it can't be checked out today.
       if (!inTime || outTime) {
         return res.status(409).json({
           code: "NEW_DAY",
@@ -189,7 +189,7 @@ export const getAllAttendance = async (req, res) => {
                 attendanceStatus = "Absent";
               }
             } else if (record?.inTime && !record?.outTime) {
-              attendanceStatus = isPastDate(date) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
+              attendanceStatus = isPastDate(date) ? "Work from Home - Present" : "Work from Home - Incomplete";
             } else {
               attendanceStatus = "Work from Home - Not Marked";
             }
@@ -217,7 +217,7 @@ export const getAllAttendance = async (req, res) => {
             }
           } else {
             // Only in-time is marked, no out-time
-            attendanceStatus = isPastDate(date) ? "Half-Day" : "Incomplete";
+            attendanceStatus = isPastDate(date) ? "Present" : "Incomplete";
           }
         } else {
           // No attendance record - check if date has passed
@@ -325,7 +325,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
               attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Present" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -353,7 +353,7 @@ export const getEmployeeMonthlyAttendance = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Present" : "Incomplete";
         }
       } else {
         // No attendance record - check if date has passed
@@ -458,7 +458,7 @@ export const getMonthlyAttendance = async (req, res) => {
               attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Present" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -486,7 +486,7 @@ export const getMonthlyAttendance = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Present" : "Incomplete";
         }
       } else {
         // No attendance record - check if date has passed
@@ -572,7 +572,7 @@ export const exportAttendanceExcel = async (req, res) => {
                 attendanceStatus = "Absent";
               }
             } else if (record?.inTime && !record?.outTime) {
-              attendanceStatus = isPastDate(date) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
+              attendanceStatus = isPastDate(date) ? "Work from Home - Present" : "Work from Home - Incomplete";
             } else {
               attendanceStatus = "Work from Home - Not Marked";
             }
@@ -600,7 +600,7 @@ export const exportAttendanceExcel = async (req, res) => {
             }
           } else {
             // Only in-time is marked, no out-time
-            attendanceStatus = isPastDate(date) ? "Half-Day" : "Incomplete";
+            attendanceStatus = isPastDate(date) ? "Present" : "Incomplete";
           }
         }
        
@@ -734,7 +734,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
               attendanceStatus = "Absent";
             }
           } else if (record?.inTime && !record?.outTime) {
-            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Half Day" : "Work from Home - Incomplete";
+            attendanceStatus = isPastDate(currentDate) ? "Work from Home - Present" : "Work from Home - Incomplete";
           } else {
             attendanceStatus = "Work from Home - Not Marked";
           }
@@ -762,7 +762,7 @@ export const exportMonthlyAttendanceExcel = async (req, res) => {
           }
         } else {
           // Only in-time is marked, no out-time
-          attendanceStatus = isPastDate(currentDate) ? "Half-Day" : "Incomplete";
+          attendanceStatus = isPastDate(currentDate) ? "Present" : "Incomplete";
         }
       }
      

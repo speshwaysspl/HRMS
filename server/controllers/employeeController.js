@@ -7,6 +7,7 @@ import Candidate from "../models/Candidate.js";
 import Offer from "../models/Offer.js";
 import bcrypt from "bcrypt";
 import ExcelJS from "exceljs";
+import Team from "../models/Team.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 
 const addEmployee = async (req, res) => {
@@ -883,6 +884,9 @@ const deleteEmployee = async (req, res) => {
 
     // Delete Employee
     await Employee.findByIdAndDelete(id);
+
+    // Remove from all teams
+    await Team.updateMany({ "members.employeeId": id }, { $pull: { members: { employeeId: id } } });
 
     // Delete User
     if (userId) {

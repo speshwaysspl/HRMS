@@ -37,10 +37,10 @@ const login = async (req, res) => {
     }
     if (!isMatch) return res.status(400).json({ success: false, error: "Wrong Password" });
 
+    // No expiry: a session lasts until the user logs out.
     const token = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      process.env.JWT_SECRET
     );
 
     return res.status(200).json({

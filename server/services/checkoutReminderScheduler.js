@@ -7,7 +7,7 @@ import { createNotification } from '../controllers/notificationController.js';
 import { toISTDateString } from '../utils/dateTimeUtils.js';
 
 // Reminds anyone still checked in (no check-out yet) to check out, so a
-// forgotten check-out doesn't turn the day into a Half-Day at midnight.
+// forgotten check-out isn't left without working hours.
 export const initializeCheckoutReminderScheduler = (io) => {
   const task = cron.schedule('45 17 * * *', async () => {
     try {
@@ -35,7 +35,7 @@ export const initializeCheckoutReminderScheduler = (io) => {
         await createNotification({
           type: 'checkout_reminder',
           title: 'Don\'t forget to check out',
-          message: `You checked in at ${rec.inTime} and haven't checked out yet. Please check out now — if you don't check out today, it will be marked Half-Day.`,
+          message: `You checked in at ${rec.inTime} and haven't checked out yet. Please check out now so your working hours are recorded.`,
           recipientId: emp.userId,
           senderId: sender._id,
           relatedId: rec._id,

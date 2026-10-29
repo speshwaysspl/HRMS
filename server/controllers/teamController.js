@@ -73,7 +73,7 @@ export const addMembers = async (req, res) => {
     // Let's support the UI sending { employeeIds: [], role: "" }
     const { role } = req.body;
     
-    const currentMemberIds = team.members.map(m => m.employeeId.toString());
+    const currentMemberIds = team.members.filter(m => m.employeeId).map(m => m.employeeId.toString());
     
     const newMembers = employeeIds
       .filter(id => !currentMemberIds.includes(id))
@@ -129,6 +129,12 @@ export const getTeams = async (req, res) => {
          teams = [];
       }
     }
+    teams = teams.map((t) => {
+      const obj = t.toObject ? t.toObject() : t;
+      obj.members = (obj.members || []).filter((m) => m.employeeId);
+      return obj;
+    });
+
     // Admins and leads also get whether today's (IST) roll call is taken.
     if (userRoles.includes("admin") || userRoles.includes("team_lead")) {
       const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
@@ -140,7 +146,7 @@ export const getTeams = async (req, res) => {
       teams = teams.map((t) => {
         const r = byTeam.get(String(t._id));
         return {
-          ...t.toObject(),
+          ...t,
           attendanceToday: r
             ? { marked: true, markedAt: r.updatedAt, markedBy: r.markedBy?.name || null }
             : { marked: false },
@@ -198,8 +204,11 @@ export const getTeamDetail = async (req, res) => {
         populate: { path: "userId", select: "name email" }
     });
 
+    const teamObj = team.toObject();
+    teamObj.members = (teamObj.members || []).filter((m) => m.employeeId);
+
     // Calculate stats per member
-    const memberStats = team.members.map(memberObj => {
+    const memberStats = teamObj.members.map(memberObj => {
       const member = memberObj.employeeId;
       if (!member) return null; // Handle case where population might fail or data issue
 
@@ -222,7 +231,7 @@ export const getTeamDetail = async (req, res) => {
       };
     }).filter(stat => stat !== null);
 
-    res.status(200).json({ success: true, team, memberStats, tasks });
+    res.status(200).json({ success: true, team: teamObj, memberStats, tasks });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -70,16 +70,14 @@ const AttendanceReport = () => {
   const [monthlyData, setMonthlyData] = useState([]);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
 
-  // Memoized monthly summary counts to avoid repeated filtering
+  // Present / absent / half-day come from the calendar's classification so the
+  // cards match its legend (holidays, weekends and future days excluded).
+  const [calendarCounts, setCalendarCounts] = useState(null);
   const monthlySummary = useMemo(() => {
-    const present = monthlyData.filter(d => d.status === "Present").length;
-    // Weekends with no punch are days off, not absences.
-    const offDay = (d) => [0, 6].includes(new Date(`${d.date}T00:00:00Z`).getUTCDay()) && (!d.inTime || d.inTime === "Not Marked");
-    const absent = monthlyData.filter(d => (d.status === "Absent" && !offDay(d)) || d.status === "Leave").length;
-    const halfDay = monthlyData.filter(d => d.status === "Half-Day").length;
     const wfh = monthlyData.filter(d => d.status?.startsWith("Work from Home")).length;
-    return { present, absent, halfDay, wfh };
-  }, [monthlyData]);
+    const c = calendarCounts || { present: 0, half: 0, absent: 0, leave: 0 };
+    return { present: c.present, absent: c.absent + c.leave, halfDay: c.half, wfh };
+  }, [monthlyData, calendarCounts]);
 
   // Decimal hours -> "Xh Ym", matching the live Attendance page's format
   // instead of a raw "0.22h" figure.
@@ -143,10 +141,10 @@ const AttendanceReport = () => {
               }
               setAttendance(record);
             } else if (record?.inTime && !record?.outTime) {
-              // Forgot to check out: Half Day once the day is over.
+              // Forgot to check out: Present once the day is over.
               setAttendanceStatus(
                 selectedDate < toISTDateString(new Date())
-                  ? "Work from Home - Half Day"
+                  ? "Work from Home - Present"
                   : "Work from Home - Incomplete"
               );
               setAttendance(record);
@@ -190,9 +188,9 @@ const AttendanceReport = () => {
             }
           } else if (record.inTime) {
             // Only in-time is marked, no out-time. Once the day itself has
-            // ended, close it out as a Half-Day instead of leaving it
+            // ended, close it out as Present instead of leaving it
             // "Incomplete" forever.
-            status = selectedDate < toISTDateString(new Date()) ? "Half-Day" : "Incomplete";
+            status = selectedDate < toISTDateString(new Date()) ? "Present" : "Incomplete";
           } else {
             status = "Not Yet";
           }
@@ -434,7 +432,7 @@ const AttendanceReport = () => {
                   </div>
                 </div>
 
-                <AttendanceCalendar month={selectedMonth} days={monthlyData} onChanged={fetchMonthlyAttendance} />
+                <AttendanceCalendar month={selectedMonth} days={monthlyData} onChanged={fetchMonthlyAttendance} onCounts={setCalendarCounts} />
 
                 {/* Monthly Data Virtualized List */}
                 <div className="overflow-x-auto px-6 pb-6">

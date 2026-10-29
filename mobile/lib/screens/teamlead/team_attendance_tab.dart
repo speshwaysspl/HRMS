@@ -9,70 +9,11 @@ import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/month_picker_dialog.dart';
 
 /// Month + year picker (no day). Returns the first day of the chosen month.
-Future<DateTime?> showMonthPicker(BuildContext context, {DateTime? initial}) {
-  final now = DateTime.now();
-  var year = (initial ?? now).year;
-  final selected = initial ?? now;
-  return showDialog<DateTime>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setD) => AlertDialog(
-        title: Row(
-          children: [
-            const Expanded(child: Text('Select month')),
-            IconButton(
-              tooltip: 'Previous year',
-              onPressed: year > 2020 ? () => setD(() => year--) : null,
-              icon: const Icon(Icons.chevron_left),
-            ),
-            Text('$year'),
-            IconButton(
-              tooltip: 'Next year',
-              onPressed: year < now.year ? () => setD(() => year++) : null,
-              icon: const Icon(Icons.chevron_right),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 300,
-          child: GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 3,
-            childAspectRatio: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            children: [
-              for (var m = 1; m <= 12; m++)
-                Builder(
-                  builder: (_) {
-                    final future = year == now.year && m > now.month;
-                    final isSel = year == selected.year && m == selected.month;
-                    final label = Text(
-                      DateFormat.MMM().format(DateTime(year, m)),
-                    );
-                    final onTap = future
-                        ? null
-                        : () => Navigator.pop(ctx, DateTime(year, m));
-                    return isSel
-                        ? FilledButton(onPressed: onTap, child: label)
-                        : OutlinedButton(onPressed: onTap, child: label);
-                  },
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+Future<DateTime?> showMonthPicker(BuildContext context, {DateTime? initial}) =>
+    showHrmsMonthPicker(context, initial: initial);
 
 /// Asks for a month and opens the all-teams attendance Excel.
 Future<void> downloadAllTeamsAttendance(BuildContext context) async {

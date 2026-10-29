@@ -130,11 +130,17 @@ const sendMulticastNotification = async (registrationTokens, title, body, data =
         priority: 'high',
         visibility: 'public',
         sound: 'default',
+        // Same tag = the phone replaces instead of stacking, so a device that
+        // still holds an old token alongside its new one shows it only once.
+        ...(stringData.notificationId ? { tag: stringData.notificationId } : {}),
       },
     },
-    apns: { payload: { aps: { sound: 'default' } } },
+    apns: {
+      ...(stringData.notificationId ? { headers: { 'apns-collapse-id': stringData.notificationId } } : {}),
+      payload: { aps: { sound: 'default' } },
+    },
     webpush: webpushOptions(),
-    tokens: registrationTokens,
+    tokens: [...new Set(registrationTokens)],
   };
 
   try {
