@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/simple_list_tile.dart';
 import 'team_palette.dart';
+import '../../widgets/balloon_refresh.dart';
 
 final _ymd = DateFormat('yyyy-MM-dd');
 final _pretty = DateFormat('EEE, d MMM');
@@ -144,7 +145,7 @@ class _MilestonesTabState extends State<MilestonesTab> {
       ],
     );
 
-    return RefreshIndicator(
+    return BalloonRefresh(
       onRefresh: widget.onChanged,
       child: ListView(
         padding: EdgeInsets.fromLTRB(pad, context.h(12), pad, context.h(96)),

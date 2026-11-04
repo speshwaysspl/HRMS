@@ -9,6 +9,7 @@ import '../../widgets/state_views.dart';
 import 'team_attendance_tab.dart';
 import 'team_detail_screen.dart';
 import 'team_palette.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class MyTeamsScreen extends StatefulWidget {
   const MyTeamsScreen({super.key});
@@ -109,7 +110,7 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _teams.isEmpty
                   ? ListView(

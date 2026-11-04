@@ -15,6 +15,7 @@ import '../widgets/state_views.dart';
 import '../widgets/hrms_app_bar.dart';
 
 import '../services/live_refresh.dart';
+import '../widgets/balloon_refresh.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -121,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LiveRefresh<ProfileS
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('My Profile')),
       // Tab root gets the menu; when pushed, keep the back arrow.
-      body: RefreshIndicator(
+      body: BalloonRefresh(
         onRefresh: _fetchProfile,
         child: ListView(
           padding: EdgeInsets.all(context.w(16)),

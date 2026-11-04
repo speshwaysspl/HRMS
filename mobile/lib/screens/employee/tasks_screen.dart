@@ -13,6 +13,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/work_proof_field.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -115,7 +116,7 @@ class _TasksScreenState extends State<TasksScreen> {
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _tasks.isEmpty
                   ? ListView(

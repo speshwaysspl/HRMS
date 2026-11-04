@@ -9,6 +9,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
@@ -93,7 +94,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen>
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

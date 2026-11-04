@@ -11,6 +11,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 const _eventTypes = ['holiday', 'wfh'];
 
 class AdminCalendarScreen extends StatefulWidget {
@@ -207,7 +208,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen> with LiveRefr
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.fromLTRB(

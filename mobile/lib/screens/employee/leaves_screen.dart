@@ -19,6 +19,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/leave_details_sheet.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class LeavesScreen extends StatefulWidget {
   const LeavesScreen({super.key});
 
@@ -180,7 +181,7 @@ class _LeavesScreenState extends State<LeavesScreen> with LiveRefresh<LeavesScre
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.all(context.w(16)),

@@ -11,6 +11,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 const _statuses = ['Pending', 'In Review', 'Resolved', 'Closed'];
 
 class AdminFeedbackScreen extends StatefulWidget {
@@ -117,7 +118,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> with LiveRefr
                   )
                 : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: visible.isEmpty
                         ? ListView(

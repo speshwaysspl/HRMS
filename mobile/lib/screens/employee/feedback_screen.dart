@@ -10,6 +10,7 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 const _categories = [
   'General',
   'Work Environment',
@@ -100,7 +101,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> with LiveRefresh<Feedba
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

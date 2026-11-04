@@ -12,6 +12,7 @@ import 'admin_employee_form_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminEmployeesScreen extends StatefulWidget {
   const AdminEmployeesScreen({super.key});
 
@@ -105,7 +106,7 @@ class _AdminEmployeesScreenState extends State<AdminEmployeesScreen> with LiveRe
                   )
                 : _error != null
                     ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
+                    : BalloonRefresh(
                         onRefresh: _load,
                         child: _visible.isEmpty
                             ? ListView(children: const [

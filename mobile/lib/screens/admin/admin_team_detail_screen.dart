@@ -11,6 +11,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
 import '../../widgets/hrms_app_bar.dart';
 import '../teamlead/team_attendance_tab.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class AdminTeamDetailScreen extends StatefulWidget {
   final String id;
@@ -186,7 +187,7 @@ class _AdminTeamDetailScreenState extends State<AdminTeamDetailScreen> {
                   )
                 : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: ListView(
                       padding: EdgeInsets.all(context.w(16)),

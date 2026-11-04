@@ -22,6 +22,7 @@ import 'admin_teams_screen.dart';
 
 import '../../services/live_refresh.dart';
 import '../../widgets/push_back_drawer.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
 
@@ -171,7 +172,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with LiveRefresh<Admi
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(onRefresh: _load, child: _content(name)),
+          : BalloonRefresh(onRefresh: _load, child: _content(name)),
     );
   }
 

@@ -14,6 +14,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/leave_reject_dialog.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminLeavesScreen extends StatefulWidget {
   const AdminLeavesScreen({super.key});
 
@@ -147,7 +148,7 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> with LiveRefresh<
                   )
                 : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: visible.isEmpty
                         ? ListView(

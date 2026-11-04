@@ -12,6 +12,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class PayslipsScreen extends StatefulWidget {
   final String employeeCode;
   const PayslipsScreen({super.key, required this.employeeCode});
@@ -165,7 +166,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> with LiveRefresh<Paysli
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

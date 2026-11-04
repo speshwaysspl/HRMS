@@ -11,6 +11,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
@@ -314,7 +315,7 @@ class _CalendarScreenState extends State<CalendarScreen> with LiveRefresh<Calend
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.all(context.w(16)),

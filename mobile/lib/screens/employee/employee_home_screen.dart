@@ -22,6 +22,7 @@ import 'payslips_screen.dart';
 
 import '../../services/live_refresh.dart';
 import '../../widgets/push_back_drawer.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
@@ -235,7 +236,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen>
           ),
         ),
       ),
-      body: RefreshIndicator(
+      body: BalloonRefresh(
         onRefresh: _load,
         child: _loading
             ? _buildSkeleton()

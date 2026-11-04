@@ -10,6 +10,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminDepartmentsScreen extends StatefulWidget {
   const AdminDepartmentsScreen({super.key});
 
@@ -122,7 +123,7 @@ class _AdminDepartmentsScreenState extends State<AdminDepartmentsScreen> with Li
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

@@ -23,6 +23,7 @@ import 'milestones_tab.dart';
 import 'team_attendance_tab.dart';
 import 'team_members_tab.dart';
 import 'team_palette.dart';
+import '../../widgets/balloon_refresh.dart';
 
 /// Team detail for team leads — mirrors web TeamDetail.jsx: a "Task List"
 /// tab (add / update / view tasks) and a "Team Members" tab (per-member stats).
@@ -723,7 +724,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen>
         _milestoneHeader(msName),
         chips,
         Expanded(
-          child: RefreshIndicator(
+          child: BalloonRefresh(
             onRefresh: () async {
               await Future.wait([_load(), _loadMilestones()]);
             },

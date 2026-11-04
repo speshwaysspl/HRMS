@@ -23,6 +23,7 @@ import 'leaves_screen.dart';
 import 'payslips_screen.dart';
 import 'tasks_screen.dart';
 import '../teamlead/task_link.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -468,7 +469,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             )
           : _error != null
           ? buildErrorState(_lastError ?? _error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

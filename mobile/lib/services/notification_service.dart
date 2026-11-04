@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'app_events.dart';
 import 'api_client.dart';
+import 'push_service.dart';
 
 class NotificationService {
   final Dio _dio = ApiClient.instance.dio;
@@ -19,9 +20,44 @@ class NotificationService {
     try {
       final data = await getNotifications(userId, limit: 50);
       final list = (data['notifications'] as List?) ?? [];
-      AppEvents.unreadNotifications.value =
-          list.where((n) => n is Map && n['isRead'] != true).length;
+      final unread = list.whereType<Map>().where((n) => n['isRead'] != true).toList();
+      AppEvents.unreadNotifications.value = unread.length;
+      _toastNewUnread(userId, unread);
     } catch (_) {}
+  }
+
+  // Unread ids already known on this device, per user. The first refresh after
+  // launch / login only records them (no toast for old items).
+  static String? _seenFor;
+  static final Set<String> _seenUnread = {};
+
+  /// Gooey-drop toast for notifications that arrived since the last refresh —
+  /// same trigger as the bell's red dot, so it works even when the live socket
+  /// or FCM doesn't deliver in the foreground. Deduped with those paths by id.
+  void _toastNewUnread(String userId, List<Map> unread) {
+    final ids = unread.map((n) => n['_id']?.toString() ?? '').where((id) => id.isNotEmpty).toList();
+    if (_seenFor != userId) {
+      _seenFor = userId;
+      _seenUnread
+        ..clear()
+        ..addAll(ids);
+      return;
+    }
+    final fresh = unread.where((n) => !_seenUnread.contains(n['_id']?.toString())).toList();
+    _seenUnread.addAll(ids);
+    if (fresh.isEmpty) return;
+    // Newest first from the API — show the latest one.
+    final n = fresh.first;
+    PushService.instance.showInApp(
+      id: n['_id']?.toString() ?? '',
+      title: n['title']?.toString() ?? '',
+      body: n['message']?.toString() ?? '',
+      data: {
+        'type': n['type']?.toString() ?? '',
+        'relatedId': n['relatedId']?.toString() ?? '',
+        'notificationId': n['_id']?.toString() ?? '',
+      },
+    );
   }
 
   Future<void> markRead(String notificationId) async {

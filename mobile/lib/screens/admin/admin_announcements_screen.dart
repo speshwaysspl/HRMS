@@ -11,6 +11,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/announcement_card.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminAnnouncementsScreen extends StatefulWidget {
   const AdminAnnouncementsScreen({super.key});
 
@@ -249,7 +250,7 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

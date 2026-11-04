@@ -13,6 +13,7 @@ import 'admin_payslip_generator_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminPayslipsScreen extends StatefulWidget {
   const AdminPayslipsScreen({super.key});
 
@@ -134,7 +135,7 @@ class _AdminPayslipsScreenState extends State<AdminPayslipsScreen> with LiveRefr
                   )
                 : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: visible.isEmpty
                         ? ListView(

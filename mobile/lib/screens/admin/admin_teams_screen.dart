@@ -12,6 +12,7 @@ import '../../widgets/simple_list_tile.dart';
 import 'admin_team_detail_screen.dart';
 import '../teamlead/team_attendance_tab.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/balloon_refresh.dart';
 
 class AdminTeamsScreen extends StatefulWidget {
   const AdminTeamsScreen({super.key});
@@ -158,7 +159,7 @@ class _AdminTeamsScreenState extends State<AdminTeamsScreen> {
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _teams.isEmpty
                   ? ListView(

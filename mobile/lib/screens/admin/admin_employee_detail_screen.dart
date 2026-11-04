@@ -14,6 +14,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/id_card.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminEmployeeDetailScreen extends StatefulWidget {
   final String id;
   const AdminEmployeeDetailScreen({super.key, required this.id});
@@ -154,7 +155,7 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> w
               )
             : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

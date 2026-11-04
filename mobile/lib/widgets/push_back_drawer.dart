@@ -24,6 +24,7 @@ class PushBackDrawer extends StatefulWidget {
 
 class PushBackDrawerState extends State<PushBackDrawer> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 340));
+  final GlobalKey _pageKey = GlobalKey();
   late final Animation<double> _t = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
 
   bool get isOpen => _c.value > 0;
@@ -80,8 +81,11 @@ class PushBackDrawerState extends State<PushBackDrawer> with SingleTickerProvide
                 ),
               ),
               // Ghost card a step behind the page: stacked "push back" depth.
-              if (open)
-                Transform(
+              // Always in the tree (invisible while closed): inserting it only
+              // when open shifted the page's slot in this Stack, so Flutter
+              // rebuilt the whole page — Home reloaded on every open/close.
+              IgnorePointer(
+                child: Transform(
                   alignment: Alignment.centerLeft,
                   transform: Matrix4.identity()
                     ..translateByDouble((slide - 26) * t, 0, 0, 1)
@@ -93,6 +97,7 @@ class PushBackDrawerState extends State<PushBackDrawer> with SingleTickerProvide
                     ),
                   ),
                 ),
+              ),
               // The page: shrinks, rounds, slides right.
               Transform(
                 alignment: Alignment.centerLeft,
@@ -111,17 +116,24 @@ class PushBackDrawerState extends State<PushBackDrawer> with SingleTickerProvide
                         if (open) BoxShadow(color: Colors.black.withValues(alpha: 0.28 * t), blurRadius: 40, offset: const Offset(-8, 12)),
                       ],
                     ),
+                    // Fixed children + a GlobalKey on the page so its state
+                    // (and loaded data) survives opening/closing the menu.
                     child: Stack(children: [
-                      AbsorbPointer(absorbing: open, child: widget.child),
-                      // Tap the pushed-back page to close.
-                      if (open)
-                        Positioned.fill(
+                      AbsorbPointer(
+                        absorbing: open,
+                        child: KeyedSubtree(key: _pageKey, child: widget.child),
+                      ),
+                      // Tap the pushed-back page to close (inactive while closed).
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: !open,
                           child: Semantics(
-                            button: true,
-                            label: 'Close menu',
+                            button: open,
+                            label: open ? 'Close menu' : null,
                             child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: close),
                           ),
                         ),
+                      ),
                     ]),
                   ),
                 ),

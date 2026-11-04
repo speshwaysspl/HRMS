@@ -14,6 +14,7 @@ import '../../widgets/work_proof_field.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminLeaveDetailScreen extends StatefulWidget {
   final String id;
   const AdminLeaveDetailScreen({super.key, required this.id});
@@ -119,7 +120,7 @@ class _AdminLeaveDetailScreenState extends State<AdminLeaveDetailScreen> with Li
               )
             : _error != null
             ? buildErrorState(_error!, _load)
-            : RefreshIndicator(
+            : BalloonRefresh(
                 onRefresh: _load,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),

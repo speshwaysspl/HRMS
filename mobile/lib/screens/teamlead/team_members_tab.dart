@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/state_views.dart';
 import 'team_palette.dart';
+import '../../widgets/balloon_refresh.dart';
 
 enum _MemberFilter { all, overdue, pending, complete }
 
@@ -56,7 +57,7 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
   Widget build(BuildContext context) {
     final stats = widget.stats;
     if (stats.isEmpty) {
-      return RefreshIndicator(
+      return BalloonRefresh(
         onRefresh: widget.onRefresh,
         child: ListView(
           children: const [
@@ -76,7 +77,7 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
     final visible = stats.where(_matches).toList();
     final pad = context.w(16);
 
-    return RefreshIndicator(
+    return BalloonRefresh(
       onRefresh: widget.onRefresh,
       child: ListView(
         padding: EdgeInsets.fromLTRB(pad, context.h(12), pad, context.h(24)),

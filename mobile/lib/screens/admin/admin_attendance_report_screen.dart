@@ -11,6 +11,7 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminAttendanceReportScreen extends StatefulWidget {
   /// 'checked-in' | 'Leave' | 'not-checked-in' — preselected by the
   /// admin dashboard tiles (mirrors web ?status=).
@@ -210,7 +211,7 @@ class _AdminAttendanceReportScreenState
                   )
                 : _error != null
                 ? buildErrorState(_error!, _load)
-                : RefreshIndicator(
+                : BalloonRefresh(
                     onRefresh: _load,
                     child: _visible.isEmpty
                         ? ListView(

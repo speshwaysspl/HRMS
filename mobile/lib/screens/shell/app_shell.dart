@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/app_events.dart';
 import '../../services/auth_provider.dart';
+import '../../services/notification_service.dart';
 import '../../services/quick_actions_service.dart';
 import '../admin/admin_employees_screen.dart';
 import '../admin/admin_home_screen.dart';
@@ -31,6 +34,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 2; // Default to Home for employee
   bool _initialized = false;
+  Timer? _unreadPoll;
 
   @override
   void initState() {
@@ -40,6 +44,13 @@ class _AppShellState extends State<AppShell> {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => QuickActionsService.consumePending(),
     );
+    // Keep the bell + gooey-drop toast current even if the live socket / FCM
+    // doesn't deliver in the foreground: one light check every 20 s while open.
+    _unreadPoll = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!mounted || WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) return;
+      final userId = context.read<AuthProvider>().user?.id ?? '';
+      NotificationService().refreshUnread(userId);
+    });
   }
 
   @override
@@ -56,6 +67,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     AppEvents.tabSwitch.removeListener(_handleTabSwitch);
+    _unreadPoll?.cancel();
     super.dispose();
   }
 

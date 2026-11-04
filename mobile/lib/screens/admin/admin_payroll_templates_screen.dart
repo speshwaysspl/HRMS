@@ -12,6 +12,7 @@ import '../../widgets/status_pill.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminPayrollTemplatesScreen extends StatefulWidget {
   const AdminPayrollTemplatesScreen({super.key});
 
@@ -148,7 +149,7 @@ class _AdminPayrollTemplatesScreenState extends State<AdminPayrollTemplatesScree
  )
                 : _error != null
                     ? buildErrorState(_error!, _load)
-                    : RefreshIndicator(
+                    : BalloonRefresh(
                         onRefresh: _load,
                         child: visible.isEmpty
                             ? ListView(children: [

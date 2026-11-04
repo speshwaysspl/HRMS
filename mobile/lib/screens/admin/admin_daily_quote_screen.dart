@@ -11,6 +11,7 @@ import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AdminDailyQuoteScreen extends StatefulWidget {
   const AdminDailyQuoteScreen({super.key});
 
@@ -158,7 +159,7 @@ class _AdminDailyQuoteScreenState extends State<AdminDailyQuoteScreen> with Live
             )
           : _error != null
           ? buildErrorState(_error!, _load)
-          : RefreshIndicator(
+          : BalloonRefresh(
               onRefresh: _load,
               child: _items.isEmpty
                   ? ListView(

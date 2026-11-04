@@ -15,6 +15,7 @@ import '../../widgets/hrms_app_bar.dart';
 import '../../widgets/month_picker_dialog.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/balloon_refresh.dart';
 class AttendanceReportScreen extends StatefulWidget {
   const AttendanceReportScreen({super.key});
 
@@ -153,7 +154,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> with Li
 
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('Attendance Report')),
-      body: RefreshIndicator(
+      body: BalloonRefresh(
         onRefresh: _load,
         child: ListView(
           padding: EdgeInsets.all(context.w(16)),
