@@ -3,6 +3,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../env.dart';
 import 'app_events.dart';
+import 'push_service.dart';
 
 /// Socket.IO connection to the server (same one the web app uses). Joins the
 /// user's room; the server also puts admins in `role_admin`. Incoming
@@ -45,6 +46,19 @@ class RealtimeService with WidgetsBindingObserver {
       final type = data is Map ? data['type']?.toString() ?? '' : '';
       if (type == 'leave_approved' || type == 'leave_rejected') {
         AppEvents.leaveChanged.value++;
+      }
+      // In-app gooey-drop toast (deduped with the FCM copy by notification id).
+      if (data is Map) {
+        PushService.instance.showInApp(
+          id: data['_id']?.toString() ?? '',
+          title: data['title']?.toString() ?? '',
+          body: data['message']?.toString() ?? '',
+          data: {
+            'type': type,
+            'relatedId': data['relatedId']?.toString() ?? '',
+            'notificationId': data['_id']?.toString() ?? '',
+          },
+        );
       }
     });
     // Generic live-refresh hint for every other screen (see LiveRefresh).

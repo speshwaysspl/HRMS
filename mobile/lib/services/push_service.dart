@@ -241,11 +241,24 @@ class PushService {
 
   void _showInAppToast(RemoteMessage message) {
     final data = message.data;
-    final title = data['title'] ?? message.notification?.title ?? 'Speshway';
-    final body = data['body'] ?? message.notification?.body ?? '';
-    if (body.isEmpty && title == 'Speshway') return;
-    final id = data['notificationId']?.toString() ?? message.messageId ?? '';
+    showInApp(
+      id: data['notificationId']?.toString() ?? message.messageId ?? '',
+      title: data['title'] ?? message.notification?.title ?? 'Speshway',
+      body: data['body'] ?? message.notification?.body ?? '',
+      data: data,
+    );
+  }
+
+  /// Gooey-drop toast for a notification while the app is open. Called from
+  /// FCM onMessage *and* the live socket (`newNotification`) — the socket is
+  /// the reliable path in the foreground (FCM may not deliver there, e.g. a
+  /// local server without push). Deduped by the server's notification id, so
+  /// when both arrive it shows once.
+  void showInApp({required String id, required String title, String body = '', Map<String, dynamic> data = const {}}) {
+    if (body.isEmpty && (title.isEmpty || title == 'Speshway')) return;
     if (id.isNotEmpty && !_shownInApp.add(id)) return;
+    // Only when the user is looking at the app (socket can linger briefly in background).
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) return;
     GooeyToast.show(title: title, body: body, onTap: () => _handleOpen(data));
   }
 
