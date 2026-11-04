@@ -149,6 +149,7 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> wit
 
   final _service = AnnouncementService();
   Map<String, dynamic>? _item;
+  bool _markedSeen = false;
   bool _loading = true;
   Object? _error;
 
@@ -165,7 +166,12 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> wit
     });
     try {
       final v = await _service.getAnnouncement(widget.id);
-      _service.markSeen(widget.id); // counts toward the admin's "seen by N"
+      // Counts toward the admin's "seen by N" — once per open, not on every
+      // live refresh (that looped: ping → broadcast → reload → ping).
+      if (!_markedSeen) {
+        _markedSeen = true;
+        _service.markSeen(widget.id);
+      }
       if (!mounted) return;
       setState(() {
         _item = v;

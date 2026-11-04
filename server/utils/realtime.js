@@ -75,8 +75,12 @@ const ALSO_CHANGES = {
 
 export const liveDataMiddleware = (io) => (req, res, next) => {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
-  const resource = req.originalUrl.split("?")[0].split("/")[2];
+  const path = req.originalUrl.split("?")[0];
+  const resource = path.split("/")[2];
   if (!resource || SKIP_RESOURCES.has(resource)) return next();
+  // "Seen" pings are read receipts, not data changes. Broadcasting them made
+  // every open announcement screen reload → ping again → reload (≈1 s loop).
+  if (req.method === "POST" && /\/seen$/.test(path)) return next();
   res.on("finish", () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
     const at = Date.now();
