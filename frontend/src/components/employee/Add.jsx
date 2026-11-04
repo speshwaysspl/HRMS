@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/apiConfig";
 import { toISTDateString } from "../../utils/dateTimeUtils";
 import { DESIGNATIONS } from "../../utils/constants";
+import { fileToIdCardPhoto } from "../../utils/idCard";
 
 const Add = () => {
   const [departments, setDepartments] = useState([]);
@@ -14,6 +15,7 @@ const Add = () => {
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const navigate = useNavigate()
 
   // All available designations organized by technology/domain
@@ -64,6 +66,20 @@ const Add = () => {
       });
     } else {
       setFormData((prevData) => ({ ...prevData, [name]: value }));
+    }
+  };
+
+  // Optional ID-card photo, resized client-side and sent with the form.
+  const handlePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const profileImage = await fileToIdCardPhoto(file);
+      setPhotoError("");
+      setFormData((prev) => ({ ...prev, profileImage }));
+    } catch (err) {
+      setPhotoError(err.message);
     }
   };
 
@@ -135,6 +151,30 @@ const Add = () => {
           <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-700 uppercase tracking-wide mb-4">
             <FiUser /> Personal Information
           </h3>
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-20 h-20 rounded-full bg-surface-muted border border-surface-subtle overflow-hidden flex items-center justify-center flex-shrink-0">
+              {formData.profileImage ? (
+                <img src={formData.profileImage} alt="Selected photo" className="w-full h-full object-cover" />
+              ) : (
+                <FiUser className="text-2xl text-ink-faint" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink">Photo <span className="text-ink-faint font-normal">(optional — used on the ID card)</span></p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <label className="inline-flex items-center px-3 py-2 rounded-lg border border-surface-subtle text-sm font-medium text-ink cursor-pointer hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent-500">
+                  {formData.profileImage ? "Change photo" : "Upload photo"}
+                  <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={handlePhoto} />
+                </label>
+                {formData.profileImage ? (
+                  <button type="button" onClick={() => setFormData((prev) => ({ ...prev, profileImage: "" }))} className="px-3 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface-muted">
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              {photoError ? <p role="alert" className="mt-1 text-xs text-red-600">{photoError}</p> : null}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div>
               <label className="block text-sm font-medium text-ink">Name</label>

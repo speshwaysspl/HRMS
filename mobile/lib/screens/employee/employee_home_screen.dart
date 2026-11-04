@@ -17,6 +17,7 @@ import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import 'announcements_screen.dart';
+import '../../widgets/announcement_card.dart';
 import 'notifications_screen.dart';
 import 'payslips_screen.dart';
 
@@ -1125,156 +1126,40 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen>
     );
   }
 
+  /// Latest announcement as a compact themed card (same design as the list),
+  /// plus a "View all" link — mirrors web Summary.jsx.
   Widget _buildRecentAnnouncementCard() {
     final latest = _announcements.isNotEmpty ? _announcements.first : null;
-    final title = (latest?['title']?.toString().trim().isNotEmpty ?? false)
-        ? latest!['title'].toString().trim()
-        : 'New Holiday List Released';
-    final desc = (latest?['description']?.toString().trim().isNotEmpty ?? false)
-        ? latest!['description'].toString().trim()
-        : 'Please check the updated holiday calendar.';
-    final imageUrl = latest?['imageUrl']?.toString();
-    final timeStr = _getAnnouncementTime(latest?['createdAt']?.toString());
-    final (categoryLabel, categoryColor) = categoryStyle(
-      latest?['category']?.toString(),
-    );
-
-    final radius = BorderRadius.circular(context.r(16));
-    return Material(
-      color: AppColors.surface,
-      borderRadius: radius,
-      child: InkWell(
-        onTap: () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => AnnouncementsScreen()));
-        },
-        borderRadius: radius,
-        child: Container(
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (latest == null)
+        Container(
+          width: double.infinity,
           padding: EdgeInsets.all(context.w(16)),
           decoration: BoxDecoration(
-            borderRadius: radius,
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(context.r(16)),
             border: Border.all(color: AppColors.surfaceSubtle),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (imageUrl != null && imageUrl.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(context.r(10)),
-                      child: Image.network(
-                        imageUrl,
-                        width: context.r(52),
-                        height: context.r(52),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
-                    ),
-                    SizedBox(width: context.w(12)),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          categoryLabel,
-                          style: TextStyle(
-                            fontSize: context.sp(10.5),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                            color: categoryColor,
-                          ),
-                        ),
-                        SizedBox(height: context.h(4)),
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: context.sp(14),
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
-                            height: 1.3,
-                          ),
-                        ),
-                        SizedBox(height: context.h(5)),
-                        Text(
-                          desc,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: context.sp(12.5),
-                            color: AppColors.inkMuted,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.h(12)),
-              Row(
-                children: [
-                  // Left side shrinks (ellipsis) so large font sizes never overflow.
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.access_time_rounded,
-                          size: context.r(13),
-                          color: AppColors.inkFaint,
-                        ),
-                        SizedBox(width: context.w(6)),
-                        Flexible(
-                          child: Text(
-                            timeStr,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: context.sp(12),
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.inkFaint,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: context.w(8)),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'View all',
-                        style: TextStyle(
-                          fontSize: context.sp(13),
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.brand500,
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: context.r(18),
-                        color: AppColors.brand500,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+          child: Text('No announcements yet — company updates will show here.',
+              style: TextStyle(color: AppColors.inkMuted, fontSize: context.sp(13))),
+        )
+      else
+        AnnouncementCard(
+          item: latest,
+          variant: AnnouncementVariant.compact,
+          isNew: latest['seen'] == false,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => AnnouncementDetailScreen(id: latest['_id'].toString())),
           ),
         ),
+      TextButton.icon(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnnouncementsScreen())),
+        icon: const Icon(Icons.chevron_right_rounded, size: 18),
+        label: const Text('View all announcements'),
       ),
-    );
+    ]);
   }
 
-  // ---------------- Helpers ----------------
   String _formatTimeDisplay(dynamic val) {
     if (val == null || val.toString().isEmpty) return '--:--';
     final s = val.toString().trim();
@@ -1317,25 +1202,6 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen>
       return DateTime(now.year, now.month, now.day, h, m);
     } catch (_) {
       return null;
-    }
-  }
-
-  String _getAnnouncementTime(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return '2 hours ago';
-    try {
-      final dt = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 60) {
-        return '${diff.inMinutes <= 1 ? 1 : diff.inMinutes} mins ago';
-      } else if (diff.inHours < 24) {
-        return '${diff.inHours} hours ago';
-      } else if (diff.inDays < 7) {
-        return '${diff.inDays} days ago';
-      } else {
-        return DateFormat('d MMM yyyy').format(dt);
-      }
-    } catch (_) {
-      return '2 hours ago';
     }
   }
 

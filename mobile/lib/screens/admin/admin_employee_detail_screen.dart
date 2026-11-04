@@ -11,6 +11,7 @@ import '../../widgets/status_pill.dart';
 import '../employee/payslips_screen.dart';
 import 'admin_employee_form_screen.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/id_card.dart';
 
 import '../../services/live_refresh.dart';
 class AdminEmployeeDetailScreen extends StatefulWidget {
@@ -196,6 +197,17 @@ class _AdminEmployeeDetailScreenState extends State<AdminEmployeeDetailScreen> w
                       _row('Joining date', _fmt(e['joiningDate'])),
                       _row('Annual CTC', e['salaryPackage'] != null ? '₹${e['salaryPackage']}' : '—'),
                       SizedBox(height: context.h(24)),
+                      FilledButton.icon(
+                        onPressed: () => showIdCardSheet(
+                          context,
+                          employee: e,
+                          allowManage: true,
+                          onPhotoChanged: (patch) => setState(() => _emp = {...?_emp, ...patch}),
+                        ),
+                        icon: const Icon(Icons.badge_outlined, size: 18),
+                        label: const Text('ID card'),
+                      ),
+                      SizedBox(height: context.h(10)),
                       OutlinedButton.icon(
                         onPressed: () {
                           final code = e['employeeId']?.toString();

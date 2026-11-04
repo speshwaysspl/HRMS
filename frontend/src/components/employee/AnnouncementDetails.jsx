@@ -4,19 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { FiArrowLeft } from "react-icons/fi";
 import { API_BASE } from "../../utils/apiConfig";
-import { formatISTDate } from "../../utils/dateTimeUtils";
+import AnnouncementCard from "../announcements/AnnouncementCard";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
-
-const CATEGORY_STYLE = {
-  important: { label: "Important", className: "text-brand-600" },
-  festival: { label: "Festival", className: "text-accent-600" },
-  event: { label: "Event", className: "text-accent-600" },
-  achievement: { label: "Achievement", className: "text-accent-600" },
-  quote: { label: "Daily Quote", className: "text-ink-faint" },
-};
-const categoryStyle = (category) => CATEGORY_STYLE[category] || { label: "Announcement", className: "text-ink-faint" };
 
 const EmployeeAnnouncementDetails = () => {
   const { id } = useParams();
@@ -45,6 +36,8 @@ const EmployeeAnnouncementDetails = () => {
         });
         if (res.data.success) {
           setAnnouncement(res.data.announcement);
+          // Counts toward the admin's "seen by N" (fire-and-forget).
+          axios.post(`${API_BASE}/api/announcement/${id}/seen`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
         } else {
           setError("Failed to load announcement.");
         }
@@ -61,8 +54,6 @@ const EmployeeAnnouncementDetails = () => {
   if (error) return <ErrorState title="Failed to load announcement" message={error} />;
   if (!announcement) return null;
 
-  const { label, className } = categoryStyle(announcement.category);
-
   return (
     <div className="min-h-screen bg-surface-muted p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
@@ -75,25 +66,7 @@ const EmployeeAnnouncementDetails = () => {
         >
           <FiArrowLeft size={16} /> Back
         </button>
-        <div className="rounded-2xl border border-surface-subtle bg-surface p-5 md:p-8">
-          {announcement.imageUrl && (
-            <img
-              src={announcement.imageUrl}
-              alt={announcement.title}
-              className="w-full max-h-80 object-cover rounded-xl mb-6"
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-            />
-          )}
-          <span className={`text-[11px] font-bold uppercase tracking-wide ${className}`}>{label}</span>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-ink leading-tight mt-1.5">{announcement.title}</h1>
-          <p className="text-sm text-ink-faint font-medium mt-2">
-            {[announcement.createdBy?.name, formatISTDate(new Date(announcement.createdAt))].filter(Boolean).join(" • ")}
-          </p>
-          <hr className="border-surface-subtle my-5" />
-          <p className="text-[15px] text-ink leading-[1.75] whitespace-pre-wrap">
-            {announcement.description}
-          </p>
-        </div>
+        <AnnouncementCard a={announcement} variant="full" />
       </div>
     </div>
   );

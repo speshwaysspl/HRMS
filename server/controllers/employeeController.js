@@ -10,6 +10,15 @@ import ExcelJS from "exceljs";
 import Team from "../models/Team.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 
+// ID-card photo arrives as a client-resized JPEG/PNG data URL; reject anything else or oversized.
+const MAX_PHOTO_CHARS = 700 * 1024;
+const sanitizeProfileImage = (value) => {
+  if (!value) return "";
+  if (typeof value !== "string" || !/^data:image\/(jpeg|png);base64,/.test(value)) return null;
+  if (value.length > MAX_PHOTO_CHARS) return null;
+  return value;
+};
+
 const addEmployee = async (req, res) => {
   try {
     const {
@@ -25,8 +34,14 @@ const addEmployee = async (req, res) => {
       password,
       role,
       salaryPackage,
+      profileImage: rawProfileImage,
     } = req.body;
- 
+
+    const profileImage = sanitizeProfileImage(rawProfileImage);
+    if (profileImage === null) {
+      return res.status(400).json({ success: false, error: "Photo must be a JPEG or PNG under 500 KB" });
+    }
+
     // Check if user exists
     const existingUser = await User.findOne({ email });
     let savedUser;
@@ -66,6 +81,7 @@ const addEmployee = async (req, res) => {
       designation,
       department,
       salaryPackage: salaryPackage ? parseFloat(salaryPackage) : null,
+      profileImage,
     });
 
     try {
@@ -128,6 +144,7 @@ const addEmployee = async (req, res) => {
 const getEmployees = async (req, res) => {
   try {
     const employees = await Employee.find()
+      .select("-profileImage")
       .populate("userId", { password: 0 })
       .populate("department");
     return res.status(200).json({ success: true, employees });
@@ -900,8 +917,47 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+// Photo position inside the ID-card circle: zoom 1–3.5, pan ±80% (same clamp as web/Flutter).
+const clampNum = (v, min, max, fallback) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+const sanitizeIdCardPhoto = (value) => ({
+  scale: clampNum(value?.scale, 1, 3.5, 1),
+  x: clampNum(value?.x, -80, 80, 0),
+  y: clampNum(value?.y, -80, 80, 0),
+});
+
+// Admin/HR set or remove an employee's ID-card photo and/or its position.
+// A new photo resets the position unless one is sent with it.
+const updateEmployeePhoto = async (req, res) => {
+  try {
+    const update = { updatedAt: Date.now() };
+    if (req.body && "profileImage" in req.body) {
+      const profileImage = sanitizeProfileImage(req.body.profileImage);
+      if (profileImage === null) {
+        return res.status(400).json({ success: false, error: "Photo must be a JPEG or PNG under 500 KB" });
+      }
+      update.profileImage = profileImage;
+      update.idCardPhoto = sanitizeIdCardPhoto(req.body.idCardPhoto);
+    } else if (req.body?.idCardPhoto) {
+      update.idCardPhoto = sanitizeIdCardPhoto(req.body.idCardPhoto);
+    } else {
+      return res.status(400).json({ success: false, error: "Nothing to update" });
+    }
+    const employee = await Employee.findByIdAndUpdate(req.params.id, update, { new: true })
+      .select("_id profileImage idCardPhoto");
+    if (!employee) return res.status(404).json({ success: false, error: "Employee not found" });
+    return res.status(200).json({ success: true, profileImage: employee.profileImage, idCardPhoto: employee.idCardPhoto });
+  } catch (error) {
+    console.error("Update employee photo error:", error);
+    return res.status(500).json({ success: false, error: "Server error updating photo" });
+  }
+};
+
 export {
   addEmployee,
+  updateEmployeePhoto,
   getEmployees,
   getEmployee,
   updateEmployee,

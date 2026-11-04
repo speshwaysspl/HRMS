@@ -24,6 +24,8 @@ const EditAnnouncement = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("important");
+  const [pinned, setPinned] = useState(false);
+  const [expiresOn, setExpiresOn] = useState("");
   const [scope, setScope] = useState("all");
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("");
@@ -99,7 +101,9 @@ const EditAnnouncement = () => {
           const a = res.data.announcement;
           setTitle(a.title);
           setDescription(a.description);
-          if (a.category) setCategory(a.category);
+          if (a.category) setCategory(a.category === "general" ? "notice" : a.category);
+          setPinned(!!a.pinned);
+          setExpiresOn(a.expiresAt ? new Date(a.expiresAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) : "");
           setScope(a.scope || "all");
           if (a.targetTeam) {
             setSelectedTeam(a.targetTeam._id || a.targetTeam);
@@ -317,6 +321,8 @@ const EditAnnouncement = () => {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("category", category);
+      formData.append("pinned", pinned ? "true" : "false");
+      formData.append("expiresAt", expiresOn ? new Date(`${expiresOn}T23:59:59+05:30`).toISOString() : "");
       formData.append("scope", scope);
       if (scope === 'team') {
         formData.append("targetTeam", selectedTeam);
@@ -390,6 +396,17 @@ const EditAnnouncement = () => {
                 );
               })}
             </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, minHeight: 44, cursor: 'pointer', fontSize: '0.875rem', color: '#1e3a5f' }}>
+              <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} style={{ width: 16, height: 16 }} />
+              <span><strong>Pin to top</strong> — stays first in everyone's announcements until unpinned.</span>
+            </label>
+
+            <label style={{ display: 'block', marginTop: 12, fontSize: '0.875rem', color: '#1e3a5f' }}>
+              <strong>Show until</strong> (optional — leave empty to keep it visible)
+              <input type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)}
+                style={{ display: 'block', marginTop: 6, minHeight: 44, padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8 }} />
+            </label>
 
             {/* Live Subject Preview */}
             <Box

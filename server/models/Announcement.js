@@ -6,12 +6,19 @@ const announcementSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
-    // category: 'important', 'quote', 'festival', 'event', 'achievement', 'general'
+    // Themed type (nutri_hrms style). 'general' is the legacy alias of 'notice';
+    // birthday / anniversary / holiday are set by automatic posts.
     category: {
       type: String,
-      enum: ["important", "quote", "festival", "event", "achievement", "general"],
+      enum: ["important", "quote", "festival", "event", "achievement", "notice", "general", "birthday", "anniversary", "holiday"],
       default: "important"
     },
+    // Pinned announcements stay at the top of every feed.
+    pinned: { type: Boolean, default: false },
+    // Hidden from employees after this; null = never (nutri_hrms "until").
+    expiresAt: { type: Date, default: null },
+    // Users who opened it — admin sees "seen by N of M".
+    readBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     // scope: 'all', 'specific', 'team_leads', 'team_members', 'team'
     scope: { 
       type: String, 

@@ -29,7 +29,7 @@ const HRDashboard = () => {
       <div className={`flex-1 min-w-0 bg-surface-muted min-h-screen text-ink transition-all duration-200 ${sidebarOpen ? "md:ml-64" : "md:ml-0"}`}>
         <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
         <div className="p-2 sm:p-4 md:p-6 max-w-[1800px] mx-auto w-full">
-          <PageBackButton />
+          <PageBackButton desktopOnly />
           <Suspense fallback={<LoadingState message="Loading…" />}>
             <Outlet />
           </Suspense>

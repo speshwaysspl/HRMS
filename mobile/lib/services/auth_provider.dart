@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import 'api_client.dart';
+import 'app_settings.dart';
 import 'location_service.dart';
 import 'push_service.dart';
 import 'realtime_service.dart';
@@ -71,10 +72,16 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Sign-out leaves nothing of this account on the phone (like nutri_hrms):
+  /// no live socket, no push token or tray notifications, no saved session,
+  /// data or App Lock. In-memory screen caches are cleared by the caller
+  /// (DataCaches.clearAll) since they live in the widget tree.
   Future<void> logout() async {
     RealtimeService.instance.disconnect();
     await PushService.instance.unregisterForUser();
+    await PushService.instance.clearShownNotifications();
     await _api.clearSession();
+    await AppSettings.clearForSignOut();
     user = null;
     status = AuthStatus.unauthenticated;
     notifyListeners();

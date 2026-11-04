@@ -249,6 +249,7 @@ export const getAnnouncementEmailTemplate = ({ title, description, imageUrl, rec
       badgeText = "Achievement";
       break;
     case 'general':
+    case 'notice':
       heading = "Company Notice 📌";
       intro = "Please take note of the following update from SPESHWAY SOLUTIONS PVT LTD.";
       badgeColor = "#64748b";
@@ -310,6 +311,7 @@ export const getAnnouncementEmailSubject = (title, category = 'important') => {
     case 'achievement':
       return `🏆 Milestone & Achievement: ${title} - SPESHWAY SOLUTIONS`;
     case 'general':
+    case 'notice':
       return `📌 Company Notice: ${title} - SPESHWAY SOLUTIONS`;
     case 'important':
     default:

@@ -134,6 +134,7 @@ export const createBirthdayAnnouncement = async (employee, adminId) => {
         $setOnInsert: {
           title: `🎉 Happy Birthday, ${employeeName}! 🎂`,
           description: getBirthdayMessage(employee),
+          category: "birthday",
           createdBy: adminId,
           image: null,
           dedupeKey,

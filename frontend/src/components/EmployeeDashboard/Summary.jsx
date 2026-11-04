@@ -22,23 +22,12 @@ import { API_BASE } from '../../utils/apiConfig'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { getEmployeeDailyMessage } from '../../utils/greetingUtils'
 import { fetchAnnouncements } from '../../utils/AnnouncementHelper'
+import AnnouncementCard from '../announcements/AnnouncementCard'
 import useMeta from '../../utils/useMeta'
 import NotificationBell from '../notifications/NotificationBell'
 import ErrorState from '../common/ErrorState'
 import CelebrationsAndHoliday from './CelebrationsAndHoliday'
 import { useLiveTick } from "../../context/NotificationContext";
-
-// Same category labels/colors as the Announcements list page — kept in
-// sync intentionally (see AnnouncementDetails.jsx / EmployeeAnnouncements.jsx).
-const ANNOUNCEMENT_CATEGORY_STYLE = {
-  important: { label: 'Important', className: 'text-brand-600' },
-  festival: { label: 'Festival', className: 'text-accent-600' },
-  event: { label: 'Event', className: 'text-accent-600' },
-  achievement: { label: 'Achievement', className: 'text-accent-600' },
-  quote: { label: 'Daily Quote', className: 'text-ink-faint' },
-}
-const announcementCategoryStyle = (category) =>
-  ANNOUNCEMENT_CATEGORY_STYLE[category] || { label: 'Announcement', className: 'text-ink-faint' }
 
 // Same 5-color palette + status vocabulary as the Flutter mobile app's
 // employee home screen — kept in sync intentionally, see MEMORY.md.
@@ -91,18 +80,6 @@ const formatWorkedHours = (hours) => {
   const h = Math.floor(hours)
   const m = Math.round((hours - h) * 60)
   return `${h}h ${m.toString().padStart(2, '0')}m`
-}
-
-const getAnnouncementTime = (dateStr) => {
-  if (!dateStr) return ''
-  const diffMs = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diffMs / 60000)
-  if (mins < 60) return `${Math.max(mins, 1)}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 /** Small circular gauge matching the mobile app's "hours worked" ring. */
@@ -511,46 +488,24 @@ const Summary = () => {
           <FaBullhorn className="text-ink" />
           Recent Announcements
         </h2>
-        {(() => {
-          const { label, className } = announcementCategoryStyle(latestAnnouncement?.category)
-          return (
-            <button
-              onClick={() => navigate('/employee-dashboard/announcements')}
-              className="w-full text-left rounded-2xl p-4 border border-surface-subtle bg-surface hover:shadow-panel transition-shadow"
-            >
-              <div className="flex items-start gap-3">
-                {latestAnnouncement?.imageUrl && (
-                  <img
-                    src={latestAnnouncement.imageUrl}
-                    alt=""
-                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                    onError={(e) => { e.currentTarget.style.display = 'none' }}
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className={`text-[10.5px] font-bold uppercase tracking-wide ${className}`}>{label}</span>
-                  <div className="font-bold text-ink text-sm leading-snug line-clamp-2 mt-0.5">
-                    {latestAnnouncement?.title?.trim() || 'New Holiday List Released'}
-                  </div>
-                  <div className="text-ink-muted text-xs leading-relaxed line-clamp-2 mt-1.5">
-                    {latestAnnouncement?.description?.trim() || 'Please check the updated holiday calendar.'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mt-3">
-                <span className="inline-flex items-center gap-1.5 text-xs text-ink-faint">
-                  <FaClock size={11} />
-                  {latestAnnouncement?.createdAt ? getAnnouncementTime(latestAnnouncement.createdAt) : 'Just now'}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-500">
-                  View all
-                  <FaChevronRight size={10} />
-                </span>
-              </div>
-            </button>
-          )
-        })()}
+        {latestAnnouncement ? (
+          <AnnouncementCard
+            a={latestAnnouncement}
+            variant="compact"
+            onClick={() => navigate(`/employee-dashboard/announcements/${latestAnnouncement._id}`)}
+          />
+        ) : (
+          <p className="rounded-2xl border border-surface-subtle bg-surface p-4 text-sm text-ink-muted">
+            No announcements yet — company updates will show here.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => navigate('/employee-dashboard/announcements')}
+          className="mt-2 inline-flex min-h-[40px] items-center gap-1 text-[13px] font-semibold text-brand-500 hover:text-brand-700"
+        >
+          View all announcements <FaChevronRight size={10} />
+        </button>
       </motion.div>
 
       {/* Attendance and Work Policy Guidance Section */}

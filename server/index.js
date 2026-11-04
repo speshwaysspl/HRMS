@@ -127,7 +127,7 @@ app.use(cors({
   exposedHeaders: ["Content-Disposition"]
 }));
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: "1mb" })); // ID-card photo data URLs
 // Live-refresh hint after every successful write (see utils/realtime.js).
 app.use("/api", liveDataMiddleware(io));
 

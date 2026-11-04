@@ -7,6 +7,7 @@ import { toISTDateString } from "../../utils/dateTimeUtils";
 import { DESIGNATIONS } from "../../utils/constants";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import LoadingState from "../common/LoadingState";
+import { fileToIdCardPhoto } from "../../utils/idCard";
 
 const Edit = () => {
   const [employee, setEmployee] = useState({
@@ -36,6 +37,10 @@ const Edit = () => {
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  // ID-card photo is saved through its own endpoint, only when changed.
+  const [photo, setPhoto] = useState("");
+  const [originalPhoto, setOriginalPhoto] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -103,6 +108,8 @@ const Edit = () => {
             reportsTo: employee.reportsTo?._id || employee.reportsTo || "",
             salaryPackage: employee.salaryPackage != null ? String(employee.salaryPackage) : "",
           }));
+          setPhoto(employee.profileImage || "");
+          setOriginalPhoto(employee.profileImage || "");
           // Initialize designation search with existing value
           setDesignationSearch(employee.designation || "");
         }
@@ -190,6 +197,18 @@ const Edit = () => {
     setFilteredDesignations([]);
   };
 
+  const handlePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setPhoto(await fileToIdCardPhoto(file));
+      setPhotoError("");
+    } catch (err) {
+      setPhotoError(err.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -225,6 +244,13 @@ const Edit = () => {
     }, {});
 
     try {
+      if (photo !== originalPhoto) {
+        await axios.put(
+          `${API_BASE}/api/employee/${id}/photo`,
+          { profileImage: photo },
+          { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
+        );
+      }
       const response = await axios.put(
         `${API_BASE}/api/employee/${id}`,
         cleanedEmployee,
@@ -251,6 +277,26 @@ const Edit = () => {
         <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
           <h2 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-center text-ink">Edit Employee</h2>
           <form onSubmit={handleSubmit}>
+            <div className="flex items-center gap-4 mb-5">
+              <div className="w-20 h-20 rounded-full bg-surface-muted border border-surface-subtle overflow-hidden flex items-center justify-center flex-shrink-0 text-2xl font-semibold text-ink-faint">
+                {photo ? <img src={photo} alt="Employee photo" className="w-full h-full object-cover" /> : (employee.name || "?").charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-ink">Photo <span className="text-ink-faint font-normal">(optional — used on the ID card)</span></p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <label className="inline-flex items-center px-3 py-2 rounded-lg border border-surface-subtle text-sm font-medium text-ink cursor-pointer hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent-500">
+                    {photo ? "Change photo" : "Upload photo"}
+                    <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={handlePhoto} />
+                  </label>
+                  {photo ? (
+                    <button type="button" onClick={() => setPhoto("")} className="px-3 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface-muted">
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                {photoError ? <p role="alert" className="mt-1 text-xs text-red-600">{photoError}</p> : null}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* Name */}
               <div>

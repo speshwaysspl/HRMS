@@ -27,6 +27,18 @@ class EmployeeService {
     await _dio.put('/api/employee/$id', data: body);
   }
 
+  /// Admin/HR: set (data URL) or clear ('') the ID-card photo. Returns the saved value.
+  Future<String> updatePhoto(String id, String profileImage) async {
+    final res = await _dio.put('/api/employee/$id/photo', data: {'profileImage': profileImage});
+    return ((res.data as Map)['profileImage'] ?? '').toString();
+  }
+
+  /// Admin/HR: save where the photo sits in the ID-card circle ({scale, x, y}).
+  Future<Map<String, dynamic>> updatePhotoFit(String id, Map<String, double> fit) async {
+    final res = await _dio.put('/api/employee/$id/photo', data: {'idCardPhoto': fit});
+    return Map<String, dynamic>.from(((res.data as Map)['idCardPhoto'] ?? const {}) as Map);
+  }
+
   /// 'active' | 'inactive'
   Future<void> setStatus(String id, String status) async {
     await _dio.patch('/api/employee/$id/status', data: {'status': status});

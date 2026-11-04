@@ -41,6 +41,19 @@ class AppSettings {
     }
   }
 
+  /// Sign-out: everything saved on the phone belongs to that account
+  /// (App Lock, offline punch queue…) — wipe it, keeping only Appearance.
+  static Future<void> clearForSignOut() async {
+    appLockEnabled.value = false;
+    try {
+      final theme = _prefs?.getString(_kThemeMode);
+      await _prefs?.clear();
+      if (theme != null) await _prefs?.setString(_kThemeMode, theme);
+    } catch (e) {
+      debugPrint('AppSettings.clearForSignOut failed: $e');
+    }
+  }
+
   static Future<void> setAppLock(bool value) async {
     appLockEnabled.value = value;
     await _prefs?.setBool(_kAppLock, value);

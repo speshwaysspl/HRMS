@@ -21,6 +21,8 @@ import { API_BASE } from "../utils/apiConfig";
 import useMeta from "../utils/useMeta";
 import PublicHeader from "../components/common/PublicHeader";
 import PublicFooter from "../components/common/PublicFooter";
+import { STORY_BG, useNow } from "../components/common/CheckInPreview";
+import ActivityPreview from "../components/common/ActivityPreview";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -95,6 +97,7 @@ const Home = () => {
   const [quote, setQuote] = useState(null);
   const [imageError, setImageError] = useState(false);
   const heroRef = useRef(null);
+  const now = useNow();
   const pageRef = useRef(null);
 
   // Performant hero entrance: transform + opacity only, single staggered
@@ -184,70 +187,48 @@ const Home = () => {
     <div ref={pageRef} className="min-h-screen flex flex-col font-sans bg-surface-muted">
       <PublicHeader />
 
-      {/* Hero */}
-      <section
-        ref={heroRef}
-        className="relative bg-brand-900 min-h-screen flex items-center overflow-hidden"
-      >
-        {/* soft ambient glows — static, no animation cost */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-[32rem] w-[32rem] rounded-full bg-accent-500/10 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" aria-hidden="true" />
-
-        <div className="container mx-auto px-4 py-20 md:py-28 relative">
-          <div className="mx-auto max-w-3xl text-center [will-change:transform]">
-            <span
-              data-hero
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80 ring-1 ring-white/15"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
-              Speshway HRMS
-            </span>
-
+      {/* Hero — same brand surface + product preview as the login page */}
+      <section ref={heroRef} className="relative overflow-hidden text-white" style={STORY_BG}>
+        <div className="container mx-auto grid items-center gap-12 px-4 pb-16 pt-12 md:pb-24 md:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-28">
+          <div className="max-w-xl text-center lg:text-left [will-change:transform]">
+            <p data-hero className="text-[15px] font-medium text-brand-200">
+              Speshway Solutions · HRMS
+            </p>
             <h1
               data-hero
-              className="mt-7 text-4xl md:text-6xl font-semibold text-white leading-[1.08] tracking-tight"
+              className="mt-4 text-[2.5rem] font-bold leading-[1.05] tracking-[-0.03em] md:text-6xl"
             >
-              The complete HR platform for{" "}
-              <span className="text-accent-500">growing teams</span>
+              Your workday,{" "}
+              <span className="text-accent-300">all in one place.</span>
             </h1>
-
-            <p
-              data-hero
-              className="mt-6 text-white/70 text-base md:text-lg max-w-xl mx-auto"
-            >
-              Attendance, leave, payroll, recruitment and performance — unified in one
-              secure portal your whole company can rely on.
+            <p data-hero className="mx-auto mt-5 max-w-[52ch] text-base leading-relaxed text-white/70 md:text-lg lg:mx-0">
+              Check in, apply for leave, download payslips and track your team —
+              attendance, leave, payroll, recruitment and performance in one secure portal.
             </p>
 
-            <div
-              data-hero
-              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
-            >
+            <div data-hero className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <Link
                 to="/login"
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-accent-600 hover:bg-accent-700 active:bg-accent-800 text-white font-semibold transition-colors text-center"
+                className="group inline-flex h-[52px] items-center justify-center gap-2 rounded-xl bg-accent-600 px-7 font-semibold text-white transition hover:bg-accent-700 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
               >
-                Sign In
+                Sign in <FiArrowRight className="transition-transform group-hover:translate-x-[3px]" aria-hidden="true" />
               </Link>
               <Link
                 to="/contact"
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl border border-white/20 text-white font-semibold hover:bg-white/10 transition-colors text-center"
+                className="inline-flex h-[52px] items-center justify-center rounded-xl border border-white/20 px-7 font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
-                Contact Sales
+                Contact sales
               </Link>
             </div>
 
-            <div
-              data-hero
-              className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/45"
-            >
-              {["Attendance", "Leave", "Payroll", "Recruitment", "Performance"].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />
-                  {item}
-                </span>
-              ))}
-            </div>
+            <p data-hero className="mt-8 text-sm font-medium text-brand-200">
+              Attendance · Leave · Payroll · Recruitment · Performance
+            </p>
+          </div>
+
+          {/* Product preview: live activity feed + this-week strip (decorative) */}
+          <div data-hero>
+            <ActivityPreview now={now} />
           </div>
         </div>
       </section>

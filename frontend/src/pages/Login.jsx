@@ -1,27 +1,55 @@
 // src/pages/Login.jsx
+// Layout mirrors nutri_hrms AuthShell, swapped: brand "story" panel left, form panel right
+// (live clock check-in card + Leave/Payslips chips). Below lg the story panel
+// becomes a dark header and the form sits in a rounded sheet over it — the
+// two halves are equal height on phones (each ≥ 50dvh, flex-1 basis-0).
+// Flutter mirror: mobile/lib/screens/login_screen.dart.
 import axios from "axios";
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FiArrowLeft, FiArrowRight, FiEye, FiEyeOff, FiLoader, FiLock, FiMail } from "react-icons/fi";
+import { PreviewChips, STORY_BG, formatClock, useNow } from "../components/common/CheckInPreview";
+import { IdCardBack, IdCardFront } from "../components/common/IdCard";
+
+// Sample details for the decorative ID card on the sign-in panel.
+const DEMO_EMPLOYEE = {
+  userId: { name: "Your Name" },
+  designation: "Your Designation",
+  employeeId: "SPW 0001",
+  mobilenumber: "9154986733",
+};
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
-import { FiEye, FiEyeOff, FiArrowLeft, FiArrowRight, FiMail, FiLock } from "react-icons/fi";
 import useMeta from "../utils/useMeta";
-import { Link } from "react-router-dom";
 import brandLogo from "../assets/logo.jpg";
-import ConstellationBg from "../components/common/ConstellationBg";
+
+const greetingFor = (h) => (h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
+
+const Brand = ({ dark = false }) => (
+  <div className="flex items-center gap-3">
+    <span className={`grid h-11 w-11 place-items-center rounded-xl ${dark ? "bg-white" : "bg-brand-50"}`}>
+      <img src={brandLogo} alt="" className="h-8 w-8 object-contain" />
+    </span>
+    <span className="flex flex-col leading-tight">
+      <span className={`text-[17px] font-bold ${dark ? "text-white" : "text-ink"}`}>Speshway Solutions</span>
+      <span className={`text-[13px] font-medium ${dark ? "text-brand-200" : "text-ink-muted"}`}>HRMS Application</span>
+    </span>
+  </div>
+);
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const now = useNow();
+  const { clock, meridiem } = formatClock(now);
+  const date = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState({ email: false, password: false });
 
   const canonical = useMemo(() => `${window.location.origin}/login`, []);
   useMeta({
@@ -33,8 +61,17 @@ const Login = () => {
     robots: "noindex,nofollow",
   });
 
-  const validateEmail = (e) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+  // After 3 s of signing in, say it is still working (slow networks).
+  useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setSlow(true), 3000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,246 +88,185 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${API_BASE}/api/auth/login`,
-        { email, password }
-      );
+      const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password });
 
       if (response.data?.success) {
         login(response.data.user);
         localStorage.setItem("token", response.data.token || "");
         sessionStorage.setItem("token", response.data.token || "");
-        if (remember) localStorage.setItem("rememberEmail", email);
-        else localStorage.removeItem("rememberEmail");
 
-        const roles = Array.isArray(response.data.user.role) 
-                      ? response.data.user.role 
-                      : [response.data.user.role];
-
-        // If admin, go to admin dashboard directly
-        if (roles.includes("admin")) {
-          navigate("/admin-dashboard");
-          return;
-        }
-
-        // If hr, go to hr dashboard directly
-        if (roles.includes("hr")) {
-          navigate("/hr-dashboard");
-          return;
-        }
-
-        // If candidate, go to candidate dashboard directly
-        if (roles.includes("candidate")) {
-          navigate("/candidate-dashboard");
-          return;
-        }
-
-        // Employee and Team Lead now share a single dashboard, with
-        // team-lead-only sections shown conditionally in the sidebar.
+        const roles = Array.isArray(response.data.user.role) ? response.data.user.role : [response.data.user.role];
+        if (roles.includes("admin")) return navigate("/admin-dashboard");
+        if (roles.includes("hr")) return navigate("/hr-dashboard");
+        if (roles.includes("candidate")) return navigate("/candidate-dashboard");
+        // Employee and Team Lead share one dashboard.
         navigate("/employee-dashboard");
       } else {
         setError(response.data?.error || "Login failed");
       }
     } catch (err) {
-      // friendly error reporting
-      if (err.response?.data?.error) setError(err.response.data.error);
-      else setError("Server error — try again");
+      setError(err.response?.data?.error || "Server error — try again");
     } finally {
       setLoading(false);
     }
   };
 
+  const inputWrap =
+    "relative flex items-center rounded-xl border border-surface-subtle bg-surface-muted transition hover:border-ink-faint focus-within:border-accent-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-accent-500/15";
+  const inputCls = "h-[52px] w-full min-w-0 flex-1 rounded-xl bg-transparent pl-12 pr-4 text-base text-ink caret-accent-600 outline-none placeholder:text-ink-faint";
+
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden w-full flex bg-surface-muted">
-      {/* Brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 xl:p-16 overflow-hidden text-white bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800">
-        <ConstellationBg className="absolute inset-0 h-full w-full" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-accent-500/15 blur-3xl" aria-hidden="true" />
-
-        <div className="relative flex items-center gap-3">
-          <img src={brandLogo} alt="Speshway HRMS" className="h-11 w-auto rounded-lg" />
-          <span className="text-lg font-semibold tracking-wide">SPESHWAY HRMS</span>
-        </div>
-
-        <div className="relative max-w-lg">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80 ring-1 ring-white/15">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
-            Speshway HRMS
-          </span>
-          <h2 className="mt-6 text-4xl xl:text-5xl font-bold leading-[1.05] tracking-tight">
-            One workplace,
-            <br />
-            every HR task in it.
-          </h2>
-          <p className="mt-5 text-white/60 leading-relaxed">
-            One portal for your whole team &mdash; track attendance, approve leave, run
-            payroll, hire faster and review performance, with dashboards that stay
-            accurate in real time.
-          </p>
-
-          <div className="mt-9 flex items-center gap-x-3 gap-y-2 overflow-x-auto whitespace-nowrap text-[13px] font-medium text-white/70">
-            {["Attendance", "Leave", "Payroll", "Recruitment", "Performance"].map((mod, i) => (
-              <React.Fragment key={mod}>
-                {i > 0 && <span className="h-1 w-1 shrink-0 rounded-full bg-white/25" />}
-                <span className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
-                  {mod}
-                </span>
-              </React.Fragment>
-            ))}
+    <div className="flex min-h-[100dvh] flex-col bg-white lg:grid lg:h-[100dvh] lg:grid-cols-[1.1fr_1fr] lg:overflow-hidden">
+      {/* Form panel */}
+      <main className="relative z-[1] -mt-8 flex min-h-[calc(50dvh+2rem)] flex-1 basis-0 flex-col justify-between gap-5 rounded-t-[28px] bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-6 shadow-[0_-12px_32px_-16px_rgba(5,3,20,0.35)] lg:mt-0 lg:min-h-0 lg:gap-6 lg:overflow-y-auto lg:rounded-none lg:px-[clamp(16px,6vw,88px)] lg:py-[clamp(24px,4vw,48px)] lg:shadow-none">
+        <div className="flex items-center justify-between gap-3">
+          <div className="hidden lg:block">
+            <Brand />
           </div>
-
-        </div>
-
-        <p className="relative text-white/40 text-xs">
-          &copy; {new Date().getFullYear()} Speshway Solutions Pvt. Ltd. All rights reserved.
-        </p>
-      </div>
-
-      {/* Form panel - no card */}
-      <div className="relative w-full lg:w-1/2 flex flex-col lg:h-screen overflow-y-auto">
-        <div className="p-6 sm:p-8">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-ink-muted shadow-panel ring-1 ring-surface-subtle transition-colors hover:text-ink"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-surface-subtle px-3.5 text-sm font-semibold text-ink transition-colors hover:border-transparent hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
           >
-            <FiArrowLeft size={16} />
-            Back to Home
+            <FiArrowLeft size={16} /> Back to home
           </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 pb-12 sm:px-10">
-          <div className="w-full max-w-sm">
-            <div className="mb-6 flex justify-center lg:hidden">
-              <img src={brandLogo} alt="Speshway HRMS" className="h-12 w-auto rounded-md" />
-            </div>
-
-            <h1 className="text-3xl font-bold tracking-tight text-ink text-center">
-              Welcome Back
+        <div className="mx-auto w-full max-w-[400px]">
+          <header className="mb-5 lg:mb-8">
+            <h1 className="text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-ink lg:text-[clamp(2rem,3vw,2.5rem)]">
+              Sign in to your workspace
             </h1>
-            <p className="mt-2 text-center text-sm text-ink-muted">
-              Sign in to your Speshway HRMS account
+            <p className="mt-2.5 text-base leading-relaxed text-ink-muted">
+              Use your Speshway Solutions work email — one login for employees and HR.
             </p>
+          </header>
 
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
             {error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
-              >
+              <div role="alert" className="rounded-xl bg-red-50 px-3.5 py-3 text-[15px] font-medium text-red-700">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted"
-                >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <FiMail
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint"
-                  />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused((s) => ({ ...s, email: true }))}
-                    onBlur={() => setFocused((s) => ({ ...s, email: false }))}
-                    placeholder="name@example.com"
-                    required
-                    className="h-14 w-full rounded-2xl border border-surface-subtle bg-white pl-12 pr-4 text-ink placeholder:text-ink-faint outline-none transition hover:border-ink-faint focus:border-accent-500 focus:ring-4 focus:ring-accent-500/15"
-                  />
-                </div>
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink">Email address</label>
+              <div className={inputWrap}>
+                <FiMail size={18} className="pointer-events-none absolute left-4 text-ink-muted" aria-hidden="true" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@speshway.com"
+                  autoComplete="username"
+                  inputMode="email"
+                  required
+                  className={inputCls}
+                />
               </div>
+            </div>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted"
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-ink">Password</label>
+              <div className={inputWrap}>
+                <FiLock size={18} className="pointer-events-none absolute left-4 text-ink-muted" aria-hidden="true" />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                  className={`${inputCls} pr-1`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="mr-1 grid h-11 w-11 flex-none place-items-center rounded-lg text-ink-muted transition-colors hover:bg-brand-50 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 active:scale-95"
                 >
-                  Password
-                </label>
-                <div className="relative">
-                  <FiLock
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint"
-                  />
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocused((s) => ({ ...s, password: true }))}
-                    onBlur={() => setFocused((s) => ({ ...s, password: false }))}
-                    placeholder="Enter your password"
-                    required
-                    className="h-14 w-full rounded-2xl border border-surface-subtle bg-white pl-12 pr-12 text-ink placeholder:text-ink-faint outline-none transition hover:border-ink-faint focus:border-accent-500 focus:ring-4 focus:ring-accent-500/15"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-ink-faint transition-colors hover:text-ink"
-                  >
-                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                  </button>
-                </div>
-                <div className="mt-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => navigate("/forgot-password")}
-                    className="text-sm font-medium text-accent-600 transition-colors hover:text-accent-700"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className={`group flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-semibold text-white transition-colors ${
-                  loading
-                    ? "cursor-not-allowed bg-accent-300"
-                    : "bg-accent-600 hover:bg-accent-700 active:bg-accent-800"
-                }`}
-              >
-                {loading ? (
-                  "Signing in..."
-                ) : (
-                  <>
-                    Continue
-                    <FiArrowRight
-                      size={18}
-                      className="transition-transform group-hover:translate-x-0.5"
-                    />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="mt-8 text-center text-xs text-ink-faint">
-              By signing in you agree to our{" "}
-              <Link to="/terms-and-conditions" className="text-accent-600 hover:text-accent-700">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link to="/privacy-policy" className="text-accent-600 hover:text-accent-700">
-                Privacy Policy
+            <div className="-mt-2 flex justify-end">
+              <Link to="/forgot-password" className="rounded text-sm font-semibold text-accent-600 hover:text-accent-700 hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500">
+                Forgot password?
               </Link>
-              .
-            </p>
-          </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group mt-2 inline-flex h-[54px] items-center justify-center gap-2.5 rounded-xl bg-accent-600 text-base font-semibold text-white transition hover:bg-accent-700 active:scale-[0.985] disabled:cursor-progress disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
+            >
+              {loading ? (
+                <>
+                  <FiLoader size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> Signing you in…
+                </>
+              ) : (
+                <>
+                  Continue <FiArrowRight size={18} className="transition-transform group-hover:translate-x-[3px]" aria-hidden="true" />
+                </>
+              )}
+            </button>
+            {loading && slow ? (
+              <p role="status" className="-mt-2 text-center text-[13px] text-ink-muted">
+                Still working — this can take a few seconds on a slow connection.
+              </p>
+            ) : null}
+          </form>
+
         </div>
-      </div>
+
+      </main>
+
+      {/* Story panel — dark header on phones, left panel on desktop (order first) */}
+      <aside
+        className="relative isolate order-first flex min-h-[50dvh] w-full flex-1 basis-0 flex-col items-center justify-between gap-6 overflow-hidden px-4 pb-[52px] pt-5 text-center text-white lg:m-3 lg:w-auto lg:min-h-0 lg:justify-center lg:gap-[clamp(20px,4vh,40px)] lg:rounded-[28px] lg:px-[clamp(32px,4.5vw,64px)] lg:py-[clamp(28px,5vh,56px)]"
+        style={STORY_BG}
+      >
+        <div className="self-stretch text-left lg:hidden">
+          <Brand dark />
+        </div>
+
+        <header className="flex w-full max-w-[420px] flex-col items-center">
+          {/* Phones show the live clock here instead of the check-in card. */}
+          <p className="mb-2 flex items-baseline justify-center gap-1.5 text-[64px] font-bold leading-none tracking-[-0.05em] tabular-nums lg:hidden">
+            <time dateTime={now.toISOString()}>{clock}</time>
+            <small className="text-base tracking-normal text-accent-300">{meridiem}</small>
+          </p>
+          <p className="mb-1 text-[15px] font-medium text-brand-200 lg:mb-3">{date}</p>
+          <h2 className="max-w-[20ch] text-[22px] font-bold leading-[1.1] tracking-[-0.03em] lg:text-[clamp(1.75rem,min(2.6vw,4.5vh),2.5rem)]">
+            Welcome back to <span className="text-accent-300">Speshway.</span>
+          </h2>
+          <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-brand-200 lg:mt-3 lg:text-[15px]">
+            {greetingFor(now.getHours())} — sign in to check in, track leave and get your payslips.
+          </p>
+        </header>
+
+        {/* Product preview, centred: card with the chips aligned to its width */}
+        <div className="relative flex w-full max-w-[420px] flex-col items-center gap-3.5 text-left lg:max-w-[360px]" aria-hidden="true">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 hidden aspect-square w-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 shadow-[0_0_0_48px_rgba(255,255,255,0.025),inset_0_0_0_48px_rgba(255,255,255,0.025)] lg:block" />
+          {/* Desktop: the digital ID card (real components, sample details), front over back */}
+          <div className="relative hidden h-[clamp(300px,46vh,380px)] w-full lg:block">
+            <div className="absolute left-1/2 top-1/2 origin-center -translate-x-[18%] -translate-y-1/2 rotate-[8deg] scale-[0.6] opacity-90 [filter:drop-shadow(0_30px_40px_rgba(5,3,20,0.55))]">
+              <IdCardBack employee={DEMO_EMPLOYEE} />
+            </div>
+            <div className="absolute left-1/2 top-1/2 origin-center -translate-x-[82%] -translate-y-1/2 -rotate-[4deg] scale-[0.6] [filter:drop-shadow(0_40px_50px_rgba(5,3,20,0.7))]">
+              <IdCardFront employee={DEMO_EMPLOYEE} />
+            </div>
+          </div>
+          <p className="hidden text-sm font-medium text-white lg:block">Your digital ID card — always in your pocket.</p>
+          <PreviewChips className="lg:hidden" />
+        </div>
+
+        <p className="hidden text-sm font-medium text-brand-200 lg:block">Attendance · Leave · Payroll · Performance</p>
+      </aside>
     </div>
   );
-
 };
 
 export default Login;

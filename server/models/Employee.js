@@ -16,6 +16,14 @@ const employeeSchema = new Schema({
   salaryPackage: { type: Number, default: null }, // annual CTC in INR, used to prefill payslip earnings
   pan: { type: String, trim: true, default: "" },
   uan: { type: String, trim: true, default: "" },
+  // ID-card photo: small JPEG data URL (resized client-side to ~400px). Optional.
+  profileImage: { type: String, default: "" },
+  // Position of the photo inside the ID-card circle (zoom + pan in % of the circle).
+  idCardPhoto: {
+    scale: { type: Number, default: 1 },
+    x: { type: Number, default: 0 },
+    y: { type: Number, default: 0 },
+  },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

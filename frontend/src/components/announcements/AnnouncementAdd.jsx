@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
 import useMeta from "../../utils/useMeta";
+import AnnouncementCard from "./AnnouncementCard";
 
 // Drawn icons for the type picker (the emoji stay in the email subject, which is what recipients see).
 export const CATEGORY_ICONS = {
@@ -24,6 +25,7 @@ export const CATEGORY_ICONS = {
   event: FaCalendarAlt,
   achievement: FaTrophy,
   general: FaThumbtack,
+  notice: FaThumbtack,
 };
 
 const SCOPES = [
@@ -35,13 +37,15 @@ const SCOPES = [
 ];
 
 export const ANNOUNCEMENT_CATEGORIES = [
-  { id: "important", label: "Important Announcement", emoji: "📢", prefix: "Important Announcement", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-  { id: "quote", label: "Today's Quote", emoji: "✨", prefix: "Today's Quote", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
-  { id: "festival", label: "Festival Greeting", emoji: "🎉", prefix: "Festival Greeting", color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
-  { id: "event", label: "Event & Activity", emoji: "📅", prefix: "Event Update", color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc" },
-  { id: "achievement", label: "Achievement", emoji: "🏆", prefix: "Milestone & Achievement", color: "#059669", bg: "#ecfdf5", border: "#a7f3d0" },
-  { id: "general", label: "Company Notice", emoji: "📌", prefix: "Company Notice", color: "#475569", bg: "#f8fafc", border: "#e2e8f0" },
+  // Colours match the themed card palettes in index.css (.anc[data-type]).
+  { id: "important", label: "Important Announcement", emoji: "📢", prefix: "Important Announcement", color: "#c2311f", bg: "#fdebe7", border: "#f6c3b9" },
+  { id: "quote", label: "Today's Quote", emoji: "✨", prefix: "Today's Quote", color: "#4338ca", bg: "#eeecff", border: "#c9c3f3" },
+  { id: "festival", label: "Festival Greeting", emoji: "🎉", prefix: "Festival Greeting", color: "#c2410c", bg: "#ffefdc", border: "#f4c48a" },
+  { id: "event", label: "Event & Activity", emoji: "📅", prefix: "Event Update", color: "#0f766e", bg: "#e3f4f1", border: "#a7dcd3" },
+  { id: "achievement", label: "Achievement", emoji: "🏆", prefix: "Milestone & Achievement", color: "#8a5a14", bg: "#fdf3dc", border: "#ecd29a" },
+  { id: "notice", label: "Company Notice", emoji: "📌", prefix: "Company Notice", color: "#475569", bg: "#eef2f6", border: "#d5dde7" },
 ];
+
 
 const AnnouncementAdd = () => {
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements/add`, []);
@@ -57,6 +61,8 @@ const AnnouncementAdd = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("important");
+  const [pinned, setPinned] = useState(false);
+  const [expiresOn, setExpiresOn] = useState(""); // YYYY-MM-DD, optional
   const [image, setImage] = useState(null);
   const [scope, setScope] = useState('all'); // 'all', 'team_leads', 'team_members', 'team', 'specific'
   const [teams, setTeams] = useState([]);
@@ -116,6 +122,9 @@ const AnnouncementAdd = () => {
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("category", category);
+      formData.append("pinned", pinned ? "true" : "false");
+      // Hidden from employees after the end of this day (IST).
+      if (expiresOn) formData.append("expiresAt", new Date(`${expiresOn}T23:59:59+05:30`).toISOString());
       formData.append("scope", scope);
       if (scope === 'team') {
         formData.append('targetTeam', selectedTeam);
@@ -472,6 +481,27 @@ const AnnouncementAdd = () => {
                 </div>
               </fieldset>
 
+              <label className="mt-4 flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-surface-subtle px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent-500">
+                <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4 accent-accent-600" />
+                <span>
+                  <span className="font-medium text-ink">Pin to top</span>
+                  <span className="block text-xs text-ink-muted">Stays first in everyone's announcements until unpinned.</span>
+                </span>
+              </label>
+
+              <div className="mt-3">
+                <label htmlFor="ann-until" className={labelCls}>Show until <span className="font-normal text-ink-muted">(optional)</span></label>
+                <input
+                  id="ann-until"
+                  type="date"
+                  value={expiresOn}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setExpiresOn(e.target.value)}
+                  className={inputCls}
+                />
+                <p className="mt-1 text-xs text-ink-muted">Leave empty to keep it visible.</p>
+              </div>
+
               <div className="mt-5">
                 <label htmlFor="ann-title" className={labelCls}>Title <span className="text-red-600">*</span></label>
                 <input
@@ -717,6 +747,18 @@ const AnnouncementAdd = () => {
           <aside className="lg:sticky lg:top-6" aria-labelledby="sec-summary">
             <div className={sectionCls}>
               <h2 id="sec-summary" className="text-lg font-semibold text-ink">Summary</h2>
+              <p className="mt-4 mb-2 text-xs text-ink-muted">Preview — how employees will see it</p>
+              <AnnouncementCard
+                variant="compact"
+                a={{
+                  category,
+                  pinned,
+                  title: title.trim() || "Your title",
+                  description: description.trim() || "Your message will appear here.",
+                  createdAt: new Date().toISOString(),
+                  createdBy: { name: "You" },
+                }}
+              />
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
                   <dt className="text-xs text-ink-muted">Email subject</dt>

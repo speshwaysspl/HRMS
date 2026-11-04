@@ -221,6 +221,9 @@ const addAnnouncement = async (req, res) => {
       title,
       description,
       category: category || 'important',
+      // multipart form → "true"/"false" strings
+      pinned: req.body.pinned === true || req.body.pinned === 'true',
+      expiresAt: parseExpiry(req.body.expiresAt),
       scope,
       targetTeam: resolved.targetTeam,
       recipients: resolved.recipients,
@@ -258,6 +261,60 @@ const addAnnouncement = async (req, res) => {
   }
 };
 
+const parseExpiry = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+// Everyone an announcement is meant for: explicit recipients, or every active employee for "all".
+const audienceUserIds = async (a) => {
+  if (a.recipients?.length) return a.recipients.map(String);
+  const emps = await Employee.find({ status: 'active' }).select('userId');
+  return emps.map((e) => e.userId).filter(Boolean).map(String);
+};
+
+// 👁 Mark seen (any signed-in recipient)
+const markAnnouncementSeen = async (req, res) => {
+  try {
+    await Announcement.updateOne({ _id: req.params.id }, { $addToSet: { readBy: req.user._id } });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// 👁 Who has / hasn't seen it (admin / HR)
+const announcementSeenBy = async (req, res) => {
+  try {
+    const a = await Announcement.findById(req.params.id).select('recipients readBy');
+    if (!a) return res.status(404).json({ success: false, error: "Announcement not found" });
+    const audience = await audienceUserIds(a);
+    const seenSet = new Set(a.readBy.map(String));
+    const users = await User.find({ _id: { $in: audience } }).select('name email').lean();
+    const row = (u) => ({ _id: u._id, name: u.name, email: u.email });
+    return res.json({
+      success: true,
+      seen: users.filter((u) => seenSet.has(String(u._id))).map(row),
+      notSeen: users.filter((u) => !seenSet.has(String(u._id))).map(row),
+    });
+  } catch (error) {
+    console.error("Seen-by error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// 📌 Pin / unpin without editing the whole announcement
+const setAnnouncementPinned = async (req, res) => {
+  try {
+    const a = await Announcement.findByIdAndUpdate(req.params.id, { pinned: !!req.body?.pinned }, { new: true }).select('pinned');
+    if (!a) return res.status(404).json({ success: false, error: "Announcement not found" });
+    return res.json({ success: true, pinned: a.pinned });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
 // 📌 Read All
 const getAnnouncements = async (req, res) => {
   try {
@@ -267,22 +324,33 @@ const getAnnouncements = async (req, res) => {
       ? {}
       : {
           published: { $ne: false },
-          $or: [
-            { recipients: req.user._id },
-            { scope: 'all', recipients: { $size: 0 } },
-            { scope: 'all', recipients: { $exists: false } }
+          $and: [
+            { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] },
+            {
+              $or: [
+                { recipients: req.user._id },
+                { scope: 'all', recipients: { $size: 0 } },
+                { scope: 'all', recipients: { $exists: false } }
+              ]
+            }
           ]
         };
 
     const announcements = await Announcement.find(filter)
       .populate("createdBy", "name email")
       .populate("targetTeam", "name")
-      .sort({ createdAt: -1 });
+      .sort({ pinned: -1, createdAt: -1 });
 
-    const mapped = announcements.map((a) => ({
-      ...a.toObject(),
-      imageUrl: buildImageUrl(a.image),
-    }));
+    const me = String(req.user._id);
+    const allCount = isAdmin ? (await audienceUserIds({ scope: 'all', recipients: [] })).length : 0;
+    const mapped = announcements.map((a) => {
+      const { readBy = [], ...rest } = a.toObject();
+      const base = { ...rest, imageUrl: buildImageUrl(a.image) };
+      if (!isAdmin) return { ...base, seen: readBy.some((id) => String(id) === me) };
+      const recipientCount = a.recipients?.length ? a.recipients.length : allCount;
+      const status = a.published === false ? 'scheduled' : a.expiresAt && a.expiresAt <= new Date() ? 'ended' : 'live';
+      return { ...base, status, seenCount: readBy.length, recipientCount };
+    });
 
     return res.status(200).json({ success: true, announcements: mapped });
   } catch (error) {
@@ -360,6 +428,8 @@ const updateAnnouncement = async (req, res) => {
     announcement.title = title || announcement.title;
     announcement.description = description || announcement.description;
     if (category) announcement.category = category;
+    if (req.body.pinned !== undefined) announcement.pinned = req.body.pinned === true || req.body.pinned === 'true';
+    if (req.body.expiresAt !== undefined) announcement.expiresAt = parseExpiry(req.body.expiresAt);
     announcement.scope = newScope;
     announcement.targetTeam = resolved.targetTeam;
     announcement.recipients = resolved.recipients;
@@ -474,6 +544,9 @@ const deleteAnnouncements = async (req, res) => {
 };
 
 export {
+  markAnnouncementSeen,
+  announcementSeenBy,
+  setAnnouncementPinned,
   deleteAnnouncements,
   addAnnouncement,
   getAnnouncements,

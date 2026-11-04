@@ -8,6 +8,7 @@ import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
 import { useLiveTick } from "../../context/NotificationContext";
+import IdCardModal from "../common/IdCardModal";
 
 const View = () => {
   const liveTick = useLiveTick(["employee"]);
@@ -15,6 +16,7 @@ const View = () => {
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showIdCard, setShowIdCard] = useState(false);
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/employees/${id}`, [id]);
   useMeta({
     title: employee?.userId?.name ? `${employee.userId.name} — Employee` : 'Employee — Speshway HRMS',
@@ -99,6 +101,14 @@ const View = () => {
               </h1>
               <p className="text-ink-muted mt-2">Comprehensive employee information and details</p>
             </div>
+            <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowIdCard(true)}
+              className="flex items-center gap-2 px-6 py-3 border border-brand-700 text-brand-700 rounded-lg hover:bg-brand-50 transition-colors font-medium"
+            >
+              <FaIdCard className="text-sm" />
+              ID Card
+            </button>
             <button
               onClick={() => navigate(`/admin-dashboard/employees/edit/${id}`)}
               className="flex items-center gap-2 px-6 py-3 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition-colors font-medium"
@@ -106,6 +116,7 @@ const View = () => {
               <FaEdit className="text-sm" />
               Edit Employee
             </button>
+            </div>
           </div>
         </div>
 
@@ -114,8 +125,12 @@ const View = () => {
           {/* Header Card */}
           <div className="bg-brand-800 p-6 md:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
-                <FaUser className="text-2xl text-white" />
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
+                {employee.profileImage ? (
+                  <img src={employee.profileImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <FaUser className="text-2xl text-white" />
+                )}
               </div>
               <div className="text-center sm:text-left">
                 <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">
@@ -251,7 +266,14 @@ const View = () => {
             </div>
           </div>
         </div>
-      </div>
+        <IdCardModal
+        open={showIdCard}
+        onClose={() => setShowIdCard(false)}
+        employee={employee}
+        allowManage
+        onPhotoChange={(profileImage, idCardPhoto) => setEmployee((prev) => ({ ...prev, profileImage, idCardPhoto }))}
+      />
+    </div>
   );
 };
 

@@ -104,6 +104,14 @@ class PushService {
   PushService._();
 
   final _notificationService = NotificationService();
+
+  /// Sign-out: remove this account's notifications from the tray.
+  Future<void> clearShownNotifications() async {
+    if (kIsWeb) return;
+    try {
+      await _localNotifications.cancelAll();
+    } catch (_) {}
+  }
   bool _messageHandlersBound = false;
   String? _lastRegisteredToken;
 

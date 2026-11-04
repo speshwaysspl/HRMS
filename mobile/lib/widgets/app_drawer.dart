@@ -5,6 +5,9 @@ import '../models/user.dart';
 import '../services/app_events.dart';
 import '../services/auth_provider.dart';
 import '../services/dashboard_service.dart';
+import '../services/employee_service.dart';
+import '../main.dart';
+import 'profile_avatar.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 import '../screens/employee/announcements_screen.dart';
@@ -174,7 +177,22 @@ class AppDrawer extends StatelessWidget {
         top: false,
         child: Column(
           children: [
-            _Header(name: user?.name ?? '', role: _roleLabel(user)),
+            Builder(builder: (context) {
+              // Photo comes from the shared profile cache (filled by Profile);
+              // fetch once if the drawer opens first.
+              final cache = AppCaches.of(context).employeeProfile;
+              if (!cache.hasData && user != null && user.id.isNotEmpty) {
+                EmployeeService().getEmployee(user.id).then(cache.set).catchError((_) {});
+              }
+              return ListenableBuilder(
+                listenable: cache,
+                builder: (context, _) => _Header(
+                  name: user?.name ?? '',
+                  role: _roleLabel(user),
+                  photo: cache.data?['profileImage']?.toString(),
+                ),
+              );
+            }),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -200,8 +218,10 @@ class AppDrawer extends StatelessWidget {
               onTap: () async {
                 final navigator = Navigator.of(context, rootNavigator: true);
                 final auth = context.read<AuthProvider>();
+                final caches = AppCaches.of(context);
                 navigator.pop(); // close the drawer
                 await auth.logout();
+                caches.clearAll();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
@@ -228,7 +248,8 @@ class AppDrawer extends StatelessWidget {
 class _Header extends StatelessWidget {
   final String name;
   final String role;
-  const _Header({required this.name, required this.role});
+  final String? photo;
+  const _Header({required this.name, required this.role, this.photo});
 
   @override
   Widget build(BuildContext context) {
@@ -238,13 +259,7 @@ class _Header extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(context.w(20), MediaQuery.of(context).padding.top + context.h(20), context.w(20), context.h(20)),
       child: Row(
         children: [
-          Container(
-            width: context.r(48),
-            height: context.r(48),
-            padding: EdgeInsets.all(context.r(6)),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(context.r(12))),
-            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-          ),
+          ProfileAvatar(photo: photo, name: name, size: context.r(52)),
           SizedBox(width: context.w(12)),
           Expanded(
             child: Column(

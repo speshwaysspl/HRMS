@@ -8,7 +8,11 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
   deleteAnnouncements,
+  markAnnouncementSeen,
+  announcementSeenBy,
+  setAnnouncementPinned,
 } from "../controllers/announcementController.js";
+import { authorizeRoles } from "../middleware/roleMiddleware.js";
 import { uploadAnnouncementS3 } from "../middleware/uploadAnnouncementS3.js";
 import { createAnnouncementNotification } from "../controllers/notificationController.js";
 
@@ -42,6 +46,11 @@ router.post("/test-notification", verifyUser, async (req, res) => {
 
 // Delete many announcements at once
 router.post("/bulk-delete", verifyUser, deleteAnnouncements);
+
+// Seen tracking + quick pin
+router.post("/:id/seen", verifyUser, markAnnouncementSeen);
+router.get("/:id/seen", verifyUser, authorizeRoles("admin", "hr"), announcementSeenBy);
+router.patch("/:id/pin", verifyUser, authorizeRoles("admin", "hr"), setAnnouncementPinned);
 
 // Get announcement by ID
 router.get("/:id", verifyUser, getAnnouncement);

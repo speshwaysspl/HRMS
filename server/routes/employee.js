@@ -2,6 +2,7 @@ import express from 'express';
 import authMiddleware from '../middleware/authMiddlware.js';
 import {
   addEmployee,
+  updateEmployeePhoto,
   getEmployees,
   getEmployee,
   updateEmployee,
@@ -13,6 +14,7 @@ import {
   exportEmployeesToExcel
 } from '../controllers/employeeController.js';
 import multer from 'multer';
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
@@ -41,6 +43,7 @@ router.get('/department/:id', authMiddleware, fetchEmployeesByDepId);
 router.get('/:id', authMiddleware, getEmployee);
 router.put('/:id', authMiddleware, updateEmployee);
 router.delete('/:id', authMiddleware, deleteEmployee);
+router.put('/:id/photo', authMiddleware, authorizeRoles('admin', 'hr'), updateEmployeePhoto);
 router.patch('/:id/status', authMiddleware, updateEmployeeStatus);
 
 export default router;

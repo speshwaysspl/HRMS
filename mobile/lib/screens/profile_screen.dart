@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/id_card.dart';
+import '../widgets/profile_avatar.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -156,6 +158,12 @@ class _ProfileScreenState extends State<ProfileScreen> with LiveRefresh<ProfileS
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      ProfileAvatar(
+                        photo: emp['profileImage']?.toString(),
+                        name: user?.name ?? '',
+                        size: context.r(60),
+                      ),
+                      SizedBox(width: context.w(12)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,6 +273,17 @@ class _ProfileScreenState extends State<ProfileScreen> with LiveRefresh<ProfileS
                           ],
                         ),
                       ),
+                    ),
+                    SizedBox(height: context.h(10)),
+                    FilledButton.icon(
+                      onPressed: () => showIdCardSheet(context, employee: Map<String, dynamic>.from(emp)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.brand800,
+                        minimumSize: const Size(0, 44),
+                      ),
+                      icon: const Icon(Icons.badge_outlined, size: 18),
+                      label: const Text('View ID card'),
                     ),
                   ],
                 ],

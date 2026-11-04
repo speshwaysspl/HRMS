@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaPen, FaTrash, FaClock, FaImage, FaBullhorn } from "react-icons/fa";
+import { FaPlus, FaPen, FaTrash, FaClock, FaImage, FaBullhorn, FaEye, FaThumbtack } from "react-icons/fa";
+import SeenByDialog from "./SeenByDialog";
 import { fetchAnnouncements } from "../../utils/AnnouncementHelper";
 import { API_BASE } from "../../utils/apiConfig";
 import { formatISTDate } from "../../utils/dateTimeUtils";
@@ -30,6 +31,21 @@ const AnnouncementList = () => {
   const [type, setType] = useState("all");
   const [deletingId, setDeletingId] = useState(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [seenFor, setSeenFor] = useState(null);
+
+  // One-click pin / unpin (pinned stay first in every feed).
+  const togglePin = async (a) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE}/api/announcement/${a._id}/pin`,
+        { pinned: !a.pinned },
+        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
+      );
+      setItems((list) => list.map((x) => (x._id === a._id ? { ...x, pinned: res.data.pinned } : x)));
+    } catch {
+      alert("Couldn't update the pin. Please try again.");
+    }
+  };
 
   const canonical = useMemo(() => `${window.location.origin}/admin-dashboard/announcements`, []);
   useMeta({
@@ -212,7 +228,8 @@ const AnnouncementList = () => {
           ) : (
             <ul className="divide-y divide-surface-subtle">
               {visible.map((a) => {
-                const cat = ANNOUNCEMENT_CATEGORIES.find((c) => c.id === (a.category || "important")) || ANNOUNCEMENT_CATEGORIES[0];
+                const catId = a.category === "general" ? "notice" : a.category || "important";
+                const cat = ANNOUNCEMENT_CATEGORIES.find((c) => c.id === catId) || ANNOUNCEMENT_CATEGORIES[0];
                 const Icon = CATEGORY_ICONS[cat.id] || FaBullhorn;
                 const scheduled = isScheduled(a);
                 return (
@@ -232,9 +249,18 @@ const AnnouncementList = () => {
                         </span>
                         <span className="text-ink-faint" aria-hidden="true">·</span>
                         <span className="text-ink-muted">{audienceLabel(a)}</span>
-                        {scheduled && (
+                        {scheduled ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
                             <FaClock aria-hidden="true" /> Scheduled
+                          </span>
+                        ) : a.status === "ended" ? (
+                          <span className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-ink-muted">Ended</span>
+                        ) : (
+                          <span className="rounded-full bg-accent-50 px-2 py-0.5 font-medium text-accent-700">Live</span>
+                        )}
+                        {a.pinned && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 font-medium text-brand-700">
+                            <FaThumbtack aria-hidden="true" /> Pinned
                           </span>
                         )}
                       </div>
@@ -248,11 +274,31 @@ const AnnouncementList = () => {
                       <p className="mt-0.5 line-clamp-2 text-sm text-ink-muted max-w-[70ch]">{a.description}</p>
                       <p className={`mt-1.5 text-xs tabular-nums ${scheduled ? "font-medium text-amber-700" : "text-ink-muted"}`}>
                         {scheduled ? `Sends ${fmtDateTime(a.scheduledAt)}` : formatISTDate(new Date(a.publishedAt || a.createdAt))}
+                        {a.expiresAt ? ` · until ${new Date(a.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
                         {a.imageUrl && !scheduled && <FaImage className="ml-2 inline text-ink-faint" aria-label="Has image" />}
                       </p>
                     </div>
 
                     <div className="relative z-10 flex shrink-0 items-start gap-1">
+                      {!scheduled && (
+                        <button
+                          onClick={() => setSeenFor(a)}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium tabular-nums text-ink-muted hover:bg-white hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
+                          aria-label={`Seen by ${a.seenCount ?? 0} of ${a.recipientCount ?? 0}`}
+                          title="Who has seen it"
+                        >
+                          <FaEye aria-hidden="true" /> {a.seenCount ?? 0}/{a.recipientCount ?? 0}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => togglePin(a)}
+                        aria-pressed={!!a.pinned}
+                        className={`rounded-lg p-2.5 hover:bg-white focus-visible:ring-2 focus-visible:ring-accent-500 outline-none ${a.pinned ? "text-brand-700" : "text-ink-muted hover:text-ink"}`}
+                        aria-label={a.pinned ? `Unpin ${a.title}` : `Pin ${a.title} to top`}
+                        title={a.pinned ? "Unpin" : "Pin to top"}
+                      >
+                        <FaThumbtack aria-hidden="true" />
+                      </button>
                       <button
                         onClick={() => navigate(`/admin-dashboard/announcements/edit/${a._id}`)}
                         className="rounded-lg p-2.5 text-ink-muted hover:bg-white hover:text-ink focus-visible:ring-2 focus-visible:ring-accent-500 outline-none"
@@ -278,6 +324,7 @@ const AnnouncementList = () => {
           )}
         </div>
       </div>
+      <SeenByDialog announcement={seenFor} onClose={() => setSeenFor(null)} />
     </div>
   );
 };

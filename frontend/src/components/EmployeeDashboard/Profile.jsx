@@ -7,11 +7,13 @@ import { formatDMY } from "../../utils/dateUtils";
 import useMeta from "../../utils/useMeta";
 import LoadingState from "../common/LoadingState";
 import EmptyState from "../common/EmptyState";
+import IdCardModal from "../common/IdCardModal";
 
 const Profile = () => {
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showIdCard, setShowIdCard] = useState(false);
   const canonical = useMemo(() => `${window.location.origin}/employee-dashboard/profile/${id}`, [id]);
   useMeta({
     title: employee?.userId?.name ? `${employee.userId.name} — Profile` : 'My Profile — Speshway HRMS',
@@ -120,7 +122,14 @@ const Profile = () => {
         {/* Header card — same layout as the Flutter Profile screen (no avatar) */}
         <div className="rounded-2xl p-5 md:p-6 text-white bg-gradient-to-br from-brand-800 to-brand-900 shadow-panel">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-white bg-brand-100 overflow-hidden flex items-center justify-center flex-shrink-0 text-brand-700 font-bold text-lg">
+              {employee.profileImage ? (
+                <img src={employee.profileImage} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (employee.userId.name || "?").split(/s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-xl md:text-2xl font-extrabold truncate">{employee.userId.name}</h1>
               <p className="text-sm text-brand-200 mt-1 truncate">
                 {employee.designation} · {employee.department?.dep_name}
@@ -137,14 +146,25 @@ const Profile = () => {
               {isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold">
-            <FaIdCard size={12} className="text-white/70" />
-            ID: {employee.employeeId}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold">
+              <FaIdCard size={12} className="text-white/70" />
+              ID: {employee.employeeId}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowIdCard(true)}
+              className="inline-flex items-center gap-2 bg-white text-brand-800 rounded-lg px-3 py-2 min-h-[36px] text-xs font-bold hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <FaIdCard size={12} />
+              View ID Card
+            </button>
           </div>
         </div>
 
         <Section title="Personal Information" icon={FaUser} bg="#DBEAFE" fg="#2563EB" rows={personal} />
         <Section title="Employment Information" icon={FaBriefcase} bg="#F3E8FF" fg="#9333EA" rows={employment} />
+        <IdCardModal open={showIdCard} onClose={() => setShowIdCard(false)} employee={employee} />
 
       </div>
     </div>

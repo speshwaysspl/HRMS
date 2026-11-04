@@ -45,4 +45,11 @@ class DataCaches {
   final payslipHistory = DataCache<List<Map<String, dynamic>>>();
   final employeeProfile = DataCache<Map<String, dynamic>>();
   final events = DataCache<List<Map<String, dynamic>>>();
+
+  /// Sign-out: drop every cached screen so the next account never sees it.
+  void clearAll() {
+    for (final c in [attendanceToday, attendanceMonthly, leavesList, tasksList, payslipHistory, employeeProfile, events]) {
+      c.clear();
+    }
+  }
 }

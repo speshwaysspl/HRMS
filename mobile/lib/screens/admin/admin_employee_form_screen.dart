@@ -7,6 +7,7 @@ import '../../services/employee_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/hrms_app_bar.dart';
+import '../../widgets/id_card.dart';
 import '../../widgets/skeleton_loader.dart';
 
 const _roleOptions = ['employee', 'team_lead', 'hr', 'admin'];
@@ -38,6 +39,8 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
   DateTime? _joiningDate;
   String? _departmentId;
   final Set<String> _roles = {'employee'};
+  String? _photo; // optional ID-card photo (data URL)
+  String? _originalPhoto;
 
   List<Map<String, dynamic>> _departments = [];
   bool _loadingDepts = true;
@@ -58,6 +61,9 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
     if (e == null) return;
     final user = e['userId'] as Map? ?? {};
     _name.text = user['name']?.toString() ?? '';
+    final img = e['profileImage']?.toString() ?? '';
+    _photo = img.isEmpty ? null : img;
+    _originalPhoto = _photo;
     _email.text = user['email']?.toString() ?? '';
     _empId.text = e['employeeId']?.toString() ?? '';
     _designation.text = e['designation']?.toString() ?? '';
@@ -152,10 +158,13 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
       if (_salary.text.trim().isNotEmpty) 'salaryPackage': _salary.text.trim(),
       'role': _roles.toList(),
       if (!_isEdit) 'password': _password.text,
+      if (!_isEdit && _photo != null) 'profileImage': _photo,
     };
     try {
       if (_isEdit) {
-        await _employeeService.updateEmployee(widget.existing!['_id'].toString(), body);
+        final id = widget.existing!['_id'].toString();
+        if (_photo != _originalPhoto) await _employeeService.updatePhoto(id, _photo ?? '');
+        await _employeeService.updateEmployee(id, body);
       } else {
         await _employeeService.addEmployee(body);
       }
@@ -165,6 +174,43 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Widget _photoPicker() {
+    final bytes = _photo == null ? null : UriData.parse(_photo!).contentAsBytes();
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.h(12)),
+      child: Row(children: [
+        CircleAvatar(
+          radius: context.r(32),
+          backgroundColor: AppColors.brand100,
+          backgroundImage: bytes != null ? MemoryImage(bytes) : null,
+          child: bytes == null ? const Icon(Icons.person_outline, color: AppColors.brand700) : null,
+        ),
+        SizedBox(width: context.w(12)),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Photo (optional — used on the ID card)',
+                style: TextStyle(fontSize: context.sp(13), color: AppColors.inkMuted)),
+            Wrap(spacing: 4, children: [
+              TextButton(
+                onPressed: () async {
+                  try {
+                    final p = await pickIdCardPhoto();
+                    if (p != null && mounted) setState(() => _photo = p);
+                  } catch (_) {
+                    _snack("Couldn't read that image");
+                  }
+                },
+                child: Text(_photo == null ? 'Upload photo' : 'Change photo'),
+              ),
+              if (_photo != null)
+                TextButton(onPressed: () => setState(() => _photo = null), child: const Text('Remove')),
+            ]),
+          ]),
+        ),
+      ]),
+    );
   }
 
   void _snack(String m) {
@@ -184,6 +230,7 @@ class _AdminEmployeeFormScreenState extends State<AdminEmployeeFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _photoPicker(),
                 _field(_name, 'Full name', required: true),
                 _field(_email, 'Email', required: true, keyboard: TextInputType.emailAddress),
                 _field(_empId, 'Employee ID', required: true),
