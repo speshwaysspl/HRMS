@@ -8,7 +8,6 @@ import '../../services/auth_provider.dart';
 import '../../services/dashboard_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/app_drawer.dart';
 import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
@@ -22,6 +21,7 @@ import 'admin_team_detail_screen.dart';
 import 'admin_teams_screen.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/push_back_drawer.dart';
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
 
@@ -91,8 +91,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with LiveRefresh<Admi
   Widget build(BuildContext context) {
     final name = context.watch<AuthProvider>().user?.name ?? '';
     return Scaffold(
-      drawer: const AppDrawer(),
       appBar: AppBar(
+        leading: const MenuButton(color: Colors.white),
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Stack(

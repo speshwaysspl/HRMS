@@ -1,5 +1,6 @@
 // backend/middleware/uploadAnnouncementS3.js
 import multer from "multer";
+import sharp from "sharp";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
@@ -41,15 +42,38 @@ export const uploadAnnouncementS3 = multer({
 });
 
 // Function to upload file to S3
+// Announcement images are shown at most ~1280px wide, so store a resized
+// WebP (typically 5–20× smaller than the phone photo / PNG that was uploaded).
+// GIFs and anything sharp can't read are stored as-is.
+const optimizeImage = async (file) => {
+  if (!/^image\/(jpe?g|png|webp|heic|heif|avif|tiff)$/i.test(file.mimetype)) {
+    return { buffer: file.buffer, ext: path.extname(file.originalname), type: file.mimetype };
+  }
+  try {
+    const buffer = await sharp(file.buffer)
+      .rotate() // respect EXIF orientation from phone cameras
+      .resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    return { buffer, ext: ".webp", type: "image/webp" };
+  } catch (err) {
+    console.warn("Image optimize failed, storing original:", err.message);
+    return { buffer: file.buffer, ext: path.extname(file.originalname), type: file.mimetype };
+  }
+};
+
 export const uploadToS3 = async (file) => {
-  const fileExtension = path.extname(file.originalname);
-  const fileName = `announcements/${uuidv4()}${fileExtension}`;
+  const optimized = await optimizeImage(file);
+  const fileName = `announcements/${uuidv4()}${optimized.ext}`;
   
   const uploadParams = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
     Key: fileName,
-    Body: file.buffer,
-    ContentType: file.mimetype,
+    Body: optimized.buffer,
+    ContentType: optimized.type,
+    // Keys are unique (uuid), so the file never changes: let browsers and the
+    // app cache it for a year.
+    CacheControl: "public, max-age=31536000, immutable",
     // Removed ACL as it might be disabled on the bucket
   };
 

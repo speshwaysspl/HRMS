@@ -1,5 +1,6 @@
-import React from "react";
-import { FiBookmark } from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { FiBookmark, FiX } from "react-icons/fi";
 import { ANNOUNCEMENT_TYPES, announcementType, timeAgo } from "../../utils/announcementMeta";
 
 /**
@@ -10,7 +11,31 @@ import { ANNOUNCEMENT_TYPES, announcementType, timeAgo } from "../../utils/annou
  * variant: "card" (feed), "full" (detail page), "compact" (dashboard).
  * Styles: `.anc*` in src/index.css.
  */
+/** Full-size image viewer (matches the app's image bottom sheet). */
+const ImageViewer = ({ src, title, onClose }) => {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={title || "Announcement image"} className="fixed inset-0 z-[60] flex flex-col bg-[#0E1122]/95" onClick={onClose}>
+      <div className="flex items-center gap-3 px-4 py-3 text-white" onClick={(e) => e.stopPropagation()}>
+        <p className="min-w-0 flex-1 truncate font-semibold">{title}</p>
+        <button type="button" onClick={onClose} aria-label="Close" className="grid h-11 w-11 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+          <FiX size={20} />
+        </button>
+      </div>
+      <div className="flex flex-1 items-center justify-center overflow-auto p-4">
+        <img src={src} alt={title || ""} className="max-h-full max-w-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 const AnnouncementCard = ({ a, variant = "card", isNew = false, onClick }) => {
+  const [viewing, setViewing] = useState(false);
   const type = announcementType(a.category);
   const meta = ANNOUNCEMENT_TYPES[type];
   const Icon = meta.icon;
@@ -36,11 +61,14 @@ const AnnouncementCard = ({ a, variant = "card", isNew = false, onClick }) => {
       </span>
 
       {image && variant !== "compact" ? (
+        // Click the image → full-size viewer (doesn't trigger the card's own click).
         <img
-          className="anc-img"
+          className="anc-img cursor-zoom-in"
           src={image}
           alt=""
           loading="lazy"
+          title="View image"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setViewing(true); }}
           onError={(e) => { e.currentTarget.style.display = "none"; }}
         />
       ) : null}
@@ -84,14 +112,21 @@ const AnnouncementCard = ({ a, variant = "card", isNew = false, onClick }) => {
   );
 
   const cls = `anc anc--${variant}${isNew ? " is-new" : ""}`;
+  const viewer = viewing ? <ImageViewer src={image} title={a.title} onClose={() => setViewing(false)} /> : null;
   return onClick ? (
-    <button type="button" className={cls} data-type={type} onClick={onClick}>
-      {body}
-    </button>
+    <>
+      <button type="button" className={cls} data-type={type} onClick={onClick}>
+        {body}
+      </button>
+      {viewer}
+    </>
   ) : (
-    <article className={cls} data-type={type}>
-      {body}
-    </article>
+    <>
+      <article className={cls} data-type={type}>
+        {body}
+      </article>
+      {viewer}
+    </>
   );
 };
 

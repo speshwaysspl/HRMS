@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/app_drawer.dart';
 import '../widgets/id_card.dart';
 import '../widgets/profile_avatar.dart';
 import 'package:flutter/services.dart';
@@ -122,7 +121,6 @@ class _ProfileScreenState extends State<ProfileScreen> with LiveRefresh<ProfileS
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('My Profile')),
       // Tab root gets the menu; when pushed, keep the back arrow.
-      drawer: Navigator.of(context).canPop() ? null : const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: _fetchProfile,
         child: ListView(

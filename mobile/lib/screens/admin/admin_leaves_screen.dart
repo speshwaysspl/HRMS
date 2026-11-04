@@ -5,7 +5,6 @@ import '../../services/api_client.dart';
 import '../../services/leave_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/app_drawer.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/simple_list_tile.dart';
@@ -111,7 +110,6 @@ class _AdminLeavesScreenState extends State<AdminLeavesScreen> with LiveRefresh<
   Widget build(BuildContext context) {
     final visible = _visible;
     return Scaffold(
-      drawer: const AppDrawer(),
       appBar: HrmsAppBar(title: const Text('Leave Requests')),
       body: Column(
         children: [

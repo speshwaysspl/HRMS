@@ -34,7 +34,7 @@ const idCardAddress = [
 ];
 const idCardWebsite = 'www.speshway.com';
 const idCardEmail = 'info@speshway.com';
-const idCardPhone = '+91 9154986733';
+const idCardPhone = '+91 91549 86732';
 
 String _escapeMeCard(String v) => v
     .replaceAllMapped(RegExp(r'([\\;:,"])'), (m) => '\\${m[1]}')
@@ -566,8 +566,6 @@ class IdCardBack extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 10),
-              Container(height: 1, color: _navy.withValues(alpha: .35)),
             ],
           ),
         ),

@@ -32,6 +32,7 @@ import '../screens/admin/admin_leave_types_screen.dart';
 import '../screens/admin/admin_payroll_templates_screen.dart';
 import '../screens/admin/admin_payslips_screen.dart';
 import '../screens/admin/admin_teams_screen.dart';
+import 'push_back_drawer.dart';
 
 /// Side navigation. Replaces the old "More" bottom-nav tab. Options are
 /// grouped into collapsible accordion sections (ExpansionTile).
@@ -39,7 +40,7 @@ class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   void _go(BuildContext context, WidgetBuilder builder) {
-    Navigator.of(context).pop(); // close the drawer
+    closeAppMenu(context); // close the menu
     // Always stack drawer destinations directly on the shell, with Home as
     // the tab underneath, so Back / swipe returns Home (not the last screen).
     final nav = Navigator.of(context, rootNavigator: true);
@@ -53,7 +54,7 @@ class AppDrawer extends StatelessWidget {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final role = context.read<AuthProvider>().user?.primaryRole ?? 'employee';
-    navigator.pop();
+    closeAppMenu(context);
     navigator.popUntil((r) => r.isFirst);
     AppEvents.switchToTab(role == 'employee' ? 2 : 0);
     try {
@@ -171,11 +172,14 @@ class AppDrawer extends StatelessWidget {
     final isTeamLead = user?.isTeamLead ?? false;
     final isAdmin = user?.isAdmin ?? false;
 
-    return Drawer(
-      backgroundColor: AppColors.surface,
+    // Sits on the push-back backdrop (navy), so it is transparent with light
+    // text and the page floats beside it.
+    return Material(
+      type: MaterialType.transparency,
       child: SafeArea(
         top: false,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Builder(builder: (context) {
               // Photo comes from the shared profile cache (filled by Profile);
@@ -195,13 +199,13 @@ class AppDrawer extends StatelessWidget {
             }),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.symmetric(horizontal: context.w(10), vertical: context.h(4)),
                 children: [
                   if (isAdmin)
                     ..._adminSections(context)
                   else
                     ..._employeeSections(context, isTeamLead),
-                  const Divider(height: 1),
+                  const _MenuDivider(),
                   _Item(Icons.person_outline_rounded, 'My Profile', color: AppColors.brand600,
                       onTap: () => _go(context, (_) => const ProfileScreen())),
                   _Item(Icons.settings_outlined, 'App Settings', color: AppColors.inkMuted, iconBg: AppColors.surfaceSubtle,
@@ -209,7 +213,7 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const _MenuDivider(),
             _Item(
               Icons.logout_rounded,
               'Log out',
@@ -219,7 +223,7 @@ class AppDrawer extends StatelessWidget {
                 final navigator = Navigator.of(context, rootNavigator: true);
                 final auth = context.read<AuthProvider>();
                 final caches = AppCaches.of(context);
-                navigator.pop(); // close the drawer
+                closeAppMenu(context); // close the menu
                 await auth.logout();
                 caches.clearAll();
                 navigator.pushAndRemoveUntil(
@@ -253,32 +257,49 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.brand900,
-      padding: EdgeInsets.fromLTRB(context.w(20), MediaQuery.of(context).padding.top + context.h(20), context.w(20), context.h(20)),
-      child: Row(
-        children: [
-          ProfileAvatar(photo: photo, name: name, size: context.r(52)),
-          SizedBox(width: context.w(12)),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white, fontSize: context.sp(16), fontWeight: FontWeight.w700)),
-                SizedBox(height: context.h(2)),
-                Text(role, style: TextStyle(color: Colors.white70, fontSize: context.sp(12))),
-              ],
-            ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(context.w(22), MediaQuery.of(context).padding.top + context.h(28), context.w(16), context.h(22)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Avatar with a green ring.
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(colors: [AppColors.accent400, AppColors.accent600]),
           ),
-        ],
-      ),
+          child: ProfileAvatar(photo: photo, name: name, size: context.r(64), borderColor: AppColors.brand950),
+        ),
+        SizedBox(height: context.h(14)),
+        // One line: long names shrink to fit instead of wrapping.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(name,
+              maxLines: 1,
+              style: TextStyle(color: Colors.white, fontSize: context.sp(19), fontWeight: FontWeight.w700, height: 1.2)),
+        ),
+        SizedBox(height: context.h(8)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.accent500.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: AppColors.accent400.withValues(alpha: 0.45)),
+          ),
+          child: Text(role, style: TextStyle(color: AppColors.accent200, fontSize: context.sp(12), fontWeight: FontWeight.w600)),
+        ),
+      ]),
     );
   }
+}
+
+class _MenuDivider extends StatelessWidget {
+  const _MenuDivider();
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.symmetric(horizontal: context.w(16), vertical: context.h(6)),
+        child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.10)),
+      );
 }
 
 class _Section extends StatelessWidget {
@@ -288,19 +309,24 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: Text(title,
-          style: TextStyle(
-              fontSize: context.sp(13), fontWeight: FontWeight.w700, color: AppColors.inkMuted, letterSpacing: 0.3)),
-      shape: const Border(),
-      collapsedShape: const Border(),
-      tilePadding: EdgeInsets.symmetric(horizontal: context.w(16)),
-      childrenPadding: EdgeInsets.only(bottom: context.h(4)),
-      children: children,
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent, splashColor: Colors.white10),
+      child: ExpansionTile(
+        title: Text(title.toUpperCase(),
+            style: TextStyle(fontSize: context.sp(11.5), fontWeight: FontWeight.w700, color: AppColors.brand200, letterSpacing: 1.1)),
+        iconColor: Colors.white,
+        collapsedIconColor: AppColors.brand200,
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: EdgeInsets.symmetric(horizontal: context.w(12)),
+        childrenPadding: EdgeInsets.only(bottom: context.h(4)),
+        children: children,
+      ),
     );
   }
 }
 
+/// Rounded pill row on the dark backdrop. Log out keeps a soft red.
 class _Item extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -311,22 +337,39 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Monochrome: every item uses the theme's ink (black in light, white in
-    // dark). Only an explicit danger item (Log out) keeps its colour.
     final isDanger = color == AppColors.danger;
-    final tint = isDanger ? AppColors.danger : AppColors.ink;
-    final bg = isDanger ? AppColors.dangerBg : AppColors.surfaceSubtle;
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.symmetric(horizontal: context.w(16)),
-      leading: Container(
-        width: context.r(32),
-        height: context.r(32),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(9)),
-        child: Icon(icon, size: context.r(17), color: tint),
+    final tint = isDanger ? const Color(0xFFFCA5A5) : Colors.white;
+    final bg = isDanger ? const Color(0x33DC2626) : Colors.white.withValues(alpha: 0.08);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: context.w(isDanger ? 10 : 0), vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: Colors.white.withValues(alpha: 0.08),
+          highlightColor: Colors.white.withValues(alpha: 0.06),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.h(10)),
+            child: Row(children: [
+              Container(
+                width: context.r(36),
+                height: context.r(36),
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)),
+                child: Icon(icon, size: context.r(18), color: tint),
+              ),
+              SizedBox(width: context.w(14)),
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: context.sp(15), fontWeight: FontWeight.w600, color: tint)),
+              ),
+            ]),
+          ),
+        ),
       ),
-      title: Text(label, style: TextStyle(fontSize: context.sp(14), fontWeight: FontWeight.w500, color: tint)),
-      onTap: onTap,
     );
   }
 }

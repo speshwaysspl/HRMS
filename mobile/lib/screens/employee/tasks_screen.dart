@@ -1,5 +1,4 @@
 import '../../services/app_events.dart';
-import '../../widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -104,7 +103,6 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('Tasks')),
       // Tab root gets the menu; when pushed, keep the back arrow.
-      drawer: Navigator.of(context).canPop() ? null : const AppDrawer(),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(context.w(16)),

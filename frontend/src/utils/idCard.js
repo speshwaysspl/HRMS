@@ -4,7 +4,7 @@
 export const ID_CARD_COMPANY = "SPESHWAY SOLUTIONS";
 export const ID_CARD_WEBSITE = "www.speshway.com";
 export const ID_CARD_EMAIL = "info@speshway.com";
-export const ID_CARD_PHONE = "+91 9154986733";
+export const ID_CARD_PHONE = "+91 91549 86732";
 export const ID_CARD_ADDRESS = [
   "Plot No 1/C, Sy No 83/1,",
   "Raidurgam Knowledge City Rd,",

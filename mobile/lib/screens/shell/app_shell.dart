@@ -14,6 +14,8 @@ import '../employee/tasks_screen.dart';
 import '../teamlead/my_teams_screen.dart';
 import '../placeholder_screen.dart';
 import '../profile_screen.dart';
+import '../../widgets/push_back_drawer.dart';
+import '../../widgets/app_drawer.dart';
 
 typedef TabIconBuilder = Widget Function(Color color);
 
@@ -84,12 +86,17 @@ class _AppShellState extends State<AppShell> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _index = homeIndex);
       },
-      child: Scaffold(
-        body: IndexedStack(
-          index: _index,
-          children: tabs.map((t) => t.screen).toList(),
+      // Push-back menu: the whole shell (page + bottom nav) shrinks and
+      // slides right to reveal the menu behind it.
+      child: PushBackDrawer(
+        menu: const AppDrawer(),
+        child: Scaffold(
+          body: IndexedStack(
+            index: _index,
+            children: tabs.map((t) => t.screen).toList(),
+          ),
+          bottomNavigationBar: _buildModernBottomNav(context, tabs),
         ),
-        bottomNavigationBar: _buildModernBottomNav(context, tabs),
       ),
     );
   }

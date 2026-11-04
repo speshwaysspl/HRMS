@@ -8,7 +8,6 @@ import '../../services/offline_punch_service.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
-import '../../widgets/app_drawer.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/hrms_app_bar.dart';
@@ -336,7 +335,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final hasCheckedOut = _hasTime('outTime');
 
     return Scaffold(
-      drawer: const AppDrawer(),
       appBar: HrmsAppBar(title: const Text('Attendance')),
       body: _loading
           ? ListView(

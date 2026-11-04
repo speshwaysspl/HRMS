@@ -9,14 +9,26 @@ import bcrypt from "bcrypt";
 import ExcelJS from "exceljs";
 import Team from "../models/Team.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
+import sharp from "sharp";
 
-// ID-card photo arrives as a client-resized JPEG/PNG data URL; reject anything else or oversized.
+// ID-card photo arrives as a client-resized JPEG/PNG/WebP data URL; reject anything
+// else or oversized. Stored as a 400px WebP (~15–30 KB) so profile, menu and ID
+// card load fast. Returns "" (cleared), the data URL, or null (invalid).
 const MAX_PHOTO_CHARS = 700 * 1024;
-const sanitizeProfileImage = (value) => {
+const sanitizeProfileImage = async (value) => {
   if (!value) return "";
-  if (typeof value !== "string" || !/^data:image\/(jpeg|png);base64,/.test(value)) return null;
+  if (typeof value !== "string" || !/^data:image\/(jpeg|png|webp);base64,/.test(value)) return null;
   if (value.length > MAX_PHOTO_CHARS) return null;
-  return value;
+  try {
+    const input = Buffer.from(value.slice(value.indexOf(",") + 1), "base64");
+    const webp = await sharp(input)
+      .resize({ width: 400, height: 400, fit: "cover" })
+      .webp({ quality: 80 })
+      .toBuffer();
+    return `data:image/webp;base64,${webp.toString("base64")}`;
+  } catch {
+    return null; // not a readable image
+  }
 };
 
 const addEmployee = async (req, res) => {
@@ -37,7 +49,7 @@ const addEmployee = async (req, res) => {
       profileImage: rawProfileImage,
     } = req.body;
 
-    const profileImage = sanitizeProfileImage(rawProfileImage);
+    const profileImage = await sanitizeProfileImage(rawProfileImage);
     if (profileImage === null) {
       return res.status(400).json({ success: false, error: "Photo must be a JPEG or PNG under 500 KB" });
     }
@@ -934,7 +946,7 @@ const updateEmployeePhoto = async (req, res) => {
   try {
     const update = { updatedAt: Date.now() };
     if (req.body && "profileImage" in req.body) {
-      const profileImage = sanitizeProfileImage(req.body.profileImage);
+      const profileImage = await sanitizeProfileImage(req.body.profileImage);
       if (profileImage === null) {
         return res.status(400).json({ success: false, error: "Photo must be a JPEG or PNG under 500 KB" });
       }

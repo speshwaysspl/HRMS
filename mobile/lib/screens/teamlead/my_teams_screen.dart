@@ -1,5 +1,4 @@
 import '../../services/app_events.dart';
-import '../../widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import '../../services/team_service.dart';
 import '../../theme/app_theme.dart';
@@ -98,7 +97,6 @@ class _MyTeamsScreenState extends State<MyTeamsScreen> {
     return Scaffold(
       appBar: HrmsAppBar(title: const Text('My Teams')),
       // Tab root gets the menu; when pushed, keep the back arrow.
-      drawer: Navigator.of(context).canPop() ? null : const AppDrawer(),
       body: _loading
           ? ListView(
               padding: EdgeInsets.all(pad),

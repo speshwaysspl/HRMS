@@ -210,7 +210,6 @@ export const IdCardBack = forwardRef((_props, ref) => (
         <br />
         If found, please return to the HR Department.
       </div>
-      <div style={{ height: 1, background: NAVY, opacity: 0.35, margin: "10px 0 0" }} />
     </div>
 
     <div style={{ position: "absolute", top: 212, left: 22, right: 18 }}>

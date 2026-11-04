@@ -11,7 +11,6 @@ import '../../services/dashboard_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../utils/greeting_utils.dart';
-import '../../widgets/app_drawer.dart';
 import '../../widgets/celebrations_card.dart';
 import '../../widgets/marquee_app_bar_title.dart';
 import '../../widgets/skeleton_loader.dart';
@@ -22,6 +21,7 @@ import 'notifications_screen.dart';
 import 'payslips_screen.dart';
 
 import '../../services/live_refresh.dart';
+import '../../widgets/push_back_drawer.dart';
 
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
@@ -138,10 +138,10 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen>
     );
 
     return Scaffold(
-      drawer: const AppDrawer(),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(context.h(176)),
         child: AppBar(
+          leading: const MenuButton(color: Colors.white),
           backgroundColor: Colors.transparent,
           elevation: 0,
           flexibleSpace: ClipRRect(

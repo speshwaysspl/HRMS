@@ -25,6 +25,7 @@ import '../screens/teamlead/my_teams_screen.dart';
 import 'app_settings.dart';
 import 'auth_provider.dart';
 import 'notification_service.dart';
+import '../widgets/gooey_toast.dart';
 
 /// Channel id must match the one the backend puts in every FCM data payload
 /// (see server/services/fcmService.js -> channel_id: 'general_channel_v4').
@@ -199,7 +200,10 @@ class PushService {
           }
         });
 
-        FirebaseMessaging.onMessage.listen(_showLocalNotification);
+        // App open: show the in-app "gooey drop" toast instead of a system
+        // banner (nutri_hrms style). Background/killed still uses the system
+        // notification via _firebaseBackgroundHandler.
+        FirebaseMessaging.onMessage.listen(_showInAppToast);
         FirebaseMessaging.onMessageOpenedApp.listen((m) => _handleOpen(m.data));
 
         final initial = await messaging.getInitialMessage();
@@ -232,6 +236,19 @@ class PushService {
   /// in-list tap logic in notifications_screen.dart's _onTapItem so a push
   /// and a list tap land on the same place. Falls back to the notifications
   /// list when the type can't be matched or the app isn't ready yet.
+  /// Server notification ids already shown while open (FCM can re-deliver).
+  final Set<String> _shownInApp = {};
+
+  void _showInAppToast(RemoteMessage message) {
+    final data = message.data;
+    final title = data['title'] ?? message.notification?.title ?? 'Speshway';
+    final body = data['body'] ?? message.notification?.body ?? '';
+    if (body.isEmpty && title == 'Speshway') return;
+    final id = data['notificationId']?.toString() ?? message.messageId ?? '';
+    if (id.isNotEmpty && !_shownInApp.add(id)) return;
+    GooeyToast.show(title: title, body: body, onTap: () => _handleOpen(data));
+  }
+
   void _handleOpen(Map<String, dynamic> data) {
     final nav = appNavigatorKey.currentState;
     final context = appNavigatorKey.currentContext;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'push_back_drawer.dart';
 
 /// Standard app bar for every sub-screen: photo backdrop with a dark scrim,
 /// matching the Notifications screen. Web mirror: `MobilePageBar` in
@@ -21,7 +22,12 @@ class HrmsAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      leading: leading,
+      // Tab screens (inside the shell, nothing to go back to) get the
+      // push-back menu button; pushed screens keep the default back arrow.
+      leading: leading ??
+          (!Navigator.of(context).canPop() && PushBackDrawer.maybeOf(context) != null
+              ? const MenuButton(color: Colors.white)
+              : null),
       title: title,
       actions: actions,
       bottom: bottom,

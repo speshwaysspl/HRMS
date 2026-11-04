@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Themed announcement (nutri_hrms style) — one design per type, same palettes
@@ -185,7 +186,25 @@ class AnnouncementCard extends StatelessWidget {
           if (image.isNotEmpty && !compact)
             ConstrainedBox(
               constraints: BoxConstraints(maxHeight: full ? 440 : 260),
-              child: Image.network(image, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink()),
+              // Tap → full image in a bottom sheet (pinch to zoom).
+              child: Semantics(
+                button: true,
+                label: 'View image',
+                child: GestureDetector(
+                  onTap: () => showAnnouncementImage(context, image, title: title),
+                  // Disk-cached (instant on revisit) and decoded at screen width,
+                  // not the image's full resolution; soft placeholder while loading.
+                  child: CachedNetworkImage(
+                    imageUrl: image,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
+                    fadeInDuration: const Duration(milliseconds: 180),
+                    placeholder: (_, _) => Container(height: compact ? 0 : 180, color: t.soft),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
             ),
           // Notice: ruled "notice board" lines behind the text.
           if (type == 'notice') CustomPaint(painter: _RuledPainter(), child: body) else body,
@@ -231,4 +250,76 @@ class _RibbonClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+/// Announcement image in a draggable bottom sheet — grab handle, title,
+/// pinch / double-tap to zoom, close button.
+Future<void> showAnnouncementImage(BuildContext context, String url, {String title = ''}) {
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scroll) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF0E1122),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          // Handle + header scroll the sheet; the image area is for zooming.
+          SingleChildScrollView(
+            controller: scroll,
+            physics: const ClampingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+              child: Column(children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                ),
+                Row(children: [
+                  Expanded(
+                    child: Text(title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ]),
+              ]),
+            ),
+          ),
+          Expanded(
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 5,
+              child: Center(
+                // Same disk-cached file as the card, so it opens instantly.
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.contain,
+                  placeholder: (_, _) => const CircularProgressIndicator(color: Colors.white),
+                  errorWidget: (_, _, _) => const Text("Couldn't load the image", style: TextStyle(color: Colors.white70)),
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Text('Pinch to zoom', style: TextStyle(color: Colors.white54, fontSize: 12.5)),
+          ),
+        ]),
+      ),
+    ),
+  );
 }
