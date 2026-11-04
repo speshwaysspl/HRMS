@@ -27,8 +27,13 @@ export const NotificationProvider = ({ children }) => {
 
   // Fire the live-refresh listeners as if everything changed ("*" = every
   // resource, kind "resync" = every team).
+  // Throttled: a flaky connection reconnecting every second must not reload
+  // every screen every second.
+  const lastResyncRef = useRef(0);
   const resyncAll = () => {
     const at = Date.now();
+    if (at - lastResyncRef.current < 10000) return;
+    lastResyncRef.current = at;
     listenersRef.current.get('data:changed')?.forEach((fn) => fn({ resource: '*', at }));
     listenersRef.current.get('team:updated')?.forEach((fn) => fn({ kind: 'resync', at }));
   };
@@ -431,16 +436,25 @@ export const useSocketEvent = (event, handler) => {
 
 // Re-runs `refetch` when the server reports a write to any of `resources`
 // (e.g. ["leave", "attendance"]). Bursts are collapsed into one refetch.
+// Live refetch for a screen: debounced (bursts → one call) and throttled to at
+// most one refetch per MIN_GAP_MS, so a flood of signals can't make the page
+// reload every second. The last signal is never dropped (trailing call).
+const MIN_GAP_MS = 4000;
 export const useLiveData = (resources, refetch, delay = 600) => {
   const ref = useRef(refetch);
   ref.current = refetch;
   const timer = useRef(null);
+  const lastRun = useRef(0);
   const key = [].concat(resources).join(",");
   useEffect(() => () => clearTimeout(timer.current), []);
   useSocketEvent("data:changed", (e) => {
     if (!e?.resource || (e.resource !== "*" && !key.split(",").includes(e.resource))) return;
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => ref.current?.(), delay);
+    const wait = Math.max(delay, MIN_GAP_MS - (Date.now() - lastRun.current));
+    timer.current = setTimeout(() => {
+      lastRun.current = Date.now();
+      ref.current?.();
+    }, wait);
   });
 };
 

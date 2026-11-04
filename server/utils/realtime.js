@@ -83,10 +83,27 @@ export const liveDataMiddleware = (io) => (req, res, next) => {
   if (req.method === "POST" && /\/seen$/.test(path)) return next();
   res.on("finish", () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
-    const at = Date.now();
-    for (const r of [resource, ...(ALSO_CHANGES[resource] || [])]) {
-      io.emit("data:changed", { resource: r, at });
-    }
+    for (const r of [resource, ...(ALSO_CHANGES[resource] || [])]) emitChanged(io, r);
   });
   next();
+};
+
+// Coalesce live-refresh hints: at most one "data:changed" per resource every
+// EMIT_GAP_MS. The first write emits immediately; writes during the gap are
+// folded into one trailing emit, so clients still get the final state but a
+// burst (or a client ping-pong) can no longer make every screen reload each
+// second.
+const EMIT_GAP_MS = 3000;
+const lastEmit = new Map(); // resource → ms
+const pendingEmit = new Map(); // resource → timeout
+const emitChanged = (io, resource) => {
+  if (pendingEmit.has(resource)) return; // trailing emit already scheduled
+  const wait = EMIT_GAP_MS - (Date.now() - (lastEmit.get(resource) || 0));
+  const fire = () => {
+    pendingEmit.delete(resource);
+    lastEmit.set(resource, Date.now());
+    io.emit("data:changed", { resource, at: Date.now() });
+  };
+  if (wait <= 0) fire();
+  else pendingEmit.set(resource, setTimeout(fire, wait));
 };

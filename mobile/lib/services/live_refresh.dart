@@ -12,6 +12,11 @@ mixin LiveRefresh<T extends StatefulWidget> on State<T> {
   void onLiveRefresh();
 
   Timer? _liveTimer;
+  DateTime _lastLive = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// At most one live refetch per this gap, so a flood of signals can't make
+  /// the screen reload every second. The last signal still runs (trailing).
+  static const _minGap = Duration(seconds: 4);
 
   @override
   void initState() {
@@ -24,8 +29,13 @@ mixin LiveRefresh<T extends StatefulWidget> on State<T> {
     // `*` = resync after a reconnect / app resume (see RealtimeService).
     if (r == null || (r != '*' && !liveResources.contains(r))) return;
     _liveTimer?.cancel();
-    _liveTimer = Timer(const Duration(milliseconds: 600), () {
-      if (mounted) onLiveRefresh();
+    final sinceLast = DateTime.now().difference(_lastLive);
+    var wait = _minGap - sinceLast;
+    if (wait < const Duration(milliseconds: 600)) wait = const Duration(milliseconds: 600);
+    _liveTimer = Timer(wait, () {
+      if (!mounted) return;
+      _lastLive = DateTime.now();
+      onLiveRefresh();
     });
   }
 

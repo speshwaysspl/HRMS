@@ -9,7 +9,7 @@ import '../theme/app_theme.dart';
 
 /// In-app notification ("Gooey Drop", from nutri_hrms): a drop falls from the
 /// top, lands, melts and spreads sideways into a toast with title + body.
-/// Themed: Speshway navy → green in light mode, deep navy in dark mode.
+/// Look: white drop / toast with navy text and a thin green edge (both themes).
 /// Tap opens it; swipe up or wait ~4.5 s to dismiss. Reduce-motion: it just
 /// appears. Needs no BuildContext (uses the root navigator's overlay).
 abstract final class GooeyToast {
@@ -89,10 +89,8 @@ class _GooeyToastViewState extends State<_GooeyToastView> with SingleTickerProvi
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top + 10;
     final dark = AppColors.isDark;
-    // Theme colours: light = navy → green; dark = deep navy with a green edge.
-    final colors = dark
-        ? const [AppColors.brand800, AppColors.brand950]
-        : const [AppColors.brand800, AppColors.accent600];
+    // White drop with navy text in both themes (green edge drawn by the painter).
+    const colors = [Colors.white, Color(0xFFE6EAF4)];
     return Positioned(
       top: top,
       left: 12,
@@ -126,8 +124,8 @@ class _GooeyToastViewState extends State<_GooeyToastView> with SingleTickerProvi
                         Container(
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), shape: BoxShape.circle),
-                          child: const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 22),
+                          decoration: BoxDecoration(color: AppColors.brand100, shape: BoxShape.circle),
+                          child: Icon(Icons.notifications_active_rounded, color: AppColors.brand800, size: 22),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -138,12 +136,12 @@ class _GooeyToastViewState extends State<_GooeyToastView> with SingleTickerProvi
                               Text(widget.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15, decoration: TextDecoration.none)),
+                                  style: TextStyle(color: AppColors.brand900, fontWeight: FontWeight.w700, fontSize: 15, decoration: TextDecoration.none)),
                               if (widget.body.isNotEmpty)
                                 Text(widget.body,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, fontWeight: FontWeight.w400, decoration: TextDecoration.none)),
+                                    style: TextStyle(color: const Color(0xFF3B4677), fontSize: 13, fontWeight: FontWeight.w400, decoration: TextDecoration.none)),
                             ],
                           ),
                         ),
@@ -210,8 +208,8 @@ class _GooeyPainter extends CustomPainter {
     final rect = RRect.fromLTRBR(left, top, left + w, top + h, Radius.circular(h / 2 * (1 - 0.45 * m)));
     canvas.drawRRect(rect.inflate(1), shadow);
     canvas.drawRRect(rect, paint);
-    if (dark) {
-      // Dark mode: thin green edge so the toast separates from dark screens.
+    {
+      // Thin green edge around the white toast.
       canvas.drawRRect(rect, Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2

@@ -72,8 +72,14 @@ class RealtimeService with WidgetsBindingObserver {
 
   /// Tell every live screen to re-fetch: resource `*` (see LiveRefresh) and
   /// team kind `resync` (team screens).
+  int _lastResync = 0;
+
   void resyncAll() {
     final at = DateTime.now().millisecondsSinceEpoch;
+    // Throttled: a flaky socket reconnecting every second must not reload
+    // every screen every second.
+    if (at - _lastResync < 10000) return;
+    _lastResync = at;
     AppEvents.dataChanged.value = {'resource': '*', 'at': at};
     AppEvents.teamChanged.value = {'kind': 'resync', 'at': at};
   }

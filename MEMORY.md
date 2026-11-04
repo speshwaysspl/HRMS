@@ -39,6 +39,8 @@ MERN stack + Flutter mobile app.
 
 - **Employee ID card (2026-11-04)**: photo stored as a data URL in `Employee.profileImage` (not S3 — avoids CORS when html2canvas/RepaintBoundary capture the card); optional at add time, admin/HR change it via `PUT /api/employee/:id/photo`. Card design + office address + QR payload live in web `utils/idCard.js` / `common/IdCard.jsx` and Flutter `widgets/id_card.dart` — change both together.
 
+- **Live-refresh throttling (2026-11-04)**: server emits `data:changed` at most once per resource per 3 s; web `useLiveData` / Flutter `LiveRefresh` refetch at most every 4 s; reconnect resync at most every 10 s. Never broadcast read-receipt-style writes (e.g. `POST …/seen`) — that caused a 1 s reload loop.
+
 ## 6. Current Work
 - Mobile app is at a Play Store-submittable state: release signing verified, analyzer clean, Firebase config consistent, basic test suite in place. Remaining open items before actual submission (not code fixes, need user action): confirm `new-hrms-d8eaf` is genuinely the intended production Firebase project; prepare Play Console store listing assets (screenshots, description, feature graphic); optionally bump Gradle 8.14→9.1+/AGP 8.11.1→9.0.1+/Kotlin 2.2.21→2.3.20+ in a dedicated low-stakes session (currently only deprecation warnings, not failures — deferred by explicit user choice).
 - No admin-side UI exists to review/action account-deletion requests (`GET /api/account/deletion-requests`) — explicitly deferred, not forgotten.
