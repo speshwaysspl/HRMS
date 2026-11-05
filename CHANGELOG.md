@@ -6,6 +6,12 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-11-04 — Release 1.0.22+25
+- Version bumped to 1.0.22+25; `RELEASE_NOTES_1.0.22.md` (Play "What's new" + full notes). Signed AAB built: `mobile/build/app/outputs/bundle/release/app-release.aab` (66.1 MB). `flutter analyze` clean, `flutter test` 17/17.
+
+## 2026-11-04 — Play Store assets folder
+- `play-store-assets/` (same layout as nutri_hrms): 1-app-icon (512²), 2-feature-graphic (1024×500), 3-phone (1080×1920), 4-tablet-7inch (1215×2160), 5-tablet-10inch (1620×2880), raw-screenshots, `make-assets.cjs` (sharp from server/). Screenshots follow greytHR: drawn as one panorama strip and sliced, so cards 1–3 connect (card 1's phone continues into card 2, card 2's becomes card 3's big tilted phone); cards 4–5 upright and card 6 the splash brand card, each drawn on its own canvas (`GROUPS`) so nothing leaks across; per-card colour + diagonal gradient, long cast shadow, punch-hole phone with side buttons, two-line headlines. Layout in `CARDS` / `PHONES`. Regenerate: `node play-store-assets/make-assets.cjs` (icon + graphic) and `… screens`.
+
 ## 2026-11-04 — Push-back menu, gooey-drop notifications, image viewer (Flutter + web)
 - Flutter **push-back menu** (`widgets/push_back_drawer.dart`): the whole shell (page + bottom nav) shrinks, rounds and slides right to reveal the menu behind it; tap the page / swipe left / Back closes; reduce-motion jumps. Tab screens dropped their own `drawer:`; `HrmsAppBar` shows `MenuButton` automatically on tab screens (pushed screens keep the back arrow); home screens set it explicitly; `AppDrawer` closes via `closeAppMenu`. Mobile-only (web keeps its sidebar).
 - Push-back menu restyled: full navy backdrop (green glow bottom-left, blue glow top-right), translucent ghost card behind the page for depth, menu transparent with light text — avatar with green ring, name, role chip, uppercase section headers, rounded pill items, soft-red Log out.
