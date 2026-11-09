@@ -31,6 +31,7 @@ import useMeta from "../../utils/useMeta";
 import { useSocketEvent, useLiveData } from "../../context/NotificationContext";
 import EmptyState from "../common/EmptyState";
 import { useAuth } from "../../context/AuthContext";
+import { getCached, setCached } from "../../utils/queryStore";
 
 const TOOLTIP = { borderRadius: 8, borderColor: "#eef0f6", fontSize: 13 };
 const ddmm = (d) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
@@ -115,7 +116,8 @@ const Skeleton = () => (
 
 const AdminSummary = () => {
   useLiveData(["dashboard", "attendance", "leave", "employee", "task", "events", "announcement"], () => { fetchSummary(); });
-  const [summary, setSummary] = useState(null);
+  // Revisits render instantly from the in-memory cache, then refresh quietly.
+  const [summary, setSummary] = useState(() => getCached("admin-summary") ?? null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -139,6 +141,7 @@ const AdminSummary = () => {
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       setSummary(data);
+      setCached("admin-summary", data);
       setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Could not load the dashboard.");

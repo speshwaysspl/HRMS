@@ -10,6 +10,7 @@ import EmptyState from "../common/EmptyState";
 import ActionIconButton from "../common/ActionIconButton";
 import { FiDownload, FiEye, FiX } from "react-icons/fi";
 import { useLiveData } from "../../context/NotificationContext";
+import { getCached, setCached } from "../../utils/queryStore";
 
 // Get auth headers helper
 const getAuthHeaders = () => {
@@ -51,26 +52,36 @@ const PayslipHistory = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadPayslips();
     loadDepartments();
   }, []);
+
+  // Year/month are filtered on the server (so nothing is cut off by a page
+  // limit); the rest is filtered here. Reload when they change.
+  useEffect(() => {
+    loadPayslips();
+  }, [filters.year, filters.month]);
 
   useEffect(() => {
     applyFilters();
   }, [payslips, filters]);
 
   const loadPayslips = async () => {
+    const key = `payslip-history:${filters.year || "all"}:${filters.month || "all"}`;
+    const cachedList = getCached(key);
+    if (cachedList) setPayslips(cachedList); // instant, then refresh below
     try {
-      setLoading(true);
+      if (!cachedList) setLoading(true);
       const response = await axios.get(`${API_BASE}/api/payslip/history`, {
+        params: { year: filters.year || undefined, month: filters.month || undefined, limit: 5000 },
         headers: getAuthHeaders()
       });
-      
+
       if (response.data.success) {
         setPayslips(response.data.payslips);
+        setCached(key, response.data.payslips);
       }
     } catch (error) {
-      alert("Error loading payslip history");
+      if (!cachedList) alert("Error loading payslip history");
     } finally {
       setLoading(false);
     }

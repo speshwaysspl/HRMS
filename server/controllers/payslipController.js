@@ -645,8 +645,14 @@ function getMonthName(monthNumber) {
 // Get payslip history
 export const getPayslipHistory = async (req, res) => {
   try {
-    const { employeeId, page = 1, limit = 100 } = req.query;
-    
+    let { employeeId, page = 1, limit = 100 } = req.query;
+    // Employees can only list their own payslips.
+    if (!isAdminOrHr(req.user)) {
+      const me = await myEmployee(req);
+      if (!me) return res.status(200).json({ success: true, payslips: [] });
+      employeeId = me.employeeId;
+    }
+
     let query = {};
     if (employeeId) {
       const employee = await Employee.findOne({ employeeId });
@@ -654,7 +660,16 @@ export const getPayslipHistory = async (req, res) => {
         query.employeeId = employee._id;
       }
     }
-    
+    // Year/month narrow the history on the server, so the page limit no longer
+    // hides older payslips (the web filters the rest client-side).
+    const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    const yr = parseInt(req.query.year, 10);
+    if (yr > 2000 && yr < 3000) query.year = yr;
+    const mo = parseInt(req.query.month, 10);
+    if (mo >= 1 && mo <= 12) query.month = { $in: [MONTH_NAMES[mo - 1], String(mo), String(mo).padStart(2, "0")] };
+    limit = Math.min(5000, Math.max(1, parseInt(limit, 10) || 100));
+
     const payslips = await Salary.find(query)
       .populate({
         path: 'employeeId',

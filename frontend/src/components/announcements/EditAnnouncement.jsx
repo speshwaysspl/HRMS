@@ -1,3 +1,4 @@
+import { withMuiTheme } from "../../muiScope";
 import React, { useEffect, useState, useMemo } from "react";
 import { Box, Button, TextField, FormControl, InputLabel, Select, MenuItem, Typography, Chip, Checkbox, Avatar } from "@mui/material";
 import axios from "axios";
@@ -762,4 +763,4 @@ const EditAnnouncement = () => {
   );
 };
 
-export default EditAnnouncement;
+export default withMuiTheme(EditAnnouncement);

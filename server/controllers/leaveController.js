@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 import { isAdminOrHr, hasAnyRole, forbid, sameId } from '../middleware/access.js'
 import { saveFile, deleteFile, getFileKeyFromUrl } from '../utils/fileSaver.js'
+import { readPage, pageMeta, escapeRegex } from '../utils/pagination.js'
 
 // Signed link that lets HR approve/reject one leave from the email without logging in.
 const ACTION_PURPOSE = 'leave_email_action'
@@ -125,6 +126,39 @@ const getLeave = async (req, res) => {
 
 const getLeaves = async (req, res) => {
     try {
+        // Paged mode (?page=&limit=&status=&q=) for the admin table: slim rows,
+        // filtering/search on the server. Without ?page: full list as before.
+        const p = readPage(req, { defaultLimit: 25, maxLimit: 100 })
+        if (p) {
+            const filter = {}
+            const status = String(req.query.status || '')
+            if (['Pending', 'Approved', 'Rejected'].includes(status)) filter.status = status
+            const q = String(req.query.q || '').trim()
+            if (q) {
+                const rx = new RegExp(escapeRegex(q), 'i')
+                const users = await User.find({ name: rx }).select('_id').lean()
+                const emps = await Employee.find({ $or: [{ employeeId: rx }, { userId: { $in: users.map((u) => u._id) } }] }).select('_id').lean()
+                filter.employeeId = { $in: emps.map((e) => e._id) }
+            }
+            const [rows, total, counts] = await Promise.all([
+                Leave.find(filter)
+                    .select('employeeId leaveType startDate endDate status appliedAt')
+                    .populate({
+                        path: 'employeeId',
+                        select: 'employeeId department userId',
+                        populate: [{ path: 'department', select: 'dep_name' }, { path: 'userId', select: 'name' }],
+                    })
+                    .sort({ appliedAt: -1 })
+                    .skip(p.skip)
+                    .limit(p.limit)
+                    .lean(),
+                Leave.countDocuments(filter),
+                Leave.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+            ])
+            const statusCounts = Object.fromEntries(counts.map((c) => [c._id, c.n]))
+            return res.status(200).json({ success: true, leaves: rows, statusCounts, ...pageMeta(p, total) })
+        }
+
         const leaves = await Leave.find().populate({
             path: 'employeeId',
             populate: [

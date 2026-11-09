@@ -28,6 +28,7 @@ import NotificationBell from '../notifications/NotificationBell'
 import ErrorState from '../common/ErrorState'
 import CelebrationsAndHoliday from './CelebrationsAndHoliday'
 import { useLiveTick } from "../../context/NotificationContext";
+import { getCached, setCached } from "../../utils/queryStore";
 
 // Same 5-color palette + status vocabulary as the Flutter mobile app's
 // employee home screen — kept in sync intentionally, see MEMORY.md.
@@ -122,9 +123,11 @@ const Summary = () => {
   // so this page's own mobile header (below) can open the sidebar drawer,
   // since the generic Navbar's mobile bar is hidden on this page.
   const { toggleSidebar } = useOutletContext() || {}
-  const [dashboardData, setDashboardData] = useState(null)
-  const [announcements, setAnnouncements] = useState([])
-  const [loading, setLoading] = useState(true)
+  // Revisits render instantly from the in-memory cache, then refresh quietly.
+  const cached = getCached('employee-summary')
+  const [dashboardData, setDashboardData] = useState(cached?.dashboard ?? null)
+  const [announcements, setAnnouncements] = useState(cached?.announcements ?? [])
+  const [loading, setLoading] = useState(!cached)
   const [clickedAction, setClickedAction] = useState(null)
   const [error, setError] = useState(null)
 
@@ -148,7 +151,7 @@ const Summary = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        setLoading(true)
+        if (!getCached('employee-summary')) setLoading(true)
         const token = sessionStorage.getItem('token')
         const [dashboardResponse, announcementList] = await Promise.all([
           axios.get(`${API_BASE}/api/dashboard/employee-stats`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -162,6 +165,8 @@ const Summary = () => {
 
         setDashboardData(dashboardResponse.data.data)
         setAnnouncements(announcementList || [])
+        setCached('employee-summary', { dashboard: dashboardResponse.data.data, announcements: announcementList || [] })
+        setError(null)
       } catch (err) {
         setError('Failed to load dashboard data')
       } finally {

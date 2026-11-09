@@ -11,6 +11,7 @@ import Team from "../models/Team.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 import sharp from "sharp";
 import { isAdminOrHr } from "../middleware/access.js";
+import { readPage, pageMeta, escapeRegex } from "../utils/pagination.js";
 
 // ID-card photo arrives as a client-resized JPEG/PNG/WebP data URL; reject anything
 // else or oversized. Stored as a 400px WebP (~15–30 KB) so profile, menu and ID
@@ -178,6 +179,32 @@ const addEmployee = async (req, res) => {
 // Get all employees
 const getEmployees = async (req, res) => {
   try {
+    // Paged mode (?page=&limit=&q=): slim rows + server-side search for the
+    // admin table. Without ?page the full list is returned as before (Flutter).
+    const p = readPage(req, { defaultLimit: 25, maxLimit: 100 });
+    if (p && isAdminOrHr(req.user)) {
+      const q = String(req.query.q || "").trim();
+      const filter = {};
+      if (q) {
+        const rx = new RegExp(escapeRegex(q), "i");
+        const users = await User.find({ $or: [{ name: rx }, { email: rx }] }).select("_id").lean();
+        filter.$or = [{ employeeId: rx }, { designation: rx }, { userId: { $in: users.map((u) => u._id) } }];
+      }
+      if (req.query.status === "active" || req.query.status === "inactive") filter.status = req.query.status;
+      const [rows, total] = await Promise.all([
+        Employee.find(filter)
+          .select("employeeId designation joiningDate dob gender mobilenumber status department userId")
+          .populate("userId", "name email")
+          .populate("department", "dep_name")
+          .sort({ createdAt: -1 })
+          .skip(p.skip)
+          .limit(p.limit)
+          .lean(),
+        Employee.countDocuments(filter),
+      ]);
+      return res.status(200).json({ success: true, employees: rows, ...pageMeta(p, total) });
+    }
+
     const employees = await Employee.find()
       .select("-profileImage")
       .populate("userId", { password: 0 })

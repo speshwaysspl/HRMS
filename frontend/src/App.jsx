@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 
 // Pages
-import Login from "./pages/Login";
+const Login = lazy(() => import("./pages/Login"));
 import Home from "./pages/Home";
 const Contact = lazy(() => import("./pages/Contact"));
 const Terms = lazy(() => import("./pages/Terms"));

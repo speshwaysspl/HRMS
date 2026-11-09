@@ -1,3 +1,4 @@
+import { withMuiTheme } from "../../muiScope";
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -552,4 +553,4 @@ const EmployeeFeedback = () => {
   );
 };
 
-export default EmployeeFeedback;
+export default withMuiTheme(EmployeeFeedback);

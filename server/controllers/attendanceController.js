@@ -139,11 +139,21 @@ export const getAllAttendance = async (req, res) => {
     const { date } = req.query;
     if (!date) return res.status(400).json({ message: "Date is required" });
  
-    const employees = await Employee.find().populate('userId', 'name').populate('shiftId');
+    // 3 queries total instead of 2 per employee: load the day's attendance and
+    // approved leaves once, then look them up per employee.
+    const day = new Date(date);
+    const [employees, dayRecords, dayLeaves] = await Promise.all([
+      Employee.find().select("userId employeeId shiftId department designation status").populate('userId', 'name').populate('shiftId'),
+      Attendance.find({ date }),
+      Leave.find({ startDate: { $lte: day }, endDate: { $gte: day }, status: "Approved" }).sort({ appliedAt: 1 }),
+    ]);
+    const recordByEmp = new Map(dayRecords.map((r) => [String(r.userId), r]));
+    const leaveByEmp = new Map();
+    for (const l of dayLeaves) if (!leaveByEmp.has(String(l.employeeId))) leaveByEmp.set(String(l.employeeId), l);
     const LATE_GRACE_MINUTES = 15;
     const attendanceData = await Promise.all(
       employees.map(async (emp) => {
-        const record = await Attendance.findOne({ userId: emp._id, date });
+        const record = recordByEmp.get(String(emp._id)) || null;
 
         let isLate = false;
         if (record?.inTime && emp.shiftId?.startTime) {
@@ -158,12 +168,7 @@ export const getAllAttendance = async (req, res) => {
         let attendanceStatus = "Not Yet";
         
         // Check if there's a leave request approved for this date
-        const leaveCheck = await Leave.findOne({
-          employeeId: emp._id,
-          startDate: { $lte: new Date(date) },
-          endDate: { $gte: new Date(date) },
-          status: "Approved"
-        });
+        const leaveCheck = leaveByEmp.get(String(emp._id)) || null;
         const hasApprovedLeave = !!leaveCheck;
         
         if (hasApprovedLeave) {

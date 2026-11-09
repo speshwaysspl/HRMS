@@ -1,3 +1,4 @@
+import { withMuiTheme } from "../../muiScope";
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
@@ -646,4 +647,4 @@ const AdminFeedback = () => {
   );
 };
 
-export default AdminFeedback;
+export default withMuiTheme(AdminFeedback);

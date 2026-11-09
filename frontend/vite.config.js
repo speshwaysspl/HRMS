@@ -45,15 +45,12 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
+        // Only split libraries every page needs. Libraries used by a few lazy
+        // screens (PDF, Excel, MUI, maps, charts) are left to Vite, so they
+        // load with those screens instead of being preloaded on every page.
         manualChunks: {
           react: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@emotion/styled'],
-          motion: ['framer-motion'],
-          pdf: ['jspdf', 'jspdf-autotable'],
-          excel: ['xlsx'],
-          socket: ['socket.io-client'],
-          maps: ['@googlemaps/react-wrapper'],
         }
       }
     }

@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { API_BASE } from "../utils/apiConfig";
 import { unregisterWebPush } from "../utils/webPush";
+import { clearQueryCache } from "../utils/queryStore";
 
 const userContext = createContext();
 
@@ -40,11 +41,13 @@ const authContext = ({ children }) => {
   }, []);
 
   const login = (user) => {
+    clearQueryCache(); // never show a previous user's cached data
     setUser(user);
   };
 
   const logout = () => {
     unregisterWebPush(); // reads the auth token synchronously before it's cleared below
+    clearQueryCache();
     setUser(null);
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");

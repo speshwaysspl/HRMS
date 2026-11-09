@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { columns, EmployeeButtons } from '../../utils/EmployeeHelper'
 import DataTable from 'react-data-table-component'
 import axios from 'axios'
-import * as XLSX from 'xlsx'
 import { FaPlus, FaSearch, FaFileExcel } from 'react-icons/fa'
 import { API_BASE } from '../../utils/apiConfig'
 import StatusToggle from './StatusToggle'
@@ -12,11 +11,10 @@ import useMeta from '../../utils/useMeta'
 import LoadingState from '../common/LoadingState'
 import EmptyState from '../common/EmptyState'
 import PageHeader from '../common/PageHeader'
-import { useLiveTick } from "../../context/NotificationContext";
+import { useCachedQuery } from "../../utils/queryCache";
 
 
 const List = () => {
-  const liveTick = useLiveTick(["employee", "department"]);
   useMeta({
       title: 'Employees — Speshway HRMS',
       description: 'Browse and manage employee records.',
@@ -25,11 +23,35 @@ const List = () => {
       url: `${window.location.origin}/admin-dashboard/employees`,
       robots: 'noindex,nofollow'
     })
-    const [employees, setEmployees] = useState([])
-    const [empLoading, setEmpLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [debouncedQuery, setDebouncedQuery] = useState('')
+    const [page, setPage] = useState(1)
+    const [perPage, setPerPage] = useState(25)
     const [importing, setImporting] = useState(false)
+    const [exporting, setExporting] = useState(false)
     const fileInputRef = useRef(null)
+
+    // Search runs on the server; wait for typing to pause.
+    useEffect(() => {
+      const t = setTimeout(() => { setDebouncedQuery(searchQuery.trim()); setPage(1); }, 300)
+      return () => clearTimeout(t)
+    }, [searchQuery])
+
+    // Server-side pages, shown instantly from cache on revisit (refreshed in the background).
+    const queryKey = `employees:${page}:${perPage}:${debouncedQuery}`
+    const { data: pageData, loading: empLoading, mutate } = useCachedQuery(
+      queryKey,
+      async () => {
+        const res = await axios.get(`${API_BASE}/api/employee`, {
+          params: { page, limit: perPage, q: debouncedQuery || undefined },
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        })
+        if (!res.data.success) throw new Error(res.data.error || 'Failed to load employees')
+        return { rows: res.data.employees, total: res.data.total }
+      },
+      { live: ["employee", "department"] }
+    )
+    const totalRows = pageData?.total ?? 0
 
     const handleDelete = useCallback(async (id) => {
       if(!window.confirm("Are you sure you want to delete this employee?")) return;
@@ -43,7 +65,7 @@ const List = () => {
           }
         );
         if (response.data.success) {
-          setEmployees(prevEmployees => prevEmployees.filter(emp => emp._id !== id));
+          mutate(prev => prev && { ...prev, rows: prev.rows.filter(emp => emp._id !== id), total: Math.max(0, prev.total - 1) });
         }
       } catch (error) {
         if(error.response && !error.response.data.success) {
@@ -52,78 +74,53 @@ const List = () => {
           alert("Server Error in deleting employee")
         }
       }
-    }, []);
+    }, [mutate]);
 
-    useEffect(() => {
-        const fetchEmployees = async () => {
-            setEmpLoading(true)
-          try {
-            const responnse = await axios.get(
-                `${API_BASE}/api/employee?t=${Date.now()}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-                    },
-                }
-            );
-            if (responnse.data.success) {
-              let sno = 1;
-              const data = responnse.data.employees.map((emp) => {
-                 return {
-                   _id: emp._id,
-                   sno: sno++,
-                   employeeId: emp.employeeId,
-                   dep_name: emp.department?.dep_name || 'N/A',
-                   name: emp.userId?.name || 'N/A',
-                   email: emp.userId?.email || 'N/A',
-                   designation: emp.designation || 'N/A',
-                   dob: emp.dob ? formatDMY(emp.dob) : 'N/A',
-                   gender: emp.gender || 'N/A',
-                   joiningDate: emp.joiningDate ? formatOrdinal(emp.joiningDate) : 'N/A',
-                   mobilenumber: emp.mobilenumber || 'N/A',
-                   status: emp.status || 'active',
-                   onStatusChange: handleStatusChange,
-                   action: (<EmployeeButtons Id={emp._id} onDelete={handleDelete} />),
-                 };
-               });
-              setEmployees(data);
-            }
-          } catch (error) {
-            console.error("Fetch employees error:", error);
-            if(error.response) {
-              if (error.response.data && !error.response.data.success) {
-                alert(error.response.data.error);
-              } else {
-                alert(`Server Error: ${error.response.status} ${error.response.statusText}`);
-              }
-            } else if (error.request) {
-              alert("No response from server. Please check your network connection.");
-            } else {
-              alert(`Error: ${error.message}`);
-            }
-          } finally {
-            setEmpLoading(false)
-          }
-        };
-    
-        fetchEmployees();
-      }, [handleDelete, liveTick]);
+      const handleStatusChange = useCallback((employeeId, newStatus) => {
+        const serverStatus = newStatus.toLowerCase();
+        mutate(prev => prev && {
+          ...prev,
+          rows: prev.rows.map(emp => emp._id === employeeId ? { ...emp, status: serverStatus } : emp),
+        });
+      }, [mutate])
+
+      // Server rows -> table rows (formatting only).
+      const toRow = useCallback((emp, i) => ({
+        _id: emp._id,
+        sno: (page - 1) * perPage + i + 1,
+        employeeId: emp.employeeId,
+        dep_name: emp.department?.dep_name || 'N/A',
+        name: emp.userId?.name || 'N/A',
+        email: emp.userId?.email || 'N/A',
+        designation: emp.designation || 'N/A',
+        dob: emp.dob ? formatDMY(emp.dob) : 'N/A',
+        gender: emp.gender || 'N/A',
+        joiningDate: emp.joiningDate ? formatOrdinal(emp.joiningDate) : 'N/A',
+        mobilenumber: emp.mobilenumber || 'N/A',
+        status: emp.status || 'active',
+        onStatusChange: handleStatusChange,
+        action: (<EmployeeButtons Id={emp._id} onDelete={handleDelete} />),
+      }), [page, perPage, handleStatusChange, handleDelete])
+
+      const employees = useMemo(() => (pageData?.rows || []).map(toRow), [pageData, toRow])
 
       const handleFilter = useCallback((e) => {
         setSearchQuery(e.target.value);
       }, [])
 
-      const handleStatusChange = useCallback((employeeId, newStatus) => {
-        const serverStatus = newStatus.toLowerCase();
-        setEmployees(prevEmployees => 
-          prevEmployees.map(emp => 
-            emp._id === employeeId ? { ...emp, status: serverStatus } : emp
-          )
-        );
-      }, [])
-
-      const handleExport = () => {
-        const exportData = employees.map(emp => ({
+      // Export needs every employee, not just the visible page: fetch all
+      // (slim rows), and load the Excel library only when exporting.
+      const handleExport = async () => {
+        setExporting(true);
+        try {
+          const [res, XLSX] = await Promise.all([
+            // No ?page -> the full list (admin/HR).
+            axios.get(`${API_BASE}/api/employee`, {
+              headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+            }),
+            import('xlsx'),
+          ]);
+          const exportData = (res.data.employees || []).map(toRow).map(emp => ({
             "Employee ID": emp.employeeId,
             "Name": emp.name,
             "Department": emp.dep_name,
@@ -134,12 +131,16 @@ const List = () => {
             "Mobile Number": emp.mobilenumber,
             "Email": emp.email,
             "Status": emp.status
-        }));
-    
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
-        XLSX.writeFile(workbook, "employees.xlsx");
+          }));
+          const worksheet = XLSX.utils.json_to_sheet(exportData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+          XLSX.writeFile(workbook, "employees.xlsx");
+        } catch {
+          alert("Couldn't export employees. Please try again.");
+        } finally {
+          setExporting(false);
+        }
       };
 
       const handleImportChange = async (e) => {
@@ -180,11 +181,8 @@ const List = () => {
         }
       };
 
-      const filteredEmployee = useMemo(() => {
-        const q = searchQuery.trim().toLowerCase();
-        if (!q) return employees;
-        return employees.filter(emp => emp.name.toLowerCase().includes(q) || String(emp.employeeId || '').toLowerCase().includes(q));
-      }, [employees, searchQuery]);
+      // Filtering happens on the server (debounced search); the page is the result.
+      const filteredEmployee = employees;
 
       const tableStyles = useMemo(() => ({
         headRow: {
@@ -281,10 +279,11 @@ const List = () => {
               </button>
               <button
                 onClick={handleExport}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-surface-subtle bg-white rounded-lg text-ink font-medium hover:bg-surface-muted transition-colors"
+                disabled={exporting}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-surface-subtle bg-white rounded-lg text-ink font-medium hover:bg-surface-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <FaFileExcel className="text-sm" />
-                Export
+                {exporting ? 'Exporting...' : 'Export'}
               </button>
               <Link
                 to="/admin-dashboard/add-employee"
@@ -386,6 +385,23 @@ const List = () => {
           )}
         </div>
 
+        {/* Mobile pager */}
+        {totalRows > perPage && (
+          <nav className="md:hidden flex items-center justify-between gap-3 mt-4" aria-label="Employee pages">
+            <button type="button" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+              className="min-h-[44px] px-4 rounded-lg border border-surface-subtle bg-white text-ink font-medium disabled:opacity-50">
+              Previous
+            </button>
+            <span className="text-sm text-ink-muted tabular-nums">
+              Page {page} of {Math.ceil(totalRows / perPage)}
+            </span>
+            <button type="button" onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(totalRows / perPage)}
+              className="min-h-[44px] px-4 rounded-lg border border-surface-subtle bg-white text-ink font-medium disabled:opacity-50">
+              Next
+            </button>
+          </nav>
+        )}
+
         {/* Desktop Table View */}
         <div className='hidden md:block'>
           {filteredEmployee.length === 0 ? (
@@ -398,13 +414,18 @@ const List = () => {
                 columns={columns}
                 data={filteredEmployee}
                 pagination
+                paginationServer
+                paginationTotalRows={totalRows}
+                paginationDefaultPage={page}
+                paginationPerPage={perPage}
+                paginationRowsPerPageOptions={[10, 25, 50, 100]}
+                onChangePage={setPage}
+                onChangeRowsPerPage={(n, p) => { setPerPage(n); setPage(p); }}
                 responsive
                 customStyles={tableStyles}
                 paginationComponentOptions={{
                   rowsPerPageText: 'Rows per page:',
                   rangeSeparatorText: 'of',
-                  selectAllRowsItem: true,
-                  selectAllRowsItemText: 'All',
                 }}
               />
             </div>
