@@ -1,0 +1,24 @@
+# systemd unit for the Speshway HRMS API (/etc/systemd/system/speshway-api.service)
+#   sudo systemctl daemon-reload && sudo systemctl enable --now speshway-api
+[Unit]
+Description=Speshway HRMS API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=deploy
+WorkingDirectory=/var/www/speshwayhrms/server
+EnvironmentFile=/var/www/speshwayhrms/server/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=5
+# Hardening: the app can only write to its uploads folder.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/www/speshwayhrms/server/public/uploads
+
+[Install]
+WantedBy=multi-user.target

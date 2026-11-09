@@ -172,12 +172,15 @@ export const NotificationProvider = ({ children }) => {
     popup.innerHTML = `
       <div class="notification-popup-content">
         <div class="notification-popup-header">
-          <h4>${notification.title || 'New Notification'}</h4>
+          <h4></h4>
           <button class="notification-popup-close">&times;</button>
         </div>
-        <p>${notification.message || ''}</p>
+        <p></p>
       </div>
     `;
+    // Set server-provided text via textContent so it can never be parsed as HTML.
+    popup.querySelector('h4').textContent = notification.title || 'New Notification';
+    popup.querySelector('p').textContent = notification.message || '';
 
     // Add styles
     popup.style.cssText = `

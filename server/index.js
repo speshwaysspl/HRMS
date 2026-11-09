@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import compression from "compression";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.js";
 import departmentRouter from "./routes/department.js";
@@ -117,8 +118,37 @@ io.on('connection', (socket) => {
   });
 });
 
+// Security headers. The API only returns JSON and uploaded files, so its CSP
+// forbids scripts entirely: an uploaded HTML/SVG can never run code.
+app.disable("x-powered-by");
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'none'"],
+      imgSrc: ["'self'", "data:"],
+      styleSrc: ["'unsafe-inline'"],
+      frameAncestors: ["'self'", ...allowedDomains],
+      baseUri: ["'none'"],
+      formAction: ["'none'"],
+    },
+  },
+  // The web app (speshwayhrms.com) loads images/PDFs from this API's origin.
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+}));
+
 app.use(metricsMiddleware);
-app.get("/metrics", metricsEndpoint);
+// /metrics exposes internals: allow only localhost, or a matching METRICS_TOKEN.
+app.get("/metrics", (req, res, next) => {
+  const token = process.env.METRICS_TOKEN;
+  const auth = req.get("authorization") || "";
+  const local = ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress);
+  const viaProxy = Boolean(req.get("x-forwarded-for") || req.get("cf-connecting-ip"));
+  if ((token && auth === `Bearer ${token}`) || (!token && local && !viaProxy)) return next();
+  return res.status(404).end();
+}, metricsEndpoint);
 
 app.use(cors({
   origin: corsOrigin,
