@@ -29,6 +29,11 @@ const employeeSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+employeeSchema.index({ userId: 1 });
+employeeSchema.index({ status: 1 });
+employeeSchema.index({ reportsTo: 1 });
+
 const Employee = mongoose.model("Employee", employeeSchema);
 export default Employee;
 // nono4of

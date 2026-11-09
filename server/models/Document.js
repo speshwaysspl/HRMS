@@ -23,5 +23,9 @@ const documentSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+documentSchema.index({ candidateId: 1 });
+documentSchema.index({ employeeId: 1, documentType: 1 });
+
 const Document = mongoose.model("Document", documentSchema);
 export default Document;

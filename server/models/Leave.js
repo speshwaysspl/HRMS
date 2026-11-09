@@ -24,5 +24,10 @@ const leaveSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+leaveSchema.index({ employeeId: 1, startDate: -1 });
+leaveSchema.index({ status: 1, startDate: 1 });
+leaveSchema.index({ appliedAt: -1 });
+
 const Leave = mongoose.model("Leave", leaveSchema);
 export default Leave;

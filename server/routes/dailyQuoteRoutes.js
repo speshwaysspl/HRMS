@@ -11,13 +11,14 @@ import {
 } from "../controllers/dailyQuoteController.js";
 import uploadDailyQuote from "../middleware/uploadDailyQuote.js";
 import authMiddleware from "../middleware/authMiddlware.js";
+import { cacheShared } from '../middleware/cache.js'
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 const adminOrHr = authorizeRoles('admin', 'hr');
 
 // Public route to get the daily quote
-router.get("/", getDailyQuote);
+router.get("/", cacheShared("daily-quote", 60), getDailyQuote);
 
 // Protected routes (Admin operations)
 router.get("/history", authMiddleware, adminOrHr, getDailyQuotesHistory);

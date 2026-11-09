@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { createAdapter } from "@socket.io/mongo-adapter";
 import Team from "../models/Team.js";
 import Employee from "../models/Employee.js";
+import { invalidateResource } from "../middleware/cache.js";
 
 // Several server processes share one database (deployed server, local dev, …).
 // Without this, a write handled by one process only reaches sockets connected
@@ -83,7 +84,10 @@ export const liveDataMiddleware = (io) => (req, res, next) => {
   if (req.method === "POST" && /\/seen$/.test(path)) return next();
   res.on("finish", () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
-    for (const r of [resource, ...(ALSO_CHANGES[resource] || [])]) emitChanged(io, r);
+    for (const r of [resource, ...(ALSO_CHANGES[resource] || [])]) {
+      invalidateResource(r); // immediately, not coalesced: the next read must be fresh
+      emitChanged(io, r);
+    }
   });
   next();
 };

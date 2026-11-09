@@ -26,6 +26,10 @@ const stripPrivate = (_doc, ret) => { PRIVATE_FIELDS.forEach((f) => delete ret[f
 userSchema.set("toJSON", { transform: stripPrivate });
 
  
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+
 const User = mongoose.model("User", userSchema)
 export default User
  

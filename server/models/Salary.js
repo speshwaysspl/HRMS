@@ -56,5 +56,9 @@ const salarySchema = new Schema(
   { timestamps: true } // createdAt, updatedAt
 );
 
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+salarySchema.index({ employeeId: 1, year: -1, month: 1 });
+salarySchema.index({ employeeId: 1, createdAt: -1 });
+
 const Salary = mongoose.model("Salary", salarySchema);
 export default Salary;

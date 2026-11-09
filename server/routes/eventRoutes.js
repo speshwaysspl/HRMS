@@ -1,5 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddlware.js";
+import { cacheShared } from '../middleware/cache.js'
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
 import {
   getEvents,
@@ -12,7 +13,7 @@ import {
 const router = express.Router();
 const adminOrHr = authorizeRoles('admin', 'hr');
 
-router.get("/", authMiddleware, getEvents);
+router.get("/", authMiddleware, cacheShared("events", 600), getEvents);
 router.post("/seed", authMiddleware, adminOrHr, seedHolidays);
 router.post("/add", authMiddleware, adminOrHr, addEvent);
 router.put("/:id", authMiddleware, adminOrHr, updateEvent);

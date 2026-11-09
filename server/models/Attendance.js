@@ -39,6 +39,10 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
  
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+attendanceSchema.index({ userId: 1, date: 1 });
+attendanceSchema.index({ date: 1 });
+
 export default mongoose.model("Attendance", attendanceSchema);  
  
 

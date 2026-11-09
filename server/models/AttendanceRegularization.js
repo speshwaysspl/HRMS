@@ -14,5 +14,9 @@ const attendanceRegularizationSchema = new Schema(
   { timestamps: true }
 );
 
+// Indexes for the app's hot queries (non-unique: existing duplicates must not block startup).
+attendanceRegularizationSchema.index({ employeeId: 1, date: 1 });
+attendanceRegularizationSchema.index({ status: 1 });
+
 const AttendanceRegularization = mongoose.model("AttendanceRegularization", attendanceRegularizationSchema);
 export default AttendanceRegularization;
