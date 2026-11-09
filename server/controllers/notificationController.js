@@ -307,6 +307,9 @@ const createPayslipNotification = async (salary, employeeUserId, adminId, io) =>
 const getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (String(userId) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, error: 'You can only access your own notifications' });
+    }
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
 
@@ -332,7 +335,8 @@ const getUserNotifications = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    await Notification.findByIdAndUpdate(notificationId, { isRead: true });
+    // Only the recipient can mark their notification as read.
+    await Notification.updateOne({ _id: notificationId, recipientId: req.user._id }, { isRead: true });
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error('markAsRead error', err);
@@ -343,6 +347,9 @@ const markAsRead = async (req, res) => {
 const markAllAsRead = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (String(userId) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, error: 'You can only access your own notifications' });
+    }
     await Notification.updateMany({ recipientId: userId, isRead: false }, { isRead: true });
     return res.status(200).json({ success: true });
   } catch (err) {

@@ -1,6 +1,7 @@
 // backend/controllers/payslipController.js
 import Salary from "../models/Salary.js";
 import Employee from "../models/Employee.js";
+import { isAdminOrHr, forbid, myEmployee, sameId } from "../middleware/access.js";
 import User from "../models/User.js";
 import PayrollTemplate from "../models/PayrollTemplate.js";
 import Department from "../models/Department.js";
@@ -735,6 +736,10 @@ export const downloadPayslipPDF = async (req, res) => {
     
     if (!salary) {
       return res.status(404).json({ success: false, error: "Payslip not found" });
+    }
+    if (!isAdminOrHr(req.user)) {
+      const me = await myEmployee(req);
+      if (!me || !sameId(salary.employeeId, me._id)) return forbid(res);
     }
     
     generateSalaryPDF(res, salary);

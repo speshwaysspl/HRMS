@@ -10,10 +10,29 @@ import ExcelJS from "exceljs";
 import Team from "../models/Team.js";
 import { enqueueEmail } from "../utils/emailQueue.js";
 import sharp from "sharp";
+import { isAdminOrHr } from "../middleware/access.js";
 
 // ID-card photo arrives as a client-resized JPEG/PNG/WebP data URL; reject anything
 // else or oversized. Stored as a 400px WebP (~15–30 KB) so profile, menu and ID
 // card load fast. Returns "" (cleared), the data URL, or null (invalid).
+// Only admins may grant the admin role or modify an admin's account.
+// (Routes already restrict these handlers to admin/HR; this stops HR escalating.)
+const callerIsAdmin = (req) => [].concat(req.user?.role || []).includes("admin");
+
+// Fields any colleague may see; never bank, PAN/UAN, salary, DOB or phone.
+const publicEmployee = (e) => {
+  const o = typeof e.toJSON === "function" ? e.toJSON() : e;
+  return {
+    _id: o._id, employeeId: o.employeeId, designation: o.designation, department: o.department,
+    reportsTo: o.reportsTo, status: o.status, joiningDate: o.joiningDate, shiftId: o.shiftId,
+    profileImage: o.profileImage,
+    userId: o.userId && typeof o.userId === "object"
+      ? { _id: o.userId._id, name: o.userId.name, email: o.userId.email, role: o.userId.role }
+      : o.userId,
+  };
+};
+const grantsAdmin = (role) => [].concat(role || []).includes("admin");
+
 const MAX_PHOTO_CHARS = 700 * 1024;
 const sanitizeProfileImage = async (value) => {
   if (!value) return "";
@@ -52,6 +71,10 @@ const addEmployee = async (req, res) => {
     const profileImage = await sanitizeProfileImage(rawProfileImage);
     if (profileImage === null) {
       return res.status(400).json({ success: false, error: "Photo must be a JPEG or PNG under 500 KB" });
+    }
+
+    if (grantsAdmin(role) && !callerIsAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Only admins can create admin accounts" });
     }
 
     // Check if user exists
@@ -159,6 +182,10 @@ const getEmployees = async (req, res) => {
       .select("-profileImage")
       .populate("userId", { password: 0 })
       .populate("department");
+    // Colleagues get the public profile only (no PAN/UAN, salary, DOB, phone).
+    if (!isAdminOrHr(req.user)) {
+      return res.status(200).json({ success: true, employees: employees.map(publicEmployee) });
+    }
     return res.status(200).json({ success: true, employees });
   } catch (error) {
     console.error(error);
@@ -188,6 +215,13 @@ const getEmployee = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, error: "Employee not found" });
+    }
+
+    // Bank, PAN/UAN and salary details are only for admin/HR or the employee
+    // themselves; everyone else gets a basic public profile.
+    const isSelf = String(employee.userId?._id || employee.userId) === String(req.user._id);
+    if (!isSelf && !isAdminOrHr(req.user)) {
+      return res.status(200).json({ success: true, employee: publicEmployee(employee) });
     }
 
     // Get default payroll template or any template
@@ -323,6 +357,10 @@ const updateEmployee = async (req, res) => {
     const user = await User.findById(employee.userId);
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    if (!callerIsAdmin(req) && (grantsAdmin(role) || grantsAdmin(user.role))) {
+      return res.status(403).json({ success: false, error: "Only admins can grant admin access or edit admin accounts" });
     }
 
     if (employeeId && employeeId !== employee.employeeId) {

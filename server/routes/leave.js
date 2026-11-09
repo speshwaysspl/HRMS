@@ -1,10 +1,13 @@
 import express from 'express'
 import multer from 'multer'
 import authMiddleware from '../middleware/authMiddlware.js'
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
+import { publicLimiter } from '../middleware/rateLimit.js'
 import { upsertMyLeaveProof, deleteMyLeaveProof, getLeaveByActionToken, actOnLeaveByToken, cancelMyLeave, addLeave, getLeave, getLeaves, getLeaveDetail, updateLeave, deleteLeave, getEmployeeLeavesByDate } from '../controllers/leaveController.js'
 import { getLeaveBalance } from '../controllers/leaveTypeController.js'
 
 const router = express.Router()
+const adminOrHr = authorizeRoles('admin', 'hr');
 
 // Optional leave proof: one image or PDF, max 5 MB.
 const PROOF_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf']
@@ -22,18 +25,18 @@ const proofUpload = (req, res, next) =>
     })
 
 // Public: authorised by the signed token in HR's leave email.
-router.get('/email-action', getLeaveByActionToken)
-router.post('/email-action', actOnLeaveByToken)
+router.get('/email-action', publicLimiter, getLeaveByActionToken)
+router.post('/email-action', publicLimiter, actOnLeaveByToken)
 router.post('/add', authMiddleware, proofUpload, addLeave)
 router.get('/detail/:id', authMiddleware, getLeaveDetail)
 router.get('/employee', authMiddleware, getEmployeeLeavesByDate)
 router.get('/balance', authMiddleware, getLeaveBalance)
 router.get('/:id/:role', authMiddleware, getLeave)
-router.get('/', authMiddleware, getLeaves)
+router.get('/', authMiddleware, adminOrHr, getLeaves)
 router.put('/:id', authMiddleware, updateLeave)
 router.put('/mine/:id/proof', authMiddleware, proofUpload, upsertMyLeaveProof)
 router.delete('/mine/:id/proof', authMiddleware, deleteMyLeaveProof)
 router.delete('/mine/:id', authMiddleware, cancelMyLeave)
-router.delete('/:id', authMiddleware, deleteLeave)
+router.delete('/:id', authMiddleware, adminOrHr, deleteLeave)
 
 export default router

@@ -4,6 +4,7 @@ import { createLeaveRequestNotification, createLeaveStatusNotification } from '.
 import { enqueueEmail } from '../utils/emailQueue.js'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import { isAdminOrHr, hasAnyRole, forbid, sameId } from '../middleware/access.js'
 import { saveFile, deleteFile, getFileKeyFromUrl } from '../utils/fileSaver.js'
 
 // Signed link that lets HR approve/reject one leave from the email without logging in.
@@ -97,7 +98,10 @@ const addLeave = async (req, res) => {
 
 const getLeave = async (req, res) => {
     try {
-        const {id, role} = req.params;
+        const { id } = req.params;
+        // Role comes from the logged-in user, never from the URL.
+        const role = hasAnyRole(req.user, "admin", "hr", "team_lead") ? "admin" : "employee";
+        if (role !== "admin" && !sameId(id, req.user._id)) return forbid(res);
         if (!id || id === "undefined") {
              return res.status(400).json({success: false, error: "Invalid ID provided"});
         }

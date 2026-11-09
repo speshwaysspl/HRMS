@@ -9,15 +9,16 @@ import {
   verifyResetOtp,
 } from "../controllers/authController.js";
 import authMiddleware from "../middleware/authMiddlware.js";
+import { loginLimiter, passwordResetLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
 
-router.post("/login", login);
+router.post("/login", loginLimiter, login);
 router.get("/verify", authMiddleware, verify);
-router.post("/forgot-password", forgotPassword);
-router.post("/forgot-password/otp", sendResetOtp);
-router.post("/forgot-password/verify-otp", verifyResetOtp);
-router.post("/reset-password/:token", resetPassword);
+router.post("/forgot-password", passwordResetLimiter, forgotPassword);
+router.post("/forgot-password/otp", passwordResetLimiter, sendResetOtp);
+router.post("/forgot-password/verify-otp", passwordResetLimiter, verifyResetOtp);
+router.post("/reset-password/:token", passwordResetLimiter, resetPassword);
 
 export default router;

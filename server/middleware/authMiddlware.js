@@ -19,9 +19,12 @@ const verifyUser = async (req, res, next) => {
       // signed with this secret (e.g. password reset, payload { id }) keep
       // their expiry.
       decoded = jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true });
+      // Only login tokens ({ _id, role }) open a session. Password-reset and
+      // email-action tokens are signed with the same secret but must never be
+      // usable as a login.
       const isLoginToken = !!decoded._id && !!decoded.role;
-      if (!isLoginToken && decoded.exp && decoded.exp * 1000 < Date.now()) {
-        return res.status(401).json({ success: false, error: "Token expired" });
+      if (!isLoginToken) {
+        return res.status(401).json({ success: false, error: "Invalid token" });
       }
     } catch (err) {
       if (err.name === "TokenExpiredError") {

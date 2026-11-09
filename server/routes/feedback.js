@@ -1,5 +1,6 @@
 import express from 'express';
 import authMiddleware from '../middleware/authMiddlware.js';
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
 import {
   createFeedback,
   getEmployeeFeedback,
@@ -12,6 +13,7 @@ import {
 } from '../controllers/feedbackController.js';
 
 const router = express.Router();
+const adminOrHr = authorizeRoles('admin', 'hr');
 
 // Middleware to attach Socket.IO instance to request
 const attachSocketIO = (req, res, next) => {
@@ -25,8 +27,8 @@ router.get('/my-feedback', authMiddleware, getEmployeeFeedback);
 router.put('/my-feedback/:id', authMiddleware, updateEmployeeFeedback);
 
 // Admin routes (declare specific paths BEFORE parameterized ':id' to avoid route collisions)
-router.get('/admin/statistics', authMiddleware, getFeedbackStatistics);
-router.get('/', authMiddleware, getAllFeedback);
+router.get('/admin/statistics', authMiddleware, adminOrHr, getFeedbackStatistics);
+router.get('/', authMiddleware, adminOrHr, getAllFeedback);
 router.put('/:id/status', authMiddleware, attachSocketIO, updateFeedbackStatus);
 
 // Shared routes (both employee and admin can access)

@@ -1,4 +1,5 @@
 import express from "express";
+import { publicLimiter } from "../middleware/rateLimit.js";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import verifyUser from "../middleware/authMiddlware.js";
@@ -43,7 +44,7 @@ const requireAdminOrHr = (req, res, next) => {
 };
 
 // POST /api/account/deletion-request (both mobile app/web and public URL)
-router.post("/deletion-request", optionalAuth, requestAccountDeletion);
+router.post("/deletion-request", publicLimiter, optionalAuth, requestAccountDeletion);
 
 // GET /api/account/deletion-requests (Admin and HR only)
 router.get("/deletion-requests", verifyUser, requireAdminOrHr, getAccountDeletionRequests);

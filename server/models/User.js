@@ -17,7 +17,14 @@ const userSchema = new mongoose.Schema({
   resetOtpAttempts: { type: Number, default: 0 },
   fcmTokens: { type: [String], default: [] }
 })
- 
+
+// Never send secrets to clients, however a User ends up in a response
+// (populate, find, lean objects excluded). Server code can still read them.
+const PRIVATE_FIELDS = ["password", "resetPasswordToken", "resetPasswordExpire", "resetOtpHash",
+  "resetOtpExpire", "resetOtpSentAt", "resetOtpAttempts", "fcmTokens"];
+const stripPrivate = (_doc, ret) => { PRIVATE_FIELDS.forEach((f) => delete ret[f]); return ret; };
+userSchema.set("toJSON", { transform: stripPrivate });
+
  
 const User = mongoose.model("User", userSchema)
 export default User

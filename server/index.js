@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import compression from "compression";
 import helmet from "helmet";
+import { apiLimiter } from "./middleware/rateLimit.js";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.js";
 import departmentRouter from "./routes/department.js";
@@ -157,6 +158,9 @@ app.use(cors({
   exposedHeaders: ["Content-Disposition"]
 }));
 app.use(compression());
+// Behind nginx (+ Cloudflare): trust the first proxy hop for req.ip.
+app.set("trust proxy", 1);
+app.use("/api", apiLimiter);
 app.use(express.json({ limit: "1mb" })); // ID-card photo data URLs
 // Live-refresh hint after every successful write (see utils/realtime.js).
 app.use("/api", liveDataMiddleware(io));

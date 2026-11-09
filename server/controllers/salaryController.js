@@ -1,6 +1,7 @@
 // backend/controllers/salaryController.js
 import Salary from "../models/Salary.js";
 import Employee from "../models/Employee.js";
+import { isAdminOrHr, forbid, myEmployee, sameId } from "../middleware/access.js";
 import { generateSalaryPDF } from "../utils/pdfGenerator.js";
 
 const num = (v) => {
@@ -12,7 +13,10 @@ const num = (v) => {
 
 export const getSalary = async (req, res) => {
   try {
-    const { id, role } = req.params;
+    const { id } = req.params;
+    // Role comes from the logged-in user, never from the URL.
+    const role = isAdminOrHr(req.user) ? "admin" : "employee";
+    if (role !== "admin" && !sameId(id, req.user._id)) return forbid(res);
 
     let salary = [];
     if (role === "admin") {
@@ -59,6 +63,10 @@ export const downloadSalaryPDF = async (req, res) => {
     const salary = await Salary.findById(id).populate("employeeId", "employeeId name");
     if (!salary) {
       return res.status(404).json({ success: false, error: "Salary record not found" });
+    }
+    if (!isAdminOrHr(req.user)) {
+      const me = await myEmployee(req);
+      if (!me || !sameId(salary.employeeId, me._id)) return forbid(res);
     }
     generateSalaryPDF(res, salary);
   } catch (error) {
