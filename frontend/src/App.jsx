@@ -9,6 +9,8 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const LeaveAction = lazy(() => import("./pages/LeaveAction"));
+const ShortLinkRedirect = lazy(() => import("./pages/ShortLinkRedirect"));
+const ShortLinks = lazy(() => import("./components/shortLinks/ShortLinks"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unauthorized = () => <div className="flex h-screen justify-center items-center text-2xl font-bold text-red-600">Unauthorized Access</div>;
@@ -110,6 +112,8 @@ function App() {
         <Route path="/privacy-policy" element={<Privacy />} />
         <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/leave-action" element={<LeaveAction />} />
+        <Route path="/s/:code" element={<ShortLinkRedirect />} />
+        <Route path="/link-expired" element={<ShortLinkRedirect />} />
         <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
  
@@ -176,6 +180,7 @@ function App() {
           <Route path="feedback" element={<AdminFeedback />} />
           <Route path="calendar" element={<AdminCalendar />} />
           <Route path="daily-quote" element={<AdminDailyQuote />} />
+          <Route path="short-links" element={<ShortLinks />} />
           
           {/* Teams */}
           <Route path="teams" element={<TeamList />} />
@@ -252,6 +257,7 @@ function App() {
           <Route path="tracker" element={<ProfileCompletionTracker />} />
           <Route path="offer" element={<ReadyForOffer />} />
           <Route path="interviews" element={<InterviewScheduler />} />
+          <Route path="short-links" element={<ShortLinks />} />
           <Route path="settings" element={<Setting />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>

@@ -8,6 +8,7 @@ import {
   FaTachometerAlt,
   FaUsers,
   FaBullhorn,
+  FaLink,
   FaTimes,
   FaClipboardCheck,
   FaSignOutAlt,
@@ -71,6 +72,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       links: [
         { to: "/admin-dashboard/announcements", label: "Announcements", icon: <FaBullhorn /> },
         { to: "/admin-dashboard/daily-quote", label: "Daily Quote", icon: <FaBullhorn /> },
+        { to: "/admin-dashboard/short-links", label: "Short Links", icon: <FaLink /> },
       ],
     },
     {

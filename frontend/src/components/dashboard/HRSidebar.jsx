@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
+  FaLink,
   FaTimes,
   FaCogs,
   FaClipboardList,
@@ -44,6 +45,14 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
       links: [
         { to: "/hr-dashboard/profiles", label: "Candidate Profiles", icon: <FaClipboardList /> },
         { to: "/hr-dashboard/offer", label: "Ready For Offer", icon: <FaUserCheck /> },
+      ],
+    },
+    {
+      key: "communication",
+      label: "Communication",
+      icon: <FaLink />,
+      links: [
+        { to: "/hr-dashboard/short-links", label: "Short Links", icon: <FaLink /> },
       ],
     },
     {

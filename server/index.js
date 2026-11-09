@@ -4,7 +4,7 @@ import cors from "cors";
 import path from "path";
 import compression from "compression";
 import helmet from "helmet";
-import { apiLimiter } from "./middleware/rateLimit.js";
+import { apiLimiter, linkResolveLimiter } from "./middleware/rateLimit.js";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.js";
 import departmentRouter from "./routes/department.js";
@@ -54,6 +54,8 @@ import offerRouter from "./routes/offerRoutes.js";
 import appointmentRouter from "./routes/appointmentRoutes.js";
 import hrDashboardRouter from "./routes/hrDashboardRoutes.js";
 import accountDeletionRouter from "./routes/accountDeletion.js";
+import shortLinkRouter from "./routes/shortLink.js";
+import { redirectShortLink } from "./controllers/shortLinkController.js";
 import { seedHolidaysInternal } from "./controllers/eventController.js";
 import { metricsMiddleware, metricsEndpoint } from "./middleware/metrics.js";
 
@@ -214,6 +216,9 @@ app.use("/api/offers", offerRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/hr-dashboard", hrDashboardRouter);
 app.use("/api/account", accountDeletionRouter);
+app.use("/api/links", shortLinkRouter);
+// Short-link redirect (when /s/* is routed to the API, e.g. backend.speshwayhrms.com/s/abc).
+app.get("/s/:code", linkResolveLimiter, redirectShortLink);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

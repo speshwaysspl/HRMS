@@ -50,3 +50,11 @@ export const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
 });
+
+// Opening short links: a whole office may share one IP. Codes are 7 random
+// characters from a 56-symbol alphabet, so guessing is impractical anyway.
+export const linkResolveLimiter = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+});

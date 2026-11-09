@@ -26,6 +26,7 @@ import '../screens/admin/admin_announcements_screen.dart';
 import '../screens/admin/admin_attendance_report_screen.dart';
 import '../screens/admin/admin_calendar_screen.dart';
 import '../screens/admin/admin_daily_quote_screen.dart';
+import '../screens/admin/admin_short_links_screen.dart';
 import '../screens/admin/admin_departments_screen.dart';
 import '../screens/admin/admin_feedback_screen.dart';
 import '../screens/admin/admin_leave_types_screen.dart';
@@ -162,6 +163,8 @@ class AppDrawer extends StatelessWidget {
                 onTap: () => _go(context, (_) => const AdminFeedbackScreen())),
             _Item(Icons.format_quote_outlined, 'Daily Quote', color: _purple, iconBg: _purpleBg,
                 onTap: () => _go(context, (_) => const AdminDailyQuoteScreen())),
+            _Item(Icons.link, 'Short Links', color: _teal, iconBg: _tealBg,
+                onTap: () => _go(context, (_) => const AdminShortLinksScreen())),
           ],
         ),
       ];
