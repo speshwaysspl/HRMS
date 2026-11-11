@@ -1141,7 +1141,79 @@ const TeamDetail = () => {
                 ) : shownMembers.length === 0 ? (
                     <p className="rounded-2xl border border-surface-subtle bg-white px-6 py-10 text-center text-sm text-ink-muted">No members match this search or filter.</p>
                 ) : (
-                    <ul className="grid gap-3 lg:grid-cols-2">
+                    <>
+                    {/* Desktop: one comparable row per member */}
+                    <div className="hidden md:block overflow-x-auto rounded-xl border border-surface-subtle bg-white shadow-card">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="border-b border-surface-subtle text-left text-xs font-medium text-ink-muted">
+                                    <th scope="col" className="px-5 py-3 font-medium">Member</th>
+                                    <th scope="col" className="px-4 py-3 text-right font-medium">Tasks</th>
+                                    <th scope="col" className="px-4 py-3 text-right font-medium">Completed</th>
+                                    <th scope="col" className="px-4 py-3 text-right font-medium">Pending</th>
+                                    <th scope="col" className="px-4 py-3 text-right font-medium">Overdue</th>
+                                    <th scope="col" className="px-5 py-3 font-medium w-56">Progress</th>
+                                    {isAdmin && <th scope="col" className="px-3 py-3"><span className="sr-only">Actions</span></th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-surface-subtle">
+                                {shownMembers.map((stat) => {
+                                    const name = (stat.member?.userId?.name || 'Unknown').trim();
+                                    return (
+                                        <tr key={stat.member._id} onClick={() => setSelectedMember(stat)} className="group cursor-pointer transition-colors duration-150 hover:bg-surface-muted/70">
+                                            <td className="px-5 py-3">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedMember(stat); }}
+                                                    className="flex items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                                                    aria-label={`View ${name}'s tasks`}
+                                                >
+                                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-700" aria-hidden="true">
+                                                        {name.split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'}
+                                                    </span>
+                                                    <span className="min-w-0">
+                                                        <span className="block font-semibold text-ink">{name}</span>
+                                                        <span className="block text-xs text-ink-muted tabular-nums">
+                                                            {stat.member?.employeeId}{stat.member?.designation ? ` · ${stat.member.designation}` : ''}
+                                                        </span>
+                                                    </span>
+                                                </button>
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-sm font-semibold text-ink tabular-nums">{stat.totalTasks}</td>
+                                            <td className={`px-4 py-3 text-right text-sm tabular-nums ${stat.completed ? 'font-semibold text-green-700' : 'text-ink-faint'}`}>{stat.completed}</td>
+                                            <td className={`px-4 py-3 text-right text-sm tabular-nums ${stat.pending ? 'font-semibold text-amber-700' : 'text-ink-faint'}`}>{stat.pending}</td>
+                                            <td className={`px-4 py-3 text-right text-sm tabular-nums ${stat.overdue ? 'font-semibold text-red-700' : 'text-ink-faint'}`}>{stat.overdue}</td>
+                                            <td className="px-5 py-3">
+                                                {stat.totalTasks ? (
+                                                    <span className="flex items-center gap-3">
+                                                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-subtle" role="progressbar" aria-valuenow={stat.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${name} progress`}>
+                                                            <span className="block h-full rounded-full bg-green-700" style={{ width: `${stat.progress}%` }} />
+                                                        </span>
+                                                        <span className="w-10 text-right text-xs font-medium text-ink-muted tabular-nums">{stat.progress}%</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-ink-faint">No tasks yet</span>
+                                                )}
+                                            </td>
+                                            {isAdmin && (
+                                                <td className="px-3 py-3 text-right">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); removeMember(stat); }}
+                                                        className="grid h-9 w-9 place-items-center rounded-lg text-ink-faint opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition"
+                                                        title="Remove from team"
+                                                        aria-label={`Remove ${name} from team`}
+                                                    >
+                                                        <FaTrash aria-hidden="true" />
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    {/* Phone: cards */}
+                    <ul className="grid gap-3 md:hidden">
                         {shownMembers.map((stat) => {
                             const name = (stat.member?.userId?.name || 'Unknown').trim();
                             return (
@@ -1188,6 +1260,7 @@ const TeamDetail = () => {
                             );
                         })}
                     </ul>
+                    </>
                 )}
             </section>
 

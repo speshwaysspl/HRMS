@@ -146,9 +146,13 @@ const TeamAttendance = ({ teamId, members }) => {
   ];
 
   return (
-    <section className="mx-auto max-w-3xl min-w-0" aria-labelledby="rollcall-heading">
+    // Phone: one column (date, counts, list, sticky Save). Desktop: a sticky
+    // control panel on the left (date, counts, Excel, Save) and the full-width
+    // member list on the right.
+    <section className="min-w-0 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-6" aria-labelledby="rollcall-heading">
       <h3 id="rollcall-heading" className="sr-only">Mark attendance</h3>
 
+      <aside className="min-w-0 lg:sticky lg:top-4">
       {/* Date + Excel */}
       <div className="flex items-center gap-2 rounded-2xl border border-surface-subtle bg-white p-2.5 shadow-card">
         <label className="relative flex min-h-[52px] min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl p-1 hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent-500">
@@ -200,20 +204,38 @@ const TeamAttendance = ({ teamId, members }) => {
       </div>
 
       {/* Counts */}
-      <dl className="mt-3 grid grid-cols-4 gap-2">
+      <dl className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-2">
         {tiles.map(({ label, value, Icon, cls }) => (
-          <div key={label} className="flex flex-col items-center rounded-2xl border border-surface-subtle bg-white px-1 py-3 shadow-card">
+          <div key={label} className="flex flex-col items-center rounded-2xl border border-surface-subtle bg-white px-1 py-3 shadow-card lg:flex-row lg:items-center lg:gap-3 lg:px-4">
             <Icon aria-hidden="true" className={`text-lg ${cls}`} />
-            <dd className={`mt-1 text-xl font-bold tabular-nums ${cls}`}>{value}</dd>
-            <dt className="text-xs text-center text-ink-muted">{label}</dt>
+            <dd className={`mt-1 text-xl font-bold tabular-nums lg:order-last lg:mt-0 lg:ml-auto ${cls}`}>{value}</dd>
+            <dt className="text-xs text-center text-ink-muted lg:text-left lg:text-sm">{label}</dt>
           </div>
         ))}
       </dl>
       {!editable && <p className="mt-2 text-sm text-ink-muted">View only — attendance can be changed for today only.</p>}
       {editable && !isToday && <p className="mt-2 text-sm font-semibold text-amber-700">Editing a past date.</p>}
 
+      {/* Desktop: Save lives in the panel so it's always in view */}
+      {message && (
+        <p role="status" className={`mt-3 hidden text-sm lg:block ${message.type === "error" ? "text-red-700" : "text-green-700"}`}>
+          {message.text}
+        </p>
+      )}
+      {editable && members.length > 0 && (
+        <button
+          onClick={save}
+          disabled={saving || loading}
+          className="mt-4 hidden min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 text-base font-semibold text-white hover:bg-brand-800 focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none disabled:opacity-60 lg:flex"
+        >
+          <FaSave aria-hidden="true" /> {saving ? "Saving..." : marked ? "Update Attendance" : "Save Attendance"}
+        </button>
+      )}
+      </aside>
+
+      <div className="min-w-0">
       {/* Search */}
-      <div className="relative mt-3">
+      <div className="relative mt-3 lg:mt-0">
         <FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
         <input
           type="search"
@@ -295,13 +317,13 @@ const TeamAttendance = ({ teamId, members }) => {
       )}
 
       {message && (
-        <p role="status" className={`mt-3 text-sm ${message.type === "error" ? "text-red-700" : "text-green-700"}`}>
+        <p role="status" className={`mt-3 text-sm lg:hidden ${message.type === "error" ? "text-red-700" : "text-green-700"}`}>
           {message.text}
         </p>
       )}
 
       {editable && members.length > 0 && (
-        <div className="sticky bottom-0 -mx-1 mt-3 bg-gradient-to-t from-surface-muted via-surface-muted to-transparent px-1 pb-3 pt-4">
+        <div className="sticky bottom-0 -mx-1 mt-3 bg-gradient-to-t from-surface-muted via-surface-muted to-transparent px-1 pb-3 pt-4 lg:hidden">
           <button
             onClick={save}
             disabled={saving || loading}
@@ -311,6 +333,7 @@ const TeamAttendance = ({ teamId, members }) => {
           </button>
         </div>
       )}
+      </div>
     </section>
   );
 };
