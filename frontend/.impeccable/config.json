@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/components/team/TeamDetail.jsx"
+        ],
+        "createdAt": "2026-11-11T05:05:47.767Z",
+        "reason": "Claude reviewed: L634 is the active-tab underline (border-b-2 on rounded-t tab), a standard tab indicator, not a card accent"
+      }
+    ]
+  }
+}

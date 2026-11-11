@@ -146,13 +146,13 @@ const TeamAttendance = ({ teamId, members }) => {
   ];
 
   return (
-    // Phone: one column (date, counts, list, sticky Save). Desktop: a sticky
-    // control panel on the left (date, counts, Excel, Save) and the full-width
-    // member list on the right.
-    <section className="min-w-0 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-6" aria-labelledby="rollcall-heading">
+    // Phone: one column (date, counts, list, sticky Save). Desktop: the member
+    // list on the left and a sticky control panel on the right (date, counts,
+    // Excel, Save).
+    <section className="min-w-0 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" aria-labelledby="rollcall-heading">
       <h3 id="rollcall-heading" className="sr-only">Mark attendance</h3>
 
-      <aside className="min-w-0 lg:sticky lg:top-4">
+      <aside className="min-w-0 lg:sticky lg:top-4 lg:order-2">
       {/* Date + Excel */}
       <div className="flex items-center gap-2 rounded-2xl border border-surface-subtle bg-white p-2.5 shadow-card">
         <label className="relative flex min-h-[52px] min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl p-1 hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent-500">
@@ -209,7 +209,7 @@ const TeamAttendance = ({ teamId, members }) => {
           <div key={label} className="flex flex-col items-center rounded-2xl border border-surface-subtle bg-white px-1 py-3 shadow-card lg:flex-row lg:items-center lg:gap-3 lg:px-4">
             <Icon aria-hidden="true" className={`text-lg ${cls}`} />
             <dd className={`mt-1 text-xl font-bold tabular-nums lg:order-last lg:mt-0 lg:ml-auto ${cls}`}>{value}</dd>
-            <dt className="text-xs text-center text-ink-muted lg:text-left lg:text-sm">{label}</dt>
+            <dt className="text-xs text-center text-ink-muted lg:whitespace-nowrap lg:text-left lg:text-sm">{label}</dt>
           </div>
         ))}
       </dl>

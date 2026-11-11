@@ -1431,15 +1431,15 @@ const TeamDetail = () => {
                                 <p className="text-ink-muted text-sm mb-1">Total</p>
                                 <p className="text-2xl font-semibold text-ink">{selectedMember.totalTasks}</p>
                             </div>
-                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle border-b-4 border-b-accent-500">
+                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle">
                                 <p className="text-ink-muted text-sm mb-1">Completed</p>
                                 <p className="text-2xl font-semibold text-accent-600">{selectedMember.completed}</p>
                             </div>
-                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle border-b-4 border-b-amber-500">
+                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle">
                                 <p className="text-ink-muted text-sm mb-1">Pending</p>
                                 <p className="text-2xl font-semibold text-amber-600">{selectedMember.pending}</p>
                             </div>
-                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle border-b-4 border-b-red-500">
+                            <div className="text-center p-3 bg-white rounded-lg border border-surface-subtle">
                                 <p className="text-ink-muted text-sm mb-1">Overdue</p>
                                 <p className="text-2xl font-semibold text-red-600">{selectedMember.overdue}</p>
                             </div>
