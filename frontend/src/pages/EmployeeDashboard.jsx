@@ -1,4 +1,5 @@
 import {Outlet, useLocation} from 'react-router-dom'
+import { useSidebarState } from '../utils/useSidebarState'
 import useMeta from '../utils/useMeta'
 import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from 'react'
@@ -21,7 +22,7 @@ const EmployeeDashboard = () => {
   })
   // Open by default on desktop (matches the md:ml-64 breakpoint below), closed
   // on mobile so the sidebar overlay doesn't cover the screen on first load.
-  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true)
+  const [sidebarOpen, setSidebarOpen] = useSidebarState()
   const location = useLocation()
   // The Home page builds its own full mobile header (photo background +
   // hamburger + title + bell + greeting, matching the Flutter app's app

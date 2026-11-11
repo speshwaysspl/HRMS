@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { useSidebarState } from '../utils/useSidebarState'
 import useMeta from '../utils/useMeta'
 import useBackToHome from '../utils/useBackToHome'
 import { useMemo, useState, Suspense } from 'react'
@@ -20,7 +21,7 @@ const AdminDashboard = () => {
   })
   // Open by default on desktop (matches the md:ml-64 breakpoint below), closed
   // on mobile so the sidebar overlay doesn't cover the screen on first load.
-  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true)
+  const [sidebarOpen, setSidebarOpen] = useSidebarState()
   return (
     <div className='flex min-h-screen bg-surface-muted'>
       <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />

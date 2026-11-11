@@ -142,7 +142,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
           <button
             className="ml-auto text-brand-200 hover:text-white transition-colors md:hidden"
             aria-label="Close menu"
-            onClick={() => setIsOpen(false)}
+            onClick={() => { if (!isDesktop) setIsOpen(false); }}
           >
             <FaTimes size={16} />
           </button>
@@ -153,7 +153,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
             to={topLink.to}
             end={topLink.end}
             className={topLinkClass}
-            onClick={() => setIsOpen(false)}
+            onClick={() => { if (!isDesktop) setIsOpen(false); }}
           >
             <span className="text-base">{topLink.icon}</span>
             <span>{topLink.label}</span>
@@ -185,7 +185,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       {!isDesktop && isOpen && (
         <div
           className="fixed inset-0 bg-brand-950/60 z-30"
-          onClick={() => setIsOpen(false)}
+          onClick={() => { if (!isDesktop) setIsOpen(false); }}
         />
       )}
     </>
