@@ -39,7 +39,7 @@ const List = () => {
 
     // Server-side pages, shown instantly from cache on revisit (refreshed in the background).
     const queryKey = `employees:${page}:${perPage}:${debouncedQuery}`
-    const { data: pageData, loading: empLoading, mutate } = useCachedQuery(
+    const { data: pageData, loading: empLoading, refreshing: empRefreshing, mutate } = useCachedQuery(
       queryKey,
       async () => {
         const res = await axios.get(`${API_BASE}/api/employee`, {
@@ -49,7 +49,7 @@ const List = () => {
         if (!res.data.success) throw new Error(res.data.error || 'Failed to load employees')
         return { rows: res.data.employees, total: res.data.total }
       },
-      { live: ["employee", "department"] }
+      { live: ["employee", "department"], keepPrevious: true }
     )
     const totalRows = pageData?.total ?? 0
 
@@ -228,7 +228,10 @@ const List = () => {
 
 
 
-      if(empLoading) {
+      // Full-page loader only on the very first load. Searching or paging keeps
+      // the search box and current rows on screen (it used to unmount the box
+      // mid-typing, losing focus and the rest of the text).
+      if(empLoading && !pageData) {
         return (
           <div>
             <PageHeader
@@ -254,11 +257,20 @@ const List = () => {
             <div className="relative w-full sm:w-auto">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-faint" />
               <input
-                type="text"
+                type="search"
+                value={searchQuery}
+                aria-label="Search employees by name, email, employee ID or designation"
                 placeholder="Search by name or employee ID..."
-                className="w-full sm:w-80 pl-10 pr-4 py-3 border border-surface-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-colors bg-white text-ink placeholder-ink-faint"
+                className="w-full sm:w-80 pl-10 pr-10 py-3 border border-surface-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-colors bg-white text-ink placeholder-ink-faint"
                 onChange={handleFilter}
               />
+              {empRefreshing && (
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-surface-subtle border-t-accent-600 animate-spin motion-reduce:animate-none"
+                  role="status"
+                  aria-label="Searching"
+                />
+              )}
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <input

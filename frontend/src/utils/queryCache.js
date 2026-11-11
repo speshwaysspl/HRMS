@@ -12,11 +12,14 @@ export { clearQueryCache, getCached, setCached } from "./queryStore";
 /**
  * @param {string|null} key     unique cache key (include params); null skips fetching
  * @param {() => Promise<any>} fetcher  returns the data to cache
- * @param {{ live?: string[], maxAgeMs?: number }} options
+ * @param {{ live?: string[], maxAgeMs?: number, keepPrevious?: boolean }} options
  *   live: /api/<resource> names that trigger a background refetch on change
  *   maxAgeMs: cached data younger than this is shown without refetching
+ *   keepPrevious: when the key changes to one with no cache (new search text,
+ *     new page), keep showing the previous data while loading instead of
+ *     dropping back to the loading state. Use for search/paging screens.
  */
-export const useCachedQuery = (key, fetcher, { live = [], maxAgeMs = 0 } = {}) => {
+export const useCachedQuery = (key, fetcher, { live = [], maxAgeMs = 0, keepPrevious = false } = {}) => {
   const entry = key ? getEntry(key) : undefined;
   const [data, setData] = useState(entry?.data);
   const [loading, setLoading] = useState(!entry && !!key); // true only with nothing to show
@@ -26,12 +29,16 @@ export const useCachedQuery = (key, fetcher, { live = [], maxAgeMs = 0 } = {}) =
   fetcherRef.current = fetcher;
   const keyRef = useRef(key);
   keyRef.current = key;
+  const keepPreviousRef = useRef(keepPrevious);
+  keepPreviousRef.current = keepPrevious;
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const run = useCallback(async () => {
     const k = keyRef.current;
     if (!k) return;
-    const hasData = hasCached(k);
-    hasData ? setRefreshing(true) : setLoading(true);
+    const showingData = hasCached(k) || (keepPreviousRef.current && dataRef.current !== undefined);
+    showingData ? setRefreshing(true) : setLoading(true);
     try {
       const result = await fetcherRef.current();
       setCached(k, result);
@@ -53,8 +60,15 @@ export const useCachedQuery = (key, fetcher, { live = [], maxAgeMs = 0 } = {}) =
   useEffect(() => {
     if (!key) return;
     const e = getEntry(key);
-    setData(e?.data);
-    setLoading(!e);
+    if (e) {
+      setData(e.data);
+      setLoading(false);
+    } else if (keepPrevious) {
+      setRefreshing(true); // old rows stay visible; `refreshing` signals the wait
+    } else {
+      setData(undefined);
+      setLoading(true);
+    }
     setError(null);
     if (e && maxAgeMs && Date.now() - e.at < maxAgeMs) return;
     run();

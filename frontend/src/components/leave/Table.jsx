@@ -50,7 +50,7 @@ const Table = () => {
       if (!res.data.success) throw new Error(res.data.error || "Failed to load leaves");
       return { rows: res.data.leaves || [], total: res.data.total || 0, counts: res.data.statusCounts || {} };
     },
-    { live: ["leave"] }
+    { live: ["leave"], keepPrevious: true }
   );
 
   const handleDeleteSuccess = useCallback((deletedId) => {
@@ -78,7 +78,8 @@ const Table = () => {
   const pages = Math.max(1, Math.ceil(total / perPage));
   const countFor = (s) => (s === "All" ? Object.values(counts).reduce((a, b) => a + b, 0) : counts[s] || 0);
 
-  if (loading) return <LoadingState message="Loading leaves..." />;
+  // Full-page loader only on first load; searching/filtering keeps the controls mounted.
+  if (loading && !data) return <LoadingState message="Loading leaves..." />;
 
   return (
     <div className="p-4 md:p-6">
