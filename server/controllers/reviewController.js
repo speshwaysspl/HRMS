@@ -1,5 +1,6 @@
 import Review from "../models/Review.js";
 import Employee from "../models/Employee.js";
+import { managedEmployeeIds } from "../utils/managerScope.js";
 
 const isAdminOrHR = (user) => {
   const roles = Array.isArray(user.role) ? user.role : [user.role];
@@ -20,9 +21,10 @@ const createReview = async (req, res) => {
     }
 
     if (!isAdminOrHR(req.user)) {
-      const targetEmployee = await Employee.findById(employeeId);
-      if (!targetEmployee || String(targetEmployee.reportsTo) !== String(reviewerEmployee._id)) {
-        return res.status(403).json({ success: false, error: "You can only review your direct reports" });
+      // Team leads review the members of the teams they lead.
+      const managed = await managedEmployeeIds(req.user._id);
+      if (!managed.includes(String(employeeId))) {
+        return res.status(403).json({ success: false, error: "You can only review members of your team" });
       }
     }
 
@@ -156,7 +158,7 @@ const getMyDirectReports = async (req, res) => {
       }
       return res.status(404).json({ success: false, error: "Employee profile not found" });
     }
-    const reports = await Employee.find({ reportsTo: reviewerEmployee._id }).populate("userId", "name");
+    const reports = await Employee.find({ _id: { $in: await managedEmployeeIds(req.user._id) } }).populate("userId", "name");
     return res.status(200).json({ success: true, reports });
   } catch (error) {
     console.log(error.message);

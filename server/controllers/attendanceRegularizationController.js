@@ -4,6 +4,7 @@ import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import { createNotification } from "./notificationController.js";
 import { toISTDateString } from "../utils/dateTimeUtils.js";
+import { managerUserIdsFor, managedEmployeeIds } from "../utils/managerScope.js";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -44,16 +45,13 @@ const requestRegularization = async (req, res) => {
     });
     await regularization.save();
 
-    // Notify approvers: admins/HR plus the employee's reporting manager.
+    // Notify approvers: admins/HR plus the employee's managers (their team leads).
     try {
       const io = req.app.get("io");
       const approverIds = new Set(
         (await User.find({ role: { $in: ["admin", "hr"] } }).select("_id")).map((u) => u._id.toString())
       );
-      if (employee.reportsTo) {
-        const manager = await Employee.findById(employee.reportsTo).select("userId");
-        if (manager?.userId) approverIds.add(manager.userId.toString());
-      }
+      for (const id of await managerUserIdsFor(employee)) approverIds.add(id);
       const times = [requestedInTime && `in ${requestedInTime}`, requestedOutTime && `out ${requestedOutTime}`].filter(Boolean).join(", ");
       for (const recipientId of approverIds) {
         await createNotification({
@@ -98,12 +96,8 @@ const getPendingRegularizations = async (req, res) => {
 
     let query = { status: "Pending" };
     if (!isAdminOrHR) {
-      const approverEmployee = await Employee.findOne({ userId: req.user._id });
-      if (!approverEmployee) {
-        return res.status(404).json({ success: false, error: "Employee profile not found" });
-      }
-      const directReports = await Employee.find({ reportsTo: approverEmployee._id }).select("_id");
-      query.employeeId = { $in: directReports.map((e) => e._id) };
+      // Team leads see requests from the members of the teams they lead.
+      query.employeeId = { $in: await managedEmployeeIds(req.user._id) };
     }
 
     const regularizations = await AttendanceRegularization.find(query)
@@ -131,6 +125,20 @@ const decideRegularization = async (req, res) => {
     }
     if (regularization.status !== "Pending") {
       return res.status(409).json({ success: false, error: `Request already ${regularization.status.toLowerCase()}` });
+    }
+
+    // Only admin/HR or the employee's own manager (team lead) may decide, and
+    // never on their own request.
+    const roles = [].concat(req.user.role || []);
+    const owner = await Employee.findById(regularization.employeeId).select("userId").lean();
+    if (owner && String(owner.userId) === String(req.user._id)) {
+      return res.status(403).json({ success: false, error: "You can't approve your own request" });
+    }
+    if (!roles.includes("admin") && !roles.includes("hr")) {
+      const managed = await managedEmployeeIds(req.user._id);
+      if (!managed.includes(String(regularization.employeeId))) {
+        return res.status(403).json({ success: false, error: "You can only decide requests from your team" });
+      }
     }
 
     regularization.status = status;

@@ -29,11 +29,9 @@ const Edit = () => {
     salary: "",
     annualSalary: "",
     pf: "",
-    reportsTo: "",
     salaryPackage: "",
   });
   const [departments, setDepartments] = useState(null);
-  const [allEmployees, setAllEmployees] = useState([]);
   const [designationSearch, setDesignationSearch] = useState("");
   const [showDesignationSuggestions, setShowDesignationSuggestions] = useState(false);
   const [filteredDesignations, setFilteredDesignations] = useState([]);
@@ -53,24 +51,6 @@ const Edit = () => {
       setDepartments(departments);
     };
     getDepartments();
-  }, []);
-
-  useEffect(() => {
-    const getAllEmployees = async () => {
-      try {
-        const response = await axios.get(`${API_BASE}/api/employee`, {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-          },
-        });
-        if (response.data.success) {
-          setAllEmployees(response.data.employees || []);
-        }
-      } catch (error) {
-        console.error("Failed to load employees for manager list", error);
-      }
-    };
-    getAllEmployees();
   }, []);
 
   useEffect(() => {
@@ -106,7 +86,6 @@ const Edit = () => {
             salary: employee.fullSalary || "",
             annualSalary: employee.fullSalary ? String(Math.round(parseFloat(employee.fullSalary) * 12)) : "",
             pf: employee.pf !== undefined && employee.pf !== 0 ? String(employee.pf) : "",
-            reportsTo: employee.reportsTo?._id || employee.reportsTo || "",
             salaryPackage: employee.salaryPackage != null ? String(employee.salaryPackage) : "",
           }));
           setPhoto(employee.profileImage || "");
@@ -499,28 +478,6 @@ const Edit = () => {
                       {dep.dep_name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              {/* Reports To */}
-              <div>
-                <label className="block text-sm font-medium text-ink">
-                  Reports To
-                </label>
-                <select
-                  name="reportsTo"
-                  value={employee.reportsTo}
-                  onChange={handleChange}
-                  className="mt-1 p-2.5 block w-full border border-surface-subtle rounded-lg text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                >
-                  <option value="">No Manager</option>
-                  {allEmployees
-                    .filter((emp) => emp._id !== id)
-                    .map((emp) => (
-                      <option key={emp._id} value={emp._id}>
-                        {emp.userId?.name || emp.employeeId} ({emp.employeeId})
-                      </option>
-                    ))}
                 </select>
               </div>
 
