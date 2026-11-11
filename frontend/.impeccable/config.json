@@ -11,6 +11,12 @@
         ],
         "createdAt": "2026-11-11T05:05:47.767Z",
         "reason": "Claude reviewed: L634 is the active-tab underline (border-b-2 on rounded-t tab), a standard tab indicator, not a card accent"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-11T05:16:23.360Z",
+        "reason": "Claude reviewed: Inter is the established typeface of the whole HRMS app (index.css, every screen); Operate-mode product UI, changing it is a brand decision outside these tasks"
       }
     ]
   }

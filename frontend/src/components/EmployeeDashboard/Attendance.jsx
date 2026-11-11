@@ -23,6 +23,7 @@ import {
   FiLock,
 } from "react-icons/fi";
 import { useLiveTick } from "../../context/NotificationContext";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 const OFFLINE_PUNCH_KEY = "offlinePunch";
 
@@ -63,7 +64,7 @@ const MiniStat = ({ icon: Icon, label, value, sub }) => (
   </div>
 );
 
-const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onClick, disabled }) => (
+const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onClick, disabled, done, doneLabel }) => (
   <div className="bg-white rounded-xl border border-surface-subtle shadow-card p-4 sm:p-5 flex flex-col items-center text-center">
     <span
       className={`flex h-14 w-14 items-center justify-center rounded-full mb-3 ${
@@ -77,15 +78,25 @@ const CheckCard = ({ icon: Icon, tone, title, subtitle, time, buttonLabel, onCli
     <p className="font-mono text-xl sm:text-2xl font-semibold text-ink mt-3 sm:mt-4" aria-live="polite">
       {time || "--:-- --"}
     </p>
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`mt-4 sm:mt-5 w-full min-h-[44px] py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-        tone === "out" ? "bg-red-500 hover:bg-red-600" : "bg-accent-600 hover:bg-accent-700"
-      }`}
-    >
-      {buttonLabel}
-    </button>
+    {done ? (
+      // Already recorded: a clear "done" state instead of a faded button that looks clickable.
+      <p
+        role="status"
+        className="mt-4 sm:mt-5 w-full min-h-[44px] py-3 rounded-lg bg-green-50 text-green-800 font-semibold text-sm inline-flex items-center justify-center gap-2"
+      >
+        <FiCheckCircle aria-hidden="true" /> {doneLabel}
+      </p>
+    ) : (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`mt-4 sm:mt-5 w-full min-h-[44px] py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          tone === "out" ? "bg-red-500 hover:bg-red-600" : "bg-accent-600 hover:bg-accent-700"
+        }`}
+      >
+        {buttonLabel}
+      </button>
+    )}
   </div>
 );
 
@@ -102,6 +113,8 @@ const Attendance = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  // "inTime" | "outTime" while the check-in/out confirmation is open.
+  const [confirmType, setConfirmType] = useState(null);
   const [accLoading, setAccLoading] = useState(false);
   const [todayRecord, setTodayRecord] = useState(null);
   const [banner, setBanner] = useState(null); // { type: "error" | "success", message }
@@ -655,8 +668,10 @@ const Attendance = () => {
               subtitle="Mark your arrival to start the day"
               time={formatTime12(tracker.inTime)}
               buttonLabel="Check In"
-              onClick={() => handleSubmit("inTime")}
+              onClick={() => setConfirmType("inTime")}
               disabled={!!todayRecord?.inTime || loading || !tracker.workMode}
+              done={!!todayRecord?.inTime}
+              doneLabel="Checked in"
             />
             <CheckCard
               icon={FiLogOut}
@@ -665,8 +680,10 @@ const Attendance = () => {
               subtitle="Mark your departure to end the day"
               time={formatTime12(tracker.outTime)}
               buttonLabel="Check Out"
-              onClick={() => handleSubmit("outTime")}
+              onClick={() => setConfirmType("outTime")}
               disabled={!todayRecord?.inTime || !!todayRecord?.outTime || loading}
+              done={!!todayRecord?.outTime}
+              doneLabel="Checked out"
             />
           </div>
         </div>
@@ -788,6 +805,44 @@ const Attendance = () => {
           Tip: Make sure to enable location access in your browser for accurate attendance tracking.
         </div>
       </div>
+
+      {/* Confirm before recording a check-in / check-out */}
+      <ConfirmDialog
+        open={!!confirmType}
+        icon={confirmType === "outTime" ? FiLogOut : FiLogIn}
+        tone={confirmType === "outTime" ? "danger" : "primary"}
+        title={confirmType === "outTime" ? "Check out now?" : "Check in now?"}
+        confirmLabel={confirmType === "outTime" ? "Yes, check out" : "Yes, check in"}
+        busy={loading}
+        onCancel={() => setConfirmType(null)}
+        onConfirm={async () => {
+          const type = confirmType;
+          setConfirmType(null);
+          await handleSubmit(type);
+        }}
+      >
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+          <dt>Time</dt>
+          <dd className="font-semibold text-ink tabular-nums">{formatTime12(getCurrentTime())}</dd>
+          <dt>Work mode</dt>
+          <dd className="font-medium text-ink">{tracker.workMode === "home" ? "Home" : "Office"}</dd>
+          {tracker.area && (
+            <>
+              <dt>Location</dt>
+              <dd className="font-medium text-ink">{tracker.area}</dd>
+            </>
+          )}
+          {confirmType === "outTime" && (
+            <>
+              <dt>Worked today</dt>
+              <dd className="font-medium text-ink tabular-nums">{formatDuration(workingMinutes)}</dd>
+            </>
+          )}
+        </dl>
+        {confirmType === "outTime" && (
+          <p className="mt-3 text-xs">You can't check in again today after checking out.</p>
+        )}
+      </ConfirmDialog>
     </div>
   );
 };

@@ -121,7 +121,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
             <button
               className="text-brand-200 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors md:hidden"
               aria-label="Close menu"
-              onClick={() => { if (!isDesktop) setIsOpen(false); }}
+              onClick={() => setIsOpen(false)}
             >
               <FaTimes size={16} />
             </button>
@@ -133,7 +133,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
             to={topLink.to}
             end={topLink.end}
             className={topLinkClass}
-            onClick={() => { if (!isDesktop) setIsOpen(false); }}
+            onClick={() => setIsOpen(false)}
           >
             <span className="text-base">{topLink.icon}</span>
             <span>{topLink.label}</span>
@@ -174,7 +174,7 @@ const HRSidebar = ({ isOpen, setIsOpen }) => {
       {!isDesktop && isOpen && (
         <div
           className="fixed inset-0 bg-brand-950/60 z-30"
-          onClick={() => { if (!isDesktop) setIsOpen(false); }}
+          onClick={() => setIsOpen(false)}
         />
       )}
     </>

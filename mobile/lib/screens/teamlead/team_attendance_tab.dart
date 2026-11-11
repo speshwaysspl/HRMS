@@ -11,6 +11,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/month_picker_dialog.dart';
 import 'team_palette.dart';
+import '../../widgets/skeleton_loader.dart';
 
 /// Month + year picker (no day). Returns the first day of the chosen month.
 Future<DateTime?> showMonthPicker(BuildContext context, {DateTime? initial}) =>
@@ -227,7 +228,10 @@ class _TeamAttendanceTabState extends State<TeamAttendanceTab>
 
     Widget body;
     if (_loading) {
-      body = const Center(child: CircularProgressIndicator());
+      body = ListView(
+        padding: EdgeInsets.all(pad),
+        children: const [SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile(), SkeletonListTile()],
+      );
     } else if (_error != null) {
       body = buildErrorState(_error!, _load);
     } else if (members.isEmpty) {

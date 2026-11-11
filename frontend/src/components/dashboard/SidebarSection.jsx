@@ -63,8 +63,9 @@ const SidebarSection = ({ icon, label, links, defaultOpen = false, isDesktop, se
                 key={idx}
                 to={link.to}
                 end={link.end}
-                // Close the overlay after a tap on phones; desktop keeps the sidebar as it is.
-                onClick={() => { if (!isDesktop) setIsOpen(false); }}
+                // Picking a page closes the sidebar (desktop and phone); the
+                // closed state is remembered across refreshes (useSidebarState).
+                onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 py-2 px-3 rounded-lg text-sm transition-colors duration-150 ${
                     isActive

@@ -32,10 +32,99 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
   bool _loading = true;
   Object? _error;
 
+  // Same filters as the web list: status chips + search.
+  String _status = 'all'; // all | published | scheduled
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  static bool _isScheduled(Map a) => a['published'] == false;
+
+  int get _scheduledCount => _items.where(_isScheduled).length;
+
+  /// Filtered list: scheduled first (soonest on top), then newest published.
+  List<Map<String, dynamic>> get _visible {
+    final q = _query.trim().toLowerCase();
+    final list = _items.where((a) {
+      final s = _isScheduled(a);
+      if (_status == 'published' && s) return false;
+      if (_status == 'scheduled' && !s) return false;
+      if (q.isEmpty) return true;
+      return (a['title']?.toString().toLowerCase().contains(q) ?? false) ||
+          (a['description']?.toString().toLowerCase().contains(q) ?? false);
+    }).toList();
+    DateTime when(Map a) =>
+        DateTime.tryParse((_isScheduled(a) ? a['scheduledAt'] : (a['publishedAt'] ?? a['createdAt']))?.toString() ?? '') ??
+        DateTime(1970);
+    list.sort((x, y) {
+      final sx = _isScheduled(x), sy = _isScheduled(y);
+      if (sx != sy) return sx ? -1 : 1;
+      return sx ? when(x).compareTo(when(y)) : when(y).compareTo(when(x));
+    });
+    return list;
+  }
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Widget _filterBar(BuildContext context) {
+    final tabs = [
+      ('all', 'All', _items.length),
+      ('published', 'Published', _items.length - _scheduledCount),
+      ('scheduled', 'Scheduled', _scheduledCount),
+    ];
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.h(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (id, label, count) in tabs)
+                  Padding(
+                    padding: EdgeInsets.only(right: context.w(8)),
+                    child: ChoiceChip(
+                      label: Text('$label ($count)'),
+                      selected: _status == id,
+                      onSelected: (_) => setState(() => _status = id),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(height: context.h(10)),
+          TextField(
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _query = v),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Search title or message',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _searchCtrl.clear();
+                        _query = '';
+                      }),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _load() async {
@@ -124,7 +213,10 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
               Text('Who has seen it', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink)),
               Text(a['title']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.inkMuted)),
               if (snap.connectionState != ConnectionState.done)
-                const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Column(children: [SkeletonListTile(), SkeletonListTile(), SkeletonListTile()]),
+                )
               else if (snap.hasError)
                 Padding(padding: const EdgeInsets.all(16), child: Text("Couldn't load who has seen it.", style: TextStyle(color: AppColors.danger)))
               else ...[
@@ -198,8 +290,9 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
     );
     if (ok != true) return;
     try {
+      // Like the web: deletes what the current filter shows.
       final skipped = await _service.deleteAnnouncements(
-        _items.map((a) => a['_id'].toString()).toList(),
+        _visible.map((a) => a['_id'].toString()).toList(),
       );
       if (mounted && skipped > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -263,11 +356,34 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
                         ),
                       ],
                     )
-                  : ListView.builder(
+                  : Builder(builder: (context) {
+                      final visible = _visible;
+                      return ListView.builder(
                       padding: EdgeInsets.all(context.w(16)),
-                      itemCount: _items.length,
+                      // Row 0 is the filter bar; an empty filter result shows a message row.
+                      itemCount: 1 + (visible.isEmpty ? 1 : visible.length),
                       itemBuilder: (context, i) {
-                        final a = _items[i];
+                        if (i == 0) return _filterBar(context);
+                        if (visible.isEmpty) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(vertical: context.h(40)),
+                            child: Column(
+                              children: [
+                                Text('No announcements match',
+                                    style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink, fontSize: context.sp(14))),
+                                TextButton(
+                                  onPressed: () => setState(() {
+                                    _status = 'all';
+                                    _searchCtrl.clear();
+                                    _query = '';
+                                  }),
+                                  child: const Text('Show all announcements'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        final a = visible[i - 1];
                         final scheduled = a['published'] == false;
                         String date = '';
                         try {
@@ -328,7 +444,8 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> wit
                           ]),
                         );
                       },
-                    ),
+                    );
+                    }),
             ),
     );
   }

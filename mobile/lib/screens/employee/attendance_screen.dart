@@ -245,11 +245,48 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     });
   }
 
+  /// Same confirmation as the web before recording a check-in / check-out.
+  Future<bool> _confirmPunch({required bool checkIn}) async {
+    final time = DateFormat('h:mm a').format(DateTime.now());
+    final mode = _workMode == 'home' ? 'Home' : 'Office';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(checkIn ? Icons.login_rounded : Icons.logout_rounded,
+            color: checkIn ? AppColors.accent500 : AppColors.danger),
+        title: Text(checkIn ? 'Check in now?' : 'Check out now?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Time: $time'),
+            Text('Work mode: $mode'),
+            if (!checkIn) ...[
+              const SizedBox(height: 8),
+              Text("You can't check in again today after checking out.",
+                  style: TextStyle(color: AppColors.inkMuted, fontSize: 13)),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            style: checkIn ? null : FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(checkIn ? 'Yes, check in' : 'Yes, check out'),
+          ),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
   Future<void> _checkIn() async {
     if (_workMode == null) {
       _toast('Please select a work mode before checking in.', isError: true);
       return;
     }
+    if (!await _confirmPunch(checkIn: true) || !mounted) return;
     setState(() => _submitting = true);
     try {
       final loc = await _punchLocation();
@@ -289,6 +326,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   Future<void> _checkOut() async {
+    if (!await _confirmPunch(checkIn: false) || !mounted) return;
     setState(() => _submitting = true);
     try {
       final loc = await _punchLocation();
