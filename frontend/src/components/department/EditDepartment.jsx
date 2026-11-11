@@ -1,4 +1,5 @@
 import axios from "axios";
+import LoadingState from "../common/LoadingState";
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -96,9 +97,7 @@ const EditDepartment = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-muted px-4">
       {depLoading ? (
-        <div className="flex justify-center items-center">
-          <div className="w-12 h-12 border-4 border-accent-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <LoadingState message="Loading department…" variant="form" rows={2} className="w-full max-w-md" />
       ) : (
         <motion.div
           className="p-6 md:p-8 w-full max-w-md rounded-xl shadow-panel bg-white border border-surface-subtle"

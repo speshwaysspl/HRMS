@@ -192,7 +192,7 @@ const Detail = () => {
           </div>
         </div>
       ) : (
-        <LoadingState message="Loading leave details..." />
+        <LoadingState message="Loading leave details..." variant="detail" />
       )}
     </>
   );

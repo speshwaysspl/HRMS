@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import LoadingState from "../common/LoadingState";
 import { useSocketEvent } from "../../context/NotificationContext";
 import axios from "axios";
 import { API_BASE } from "../../utils/apiConfig";
@@ -248,7 +249,7 @@ const TeamAttendance = ({ teamId, members }) => {
       </div>
 
       {loading ? (
-        <div className="mt-3 rounded-2xl bg-white px-5 py-12 text-center text-sm text-ink-muted shadow-card">Loading attendance...</div>
+        <LoadingState message="Loading attendance…" rows={6} className="mt-3" />
       ) : members.length === 0 ? (
         <div className="mt-3 rounded-2xl bg-white px-6 py-14 text-center shadow-card">
           <p className="font-semibold text-ink">No members in this team</p>

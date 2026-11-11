@@ -30,7 +30,7 @@ const HRDashboard = () => {
         <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
         <div className="p-2 sm:p-4 md:p-6 max-w-[1800px] mx-auto w-full">
           <PageBackButton desktopOnly />
-          <Suspense fallback={<LoadingState message="Loading…" />}>
+          <Suspense fallback={<LoadingState message="Loading page…" className="p-4 sm:p-6" />}>
             <Outlet />
           </Suspense>
         </div>

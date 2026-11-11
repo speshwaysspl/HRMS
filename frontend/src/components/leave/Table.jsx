@@ -79,7 +79,7 @@ const Table = () => {
   const countFor = (s) => (s === "All" ? Object.values(counts).reduce((a, b) => a + b, 0) : counts[s] || 0);
 
   // Full-page loader only on first load; searching/filtering keeps the controls mounted.
-  if (loading && !data) return <LoadingState message="Loading leaves..." />;
+  if (loading && !data) return <LoadingState message="Loading leaves..." variant="table" columns={7} rows={8} />;
 
   return (
     <div className="p-4 md:p-6">

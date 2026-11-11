@@ -309,7 +309,7 @@ const HRSummary = () => {
   if (loading && !kpis) {
     return (
       <div className="flex flex-col justify-center items-center h-[70vh]">
-        <LoadingState message="Analyzing command center records…" />
+        <LoadingState message="Analyzing command center records…" variant="dashboard" />
       </div>
     );
   }

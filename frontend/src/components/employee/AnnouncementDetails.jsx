@@ -50,7 +50,7 @@ const EmployeeAnnouncementDetails = () => {
     fetchAnnouncement();
   }, [id]);
 
-  if (loading) return <LoadingState message="Loading announcement..." />;
+  if (loading) return <LoadingState message="Loading announcement..." variant="detail" />;
   if (error) return <ErrorState title="Failed to load announcement" message={error} />;
   if (!announcement) return null;
 

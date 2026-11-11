@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Bone } from "../common/LoadingState";
 import axios from "axios";
 import { API_BASE, getAuthHeaders } from "../../utils/apiConfig";
 import { 
@@ -485,9 +486,11 @@ const AdminDailyQuote = () => {
 
             <div className="p-6 flex-grow flex flex-col justify-between min-h-[300px]">
               {loadingCurrent ? (
-                <div className="space-y-4 w-full flex flex-col items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 text-accent-600 animate-spin" />
-                  <p className="text-sm text-ink-muted font-medium animate-pulse">Loading live quote data...</p>
+                <div role="status" aria-busy="true" className="w-full space-y-4">
+                  <span className="sr-only">Loading today's quote…</span>
+                  <Bone className="aspect-video w-full rounded-xl" />
+                  <Bone className="h-4 w-1/2" />
+                  <Bone className="h-4 w-1/3" />
                 </div>
               ) : currentQuote ? (
                 <div className="space-y-6 flex-grow flex flex-col justify-between">
@@ -924,9 +927,11 @@ const AdminDailyQuote = () => {
         )}
 
         {loadingHistory ? (
-          <div className="space-y-4 w-full flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 text-accent-600 animate-spin" />
-            <p className="text-sm text-ink-muted font-medium animate-pulse">Loading gallery records...</p>
+          <div role="status" aria-busy="true" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <span className="sr-only">Loading past quotes…</span>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Bone key={i} className="aspect-[4/5] w-full rounded-xl" />
+            ))}
           </div>
         ) : filteredHistory.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

@@ -132,7 +132,7 @@ const DocumentVerificationList = () => {
       {/* Candidate Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
-          <LoadingState message="Loading documents..." />
+          <LoadingState message="Loading documents..." variant="table" columns={5} />
         ) : filteredGroups.length === 0 ? (
           <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-surface-subtle bg-white">
             <EmptyState title="No candidates found" message="No onboarding documents match the selected filters." />

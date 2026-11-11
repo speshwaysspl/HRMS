@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Bone } from "../components/common/LoadingState";
 import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 import { API_BASE } from "../utils/apiConfig";
@@ -69,7 +70,13 @@ const LeaveAction = () => {
           {loadError ? (
             <p role="alert" className="text-sm text-red-700">{loadError}</p>
           ) : !leave ? (
-            <p className="text-sm text-ink-muted">Loading leave request...</p>
+            <div role="status" aria-busy="true" className="space-y-3">
+              <span className="sr-only">Loading leave request…</span>
+              <Bone className="h-5 w-2/3" />
+              <Bone className="h-4 w-1/2" />
+              <Bone className="h-4 w-3/5" />
+              <Bone className="mt-4 h-11 w-full rounded-lg" />
+            </div>
           ) : done ? (
             <div role="status" className="text-center py-6">
               <p className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${STATUS_STYLE[done]}`}>{done}</p>

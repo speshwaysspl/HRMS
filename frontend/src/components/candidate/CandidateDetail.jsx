@@ -123,7 +123,7 @@ const CandidateDetail = () => {
   };
 
   if (cLoading || !candidate) {
-    return <LoadingState message="Loading candidate details…" />;
+    return <LoadingState message="Loading candidate details…" variant="detail" />;
   }
 
   return (

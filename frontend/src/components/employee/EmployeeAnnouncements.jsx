@@ -53,7 +53,7 @@ const EmployeeAnnouncements = () => {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
-      <LoadingState message="Loading announcements..." />
+      <LoadingState message="Loading announcements..." variant="cards" rows={6} />
     </div>
   );
   if (error) return (

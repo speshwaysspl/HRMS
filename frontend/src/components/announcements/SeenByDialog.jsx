@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import LoadingState from "../common/LoadingState";
 import axios from "axios";
 import { FiX } from "react-icons/fi";
 import { API_BASE } from "../../utils/apiConfig";
@@ -63,7 +64,7 @@ const SeenByDialog = ({ announcement, onClose }) => {
         </div>
         <div className="grid gap-5 p-5 sm:grid-cols-2">
           {!data ? (
-            <p className="text-sm text-ink-muted sm:col-span-2">Loading…</p>
+            <LoadingState message="Loading who has seen this…" rows={4} className="sm:col-span-2" />
           ) : data.error ? (
             <p role="alert" className="text-sm text-red-600 sm:col-span-2">Couldn't load who has seen it. Please try again.</p>
           ) : (

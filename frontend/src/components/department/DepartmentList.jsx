@@ -99,7 +99,7 @@ const DepartmentList = () => {
         />
 
         {depLoading ? (
-          <LoadingState message="Loading departments…" />
+          <LoadingState message="Loading departments…" variant="table" columns={4} />
         ) : filteredDepartments.length === 0 ? (
           <EmptyState icon={FaBuilding} title="No departments found" />
         ) : (

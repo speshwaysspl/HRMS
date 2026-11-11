@@ -56,7 +56,7 @@ const Profile = () => {
       <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
-            <LoadingState message="Loading your profile…" />
+            <LoadingState message="Loading your profile…" variant="detail" />
           </div>
         </div>
       </div>

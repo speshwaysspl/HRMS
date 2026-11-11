@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { PageSkeleton } from "../common/LoadingState";
 import { useSocketEvent } from "../../context/NotificationContext";
 import axios from "axios";
 
@@ -127,7 +128,7 @@ const TaskList = () => {
     return null;
   };
 
-  if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
+  if (loading) return <PageSkeleton variant="table" message="Loading tasks…" />;
 
   return (
     <motion.div

@@ -164,7 +164,7 @@ const CandidateDashboard = () => {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-surface-muted text-ink">
-        <LoadingState message="Loading your onboarding portal…" />
+        <LoadingState message="Loading your onboarding portal…" variant="detail" />
       </div>
     );
   }

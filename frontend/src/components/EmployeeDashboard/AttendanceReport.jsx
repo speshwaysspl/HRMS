@@ -270,7 +270,7 @@ const AttendanceReport = () => {
       </div>
     ) : null;
 
-  if (loading) return <LoadingState message="Loading attendance..." />;
+  if (loading) return <LoadingState message="Loading attendance..." variant="table" columns={5} />;
 
   const isSpecialStatus = attendanceStatus === "Leave" || attendanceStatus.startsWith("Work from Home");
 
@@ -389,7 +389,7 @@ const AttendanceReport = () => {
         {viewMode === "monthly" && (
           <>
             {monthlyLoading ? (
-              <LoadingState message="Loading monthly attendance..." />
+              <LoadingState message="Loading monthly attendance..." variant="table" columns={5} />
             ) : !selectedMonth ? (
               <div className="bg-white shadow-card rounded-xl border border-surface-subtle">
                 <EmptyState

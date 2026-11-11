@@ -36,7 +36,7 @@ const EmployeeDashboard = () => {
         <Navbar onMenuClick={toggleSidebar} variant="employee" hideMobileBar={isHome} />
         <div className='p-4 md:p-6 pb-24 md:pb-6 min-h-screen max-w-[1800px] mx-auto w-full'>
           <PageBackButton desktopOnly />
-          <Suspense fallback={<LoadingState message="Loading…" />}>
+          <Suspense fallback={<LoadingState message="Loading page…" className="p-4 sm:p-6" />}>
             <Outlet context={{ toggleSidebar }} />
           </Suspense>
         </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import LoadingState, { PageSkeleton } from "../common/LoadingState";
 import { proofsOf } from "../task/WorkProofField";
 import { useSocketEvent } from "../../context/NotificationContext";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -537,7 +538,7 @@ const TeamDetail = () => {
     ? tasks.filter(t => !t.isDeleted && t.assignedTo && t.assignedTo._id === selectedMember.member._id)
     : [];
 
-  if (loading) return <div className="p-6 text-ink-muted">Loading...</div>;
+  if (loading) return <PageSkeleton variant="table" message="Loading team…" />;
   if (!team) return <div className="p-6 text-ink-muted">Team not found</div>;
 
   const canTakeAttendance =
@@ -2094,10 +2095,7 @@ const TeamDetail = () => {
               <button onClick={() => setDocsModal({ open: false, documents: [], employeeName: "" })} className="text-ink-faint hover:text-ink text-2xl font-bold transition-colors">&times;</button>
             </div>
             {docsLoading ? (
-              <div className="p-8 text-center text-ink-muted">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-600 mx-auto mb-2"></div>
-                  Loading...
-              </div>
+              <LoadingState message="Loading documents…" rows={3} />
             ) : docsModal.documents.length === 0 ? (
               <div className="p-8 text-center text-ink-muted bg-surface-muted rounded-lg">No documents uploaded</div>
             ) : (

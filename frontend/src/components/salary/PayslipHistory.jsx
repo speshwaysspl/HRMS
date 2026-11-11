@@ -368,7 +368,7 @@ const PayslipHistory = () => {
         </div>
         
         {loading ? (
-          <LoadingState message="Loading payslips..." />
+          <LoadingState message="Loading payslips..." variant="table" columns={7} rows={8} />
         ) : filteredPayslips.length === 0 ? (
           <EmptyState title="No payslips found" message="Try adjusting your filters or search criteria." />
         ) : (

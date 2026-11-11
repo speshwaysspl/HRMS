@@ -23,6 +23,7 @@ const EmployeeDashboard = lazy(() => import("./pages/EmployeeDashboard"));
 // Utils
 import PrivateRoutes from "./utils/PrivateRoutes";
 import RoleBaseRoutes from "./utils/RoleBaseRoutes";
+import { PageSkeleton } from "./components/common/LoadingState";
 
 // Team & Task Components (lazy-loaded)
 const TeamList = lazy(() => import("./components/team/TeamList"));
@@ -103,7 +104,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="p-6 text-center text-gray-600">Loading...</div>}>
+      <Suspense fallback={<PageSkeleton />}>
       <Routes>
         {/* Home Page */}
         <Route path="/" element={<Home />} />

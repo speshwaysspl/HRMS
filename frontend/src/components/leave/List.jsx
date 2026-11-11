@@ -163,7 +163,7 @@ const List = () => {
   });
 
   if (!leaves) {
-    return <LoadingState message="Loading leaves..." />;
+    return <LoadingState message="Loading leaves..." variant="table" columns={6} />;
   }
 
   const statusBadgeClass = (status) =>

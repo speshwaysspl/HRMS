@@ -77,7 +77,7 @@ const EmployeeCalendar = () => {
     setSelected(null);
   };
 
-  if (loading) return <LoadingState message="Loading calendar..." />;
+  if (loading) return <LoadingState message="Loading calendar..." variant="cards" rows={6} />;
   if (error) return <ErrorState title="Couldn't load the calendar" onRetry={load} />;
 
   const daysInMonth = new Date(Date.UTC(month.y, month.m, 0)).getUTCDate();

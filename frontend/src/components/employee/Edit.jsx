@@ -559,7 +559,7 @@ const Edit = () => {
         </div>
       ) : (
         <div className="max-w-4xl mx-auto mt-4 md:mt-10 bg-white p-4 md:p-8 rounded-xl shadow-card border border-surface-subtle">
-          <LoadingState message="Loading employee details..." />
+          <LoadingState message="Loading employee details..." variant="form" rows={10} />
         </div>
       )}
     </>

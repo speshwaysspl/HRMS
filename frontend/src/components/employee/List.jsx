@@ -239,7 +239,7 @@ const List = () => {
               subtitle="Efficiently manage your workforce with our comprehensive employee management system"
             />
             <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
-              <LoadingState message="Please wait while we fetch the employee data..." />
+              <LoadingState message="Please wait while we fetch the employee data..." variant="table" columns={6} rows={8} />
             </div>
           </div>
         )

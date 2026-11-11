@@ -58,7 +58,7 @@ const View = () => {
       <div className='min-h-screen bg-surface-muted p-4 md:p-6'>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-card border border-surface-subtle p-8 md:p-12">
-            <LoadingState message="Please wait while we fetch the employee information..." />
+            <LoadingState message="Please wait while we fetch the employee information..." variant="detail" />
           </div>
         </div>
       </div>
