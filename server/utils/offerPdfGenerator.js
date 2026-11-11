@@ -3,6 +3,7 @@ import numberToWords from "number-to-words";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { SALARY_SPLIT } from "./salarySplit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,13 +41,17 @@ const calculateSalaryBreakdown = (totalGross) => {
   const annualGross = Number(totalGross || 650000);
   const monthlyGross = Math.floor(annualGross / 12);
 
-  const basicAnnual = Math.round(annualGross * 0.3789538);
+  // Same split as payslips (utils/salarySplit.js): shares of the gross left
+  // after the fixed conveyance + medical. Special allowance takes the rest.
+  const remainingAnnual = annualGross - (SALARY_SPLIT.conveyance + SALARY_SPLIT.medical) * 12;
+
+  const basicAnnual = Math.round(remainingAnnual * SALARY_SPLIT.basic);
   const basicMonthly = Math.floor(basicAnnual / 12);
 
-  const daAnnual = Math.round(annualGross * 0.2084246);
+  const daAnnual = Math.round(remainingAnnual * SALARY_SPLIT.da);
   const daMonthly = Math.round(daAnnual / 12);
 
-  const hraAnnual = Math.round(annualGross * 0.1894769);
+  const hraAnnual = Math.round(remainingAnnual * SALARY_SPLIT.hra);
   const hraMonthly = Math.round(hraAnnual / 12);
 
   const conveyanceAnnual = 19200;

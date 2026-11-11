@@ -1,3 +1,4 @@
+import { SALARY_SPLIT } from "../../utils/salarySplit";
 // src/components/salary/PayrollTemplateManager.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
@@ -188,12 +189,12 @@ const PayrollTemplateManager = () => {
                 const fullSalary = parseFloat(employeeDetails.fullSalary);
                 if (!isNaN(fullSalary) && fullSalary > 2850) {
                   const remaining = fullSalary - 2850;
-                  updated.basicSalary = (remaining * 0.40).toFixed(2);
-                  updated.da = (remaining * 0.22).toFixed(2);
-                  updated.hra = (remaining * 0.20).toFixed(2);
+                  updated.basicSalary = (remaining * SALARY_SPLIT.basic).toFixed(2);
+                  updated.da = (remaining * SALARY_SPLIT.da).toFixed(2);
+                  updated.hra = (remaining * SALARY_SPLIT.hra).toFixed(2);
                   updated.conveyance = "1600";
                   updated.medicalallowances = "1250";
-                  updated.specialallowances = (remaining * 0.18).toFixed(2);
+                  updated.specialallowances = (remaining * SALARY_SPLIT.special).toFixed(2);
                 }
               }
               return updated;
@@ -303,12 +304,12 @@ const PayrollTemplateManager = () => {
       
       setTemplate(prev => ({
         ...prev,
-        basicSalary: (remaining * 0.40).toFixed(2),
-        da: (remaining * 0.22).toFixed(2),
-        hra: (remaining * 0.20).toFixed(2),
+        basicSalary: (remaining * SALARY_SPLIT.basic).toFixed(2),
+        da: (remaining * SALARY_SPLIT.da).toFixed(2),
+        hra: (remaining * SALARY_SPLIT.hra).toFixed(2),
         conveyance: "1600",
         medicalallowances: "1250",
-        specialallowances: (remaining * 0.18).toFixed(2),
+        specialallowances: (remaining * SALARY_SPLIT.special).toFixed(2),
         autoCalculatePF: true
       }));
     }

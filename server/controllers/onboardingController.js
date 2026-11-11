@@ -1,3 +1,4 @@
+import { SALARY_SPLIT } from "../utils/salarySplit.js";
 import Candidate from "../models/Candidate.js";
 import User from "../models/User.js";
 import Employee from "../models/Employee.js";
@@ -387,12 +388,12 @@ export const convertCandidateToEmployee = async (req, res) => {
       
       if (fullSalary > 2850) {
         const remaining = fullSalary - 2850;
-        basicSalary = parseFloat((remaining * 0.40).toFixed(2));
-        da = parseFloat((remaining * 0.22).toFixed(2));
-        hra = parseFloat((remaining * 0.20).toFixed(2));
+        basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
+        da = parseFloat((remaining * SALARY_SPLIT.da).toFixed(2));
+        hra = parseFloat((remaining * SALARY_SPLIT.hra).toFixed(2));
         conveyance = 1600;
         medicalallowances = 1250;
-        specialallowances = parseFloat((remaining * 0.18).toFixed(2));
+        specialallowances = parseFloat((remaining * SALARY_SPLIT.special).toFixed(2));
       } else {
         basicSalary = parseFloat(fullSalary.toFixed(2));
       }

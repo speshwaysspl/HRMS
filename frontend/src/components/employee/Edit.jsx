@@ -1,3 +1,4 @@
+import { SALARY_SPLIT } from "../../utils/salarySplit";
 import React, { useEffect, useState } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
@@ -133,7 +134,7 @@ const Edit = () => {
         const fullSalary = parseFloat(value);
         if (fullSalary > 2850) {
           const remaining = fullSalary - 2850;
-          const basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+          const basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
           calculatedPf = String(Math.round(basicSalary * 0.24));
         } else {
           calculatedPf = String(Math.round(fullSalary * 0.24));
@@ -147,7 +148,7 @@ const Edit = () => {
         const fullSalary = parseFloat(monthly);
         if (fullSalary > 2850) {
           const remaining = fullSalary - 2850;
-          const basicSalary = parseFloat((remaining * 0.40).toFixed(2));
+          const basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
           calculatedPf = String(Math.round(basicSalary * 0.24));
         } else {
           calculatedPf = String(Math.round(fullSalary * 0.24));

@@ -1,3 +1,4 @@
+import { SALARY_SPLIT } from "../../utils/salarySplit";
 // src/components/salary/GeneratePayslipByDays.jsx
 //
 // A separate, lightweight payslip form for partial-month cases (an
@@ -139,12 +140,12 @@ const GeneratePayslipByDays = () => {
       const fullSalary = parseFloat(employee.fullSalary);
       if (!isNaN(fullSalary) && fullSalary > 2850) {
         const remaining = fullSalary - 2850;
-        basicSalary = (remaining * 0.4).toFixed(2);
-        da = (remaining * 0.22).toFixed(2);
-        hra = (remaining * 0.2).toFixed(2);
+        basicSalary = (remaining * SALARY_SPLIT.basic).toFixed(2);
+        da = (remaining * SALARY_SPLIT.da).toFixed(2);
+        hra = (remaining * SALARY_SPLIT.hra).toFixed(2);
         conveyance = "1600";
         medicalallowances = "1250";
-        specialallowances = (remaining * 0.18).toFixed(2);
+        specialallowances = (remaining * SALARY_SPLIT.special).toFixed(2);
       }
     }
 
