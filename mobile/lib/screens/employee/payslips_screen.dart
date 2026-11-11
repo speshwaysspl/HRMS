@@ -223,10 +223,13 @@ class _PayslipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final net = (num.tryParse(payslip['netSalary']?.toString() ?? '') ?? 0).round();
-    final basic = num.tryParse(payslip['basicSalary']?.toString() ?? '') ?? 0;
     // Total deductions, same as the preview sheet: the `deductions` field is
     // only "Other Deductions".
     num n(dynamic v) => num.tryParse(v?.toString() ?? '') ?? 0;
+    // Gross salary (all earnings), like the web list. It used to show Basic
+    // only, which made Net Pay look larger than the "Salary" next to it.
+    final gross = ['basicSalary', 'da', 'hra', 'conveyance', 'medicalallowances', 'specialallowances']
+        .fold<num>(0, (sum, k) => sum + n(payslip[k]));
     final ded =
         n(payslip['proftax']) +
         n(payslip['pf']) +
@@ -350,8 +353,8 @@ class _PayslipCard extends StatelessWidget {
           Row(
             children: [
               stat('Emp ID', empId),
-              stat('Salary', formatCurrency.format(basic)),
-              stat('Deduction', formatCurrency.format(ded)),
+              stat('Gross', formatCurrency.format(gross)),
+              stat('Deductions', formatCurrency.format(ded)),
             ],
           ),
           SizedBox(height: context.h(16)),

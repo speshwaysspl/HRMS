@@ -37,7 +37,7 @@ const payrollTemplateSchema = new Schema(
     // Calculation Settings
     
     // Auto-calculation flags
-    autoCalculatePF: { type: Boolean, default: true }, // Auto calculate PF as % of basic
+    autoCalculatePF: { type: Boolean, default: false }, // Legacy: PF is entered manually, never auto-calculated
     pfPercentage: { type: Number, default: 24, min: 0, max: 100 }, // PF percentage of basic salary
     
     // Template Status

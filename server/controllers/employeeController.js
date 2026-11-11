@@ -1,4 +1,4 @@
-import { SALARY_SPLIT } from "../utils/salarySplit.js";
+import { splitGross } from "../utils/salarySplit.js";
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import Department from "../models/Department.js";
@@ -318,17 +318,7 @@ const getEmployee = async (req, res) => {
       hasTemplateOrSalary = true;
     }
 
-    if (!hasTemplateOrSalary && fullSalary > 0) {
-      let basicSalary = 0;
-      const fSal = parseFloat(fullSalary);
-      if (fSal > 2850) {
-        const remaining = fSal - 2850;
-        basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-      } else {
-        basicSalary = fSal;
-      }
-      pf = Math.round(basicSalary * 0.24);
-    }
+    // PF is entered manually; with no template or payslip on file it starts at 0.
 
     const employeeObj = employee.toObject();
     employeeObj.bankname = bankname;
@@ -465,17 +455,8 @@ const updateEmployee = async (req, res) => {
           let medicalallowances = 0;
           let specialallowances = 0;
           
-          if (fullSalary > 2850) {
-            const remaining = fullSalary - 2850;
-            basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-            da = parseFloat((remaining * SALARY_SPLIT.da).toFixed(2));
-            hra = parseFloat((remaining * SALARY_SPLIT.hra).toFixed(2));
-            conveyance = 1600;
-            medicalallowances = 1250;
-            specialallowances = parseFloat((remaining * SALARY_SPLIT.special).toFixed(2));
-          } else {
-            basicSalary = parseFloat(fullSalary.toFixed(2));
-          }
+          // Company salary structure (utils/salarySplit.js)
+          ({ basicSalary, da, hra, conveyance, medicalallowances, specialallowances } = splitGross(fullSalary));
 
           salaryFields = {
             basicSalary,
@@ -485,8 +466,8 @@ const updateEmployee = async (req, res) => {
             medicalallowances,
             specialallowances,
             proftax: fullSalary <= 20000 ? 150 : 200,
-            pf: Math.round(basicSalary * 0.24),
-            autoCalculatePF: true,
+            pf: 0, // PF is entered manually
+            autoCalculatePF: false,
             pfPercentage: 24
           };
         }
@@ -505,7 +486,7 @@ const updateEmployee = async (req, res) => {
           joiningDate: joiningDate ? new Date(joiningDate) : template.joiningDate,
           ...salaryFields,
           pf: pf !== undefined ? (parseFloat(pf) || 0) : (salaryFields.pf !== undefined ? salaryFields.pf : template.pf),
-          autoCalculatePF: pf !== undefined ? (parseFloat(pf) === 0 ? false : (salaryFields.autoCalculatePF !== undefined ? salaryFields.autoCalculatePF : template.autoCalculatePF)) : (salaryFields.autoCalculatePF !== undefined ? salaryFields.autoCalculatePF : template.autoCalculatePF),
+          autoCalculatePF: false, // PF is entered manually
           updatedAt: new Date()
         });
       } else {
@@ -521,17 +502,8 @@ const updateEmployee = async (req, res) => {
         let medicalallowances = 0;
         let specialallowances = 0;
         
-        if (fullSalary > 2850) {
-          const remaining = fullSalary - 2850;
-          basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-          da = parseFloat((remaining * SALARY_SPLIT.da).toFixed(2));
-          hra = parseFloat((remaining * SALARY_SPLIT.hra).toFixed(2));
-          conveyance = 1600;
-          medicalallowances = 1250;
-          specialallowances = parseFloat((remaining * SALARY_SPLIT.special).toFixed(2));
-        } else {
-          basicSalary = parseFloat(fullSalary.toFixed(2));
-        }
+        // Company salary structure (utils/salarySplit.js)
+        ({ basicSalary, da, hra, conveyance, medicalallowances, specialallowances } = splitGross(fullSalary));
 
         const newTemplate = new PayrollTemplate({
           employeeId: id,
@@ -552,8 +524,8 @@ const updateEmployee = async (req, res) => {
           medicalallowances,
           specialallowances,
           proftax: fullSalary <= 20000 ? 150 : 200,
-          pf: pf !== undefined ? (parseFloat(pf) || 0) : Math.round(basicSalary * 0.24),
-          autoCalculatePF: pf !== undefined ? (parseFloat(pf) === 0 ? false : true) : true,
+          pf: pf !== undefined ? (parseFloat(pf) || 0) : 0, // PF is entered manually
+          autoCalculatePF: false,
           pfPercentage: 24,
           deductions: 0,
           isActive: true,

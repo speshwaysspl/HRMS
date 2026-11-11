@@ -174,10 +174,7 @@ export const generatePayslip = async (req, res) => {
       lopamount: num(payload.lopamount)
     };
     
-    // Auto-calculate PF if enabled
-    if (payload.autoCalculatePF) {
-      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 24)) / 100;
-    }
+    // PF is entered manually; it is never auto-calculated.
     
     // Auto-calculate LOP if enabled (based on total earnings)
     if (payload.autoCalculateLOP && payload.lopDays) {
@@ -372,9 +369,7 @@ export const autoGenerateMonthlyPayslips = async (req, res) => {
         }
         
         let pf = template.pf;
-        if (template.autoCalculatePF) {
-          pf = (template.basicSalary * template.pfPercentage) / 100;
-        }
+        // PF is entered manually; it is never auto-calculated.
         
         const totalEarnings = template.basicSalary + template.da + hra + 
                              template.conveyance + template.medicalallowances + 
@@ -951,11 +946,7 @@ export const previewPayslip = async (req, res) => {
       lopamount: num(payload.lopamount)
     };
     
-    // Auto-calculate PF if enabled — kept in sync with generatePayslip's
-    // 24% default so a preview matches what actually gets generated.
-    if (payload.autoCalculatePF) {
-      deductions.pf = (basicSalary * (num(payload.pfPercentage) || 24)) / 100;
-    }
+    // PF is entered manually; it is never auto-calculated.
 
     // Auto-calculate LOP if enabled (based on total earnings) — mirrors
     // generatePayslip so preview and generate never disagree on this.

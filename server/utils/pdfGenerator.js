@@ -5,7 +5,7 @@ import numberToWords from "number-to-words";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SALARY_SPLIT } from "./salarySplit.js";
+import { splitGross } from "./salarySplit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -373,51 +373,21 @@ const convertNumberToIndianWords = (num) => {
  * Calculate dynamic Salary Breakdown percentages matching the sample letter
  */
 const calculateSalaryBreakdown = (totalGross) => {
+  // Company salary structure (utils/salarySplit.js); annual = monthly x 12,
+  // as in the reference table (e.g. Basic 15,000 / month = 1,80,000 / year).
   const annualGross = Number(totalGross || 650000);
-  const monthlyGross = Math.floor(annualGross / 12);
-
-  // Same split as payslips (utils/salarySplit.js): shares of the gross left
-  // after the fixed conveyance + medical. Special allowance takes the rest.
-  const remainingAnnual = annualGross - (SALARY_SPLIT.conveyance + SALARY_SPLIT.medical) * 12;
-
-  const basicAnnual = Math.round(remainingAnnual * SALARY_SPLIT.basic);
-  const basicMonthly = Math.floor(basicAnnual / 12);
-
-  const daAnnual = Math.round(remainingAnnual * SALARY_SPLIT.da);
-  const daMonthly = Math.round(daAnnual / 12);
-
-  const hraAnnual = Math.round(remainingAnnual * SALARY_SPLIT.hra);
-  const hraMonthly = Math.round(hraAnnual / 12);
-
-  const conveyanceAnnual = 19200;
-  const conveyanceMonthly = 1600;
-
-  const medicalAnnual = 15000;
-  const medicalMonthly = 1250;
-
-  const specialAnnual = annualGross - (basicAnnual + daAnnual + hraAnnual + conveyanceAnnual + medicalAnnual);
-  const specialMonthly = monthlyGross - (basicMonthly + daMonthly + hraMonthly + conveyanceMonthly + medicalMonthly);
-
-  return {
-    annual: {
-      basic: basicAnnual,
-      da: daAnnual,
-      hra: hraAnnual,
-      conveyance: conveyanceAnnual,
-      medical: medicalAnnual,
-      special: specialAnnual,
-      total: annualGross
-    },
-    monthly: {
-      basic: basicMonthly,
-      da: daMonthly,
-      hra: hraMonthly,
-      conveyance: conveyanceMonthly,
-      medical: medicalMonthly,
-      special: specialMonthly,
-      total: monthlyGross
-    }
+  const m = splitGross(Math.round(annualGross / 12));
+  const monthly = {
+    basic: Math.round(m.basicSalary),
+    da: Math.round(m.da),
+    hra: Math.round(m.hra),
+    conveyance: Math.round(m.conveyance),
+    medical: Math.round(m.medicalallowances),
   };
+  monthly.special = Math.round(annualGross / 12) - (monthly.basic + monthly.da + monthly.hra + monthly.conveyance + monthly.medical);
+  monthly.total = Math.round(annualGross / 12);
+  const annual = Object.fromEntries(Object.entries(monthly).map(([k, v]) => [k, v * 12]));
+  return { annual, monthly };
 };
 
 /**

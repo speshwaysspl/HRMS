@@ -1,4 +1,4 @@
-import { SALARY_SPLIT } from "../utils/salarySplit.js";
+import { splitGross } from "../utils/salarySplit.js";
 import Appointment from "../models/Appointment.js";
 import Candidate from "../models/Candidate.js";
 import Employee from "../models/Employee.js";
@@ -403,17 +403,8 @@ export const convertCandidateToEmployee = async (req, res) => {
         let medicalallowances = 0;
         let specialallowances = 0;
         
-        if (fullSalary > 2850) {
-          const remaining = fullSalary - 2850;
-          basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-          da = parseFloat((remaining * SALARY_SPLIT.da).toFixed(2));
-          hra = parseFloat((remaining * SALARY_SPLIT.hra).toFixed(2));
-          conveyance = 1600;
-          medicalallowances = 1250;
-          specialallowances = parseFloat((remaining * SALARY_SPLIT.special).toFixed(2));
-        } else {
-          basicSalary = parseFloat(fullSalary.toFixed(2));
-        }
+        // Company salary structure (utils/salarySplit.js)
+        ({ basicSalary, da, hra, conveyance, medicalallowances, specialallowances } = splitGross(fullSalary));
 
         const defaultTemplate = new PayrollTemplate({
           employeeId: employee._id,
@@ -434,8 +425,8 @@ export const convertCandidateToEmployee = async (req, res) => {
           medicalallowances,
           specialallowances,
           proftax: fullSalary <= 20000 ? 150 : 200,
-          pf: Math.round(basicSalary * 0.24),
-          autoCalculatePF: true,
+          pf: 0, // PF is entered manually
+          autoCalculatePF: false,
           pfPercentage: 24,
           deductions: 0,
           isActive: true,

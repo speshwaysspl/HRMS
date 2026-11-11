@@ -1,4 +1,4 @@
-import { SALARY_SPLIT } from "../../utils/salarySplit";
+import { splitGross } from "../../utils/salarySplit";
 // src/components/salary/PayrollTemplateManager.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
@@ -60,7 +60,7 @@ const PayrollTemplateManager = () => {
     
     isDefault: false,
     isActive: true,
-    autoCalculatePF: true
+    autoCalculatePF: false
   });
 
   const [templates, setTemplates] = useState([]);
@@ -173,30 +173,20 @@ const PayrollTemplateManager = () => {
 
               // Load template salary structure if template exists
               const t = employeeDetails.template;
+              // Earnings follow the company salary structure, split from the
+              // monthly gross (the template's total, or the salary for a new template).
+              const gross = t
+                ? ["basicSalary", "da", "hra", "conveyance", "medicalallowances", "specialallowances"].reduce((s, k) => s + Number(t[k] || 0), 0)
+                : parseFloat(employeeDetails.fullSalary) || 0;
+              if (gross > 0) {
+                for (const [k, v] of Object.entries(splitGross(gross))) updated[k] = String(v);
+              }
               if (t) {
-                updated.basicSalary = t.basicSalary?.toString() || prev.basicSalary;
-                updated.da = t.da?.toString() || prev.da;
-                updated.hra = t.hra?.toString() || prev.hra;
-                updated.conveyance = t.conveyance?.toString() || prev.conveyance;
-                updated.medicalallowances = t.medicalallowances?.toString() || prev.medicalallowances;
-                updated.specialallowances = t.specialallowances?.toString() || prev.specialallowances;
                 updated.pf = t.pf?.toString() || prev.pf;
                 updated.proftax = t.proftax?.toString() || prev.proftax;
                 updated.deductions = t.deductions?.toString() || prev.deductions;
-                updated.autoCalculatePF = t.autoCalculatePF !== undefined ? t.autoCalculatePF : false;
-              } else if (employeeDetails.fullSalary) {
-                // Auto calculate breakdown if CTC package exists
-                const fullSalary = parseFloat(employeeDetails.fullSalary);
-                if (!isNaN(fullSalary) && fullSalary > 2850) {
-                  const remaining = fullSalary - 2850;
-                  updated.basicSalary = (remaining * SALARY_SPLIT.basic).toFixed(2);
-                  updated.da = (remaining * SALARY_SPLIT.da).toFixed(2);
-                  updated.hra = (remaining * SALARY_SPLIT.hra).toFixed(2);
-                  updated.conveyance = "1600";
-                  updated.medicalallowances = "1250";
-                  updated.specialallowances = (remaining * SALARY_SPLIT.special).toFixed(2);
-                }
               }
+              updated.autoCalculatePF = false; // PF is entered manually
               return updated;
             });
 
@@ -299,19 +289,10 @@ const PayrollTemplateManager = () => {
     setFullSalaryInput(value);
     
     const fullSalary = parseFloat(value);
-    if (!isNaN(fullSalary) && fullSalary > 2850) {
-      const remaining = fullSalary - 2850;
-      
-      setTemplate(prev => ({
-        ...prev,
-        basicSalary: (remaining * SALARY_SPLIT.basic).toFixed(2),
-        da: (remaining * SALARY_SPLIT.da).toFixed(2),
-        hra: (remaining * SALARY_SPLIT.hra).toFixed(2),
-        conveyance: "1600",
-        medicalallowances: "1250",
-        specialallowances: (remaining * SALARY_SPLIT.special).toFixed(2),
-        autoCalculatePF: true
-      }));
+    if (!isNaN(fullSalary) && fullSalary > 0) {
+      // Company salary structure (utils/salarySplit.js); PF stays as entered.
+      const parts = Object.fromEntries(Object.entries(splitGross(fullSalary)).map(([k, v]) => [k, String(v)]));
+      setTemplate(prev => ({ ...prev, ...parts, autoCalculatePF: false }));
     }
   };
 
@@ -346,7 +327,7 @@ const PayrollTemplateManager = () => {
         }
         // Enable auto calculate PF if user manually modifies basicSalary
         if (name === "basicSalary") {
-          nextState.autoCalculatePF = true;
+          nextState.autoCalculatePF = false; // PF is entered manually
         }
         return nextState;
       });
@@ -402,7 +383,7 @@ const PayrollTemplateManager = () => {
       proftax: "",
       isDefault: false,
       isActive: true,
-      autoCalculatePF: true
+      autoCalculatePF: false
     });
     setEditingTemplate(null);
     setBankSuggestions([]);

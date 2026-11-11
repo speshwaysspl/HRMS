@@ -15,6 +15,12 @@ import { useLiveTick } from "../../context/NotificationContext";
 const totalDeductionsOf = (s) =>
   Number(s.proftax || 0) + Number(s.pf || 0) + Number(s.lopamount || 0) + Number(s.deductions || 0);
 
+// Gross salary (all earnings). The list used to show only Basic here, which
+// made Net Pay look larger than the "Salary" beside it.
+const grossOf = (s) =>
+  ["basicSalary", "da", "hra", "conveyance", "medicalallowances", "specialallowances"]
+    .reduce((sum, k) => sum + Number(s[k] || 0), 0);
+
 const View = () => {
   const liveTick = useLiveTick(["salary", "payslip"]);
   const [salaries, setSalaries] = useState([]);
@@ -403,9 +409,9 @@ const View = () => {
               <tr>
                 <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">SNO</th>
                 <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Emp ID</th>
-                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Salary</th>
-                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Deduction</th>
-                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Total</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Gross Salary</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Deductions</th>
+                <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Net Pay</th>
                 <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Payslip Month</th>
                 <th className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap font-medium text-ink-muted">Actions</th>
               </tr>
@@ -426,7 +432,7 @@ const View = () => {
                       return 'N/A';
                     })()}
                   </td>
-                  <td className="px-6 py-3 border-b border-surface-subtle text-center">{Number(salary.basicSalary).toFixed(2)}</td>
+                  <td className="px-6 py-3 border-b border-surface-subtle text-center tabular-nums">{grossOf(salary).toFixed(2)}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center">{totalDeductionsOf(salary).toFixed(2)}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center font-medium text-accent-700">{Number(salary.netSalary).toFixed(2)}</td>
                   <td className="px-6 py-3 border-b border-surface-subtle text-center whitespace-nowrap">{salary.month ? `${salary.month} ${salary.year}` : '-'}</td>
@@ -503,11 +509,11 @@ const View = () => {
                       <div className="font-medium text-ink truncate">{empId}</div>
                     </div>
                     <div>
-                      <div className="text-ink-faint">Salary</div>
-                      <div className="font-medium text-ink truncate tabular-nums">{inr(salary.basicSalary)}</div>
+                      <div className="text-ink-faint">Gross Salary</div>
+                      <div className="font-medium text-ink truncate tabular-nums">{inr(grossOf(salary))}</div>
                     </div>
                     <div>
-                      <div className="text-ink-faint">Deduction</div>
+                      <div className="text-ink-faint">Deductions</div>
                       <div className="font-medium text-ink truncate tabular-nums">{inr(totalDeductionsOf(salary))}</div>
                     </div>
                   </div>

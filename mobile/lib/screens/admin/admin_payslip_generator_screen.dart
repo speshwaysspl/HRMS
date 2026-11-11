@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/api_client.dart';
+import '../../utils/salary_split.dart';
 import '../../services/payslip_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
@@ -147,9 +148,23 @@ class _AdminPayslipGeneratorScreenState
         _pan.text = e['pan']?.toString() ?? '';
         _uan.text = e['uan']?.toString() ?? '';
         _joiningDate = DateTime.tryParse(e['joiningDate']?.toString() ?? '');
+        // Deductions (PF is manual), from the template.
         for (final k in _c.keys) {
           final v = t[k];
           if (v is num) _c[k]!.text = v.toStringAsFixed(0);
+        }
+        // Earnings always follow the company salary structure, split from the
+        // monthly gross (template total, or the salary when there's no template).
+        const earnings = ['basicSalary', 'da', 'hra', 'conveyance', 'medicalallowances', 'specialallowances'];
+        final templateGross = earnings.fold<double>(0, (s, k) => s + ((t[k] as num?)?.toDouble() ?? 0));
+        final gross = templateGross > 0
+            ? templateGross
+            : (double.tryParse(e['fullSalary']?.toString() ?? '') ?? 0);
+        if (gross > 0) {
+          String fmt(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+          splitGross(gross).forEach((k, v) {
+            if (_c.containsKey(k)) _c[k]!.text = fmt(v);
+          });
         }
       });
       if (t.isEmpty) {

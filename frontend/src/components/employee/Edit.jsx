@@ -1,4 +1,3 @@
-import { SALARY_SPLIT } from "../../utils/salarySplit";
 import React, { useEffect, useState } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
 import axios from "axios";
@@ -106,34 +105,13 @@ const Edit = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
+    // PF is entered manually, so changing the salary no longer overwrites it.
     if (name === "salary") {
       const annual = value ? String(Math.round(parseFloat(value) * 12)) : "";
-      let calculatedPf = "";
-      if (value) {
-        const fullSalary = parseFloat(value);
-        if (fullSalary > 2850) {
-          const remaining = fullSalary - 2850;
-          const basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-          calculatedPf = String(Math.round(basicSalary * 0.24));
-        } else {
-          calculatedPf = String(Math.round(fullSalary * 0.24));
-        }
-      }
-      setEmployee((prevData) => ({ ...prevData, salary: value, annualSalary: annual, pf: calculatedPf }));
+      setEmployee((prevData) => ({ ...prevData, salary: value, annualSalary: annual }));
     } else if (name === "annualSalary") {
       const monthly = value ? String(parseFloat((parseFloat(value) / 12).toFixed(2))) : "";
-      let calculatedPf = "";
-      if (monthly) {
-        const fullSalary = parseFloat(monthly);
-        if (fullSalary > 2850) {
-          const remaining = fullSalary - 2850;
-          const basicSalary = parseFloat((remaining * SALARY_SPLIT.basic).toFixed(2));
-          calculatedPf = String(Math.round(basicSalary * 0.24));
-        } else {
-          calculatedPf = String(Math.round(fullSalary * 0.24));
-        }
-      }
-      setEmployee((prevData) => ({ ...prevData, annualSalary: value, salary: monthly, pf: calculatedPf }));
+      setEmployee((prevData) => ({ ...prevData, annualSalary: value, salary: monthly }));
     } else if (name === "mobilenumber") {
       // Only allow digits and limit to 10 characters
       const numericValue = value.replace(/\D/g, '');

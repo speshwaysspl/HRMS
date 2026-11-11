@@ -1,4 +1,4 @@
-import { SALARY_SPLIT } from "../../utils/salarySplit";
+import { splitGross } from "../../utils/salarySplit";
 // src/components/salary/PayslipGenerator.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchDepartments } from "../../utils/EmployeeHelper";
@@ -63,7 +63,7 @@ const PayslipGenerator = () => {
     proftax: "",
     payDate: "", // Will be set to joining date when employee is selected
     autoCalculateLOP: false,
-    autoCalculatePF: true
+    autoCalculatePF: false
   });
 
   const [departments, setDepartments] = useState([]);
@@ -147,22 +147,20 @@ const PayslipGenerator = () => {
             bankaccountnumber: employee.bankaccountnumber || prev.bankaccountnumber || "",
             pan: employee.pan || prev.pan || "",
             uan: employee.uan || prev.uan || "",
-            autoCalculatePF: employee.template ? (employee.template.autoCalculatePF !== undefined ? employee.template.autoCalculatePF : false) : true,
+            // PF is entered manually (taken from the template, never auto-calculated).
+            autoCalculatePF: false,
             pf: employee.template ? (employee.template.pf !== undefined && employee.template.pf !== null ? employee.template.pf.toString() : "") : ""
           };
 
-          // If no template but we have fullSalary from offer, calculate breakdown
-          if (!employee.template && employee.fullSalary) {
-            const fullSalary = parseFloat(employee.fullSalary);
-            if (!isNaN(fullSalary) && fullSalary > 2850) {
-              const remaining = fullSalary - 2850;
-              updated.basicSalary = (remaining * SALARY_SPLIT.basic).toFixed(2);
-              updated.da = (remaining * SALARY_SPLIT.da).toFixed(2);
-              updated.hra = (remaining * SALARY_SPLIT.hra).toFixed(2);
-              updated.conveyance = "1600";
-              updated.medicalallowances = "1250";
-              updated.specialallowances = (remaining * SALARY_SPLIT.special).toFixed(2);
-            }
+          // Earnings always follow the company salary structure, split from the
+          // monthly gross (template total, or the salary when there's no template).
+          const t = employee.template;
+          const gross = t
+            ? ["basicSalary", "da", "hra", "conveyance", "medicalallowances", "specialallowances"].reduce((s, k) => s + Number(t[k] || 0), 0)
+            : parseFloat(employee.fullSalary) || 0;
+          if (gross > 0) {
+            const parts = splitGross(gross);
+            for (const [k, v] of Object.entries(parts)) updated[k] = String(v);
           }
 
           return updated;
@@ -273,7 +271,11 @@ const PayslipGenerator = () => {
     const targetEmpId = empId || payslip.employeeId;
     // Calculate working days for current month/year
     const workingDays = await calculateWorkingDays(payslip.month, payslip.year, targetEmpId);
-    
+    // Earnings follow the company salary structure, split from the template's gross.
+    const gross = ["basicSalary", "da", "hra", "conveyance", "medicalallowances", "specialallowances"]
+      .reduce((s, k) => s + Number(template[k] || 0), 0);
+    const parts = Object.fromEntries(Object.entries(splitGross(gross)).map(([k, v]) => [k, String(v)]));
+
     setPayslip(prev => ({
       ...prev,
       location: template.location || "",
@@ -281,17 +283,12 @@ const PayslipGenerator = () => {
       bankaccountnumber: template.bankaccountnumber || "",
       pan: template.pan || "",
       uan: template.uan || "",
-      basicSalary: template.basicSalary || "",
-      da: template.da || "",
-      hra: template.hra || "",
-      conveyance: template.conveyance || "",
-      medicalallowances: template.medicalallowances || "",
-      specialallowances: template.specialallowances || "",
+      ...parts,
       deductions: template.deductions || "",
       pf: template.pf !== undefined && template.pf !== null ? template.pf.toString() : "",
       proftax: template.proftax || "",
       workingdays: workingDays || 30,
-      autoCalculatePF: template.autoCalculatePF !== undefined ? template.autoCalculatePF : false
+      autoCalculatePF: false // PF is entered manually
     }));
   };
 
@@ -476,7 +473,7 @@ const PayslipGenerator = () => {
         }
         // Enable auto calculate PF if user manually modifies basicSalary
         if (name === "basicSalary") {
-          nextState.autoCalculatePF = true;
+          nextState.autoCalculatePF = false; // PF is entered manually
         }
         return nextState;
       });

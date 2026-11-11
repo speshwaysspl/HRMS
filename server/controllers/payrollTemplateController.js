@@ -27,9 +27,7 @@ export const createTemplate = async (req, res) => {
     let hra = num(payload.hra);
     let pf = num(payload.pf);
     
-    if (payload.autoCalculatePF) {
-      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 24)) / 100;
-    }
+    // PF is entered manually; it is never auto-calculated.
     
     const newTemplate = new PayrollTemplate({
       employeeId: employee._id,
@@ -247,9 +245,7 @@ export const updateTemplate = async (req, res) => {
     let hra = num(payload.hra);
     let pf = num(payload.pf);
     
-    if (payload.autoCalculatePF) {
-      pf = (num(payload.basicSalary) * num(payload.pfPercentage || 24)) / 100;
-    }
+    // PF is entered manually; it is never auto-calculated.
     
     // Update template fields
     const updateFields = {

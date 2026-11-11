@@ -1,4 +1,4 @@
-import { SALARY_SPLIT } from "../../utils/salarySplit";
+import { splitGross } from "../../utils/salarySplit";
 // src/components/salary/GeneratePayslipByDays.jsx
 //
 // A separate, lightweight payslip form for partial-month cases (an
@@ -127,32 +127,18 @@ const GeneratePayslipByDays = () => {
 
   const buildPayload = () => {
     const template = employee?.template;
-    let basicSalary = template?.basicSalary ?? 0;
-    let da = template?.da ?? 0;
-    let hra = template?.hra ?? 0;
-    let conveyance = template?.conveyance ?? 0;
-    let medicalallowances = template?.medicalallowances ?? 0;
-    let specialallowances = template?.specialallowances ?? 0;
+    // Monthly gross: the template's total earnings, or the employee's salary
+    // when there's no template. It is always split with the company salary
+    // structure (utils/salarySplit.js), so old templates show the current split.
+    const templateGross = template
+      ? ["basicSalary", "da", "hra", "conveyance", "medicalallowances", "specialallowances"]
+          .reduce((sum, k) => sum + Number(template[k] || 0), 0)
+      : 0;
+    const gross = templateGross || parseFloat(employee?.fullSalary) || 0;
+    const { basicSalary, da, hra, conveyance, medicalallowances, specialallowances } = splitGross(gross);
 
-    // No payroll template on file — fall back to the standard breakdown of
-    // their full salary, same formula the main generator uses.
-    if (!template && employee?.fullSalary) {
-      const fullSalary = parseFloat(employee.fullSalary);
-      if (!isNaN(fullSalary) && fullSalary > 2850) {
-        const remaining = fullSalary - 2850;
-        basicSalary = (remaining * SALARY_SPLIT.basic).toFixed(2);
-        da = (remaining * SALARY_SPLIT.da).toFixed(2);
-        hra = (remaining * SALARY_SPLIT.hra).toFixed(2);
-        conveyance = "1600";
-        medicalallowances = "1250";
-        specialallowances = (remaining * SALARY_SPLIT.special).toFixed(2);
-      }
-    }
-
-    // PF is based on the FULL (unprorated) basic salary — same rule the
-    // main generator uses.
-    const fullBasicSalary = Number(basicSalary || 0);
-    const pfAmount = template?.autoCalculatePF !== false ? (fullBasicSalary * 0.24).toFixed(2) : template?.pf ?? "";
+    // PF is entered manually on the employee's payroll template.
+    const pfAmount = template?.pf ?? 0;
 
     // Earnings, LOP Days/Amount, and Other Deductions all display exactly
     // as they would for a full month — Basic/DA/HRA/etc. stay at their
