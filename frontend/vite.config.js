@@ -13,7 +13,7 @@ const CSP = [
   "media-src 'self' blob:",
   "connect-src 'self' https://speshwayhrms.com https://*.speshwayhrms.com wss://speshwayhrms.com wss://*.speshwayhrms.com https://*.googleapis.com https://ipapi.co https://nominatim.openstreetmap.org",
   "worker-src 'self'",
-  "frame-src 'self' https://www.openstreetmap.org",
+  "frame-src 'self' blob: https://www.openstreetmap.org",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
