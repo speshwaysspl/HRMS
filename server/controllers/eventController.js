@@ -1,12 +1,17 @@
 import Event from "../models/Event.js";
+import DeletedHoliday from "../models/DeletedHoliday.js";
 import { createHolidayNotification, createEventNotification } from "./notificationController.js";
 import { holidays } from "../utils/holidays.js";
 
 const seedHolidaysInternal = async () => {
   try {
     let count = 0;
+    const deleted = new Set(
+      (await DeletedHoliday.find().lean()).map((d) => `${d.title}|${new Date(d.date).toISOString()}`)
+    );
     for (const holiday of holidays) {
       if (!holiday.date) continue;
+      if (deleted.has(`${holiday.title}|${new Date(holiday.date).toISOString()}`)) continue;
       // Upsert so two server processes seeding at once can't create duplicates.
       const r = await Event.updateOne(
         { date: new Date(holiday.date), title: holiday.title },
@@ -101,6 +106,17 @@ const deleteEvent = async (req, res) => {
     }
     // Also drop hidden duplicates of the same event.
     await Event.deleteMany({ title: deleteEvent.title, date: deleteEvent.date });
+    // Remember deleted built-in holidays so the startup seeder doesn't bring them back.
+    const isBuiltIn = holidays.some(
+      (h) => h.title === deleteEvent.title && new Date(h.date).getTime() === new Date(deleteEvent.date).getTime()
+    );
+    if (isBuiltIn) {
+      await DeletedHoliday.updateOne(
+        { title: deleteEvent.title, date: deleteEvent.date },
+        { $setOnInsert: { title: deleteEvent.title, date: deleteEvent.date } },
+        { upsert: true }
+      );
+    }
     return res.status(200).json({ success: true, event: deleteEvent });
   } catch (error) {
     return res.status(500).json({ success: false, error: "delete event server error" });
