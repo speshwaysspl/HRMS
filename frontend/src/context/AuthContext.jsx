@@ -54,7 +54,10 @@ const authContext = ({ children }) => {
         const status = error.response?.status;
         // Session rejected: sign out. Network/server hiccup: keep the cached
         // session so a refresh while offline still shows the app.
-        if (status === 401 || status === 403 || status === 404) signOutLocally();
+        if (status === 401 || status === 403 || status === 404) {
+          unregisterWebPush();
+          signOutLocally();
+        }
         else if (!readCachedUser()) setUser(null);
       } finally {
         setLoading(false);

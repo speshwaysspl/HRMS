@@ -3,7 +3,7 @@
 // browser's token so notifications arrive even when no HRMS tab is open.
 // While a tab is open, the socket popup in NotificationContext shows them instead.
 import { initializeApp, getApps } from "firebase/app";
-import { getMessaging, getToken, deleteToken, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { API_BASE } from "./apiConfig";
 
 const env = import.meta.env;
@@ -70,19 +70,37 @@ export const registerWebPush = async ({ askPermission = false } = {}) => {
   }
 };
 
-/** On logout: stop pushes to this browser for this user. Call before the auth token is cleared. */
+/**
+ * On logout (or a rejected session): stop pushes to this browser. Call before the
+ * auth token is cleared - the server request's headers are built synchronously.
+ */
 export const unregisterWebPush = async () => {
   const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) return;
   localStorage.removeItem(TOKEN_KEY);
-  try {
-    await fetch(`${API_BASE}/api/notifications/fcm-token`, {
+  if (token) {
+    // keepalive: the request survives the redirect to the login page.
+    fetch(`${API_BASE}/api/notifications/fcm-token`, {
       method: "DELETE",
       headers: authHeader(),
       body: JSON.stringify({ token }),
-    });
-    const messaging = await messagingOrNull();
-    if (messaging) await deleteToken(messaging);
+      keepalive: true,
+    }).catch(() => {});
+  }
+  try {
+    // Kill the browser's push subscription itself, so nothing can arrive even if
+    // the server still holds the token (stored key missing, request failed, ...).
+    // Firebase's deleteToken() alone looks at a different worker scope than the
+    // one registerWebPush uses, so it never unsubscribed this one.
+    if (!("serviceWorker" in navigator)) return;
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations
+        .filter((r) => (r.active || r.waiting || r.installing)?.scriptURL.includes("firebase-messaging-sw.js"))
+        .map(async (r) => {
+          const sub = await r.pushManager.getSubscription();
+          if (sub) await sub.unsubscribe();
+        })
+    );
   } catch {
     // Best effort; the server drops dead tokens when sends fail.
   }
