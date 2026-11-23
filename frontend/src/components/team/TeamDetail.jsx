@@ -128,7 +128,12 @@ const TeamDetail = () => {
   const openProofPreview = async (url, name) => {
     setProofPreview({ url, name, loading: true });
     try {
-      const res = await fetch(url);
+      // S3 files go through the server: the browser can't fetch S3 directly (CSP / no CORS).
+      const isS3 = /^https:\/\/[^/]+\.amazonaws\.com\//.test(url);
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const res = isS3
+        ? await fetch(`${API_BASE}/api/task/file?url=${encodeURIComponent(url)}`, { headers: { Authorization: `Bearer ${token}` } })
+        : await fetch(url);
       if (!res.ok) throw new Error();
       const raw = await res.blob();
       const ext = proofFileName(url, name).split(".").pop().toLowerCase();
