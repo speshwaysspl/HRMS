@@ -96,3 +96,6 @@ server/public/uploads/*
 
 # Firebase service account key (secret)
 server/service_account.json
+
+# Codex hooks (installed by impeccable)
+.codex/

@@ -42,7 +42,8 @@ MERN stack + Flutter mobile app.
 - **Live-refresh throttling (2026-11-04)**: server emits `data:changed` at most once per resource per 3 s; web `useLiveData` / Flutter `LiveRefresh` refetch at most every 4 s; reconnect resync at most every 10 s. Never broadcast read-receipt-style writes (e.g. `POST …/seen`) — that caused a 1 s reload loop.
 
 ## 6. Current Work
-- Mobile app is at a Play Store-submittable state: release signing verified, analyzer clean, Firebase config consistent, basic test suite in place. Remaining open items before actual submission (not code fixes, need user action): confirm `new-hrms-d8eaf` is genuinely the intended production Firebase project; prepare Play Console store listing assets (screenshots, description, feature graphic); optionally bump Gradle 8.14→9.1+/AGP 8.11.1→9.0.1+/Kotlin 2.2.21→2.3.20+ in a dedicated low-stakes session (currently only deprecation warnings, not failures — deferred by explicit user choice).
+- Mobile release: **1.0.23+26** built and pushed 2026-11-23 (`RELEASE_NOTES_1.0.23.md`), awaiting Play upload. Next build = version code **27**. Play Console's last live release was 25 (1.0.22).
+- Pending ops (user action): redeploy server + frontend for the 2026-11-12…23 fixes (CSP, holiday tombstones, S3 proof stream, push logout); reload nginx after CSP changes.
 - No admin-side UI exists to review/action account-deletion requests (`GET /api/account/deletion-requests`) — explicitly deferred, not forgotten.
 
 ## 11. Do Not Repeat
@@ -83,7 +84,7 @@ MERN stack + Flutter mobile app.
 - **Mobile splash + login logo tile is hard-coded `Colors.white`** (not `AppColors.surface`) so it doesn't turn navy in dark mode. Web has no theme switching, so no web counterpart needed.
 
 ## 12. Last Updated
-2026-10-01 (dashboard redesign, root password, team attendance status, 1–10 ratings)
+2026-11-23 (CSP frames, S3 file stream, holiday tombstones, push logout, synthesized chime, milestone order, release 1.0.23+26)
 
 
 ## Update 2026-09-19
@@ -158,3 +159,11 @@ MERN stack + Flutter mobile app.
 - SALARY SPLIT (2026-11-11): Basic 50% / DA 22% / HRA 20% / Special 8% of (gross - 1600 conveyance - 1250 medical). Single source: server/utils/salarySplit.js + frontend/src/utils/salarySplit.js (keep in sync); used by payslip/template/employee forms, appointment/onboarding/employee controllers and offer + appointment letter PDFs. Was 40/22/20/18; letters had used hard-coded ratios tuned to a 6.5L sample. Existing saved payroll templates/payslips are NOT recalculated automatically.
 - MANAGERS (2026-11-11): "Reports To" removed from UI. Manager = lead of the employee's Teams (server/utils/managerScope.js: managerUserIdsFor / managedEmployeeIds); legacy Employee.reportsTo links still honoured read-only. Used by attendance regularization (notify/list/decide) and reviews. Regularization decide now requires admin/HR or the employee's manager and blocks approving your own request (was open to any logged-in user).
 - SALARY STRUCTURE (2026-11-11, supersedes the 40/50%-of-remaining notes above): Basic 50% of gross, DA 25% of Basic, HRA 40% of Basic, Conveyance 1600, Medical 1250, Special = rest; below ~16.3k gross Special=0 and shortfall comes from HRA then DA. One function splitGross() in server/utils/salarySplit.js, frontend/src/utils/salarySplit.js, mobile/lib/utils/salary_split.dart (keep in sync; Flutter test covers it). PF is MANUAL everywhere (autoCalculatePF ignored/false). Payslip/template screens split from the template's gross on load. Saved payslips are not recalculated. One-time template migration: server/scripts/recalcTemplateSplit.js (preview / --apply / --restore; backups in server/backups, gitignored). The earlier 50%-of-remaining version was applied to live templates 2026-11-11 05:35 UTC (backup in server/backups).
+
+## Fixes & patterns (2026-11-12 … 11-23)
+- CSP frame-src = `'self' blob: https://www.openstreetmap.org` (attendance map iframe + blob PDF/proof previews). Cloudflare beacon script is blocked by script-src on purpose (harmless console error).
+- S3 FILES IN-PAGE: the browser can't fetch `*.s3.<region>.amazonaws.com` (CSP connect-src + no bucket CORS). Use `GET /api/task/file?url=` (auth; `getDocStreamFromS3` in middleware/uploadDocumentS3.js streams with server creds, only our bucket's host). Don't add amazonaws to CSP instead.
+- BUILT-IN HOLIDAYS: `seedHolidaysInternal` upserts utils/holidays.js on every boot; admin deletes of built-ins are recorded in `DeletedHoliday` (title+date) and skipped by the seeder.
+- WEB PUSH LOGOUT: `unregisterWebPush` unsubscribes the firebase-messaging-sw registration's pushManager directly (Firebase `deleteToken()` targets a different SW scope and never unsubscribed ours) + DELETE /fcm-token with keepalive; also runs on rejected-session sign-out. Flutter logout was already correct.
+- NOTIFICATION SOUND: synthesized WebAudio chime in NotificationContext.jsx; there is no mp3 (the old one was a text placeholder).
+- MILESTONES ORDER (web MilestonesPanel + Flutter milestones_tab): open newest-created first, closed latest-closedAt first.
