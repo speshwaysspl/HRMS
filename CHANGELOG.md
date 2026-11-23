@@ -6,6 +6,9 @@ All notable changes to this project are logged here, newest first. Timestamps ar
 
 ---
 
+## 2026-11-23 — Release 1.0.23+26
+- Version bumped to 1.0.23+26; `RELEASE_NOTES_1.0.23.md` (Play "What's new" + full notes). Signed AAB built: `mobile/build/app/outputs/bundle/release/app-release.aab` (66.2 MB). `flutter analyze` clean, `flutter test` 20/20.
+
 ## 2026-11-04 — Release 1.0.22+25
 - Version bumped to 1.0.22+25; `RELEASE_NOTES_1.0.22.md` (Play "What's new" + full notes). Signed AAB built: `mobile/build/app/outputs/bundle/release/app-release.aab` (66.1 MB). `flutter analyze` clean, `flutter test` 17/17.
 
