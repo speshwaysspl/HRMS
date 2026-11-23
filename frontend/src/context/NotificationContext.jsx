@@ -3,8 +3,29 @@ import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/apiConfig';
 import { registerWebPush } from '../utils/webPush';
 
-// Add notification sound
-const notificationSound = new Audio('/notification-sound.mp3');
+// Notification chime, synthesized (no audio file to ship or go missing).
+// Browsers keep audio locked until the user has interacted with the page; a
+// blocked play just stays silent.
+let audioCtx = null;
+const playNotificationSound = () => {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audioCtx = audioCtx || new Ctx();
+  if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  const now = audioCtx.currentTime;
+  [[880, 0], [1320, 0.12]].forEach(([freq, delay]) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, now + delay);
+    gain.gain.exponentialRampToValueAtTime(0.18, now + delay + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.35);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now + delay);
+    osc.stop(now + delay + 0.4);
+  });
+};
 
 const NotificationContext = createContext();
 
@@ -114,7 +135,7 @@ export const NotificationProvider = ({ children }) => {
   const showPopupNotification = (notification) => {
     // Play notification sound
     try {
-      notificationSound.play().catch(err => console.log("Error playing sound:", err));
+      playNotificationSound();
     } catch (error) {
       console.error("Error playing notification sound:", error);
     }
