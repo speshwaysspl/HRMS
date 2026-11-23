@@ -57,8 +57,12 @@ const MilestonesPanel = ({ teamId, milestones, canManage, onChanged, onViewTasks
   const [rowError, setRowError] = useState("");
   const [menuId, setMenuId] = useState(null);
 
-  const open = milestones.filter((m) => m.state === "open");
-  const closed = milestones.filter((m) => m.state === "closed");
+  // Latest on top by time: open = most recently created, closed = most recently closed.
+  const t = (v) => new Date(v || 0).getTime();
+  const open = milestones.filter((m) => m.state === "open")
+    .sort((a, b) => t(b.createdAt) - t(a.createdAt));
+  const closed = milestones.filter((m) => m.state === "closed")
+    .sort((a, b) => t(b.closedAt || b.createdAt) - t(a.closedAt || a.createdAt) || t(b.createdAt) - t(a.createdAt));
   const shown = view === "open" ? open : closed;
 
   const startNew = () => {

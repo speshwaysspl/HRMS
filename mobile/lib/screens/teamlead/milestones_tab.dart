@@ -112,12 +112,24 @@ class _MilestonesTabState extends State<MilestonesTab> {
 
   @override
   Widget build(BuildContext context) {
-    final open = widget.milestones
-        .where((m) => m['state'] != 'closed')
-        .toList();
-    final closed = widget.milestones
-        .where((m) => m['state'] == 'closed')
-        .toList();
+    // Latest on top by time: open = most recently created,
+    // closed = most recently closed.
+    int time(dynamic v) =>
+        (DateTime.tryParse(v?.toString() ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0))
+            .millisecondsSinceEpoch;
+    final open = widget.milestones.where((m) => m['state'] != 'closed').toList()
+      ..sort((a, b) => time(b['createdAt']).compareTo(time(a['createdAt'])));
+    final closed =
+        widget.milestones.where((m) => m['state'] == 'closed').toList()
+          ..sort((a, b) {
+            final byClosed = time(
+              b['closedAt'] ?? b['createdAt'],
+            ).compareTo(time(a['closedAt'] ?? a['createdAt']));
+            return byClosed != 0
+                ? byClosed
+                : time(b['createdAt']).compareTo(time(a['createdAt']));
+          });
     final shown = _showClosed ? closed : open;
     final showUnplanned = !_showClosed && widget.unplannedCount > 0;
     final total = open.length + closed.length;
